@@ -44,14 +44,19 @@ SocketHandler::SocketHandler() : param(NULL), result(NULL)
 //コンストラクタ
 SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 {
+	//wsa_dataの初期化
+	int init_result = WSAStartup(MAKEWORD(2, 0), &wsa_data);
 
 	//select関数のタイムアウト初期設定(tv_sec=秒の指定　tv_usec=マイクロ秒の指定)
 	timeout.tv_sec = tv_sec;
 	timeout.tv_usec = tv_usec;
 
-	//wsa_dataの初期化
-	int init_result = WSAStartup(MAKEWORD(2, 0), &wsa_data);
+	//リッスンソケットの初期化
+	listen_socket = INVALID_SOCKET;
 
+	//クライアントのリスト初期化
+	client_socket_list->reserve(10000);
+	client_socket_list->push_back(INVALID_SOCKET);
 
 }
 

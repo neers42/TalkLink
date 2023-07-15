@@ -70,6 +70,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(ProjectDir)/inc/;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -128,15 +131,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ChatServer.cpp" />
-    <ClCompile Include="ClientInfomationListHandler.cpp" />
-    <ClCompile Include="ServerControlleFacade.cpp" />
-    <ClCompile Include="SocketHandler.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\ClientInfomationListHandler.cpp" />
+    <ClCompile Include="src\ServerControlleFacade.cpp" />
+    <ClCompile Include="src\SocketHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ClientInfomationListHandler.h" />
-    <ClInclude Include="ServerControlleFacade.h" />
-    <ClInclude Include="SocketHandler.h" />
+    <ClInclude Include="inc\ClientInfomationListHandler.h" />
+    <ClInclude Include="inc\inicpp.h" />
+    <ClInclude Include="inc\ServerControlleFacade.h" />
+    <ClInclude Include="inc\SocketHandler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

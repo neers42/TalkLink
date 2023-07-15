@@ -4,7 +4,9 @@
 #include <winsock2.h>
 #include <vector>
 #include <string>
+#include "inicpp.h"
 
+#define INIT_FILE_PASS : ".//ini/socket_setting.ini"
 
 class SocketHandler
 {
@@ -35,9 +37,7 @@ private:
 			 関数
 :::::::::::::::::::::::::::::::
 */
-	template<typename T>
-	auto loadServerInitFile(const std::string& filePath, const char* sectionName, const char* keyName, T* setElement)
-		-> typename std::enable_if<std::is_integral<T>::value>::type;
+	void load_socket_setting_ini_file(const std::string file_pass);
 
 	//Listenソケットをbindする【未実装】
 	void bind_listen_socket();
@@ -89,8 +89,4 @@ public:
 
 #endif // !SOCKETHANDLER_H_
 
-template<typename T>
-inline auto SocketHandler::loadServerInitFile(const std::string& filePath, const char* sectionName, const char* keyName, T* setElement) -> typename std::enable_if<std::is_integral<T>::value>::type
-{
-	return typename std::enable_if<std::is_integral<T>::value>::type();
-}
+

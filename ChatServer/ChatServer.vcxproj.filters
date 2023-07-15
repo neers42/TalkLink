@@ -15,27 +15,30 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChatServer.cpp">
+    <ClCompile Include="src\main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ServerControlleFacade.cpp">
+    <ClCompile Include="src\ServerControlleFacade.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="SocketHandler.cpp">
+    <ClCompile Include="src\SocketHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="ClientInfomationListHandler.cpp">
+    <ClCompile Include="src\ClientInfomationListHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ServerControlleFacade.h">
+    <ClInclude Include="inc\ServerControlleFacade.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="SocketHandler.h">
+    <ClInclude Include="inc\SocketHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="ClientInfomationListHandler.h">
+    <ClInclude Include="inc\ClientInfomationListHandler.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\inicpp.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
