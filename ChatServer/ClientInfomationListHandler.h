@@ -1,0 +1,13 @@
+#ifndef CLIENTINFOMATIONLISTHANDLER_H_
+#define CLIENTINFOMATIONLISTHANDLER_H_
+
+class ClientInfomationListHandler
+{
+private:
+
+};
+
+#endif // !CLIENTINFOMATIONLISTHANDLER_H_
+
+
+
