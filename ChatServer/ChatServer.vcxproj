@@ -131,16 +131,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\AppException.cpp" />
+    <ClCompile Include="src\ExceptionBase.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ClientInfomationListHandler.cpp" />
     <ClCompile Include="src\ServerControlleFacade.cpp" />
     <ClCompile Include="src\SocketHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\AppException.h" />
+    <ClInclude Include="inc\ExceptionBase.h" />
     <ClInclude Include="inc\ClientInfomationListHandler.h" />
     <ClInclude Include="inc\inicpp.h" />
     <ClInclude Include="inc\ServerControlleFacade.h" />
     <ClInclude Include="inc\SocketHandler.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ini\socket_setting.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

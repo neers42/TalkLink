@@ -1,10 +1,12 @@
 #ifndef SOCKETHANDLER_H_
 #define SOCKETHANDLER_H_
-#include <stdio.h>
+#include <iostream>
 #include <winsock2.h>
 #include <vector>
 #include <string>
+#include <exception>
 #include "inicpp.h"
+#include "AppException.h"
 
 #define INIT_FILE_PASS : ".//ini/socket_setting.ini"
 
@@ -18,7 +20,7 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	//リッスンソケット生成用のパラメータ
-	struct addrinfo* param, *result;
+	struct addrinfo param, *result = NULL;
 
 	WSADATA wsa_data;
 
@@ -37,7 +39,7 @@ private:
 			 関数
 :::::::::::::::::::::::::::::::
 */
-	void load_socket_setting_ini_file(const std::string file_pass);
+	void load_socket_setting_ini_file(const std::string& file_pass);
 
 	//Listenソケットをbindする【未実装】
 	void bind_listen_socket();

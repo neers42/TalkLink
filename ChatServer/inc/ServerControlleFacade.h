@@ -19,6 +19,9 @@ public:
 	//デストラクタ
 	~ServerControlleFacade();
 
+	//サーバプログラム実行
+	void run();
+
 
 };
 
