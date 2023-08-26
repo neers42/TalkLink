@@ -133,6 +133,13 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	client_socket_list.reserve(10000);
 	client_socket_list.push_back(INVALID_SOCKET);
 
+	init_sockaddr_in.sin_family = AF_INET;
+	init_sockaddr_in.sin_port = 50000;
+	init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+
+	client_net_info init_net_info(INVALID_SOCKET, init_sockaddr_in);
+	client_net_info_list.reserve(MAX_CONNECT_NUM);
+	client_net_info_list.push_back(init_net_info);
 }
 
 //デストラクタ
@@ -278,7 +285,7 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 	return true;
 }
 
-std::string SocketHandler::get_client_ip(SOCKET client_socket)
+std::string SocketHandler::get_client_ip(int client_num)
 {
 	
 	return std::string();
@@ -326,15 +333,19 @@ bool SocketHandler::accept_client_socket()
 		try
 		{
 			client_net_info_list[check_n_invalid_socket_result].client_socket = 
-				accept(listen_socket, (struct sockaddr*)&client_net_info_list[check_n_invalid_socket_result].client_sockaadr_in, NULL);
+				accept(listen_socket, 
+					(struct sockaddr*)&client_net_info_list[check_n_invalid_socket_result].client_sockaadr_in, 
+					&client_net_info_list[check_n_invalid_socket_result].socket_addr_in_length);
+			
+			//acceptしたソケットがINVALID_SOCKETである場合
 			if (client_socket_list[check_n_invalid_socket_result] == INVALID_SOCKET) {
-				std::cout << "[INFO] IP : " << std::endl;
+				
 
-				return true;
 			}
 			else {
-				//acceptしたソケットがINVALID_SOCKETである場合
-				
+				//acceptが成功した場合
+				std::cout << "[INFO] IP : " << std::endl;
+				return true;
 			}
 		}
 		catch (const std::exception& ex)

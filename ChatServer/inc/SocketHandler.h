@@ -41,10 +41,18 @@ private:
 
 	//接続中のクライアント情報
 	struct client_net_info {
+		//コンストラクタ
 		client_net_info(SOCKET socket, sockaddr_in sockaddr) : 
 			client_socket{ socket }, client_sockaadr_in{ sockaddr } {}
+		
+		//接続中のクライアントソケット
 		SOCKET client_socket;
+	
+		//接続中のクライアントソケット情報
 		struct sockaddr_in client_sockaadr_in;
+
+		//接続中のクライアントソケットのサイズ
+		socklen_t socket_addr_in_length = sizeof(client_sockaadr_in);
 	};
 
 	//接続中のクライアントリスト
@@ -85,7 +93,7 @@ private:
 
 	bool load_socket_setting_ini_file(const std::string& file_pass);
 
-	std::string get_client_ip(SOCKET client_socket);
+	std::string get_client_ip(int client_num);
 
 
 
