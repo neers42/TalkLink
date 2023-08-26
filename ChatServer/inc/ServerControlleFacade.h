@@ -7,9 +7,7 @@
 class ServerControlleFacade
 {
 private:
-	ServerControlleFacade* m_sever_controlle_facade;
-	SocketHandler* m_socket_handler;
-	ClientInfomationListHandler* m_client_infomation_list_handler;
+	SocketHandler* m_socket_handler = new SocketHandler();
 
 
 public:
@@ -18,6 +16,11 @@ public:
 
 	//デストラクタ
 	~ServerControlleFacade();
+
+
+	SocketHandler* get_m_socket_handler() {
+		return m_socket_handler;
+	}
 
 	//サーバプログラム実行
 	void run();

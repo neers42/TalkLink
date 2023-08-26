@@ -145,6 +145,7 @@
     <ClInclude Include="inc\inicpp.h" />
     <ClInclude Include="inc\ServerControlleFacade.h" />
     <ClInclude Include="inc\SocketHandler.h" />
+    <ClInclude Include="inc\StringFormat.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ini\socket_setting.ini" />

@@ -2,10 +2,16 @@
 //
 
 #include <iostream>
+#include "ServerControlleFacade.h"
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    ServerControlleFacade* server_cont_facade = new ServerControlleFacade();
+    server_cont_facade->run();
+
+
+    delete server_cont_facade;
+    
 }
 
 // プログラムの実行: Ctrl + F5 または [デバッグ] > [デバッグなしで開始] メニュー
