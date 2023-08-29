@@ -11,7 +11,7 @@
  **********************************************************************************/
 SocketHandler::SocketHandler()
 {
-	ZeroMemory(&this->param, sizeof(this->param));
+	ZeroMemory(&param, sizeof(param));
 
 	try
 	{
@@ -63,14 +63,15 @@ SocketHandler::SocketHandler()
 	client_socket_list.push_back(INVALID_SOCKET);
 
 	init_sockaddr_in.sin_family = AF_INET;
-	init_sockaddr_in.sin_port = 50000;
+	init_sockaddr_in.sin_port = 0;
 	init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
 	client_net_info init_net_info(INVALID_SOCKET, init_sockaddr_in);
 	client_net_info_list.reserve(MAX_CONNECT_NUM);
-	client_net_info_list.push_back(init_net_info);
+	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
+		client_net_info_list.push_back(init_net_info);
 
-
+	}
 
 }
 
@@ -119,8 +120,8 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
-	FD_ZERO(&fds);
-	FD_ZERO(&fd_read);
+	//FD_ZERO(&fds);
+	//FD_ZERO(&fd_read);
 
 	//select関数のタイムアウト初期設定(tv_sec=秒の指定　tv_usec=マイクロ秒の指定)
 	timeout.tv_sec = tv_sec;
@@ -217,7 +218,7 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 	//通信プロトコルがどちらにも設定していない場合及び読み取れなかった場合(af_unspecに設定)
 	else if(std::equal(temp_family.begin(), temp_family.end(), "AF_UNSPEC")) {
 		param.ai_family = AF_UNSPEC;
-		std::cout << "param : ai_familyはAF_INET6(アドレスファミリはAF=UNSPECに設定されました)" << std::endl;
+		std::cout << "param : ai_familyはAF_UNSPEC(アドレスファミリはAF=UNSPECに設定されました)" << std::endl;
 	}
 	else {
 
@@ -275,6 +276,8 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 			THROW_APP_EXCEPTION("aaa");
 		}
 		port = temp_port;
+		std::cout << "param : アプリケーションポートは" << port<<"が割り当てられました。" << std::endl;
+
 	}
 	catch (const std::exception& ex)
 	{
@@ -285,10 +288,78 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 	return true;
 }
 
-std::string SocketHandler::get_client_ip(int client_num)
+/**********************************************************************************
+ * @fn	  get_client_ip
+ * 接続要求があった際のクライアントソケットに対してaccept処理を実行する
+ * @brief accept処理
+ *
+ * @param [in] client_num  IPアドレス変換をする際のクライアントリストの番号
+ * @return 処理結果(true:成功/false:エラー)
+ *
+ * @detail
+ **********************************************************************************/
+void SocketHandler::extraction_client_ip(int client_num)
 {
-	
-	return std::string();
+	try
+	{
+		char temp_ip_addr_char[100];
+		PCSTR iresult;
+		iresult = inet_ntop(client_net_info_list[client_num].client_sockaadr_in.sin_family, &client_net_info_list[client_num].client_sockaadr_in.sin_addr,
+			temp_ip_addr_char, sizeof(client_net_info_list[client_num].client_ip_addr));
+		client_net_info_list[client_num].client_ip_addr = temp_ip_addr_char;
+		if (iresult == NULL) {
+			switch (WSAGetLastError())
+			{
+			case WSAEAFNOSUPPORT:
+				THROW_APP_EXCEPTION("CASE:WSAEAFNOSUPPORT(Family パラメーターで指定されたアドレス ファミリ はサポートされていません。 このエラーは、指定された Family パラメーターが AF_INET または AF_INET6されていない場合に返されます。)");
+				break;
+
+			case ERROR_INVALID_PARAMETER:
+				THROW_APP_EXCEPTION("CASE:ERROR_INVALID_PARAMETER(無効なパラメーターが関数に渡されました。 このエラーは、pStringBuf で NULL ポインターが渡された場合、または StringBufSize パラメーターが 0 の場合に返されます。 このエラーは、 pStringBuf パラメーターが指すバッファーの長さが IP アドレスの文字列表現を受け取るのに十分な大きさでない場合にも返されます。)");
+				break;
+
+			default:
+				break;
+			}
+		}
+	}
+	catch (const std::exception& ex)
+	{
+		std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
+	}
+}
+
+//未実装
+void SocketHandler::init_client_net_info(int client_num)
+{
+	//ソケットをINVALID_SOCKETに初期化する
+	client_net_info_list[client_num].client_socket = INVALID_SOCKET;
+
+	//sockaddr_inを初期化する
+	client_net_info_list[client_num].client_sockaadr_in = init_sockaddr_in;
+}
+
+//未実装
+void SocketHandler::print_client_net_info(int client_num)
+{
+	std::cout << "[INFO] client_net番号[" << client_num << "] IPアドレス(" << client_net_info_list[client_num].client_ip_addr <<")" << std::endl;
+}
+
+void SocketHandler::set_select_info(SOCKET* socket, fd_set* fd, fd_set* fds)
+{
+	FD_ZERO(fd);
+	FD_SET(*socket, fd);
+
+	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
+		
+		//有効なソケットにFDSETを実行する
+		if (client_net_info_list[i].client_socket != INVALID_SOCKET) {
+			FD_SET(client_net_info_list[i].client_socket, fd);
+		}
+			}
+
+	memcpy(fds, fd, sizeof(fd_set));
+
 }
 
 bool SocketHandler::bind_listen_socket()
@@ -338,13 +409,70 @@ bool SocketHandler::accept_client_socket()
 					&client_net_info_list[check_n_invalid_socket_result].socket_addr_in_length);
 			
 			//acceptしたソケットがINVALID_SOCKETである場合
-			if (client_socket_list[check_n_invalid_socket_result] == INVALID_SOCKET) {
-				
+			if (client_net_info_list[check_n_invalid_socket_result].client_socket == INVALID_SOCKET) {
+				std::cout << "[ERROR] Accept要求のあったSocketが無効です(INVALID SOCKET)。"<< std::endl;
 
+				switch (WSAGetLastError())
+				{
+				case WSANOTINITIALISED:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが正常に行われる必要があります。)");
+					break;
+
+				case WSAECONNRESET:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAECONNRESET(着信接続が示されましたが、その後、呼び出しを受け入れる前にリモート ピアによって終了されました。)");
+					break;
+
+				case WSAEFAULT:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(addrlen パラメーターが小さすぎるか、addr がユーザー アドレス空間の有効な部分ではありません。)");
+					break;
+
+				case WSAEINTR:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、ブロックしている Windows ソケット 1.1 呼び出しが取り消されました。)");
+					break;
+
+				case WSAEINVAL:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(リッスン関数は、受け入れる前に呼び出されませんでした。)");
+					break;
+					
+				case WSAEINPROGRESS:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+					break;
+
+				case EMFILE:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:EMFILE(キューは、 受け入れる エントリに空きがなく、使用可能な記述子がありません。)");
+					break;
+
+				case WSAENETDOWN:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
+					break;
+
+				case WSAENOBUFS:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOBUFS(バッファーに空き領域がありません。)");
+					break;
+
+				case WSAENOTSOCK:
+					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子はソケットではありません。)");
+					break;
+
+				case WSAEOPNOTSUPP:
+					THROW_APP_EXCEPTION("CASE:WSAEOPNOTSUPP(参照されるソケットは、接続指向サービスをサポートする型ではありません。)");
+					break;
+
+				case WSAEWOULDBLOCK:
+					THROW_APP_EXCEPTION("CASE:WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、受け入れられる接続はありません。)");
+					break;
+
+				default:
+					
+					break;
+				}
 			}
 			else {
 				//acceptが成功した場合
-				std::cout << "[INFO] IP : " << std::endl;
+				extraction_client_ip(check_n_invalid_socket_result);
+
+				std::cout << "[INFO] クライアントリスト[ " << check_n_invalid_socket_result
+					<< " ]にIPアドレス(" << client_net_info_list[check_n_invalid_socket_result].client_ip_addr << ")が登録されました。"<<std::endl;
 				return true;
 			}
 		}
@@ -353,7 +481,6 @@ bool SocketHandler::accept_client_socket()
 			std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
 		}
 		
-
 	}
 	
 	return false;
@@ -374,14 +501,66 @@ void SocketHandler::push_client_socket_list(const SOCKET new_client_socket)
 	
 }
 
-int SocketHandler::search_connect_client_socket_num(const SOCKET serach_socket)
+/**********************************************************************************
+ * @fn	  search_connect_client_socket_num
+ * SEARCH要求があったクライアントのソケット番号を返す
+ * @brief accept処理
+ *
+ * @param [in] なし
+ * @return 処理結果(接続中のクライアントにSEARCH要求があったIPアドレスがあれば、リストの番号を返す)
+ * 　　　　IPアドレスがない場合は、
+ *
+ * @detail
+ **********************************************************************************/
+int SocketHandler::search_connect_client_socket_num(const std::string search_ip_addr)
 {
-	
-	return 0;
+	for (int search_result = 0; search_result < MAX_CONNECT_NUM; search_result++) {
+
+		if (client_net_info_list[search_result].client_ip_addr == search_ip_addr) {
+			return search_result;
+		}
+	}
+	return NOT_EXIST_IP_ADDRESS;
 }
 
-void SocketHandler::close_socket(SOCKET request_close_socket)
+void SocketHandler::close_socket(int socket_num)
 {
+	try
+	{
+		int close_socket_result = closesocket(client_net_info_list[socket_num].client_socket);
+		if (close_socket_result == SOCKET_ERROR) {
+			switch (WSAGetLastError())
+			{
+			case WSANOTINITIALISED:
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
+				break;
+			case WSAENETDOWN:
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
+				break;
+			case WSAENOTSOCK:
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTSOCK(記述子はソケットではありません。)");
+				break;
+			case WSAEINPROGRESS:
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+				break;
+			case WSAEINTR:
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINTR((ブロッキング) Windows Socket 1.1 呼び出しは 、WSACancelBlockingCall を介して取り消されました。)");
+				break;
+			case WSAEWOULDBLOCK:
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされていますが、残留構造のl_onoff メンバーは 0 以外に設定され、残留構造のl_linger メンバーは 0 以外のタイムアウト値に設定されます。)");
+				break;
+
+			default:
+				break;
+			}
+		}
+	}
+	catch (const std::exception& ex)
+	{
+		std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
+	}
+
+	init_client_net_info(socket_num);
 	
 }
 
@@ -448,7 +627,7 @@ bool SocketHandler::generate_listen_socket()
 		}
 
 		//リッスンソケットの生成
-		listen_socket = socket(param.ai_family, param.ai_socktype, param.ai_protocol);
+		listen_socket = socket(result -> ai_family, result -> ai_socktype, result->ai_protocol);
 		if (listen_socket == INVALID_SOCKET) {
 			THROW_APP_EXCEPTION("生成されたLISTENソケットは有効ではありません");
 		}
@@ -468,5 +647,92 @@ bool SocketHandler::generate_listen_socket()
 
 int SocketHandler::monitor_socket()
 {
+	try
+	{
+		
+		set_select_info(&listen_socket, &fd_read, &fds);
+
+		int select_result = 0;
+		select_result = select(0, &fds, NULL, NULL, &timeout);
+
+		switch (select_result)
+		{
+			//fd_set構造体に含まれているソケット ハンドルの合計数、期限切れの場合
+		case 0:
+			//THROW_APP_EXCEPTION("CASE:SELECT FUNCTION ERROR(fd_set構造体に含まれているソケット ハンドルの合計数、期限切れです。)");
+			return SELECT_TIME_OUT;
+			break;
+
+			//エラーが発生した場合
+		case SOCKET_ERROR:
+			switch (WSAGetLastError())
+			{
+			case WSANOTINITIALISED:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが成功する必要があります。)");
+				break;
+			case WSAEFAULT:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(Windows ソケットの実装では、内部操作に必要なリソースを割り当てることができませんでした。または、 readfds、 writefds、 exceptfds、または timeval パラメーターがユーザー アドレス空間の一部ではありません。)");
+				break;
+			case ENETDOWN:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:ENETDOWN(ネットワーク サブシステムが失敗しました。)");
+				break;
+			case WSAEINVAL:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(タイムアウト値が無効であるか、3 つの記述子パラメーターがすべて null でした。)");
+				break;
+			case WSAEINTR:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、Windows ソケット 1.1 呼び出しのブロックが取り消されました。)");
+				break;
+			case WSAEINPROGRESS:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロック中の Windows ソケット 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+				break;
+			case WSAENOTSOCK:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子セットの 1 つに、ソケットではないエントリが含まれています。)");
+				break;
+			default:
+				break;
+			}
+			break;
+
+
+
+			//ディスクリプションに変化が起こった場合
+		default:
+			if (FD_ISSET(listen_socket, &fds)) {
+				std::cout << "[INFO]新規クライアントから接続要求がありました。" << std::endl;
+				return REQUEST_ACCEPT_CLIENT_DETECTION;
+			}
+			else {
+				//接続中のクライアントリストのどのクライアントからの通知かを判定する
+				for (int detection_client_num = 0; detection_client_num < MAX_CONNECT_NUM; detection_client_num++) {
+					if (client_net_info_list[detection_client_num].client_socket != INVALID_SOCKET && FD_ISSET(client_net_info_list[detection_client_num].client_socket, &fds)) {
+						std::cout << "[INFO]接続中のクライアント(client_net_info_list[" << detection_client_num << "]から要求がありました" << std::endl;
+						return detection_client_num;
+					}
+				}
+			}
+			break;
+		}
+	}
+	catch (const std::exception& ex)
+	{
+		std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
+		return SOCKET_ERROR;
+	}
+
 	return 0;
+}
+
+void SocketHandler::active_listen_socket()
+{
+	try
+	{
+		if (listen(listen_socket, SOMAXCONN) == SOCKET_ERROR) {
+			THROW_APP_EXCEPTION("ERROR");
+		}
+	}
+	catch (const std::exception& ex)
+	{
+		std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
+	}
+	
 }

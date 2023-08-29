@@ -13,6 +13,9 @@
 #define INIT_FILE_PASS  ".//ini/socket_setting.ini"
 #define DEFFAULT_PORT "50000"
 #define MAX_CONNECT_NUM 10000
+#define SELECT_TIME_OUT -2
+#define REQUEST_ACCEPT_CLIENT_DETECTION -3
+#define NOT_EXIST_IP_ADDRESS -1
 
 class SocketHandler
 {
@@ -24,8 +27,7 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	//リッスンソケット生成用のパラメータ
-	struct addrinfo *result = NULL;
-	struct addrinfo param;
+	struct addrinfo *result = NULL, param;
 
 	WSADATA wsa_data;
 
@@ -53,6 +55,8 @@ private:
 
 		//接続中のクライアントソケットのサイズ
 		socklen_t socket_addr_in_length = sizeof(client_sockaadr_in);
+
+		std::string client_ip_addr = "";
 	};
 
 	//接続中のクライアントリスト
@@ -61,7 +65,10 @@ private:
 	//サーバのアプリケーションポート番号
 	int port = 0;
 
+	//初期化用のアドレス
 	sockaddr_in init_sockaddr_in;
+
+	
 
 /*
 :::::::::::::::::::::::::::::::
@@ -73,28 +80,33 @@ private:
 	//Listenソケットをbindする【未実装】
 	bool bind_listen_socket();
 
-	//Accept処理【未実装】
-	bool accept_client_socket();
-
+	//クライアントリストの空いている箇所を探索
 	int check_next_invalid_socket();
-
 
 	//Acceptしたクライアントを接続リストに追加する【未実装】
 	void push_client_socket_list(const SOCKET new_client_socket);
 
 	//接続中のクライアント数を計算する【未実装】
-	int search_connect_client_socket_num(const SOCKET serach_socket);
+	int search_connect_client_socket_num(const std::string search_ip_addr);
 
 	//接続中のクライアントソケットをクローズする【未実装】
-	void close_socket(SOCKET request_close_socket);
+	void close_socket(int socket_num);
 
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(SOCKET request_socket);
 
 	bool load_socket_setting_ini_file(const std::string& file_pass);
 
-	std::string get_client_ip(int client_num);
+	//クライアントのIPアドレスを抽出する
+	void extraction_client_ip(int client_num);
 
+	//クライアントの情報を初期化する
+	void init_client_net_info(int client_num);
+
+	void print_client_net_info(int client_num);
+
+	//select関数の初期化
+	void set_select_info(SOCKET* socket, fd_set* fd, fd_set* fds);
 
 
 public:
@@ -123,11 +135,18 @@ public:
 	}
 
 
-	//Listenソケットを生成する【未実装】
+	//Listenソケットを生成する
 	bool generate_listen_socket();
 
-	//ファイルディスクリプタに変化がないか監視する【未実装】
+	//ファイルディスクリプタに変化がないか監視する
 	int monitor_socket();
+
+	
+	void active_listen_socket();
+
+	//Accept処理
+	bool accept_client_socket();
+
 
 };
 
