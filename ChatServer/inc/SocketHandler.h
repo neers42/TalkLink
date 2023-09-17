@@ -90,7 +90,7 @@ private:
 	int search_connect_client_socket_num(const std::string search_ip_addr);
 
 	//接続中のクライアントソケットをクローズする【未実装】
-	void close_socket(int socket_num);
+	void disconnect_socket(int socket_num);
 
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(SOCKET request_socket);
@@ -118,7 +118,7 @@ public:
 	//コンストラクタ
 	SocketHandler();
 
-	//コンストラクタ
+	//コピーコンストラクタ
 	SocketHandler(int tv_sec, int tv_usec);
 
 	//デストラクタ
@@ -141,7 +141,7 @@ public:
 	//ファイルディスクリプタに変化がないか監視する
 	int monitor_socket();
 
-	
+	//リッスンソケットをアクティブにする
 	void active_listen_socket();
 
 	//Accept処理
