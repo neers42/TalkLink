@@ -7,15 +7,19 @@ ServerControlleFacade::ServerControlleFacade()
 
 ServerControlleFacade::~ServerControlleFacade()
 {
+	delete m_receiver;
 	delete m_socket_handler;
+	
 }
 
 //サーバプログラムの実行
 void ServerControlleFacade::run()
 {
+	std::cout << "[INFO]サーバのプログラムを起動します。" << std::endl;
 	//リッスンソケットの生成
 	m_socket_handler->generate_listen_socket();
 	m_socket_handler->active_listen_socket();
+	int receive_result = 0;
 	std::cout << "[INFO]クライアントからの要求の監視を開始します。" << std::endl;
 
 	//ディスクリプション監視スタート
@@ -37,7 +41,18 @@ void ServerControlleFacade::run()
 		
 		//接続中のクライアントリストから通知があった場合
 		default:
-
+			receive_result = m_receiver->data_receive(m_socket_handler->get_client_socket_info_list(),monitor_result);
+			if (receive_result == 0) {
+				m_socket_handler->disconnect_socket(monitor_result);
+			}
+			//ソケットエラーの場合
+			else if (receive_result == SOCKET_ERROR) {
+				m_socket_handler->disconnect_socket(monitor_result);
+			}
+			//それ以外の場合は何もしない
+			else {
+				;
+			}
 			break;
 		}
 

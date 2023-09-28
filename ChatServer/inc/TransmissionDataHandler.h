@@ -8,7 +8,7 @@
 #include <queue>
 class TransmissionDataHandler
 {
-private:
+public:
 	struct trans_data_info {
 
 		//データタイプ
@@ -41,6 +41,10 @@ private:
 		//送信先のグループID
 		std::string dst_group_id;
 
+		std::string scr_recv_data;
+
+		std::string decrypted_recv_data;
+
 		//ペイロード(暗号化)
 		std::string scr_payload;
 
@@ -54,7 +58,7 @@ private:
 
 		//デフォルトコンストラクタ
 		trans_data_info() : scr_ip_addr{ "" }, dst_ip_addr{ "" }, dst_ip_addr_num{ 0 }, dst_group_id{""},
-			scr_payload{ "" },decrypted_payload{""}, file_data{NULL}, file_name{""} {
+			scr_recv_data{""}, decrypted_recv_data{""}, scr_payload{""}, decrypted_payload{""}, file_data{NULL}, file_name{""} {
 
 			//ここに以下の変数の初期化処理を記載する
 			dst_ip_addr_list = { "" };
@@ -63,13 +67,16 @@ private:
 		//コピーコンストラクタ
 		trans_data_info(std::string scr_ip_addr, std::string dst_ip_addr, 
 			std::vector<std::string> dst_ip_addr_list, __int16 dst_ip_addr_num, std::string dst_group_id,
+			std::string scr_recv_data, std::string decrypted_recv_data,
 			std::string scr_payload, FILE* file_data, std::string file_name):scr_ip_addr{scr_ip_addr}, dst_ip_addr{dst_ip_addr},dst_ip_addr_list{dst_ip_addr_list},
-			dst_ip_addr_num{ dst_ip_addr_num }, dst_group_id{ dst_group_id }, scr_payload{ scr_payload }, decrypted_payload{""}, file_data{file_data}, file_name(file_name) {}
+			dst_ip_addr_num{ dst_ip_addr_num }, dst_group_id{ dst_group_id },
+			scr_recv_data{scr_recv_data}, decrypted_recv_data{decrypted_recv_data},
+			scr_payload{ scr_payload }, decrypted_payload{""}, file_data{file_data}, file_name(file_name) {}
 
 	};
 
 	
-
+private:
 	//データキュー
 	static std::queue<trans_data_info> data_queue;
 

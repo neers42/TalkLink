@@ -1,8 +1,17 @@
 #ifndef RECEIVER_H_
 #define RECEIVER_H_
 
-
 #include "TransmissionDataHandler.h"
+#include "SocketHandler.h"
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include "AppException.h"
+#include "StringFormat.h"
+
+#define DEBUG
+#define MAX_RECEIVE_MESSAGE_LEN 2048
+
+struct client_socket_info;
 
 class Receiver :
     public TransmissionDataHandler
@@ -32,12 +41,16 @@ private:
     //データを送信する
     bool store_receive_data();
 
+    void print_src_recv_data(const std::string& data, std::vector<SocketHandler::client_socket_info>& client_socket_info_list
+        , int& detection_num, int& receive_result);
+
+
 public:
     Receiver();
     ~Receiver();
 
     //データ受信処理
-    bool data_receive(int detection_num);
+    int data_receive(std::vector<SocketHandler::client_socket_info> client_socket_info_list,int detection_num);
     
 };
 

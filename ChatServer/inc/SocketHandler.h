@@ -17,8 +17,29 @@
 #define REQUEST_ACCEPT_CLIENT_DETECTION -3
 #define NOT_EXIST_IP_ADDRESS -1
 
+
 class SocketHandler
 {
+public:
+	//接続中のクライアント情報
+	struct client_socket_info {
+		//コンストラクタ
+		client_socket_info(SOCKET socket, sockaddr_in sockaddr) :
+			client_socket{ socket }, client_sockaadr_in{ sockaddr } {}
+
+		//接続中のクライアントソケット
+		SOCKET client_socket;
+
+		//接続中のクライアントソケット情報
+		struct sockaddr_in client_sockaadr_in;
+
+		//接続中のクライアントソケットのサイズ
+		socklen_t socket_addr_in_length = sizeof(client_sockaadr_in);
+
+		std::string client_ip_addr = "";
+	};
+
+
 
 private:
 /*
@@ -41,26 +62,8 @@ private:
 	//接続中のクライアントソケットリスト
 	std::vector<SOCKET> client_socket_list;
 
-	//接続中のクライアント情報
-	struct client_net_info {
-		//コンストラクタ
-		client_net_info(SOCKET socket, sockaddr_in sockaddr) : 
-			client_socket{ socket }, client_sockaadr_in{ sockaddr } {}
-		
-		//接続中のクライアントソケット
-		SOCKET client_socket;
-	
-		//接続中のクライアントソケット情報
-		struct sockaddr_in client_sockaadr_in;
-
-		//接続中のクライアントソケットのサイズ
-		socklen_t socket_addr_in_length = sizeof(client_sockaadr_in);
-
-		std::string client_ip_addr = "";
-	};
-
 	//接続中のクライアントリスト
-	std::vector<client_net_info> client_net_info_list;
+	std::vector<client_socket_info> client_socket_info_list;
 
 	//サーバのアプリケーションポート番号
 	int port = 0;
@@ -68,7 +71,6 @@ private:
 	//初期化用のアドレス
 	sockaddr_in init_sockaddr_in;
 
-	
 
 /*
 :::::::::::::::::::::::::::::::
@@ -89,8 +91,7 @@ private:
 	//接続中のクライアント数を計算する【未実装】
 	int search_connect_client_socket_num(const std::string search_ip_addr);
 
-	//接続中のクライアントソケットをクローズする【未実装】
-	void disconnect_socket(int socket_num);
+	
 
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(SOCKET request_socket);
@@ -108,6 +109,9 @@ private:
 	//select関数の初期化
 	void set_select_info(SOCKET* socket, fd_set* fd, fd_set* fds);
 
+	//サーバのIPアドレスを表示する
+	void print_server_ip();
+
 
 public:
 /*
@@ -123,6 +127,8 @@ public:
 
 	//デストラクタ
 	~SocketHandler();
+
+	
 
 	
 	//【getter】接続中のクライアントリスト(参照)
@@ -147,6 +153,12 @@ public:
 	//Accept処理
 	bool accept_client_socket();
 
+	std::vector<client_socket_info> get_client_socket_info_list() {
+		return client_socket_info_list;
+	}
+
+	//接続中のクライアントソケットをクローズする【未実装】
+	void disconnect_socket(int socket_num);
 
 };
 

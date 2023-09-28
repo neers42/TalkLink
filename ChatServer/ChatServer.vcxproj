@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\DataBaseAccesor.cpp" />
     <ClCompile Include="src\Sender.cpp" />
     <ClCompile Include="src\Receiver.cpp" />
     <ClCompile Include="src\AppException.cpp" />
@@ -142,6 +143,7 @@
     <ClCompile Include="src\TransmissionDataHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\DataBaseAccesor.h" />
     <ClInclude Include="inc\AppException.h" />
     <ClInclude Include="inc\ExceptionBase.h" />
     <ClInclude Include="inc\ClientInfomationListHandler.h" />

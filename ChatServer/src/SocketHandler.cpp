@@ -66,10 +66,10 @@ SocketHandler::SocketHandler()
 	init_sockaddr_in.sin_port = 0;
 	init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
-	client_net_info init_net_info(INVALID_SOCKET, init_sockaddr_in);
-	client_net_info_list.reserve(MAX_CONNECT_NUM);
+	client_socket_info init_net_info(INVALID_SOCKET, init_sockaddr_in);
+	client_socket_info_list.reserve(MAX_CONNECT_NUM);
 	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-		client_net_info_list.push_back(init_net_info);
+		client_socket_info_list.push_back(init_net_info);
 
 	}
 
@@ -138,9 +138,9 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	init_sockaddr_in.sin_port = 50000;
 	init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
-	client_net_info init_net_info(INVALID_SOCKET, init_sockaddr_in);
-	client_net_info_list.reserve(MAX_CONNECT_NUM);
-	client_net_info_list.push_back(init_net_info);
+	client_socket_info init_net_info(INVALID_SOCKET, init_sockaddr_in);
+	client_socket_info_list.reserve(MAX_CONNECT_NUM);
+	client_socket_info_list.push_back(init_net_info);
 }
 
 //デストラクタ
@@ -165,7 +165,7 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 	}
 	catch (const std::exception& ex)
 	{
-		THROW_APP_EXCEPTION("iniファイルの読み込みに失敗しました");
+		THROW_APP_EXCEPTION("iniファイルの読み込みに失敗しました。");
 	}
 	std::cout << "[INFO] iniファイルの読み込みに成功しました。" << std::endl;
 	
@@ -175,27 +175,27 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 
 	if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_PASSIVE")) {
 		param.ai_flags = AI_PASSIVE;
-		std::cout << "[INFO] param：ai_flagsはAI_PASSIVEに設定されました" << std::endl;
+		std::cout << "[INFO] param：ai_flagsはAI_PASSIVEに設定されました。" << std::endl;
 	}
 	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_CANONNAME")) {
 		param.ai_flags = AI_CANONNAME;
-		std::cout << "[INFO] param : ai_flagsはAI_CANONNAMEに設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_flagsはAI_CANONNAMEに設定されました。" << std::endl;
 	}
 	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_NUMERICHOST")) {
 		param.ai_flags = AI_NUMERICHOST;
-		std::cout << "[INFO] param : ai_flagsはAI_NUMERICHOSTに設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_flagsはAI_NUMERICHOSTに設定されました。" << std::endl;
 	}
 	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_ALL")) {
 		param.ai_flags = AI_ALL;
-		std::cout << "[INFO] param : ai_flagsはAI_ALLに設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_flagsはAI_ALLに設定されました。" << std::endl;
 	}
 	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_ADDRCONFIG")) {
 		param.ai_flags = AI_ADDRCONFIG;
-		std::cout << "[INFO] param : ai_flagsはAI_ADDRCONFIGに設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_flagsはAI_ADDRCONFIGに設定されました。" << std::endl;
 	}
 	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_V4MAPPED")) {
 		param.ai_flags = AI_V4MAPPED;
-		std::cout << "[INFO] param : ai_flagsはAI_V4MAPPEDに設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_flagsはAI_V4MAPPEDに設定されました。" << std::endl;
 	}
 	else {
 		return false;
@@ -208,18 +208,18 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 	//通信プロトコル
 	if (std::equal(temp_family.begin(), temp_family.end(), "AF_INET") ){
 		param.ai_family = AF_INET;
-		std::cout << "[INFO] param : ai_familyはAF_INET(アドレスファミリはipv4に設定されました)" << std::endl;
+		std::cout << "[INFO] param : ai_familyはAF_INET(アドレスファミリはipv4に設定されました)に設定されました。" << std::endl;
 	}
 	//通信プロトコルをipv6に設定する場合
 	else if (std::equal(temp_family.begin(), temp_family.end(), "AF_INET6")) {
 		param.ai_family = AF_INET6;
-		std::cout << "[INFO] param : ai_familyはAF_INET6(アドレスファミリはipv6に設定されました)" << std::endl;
+		std::cout << "[INFO] param : ai_familyはAF_INET6(アドレスファミリはipv6に設定されました)に設定されました。" << std::endl;
 	}
 	//通信プロトコルがaf_unspecに設定された場合(ipv4とipv6に対応)
 	//通信プロトコルがどちらにも設定していない場合及び読み取れなかった場合(af_unspecに設定)
 	else if(std::equal(temp_family.begin(), temp_family.end(), "AF_UNSPEC")) {
 		param.ai_family = AF_UNSPEC;
-		std::cout << "[INFO] param : ai_familyはAF_UNSPEC(アドレスファミリはAF=UNSPECに設定されました)" << std::endl;
+		std::cout << "[INFO] param : ai_familyはAF_UNSPEC(アドレスファミリはAF=UNSPECに設定されました)に設定されました。" << std::endl;
 	}
 	else {
 
@@ -230,18 +230,18 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 	std::string temp_socket_type = socket_setting_ini["SocketSetting"]["socktype"].as<std::string>();
 	if (std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_STREAM")) {
 		param.ai_socktype = SOCK_STREAM;
-		std::cout << "[INFO] param : ai_socktypeはSOCK_STREAM(TCPプロトコルを使用)に設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_socktypeはSOCK_STREAM(TCPプロトコルを使用)に設定されました。" << std::endl;
 	}
 	else if(std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_DGRAM")) {
 		param.ai_socktype = SOCK_DGRAM;
-		std::cout << "[INFO] param : ai_socktypeはsock_dgram(UDPプロトコルを使用)に設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_socktypeはsock_dgram(UDPプロトコルを使用)に設定されました。" << std::endl;
 	}
 	else if (std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_RDM")) {
 		param.ai_socktype = SOCK_RDM;
-		std::cout << "[INFO] param : ai_socktypeはSOCK_RDM(RDMプロトコルを使用)に設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_socktypeはSOCK_RDM(RDMプロトコルを使用)に設定されました。" << std::endl;
 	}
 	else{
-		std::cout << "[INFO] param : ai_socktypeは設定されませんでした" << std::endl;
+		std::cout << "[INFO] param : ai_socktypeは設定されませんでした。" << std::endl;
 		return false;
 	}
 
@@ -251,18 +251,18 @@ bool SocketHandler::load_socket_setting_ini_file(const std::string& file_pass)
 	//プロトコルをtcpに設定する場合
 	if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_TCP")) && ((param.ai_family == AF_INET || param.ai_family == AF_INET6)&& param.ai_socktype == SOCK_STREAM)) {
 		param.ai_protocol = IPPROTO_TCP;
-		std::cout << "[INFO] param : ai_protocolはIPPROTO_TCP(tcpプロトコルを使用)に設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_protocolはIPPROTO_TCP(tcpプロトコルを使用)に設定されました。" << std::endl;
 	}
 
 	//プロトコルをudpに設定する場合
 	else if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_UDP")) && ((param.ai_family == AF_INET || param.ai_family == AF_INET6)&& param.ai_socktype == SOCK_DGRAM)) {
 		param.ai_protocol = IPPROTO_UDP;
-		std::cout << "[INFO] param : ai_protocolはipproto_tcp(tcpプロトコルを使用)に設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_protocolはipproto_tcp(tcpプロトコルを使用)に設定されました。" << std::endl;
 	}
 	//プロトコルをpgmに設定する場合
 	else if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_PGM")) && param.ai_family == AF_INET && param.ai_socktype == SOCK_RDM) {
 		param.ai_protocol = IPPROTO_PGM;
-		std::cout << "[INFO] param : ai_protocolはipproto_pgm(pgmプロトコルを使用)に設定されました" << std::endl;
+		std::cout << "[INFO] param : ai_protocolはipproto_pgm(pgmプロトコルを使用)に設定されました。" << std::endl;
 	}
 	else {
 		return false;
@@ -305,9 +305,9 @@ void SocketHandler::extraction_client_ip(int client_num)
 	{
 		char temp_ip_addr_char[100];
 		PCSTR iresult;
-		iresult = inet_ntop(client_net_info_list[client_num].client_sockaadr_in.sin_family, &client_net_info_list[client_num].client_sockaadr_in.sin_addr,
-			temp_ip_addr_char, sizeof(client_net_info_list[client_num].client_ip_addr));
-		client_net_info_list[client_num].client_ip_addr = temp_ip_addr_char;
+		iresult = inet_ntop(client_socket_info_list[client_num].client_sockaadr_in.sin_family, &client_socket_info_list[client_num].client_sockaadr_in.sin_addr,
+			temp_ip_addr_char, sizeof(client_socket_info_list[client_num].client_ip_addr));
+		client_socket_info_list[client_num].client_ip_addr = temp_ip_addr_char;
 		if (iresult == NULL) {
 			switch (WSAGetLastError())
 			{
@@ -334,16 +334,16 @@ void SocketHandler::extraction_client_ip(int client_num)
 void SocketHandler::init_client_net_info(int client_num)
 {
 	//ソケットをINVALID_SOCKETに初期化する
-	client_net_info_list[client_num].client_socket = INVALID_SOCKET;
+	client_socket_info_list[client_num].client_socket = INVALID_SOCKET;
 
 	//sockaddr_inを初期化する
-	client_net_info_list[client_num].client_sockaadr_in = init_sockaddr_in;
+	client_socket_info_list[client_num].client_sockaadr_in = init_sockaddr_in;
 }
 
 
 void SocketHandler::print_client_net_info(int client_num)
 {
-	std::cout << "[INFO] client_net番号[" << client_num << "] IPアドレス(" << client_net_info_list[client_num].client_ip_addr <<")" << std::endl;
+	std::cout << "[INFO] client_net番号[" << client_num << "] IPアドレス(" << client_socket_info_list[client_num].client_ip_addr <<")" << std::endl;
 }
 
 void SocketHandler::set_select_info(SOCKET* socket, fd_set* fd, fd_set* fds)
@@ -354,12 +354,17 @@ void SocketHandler::set_select_info(SOCKET* socket, fd_set* fd, fd_set* fds)
 	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
 		
 		//有効なソケットにFDSETを実行する
-		if (client_net_info_list[i].client_socket != INVALID_SOCKET) {
-			FD_SET(client_net_info_list[i].client_socket, fd);
+		if (client_socket_info_list[i].client_socket != INVALID_SOCKET) {
+			FD_SET(client_socket_info_list[i].client_socket, fd);
 		}
 			}
 
 	memcpy(fds, fd, sizeof(fd_set));
+
+}
+
+void SocketHandler::print_server_ip()
+{
 
 }
 
@@ -404,13 +409,13 @@ bool SocketHandler::accept_client_socket()
 	if (check_n_invalid_socket_result != -1) {
 		try
 		{
-			client_net_info_list[check_n_invalid_socket_result].client_socket = 
+			client_socket_info_list[check_n_invalid_socket_result].client_socket = 
 				accept(listen_socket, 
-					(struct sockaddr*)&client_net_info_list[check_n_invalid_socket_result].client_sockaadr_in, 
-					&client_net_info_list[check_n_invalid_socket_result].socket_addr_in_length);
+					(struct sockaddr*)&client_socket_info_list[check_n_invalid_socket_result].client_sockaadr_in, 
+					&client_socket_info_list[check_n_invalid_socket_result].socket_addr_in_length);
 			
 			//acceptしたソケットがINVALID_SOCKETである場合
-			if (client_net_info_list[check_n_invalid_socket_result].client_socket == INVALID_SOCKET) {
+			if (client_socket_info_list[check_n_invalid_socket_result].client_socket == INVALID_SOCKET) {
 				std::cout << "[ERROR] Accept要求のあったSocketが無効です(INVALID SOCKET)。"<< std::endl;
 
 				switch (WSAGetLastError())
@@ -473,7 +478,7 @@ bool SocketHandler::accept_client_socket()
 				extraction_client_ip(check_n_invalid_socket_result);
 
 				std::cout << "[INFO] クライアントリスト[ " << check_n_invalid_socket_result
-					<< " ]にIPアドレス(" << client_net_info_list[check_n_invalid_socket_result].client_ip_addr << ")が登録されました。"<<std::endl;
+					<< " ]にIPアドレス(" << client_socket_info_list[check_n_invalid_socket_result].client_ip_addr << ")が登録されました。"<<std::endl;
 				return true;
 			}
 		}
@@ -517,7 +522,7 @@ int SocketHandler::search_connect_client_socket_num(const std::string search_ip_
 {
 	for (int search_result = 0; search_result < MAX_CONNECT_NUM; search_result++) {
 
-		if (client_net_info_list[search_result].client_ip_addr == search_ip_addr) {
+		if (client_socket_info_list[search_result].client_ip_addr == search_ip_addr) {
 			return search_result;
 		}
 	}
@@ -528,25 +533,31 @@ void SocketHandler::disconnect_socket(int socket_num)
 {
 	try
 	{
-		int close_socket_result = closesocket(client_net_info_list[socket_num].client_socket);
+		std::cout << "[INFO] クライアントリスト[ " << socket_num << " ] (IPアドレス : " << client_socket_info_list[socket_num].client_ip_addr<< ")の接続が切れたたため、初期化します。" << std::endl;
+		int close_socket_result = closesocket(client_socket_info_list[socket_num].client_socket);
 		if (close_socket_result == SOCKET_ERROR) {
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
 				THROW_APP_EXCEPTION("WSA ERROR CASE : WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
 				break;
+
 			case WSAENETDOWN:
 				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
 				break;
+
 			case WSAENOTSOCK:
 				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTSOCK(記述子はソケットではありません。)");
 				break;
+
 			case WSAEINPROGRESS:
 				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
 				break;
+
 			case WSAEINTR:
 				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINTR((ブロッキング) Windows Socket 1.1 呼び出しは 、WSACancelBlockingCall を介して取り消されました。)");
 				break;
+
 			case WSAEWOULDBLOCK:
 				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされていますが、残留構造のl_onoff メンバーは 0 以外に設定され、残留構造のl_linger メンバーは 0 以外のタイムアウト値に設定されます。)");
 				break;
@@ -555,6 +566,7 @@ void SocketHandler::disconnect_socket(int socket_num)
 				break;
 			}
 		}
+		
 	}
 	catch (const std::exception& ex)
 	{
@@ -562,6 +574,7 @@ void SocketHandler::disconnect_socket(int socket_num)
 	}
 
 	init_client_net_info(socket_num);
+	std::cout << "[INFO] クライアントの初期化に成功しました。" << std::endl;
 	
 }
 
@@ -585,40 +598,40 @@ bool SocketHandler::generate_listen_socket()
 			switch (get_addr_result)
 			{
 			case EAI_AGAIN:
-				THROW_APP_EXCEPTION("名前解決の一時的なエラーが発生しました");
+				THROW_APP_EXCEPTION("名前解決の一時的なエラーが発生しました。");
 				return false;
 				break;
 
 			case EAI_BADFLAGS:
-				THROW_APP_EXCEPTION("pHints パラメーターのai_flags メンバーに無効な値が指定されました");
+				THROW_APP_EXCEPTION("pHints パラメーターのai_flags メンバーに無効な値が指定されました。");
 				return false;
 				break;
 			
 			case EAI_FAIL:
-				THROW_APP_EXCEPTION("名前解決で回復不可能なエラーが発生しました");
+				THROW_APP_EXCEPTION("名前解決で回復不可能なエラーが発生しました。");
 				return false;
 				break;
 
 			case EAI_FAMILY:
-				THROW_APP_EXCEPTION("pHints パラメーターのai_familyメンバーはサポートされていません");
+				THROW_APP_EXCEPTION("pHints パラメーターのai_familyメンバーはサポートされていません。");
 				return false;
 				break;
 
 			case EAI_MEMORY:
-				THROW_APP_EXCEPTION("メモリ割り当てエラーが発生しました");
+				THROW_APP_EXCEPTION("メモリ割り当てエラーが発生しました。");
 				return false;
 				break;
 
 			case EAI_NONAME:
-				THROW_APP_EXCEPTION("指定されたパラメーターの名前が解決されないか、 pNodeName パラメーターと pServiceName パラメーターが指定されませんでした");
+				THROW_APP_EXCEPTION("指定されたパラメーターの名前が解決されないか、 pNodeName パラメーターと pServiceName パラメーターが指定されませんでした。");
 				return false;
 
 			case EAI_SERVICE:
-				THROW_APP_EXCEPTION("pServiceName パラメーターは、pHints パラメーターの指定したai_socktype メンバーではサポートされていません");
+				THROW_APP_EXCEPTION("pServiceName パラメーターは、pHints パラメーターの指定したai_socktype メンバーではサポートされていません。");
 				return false;
 
 			case EAI_SOCKTYPE:
-				THROW_APP_EXCEPTION("pHints パラメーターのai_socktype メンバーはサポートされていません");
+				THROW_APP_EXCEPTION("pHints パラメーターのai_socktype メンバーはサポートされていません。");
 				return false;
 				break;
 
@@ -705,8 +718,8 @@ int SocketHandler::monitor_socket()
 			else {
 				//接続中のクライアントリストのどのクライアントからの通知かを判定する
 				for (int detection_client_num = 0; detection_client_num < MAX_CONNECT_NUM; detection_client_num++) {
-					if (client_net_info_list[detection_client_num].client_socket != INVALID_SOCKET && FD_ISSET(client_net_info_list[detection_client_num].client_socket, &fds)) {
-						std::cout << "[INFO]接続中のクライアント(client_net_info_list[" << detection_client_num << "]から要求がありました" << std::endl;
+					if (client_socket_info_list[detection_client_num].client_socket != INVALID_SOCKET && FD_ISSET(client_socket_info_list[detection_client_num].client_socket, &fds)) {
+						std::cout << "[REQ]接続中のクライアント(client_net_info_list[" << detection_client_num << "])から要求がありました" << std::endl;
 						return detection_client_num;
 					}
 				}

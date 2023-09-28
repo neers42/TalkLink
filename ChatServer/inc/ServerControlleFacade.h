@@ -2,12 +2,14 @@
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
 #include "ClientInfomationListHandler.h"
+#include "Receiver.h"
 
 
 class ServerControlleFacade
 {
 private:
 	SocketHandler* m_socket_handler = new SocketHandler();
+	Receiver* m_receiver = new Receiver();
 
 
 public:
