@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <string>
+#include <iostream>
 namespace exception
 {
     /* ƒGƒ‰[î•ñ */

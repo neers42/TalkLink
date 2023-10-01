@@ -1,5 +1,5 @@
 #include "ExceptionBase.h"
-
+#define DEBUG
 #include <sstream>
 namespace exception
 {
@@ -60,6 +60,11 @@ namespace exception
             /* エラーメッセージに、エラー発生箇所(関数名、ファイルパス、ファイル行番号)を付加 */
             ss << this->m_Message << " @ " << this->m_FunctionName << "[" << this->m_FilePath << ": L." << this->m_LineNumber << "]";
             std::string message = ss.str();
+
+#ifdef DEBUG
+            std::cout << "[DEBUG]" << message.c_str() << std::endl;
+#endif // DEBUG
+
             return message.c_str();
         }
         /* エラー情報が存在しない場合 */

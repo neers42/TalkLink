@@ -28,6 +28,8 @@ int Receiver::data_receive(std::vector<SocketHandler::client_socket_info> client
 		char temp_recv_data[MAX_RECEIVE_MESSAGE_LEN];
 		memset(temp_recv_data, '\0', sizeof(temp_recv_data));
 		int receive_result = recv(client_socket_info_list[detection_num].client_socket, temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
+		
+		receive_result = SOCKET_ERROR;
 
 #ifdef DEBUG
 		std::cout << "[DEBUG]receive_result = " << receive_result << std::endl;
@@ -115,6 +117,11 @@ int Receiver::data_receive(std::vector<SocketHandler::client_socket_info> client
 	}
 	catch (const std::exception& ex)
 	{
+#ifdef DEBUG
+		//std::string temp_str = std::string(ex.what());
+		//std::cout << temp_str << std::endl;
+#endif // DEBUG
+
 
 		std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
 		return SOCKET_ERROR;
