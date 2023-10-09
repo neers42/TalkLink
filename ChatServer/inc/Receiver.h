@@ -8,6 +8,7 @@
 #include "AppException.h"
 #include "StringFormat.h"
 
+
 #define DEBUG
 #define MAX_RECEIVE_MESSAGE_LEN 2048
 
@@ -17,6 +18,9 @@ class Receiver :
     public TransmissionDataHandler
 {
 private:
+    //ユニキャストorマルチキャストなのかをデータから抽出する
+    int extraction_cast_type(const std::string& data);
+
     //データタイプを抽出する(未実装)
     int extraction_data_type(const std::string& data);
 

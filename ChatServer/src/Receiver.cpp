@@ -1,5 +1,6 @@
 #include "Receiver.h"
 
+
 Receiver::Receiver()
 {
 
@@ -29,10 +30,11 @@ int Receiver::data_receive(std::vector<SocketHandler::client_socket_info> client
 		memset(temp_recv_data, '\0', sizeof(temp_recv_data));
 		int receive_result = recv(client_socket_info_list[detection_num].client_socket, temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
 		
-		receive_result = SOCKET_ERROR;
+		//ERROR検証用←デバック完了したら以下を消す
+		//receive_result = SOCKET_ERROR;
 
 #ifdef DEBUG
-		std::cout << "[DEBUG]receive_result = " << receive_result << std::endl;
+		std::cout << ServerTime::get_current_time()<< "[DEBUG]receive_result = " << receive_result << std::endl;
 #endif // DEBUG
 
 		
@@ -115,7 +117,8 @@ int Receiver::data_receive(std::vector<SocketHandler::client_socket_info> client
 		return receive_result;
 		
 	}
-	catch (const std::exception& ex)
+	//catch (const std::exception& ex)
+	catch (const exception::ExceptionBase& ex)
 	{
 #ifdef DEBUG
 		//std::string temp_str = std::string(ex.what());
@@ -123,7 +126,8 @@ int Receiver::data_receive(std::vector<SocketHandler::client_socket_info> client
 #endif // DEBUG
 
 
-		std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
+		//std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
+		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return SOCKET_ERROR;
 
 	}
@@ -136,10 +140,26 @@ int Receiver::data_receive(std::vector<SocketHandler::client_socket_info> client
  *
  * @param [in] std::string& data
  *             受信データ
+ *
+ * @return [out]
+ *
+ **********************************************************************************/
+int Receiver::extraction_cast_type(const std::string& data)
+{
+	return 0;
+}
+
+/**********************************************************************************
+ * @fn	  extraction_data_type
+ * @brief 受信データからデータタイプを抽出する
+ *
+ * @param [in] std::string& data
+ *             受信データ
  * 
  * @return [out]
  *
  **********************************************************************************/
+
 int Receiver::extraction_data_type(const std::string& data)
 {
 
@@ -251,7 +271,7 @@ void Receiver::print_src_recv_data(const std::string& data, std::vector<SocketHa
 	, int& detection_num, int& receive_result)
 {
 #ifdef DEBUG
-	std::cout << "[RECV]クライアントリスト[" << detection_num << "]"
+	std::cout << ServerTime::get_current_time() << "[RECV]クライアントリスト[" << detection_num << "]"
 		<< "(IPアドレス：" << client_socket_info_list[detection_num].client_ip_addr <<
 		")から" << receive_result << "byteのメッセージ(" << data << ")を受信しました。" << std::endl;
 #endif // DEBUG

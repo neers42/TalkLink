@@ -3,6 +3,7 @@
 #include "SocketHandler.h"
 #include "ClientInfomationListHandler.h"
 #include "Receiver.h"
+#include "ServerTime.h"
 
 
 class ServerControlleFacade
@@ -10,6 +11,7 @@ class ServerControlleFacade
 private:
 	SocketHandler* m_socket_handler = new SocketHandler();
 	Receiver* m_receiver = new Receiver();
+	ServerTime* m_server_time = new ServerTime();
 
 
 public:

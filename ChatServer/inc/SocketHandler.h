@@ -9,6 +9,7 @@
 #include "inicpp.h"
 #include "AppException.h"
 #include "StringFormat.h"
+#include "ServerTime.h"
 
 #define INIT_FILE_PASS  ".//ini/socket_setting.ini"
 #define DEFFAULT_PORT "50000"

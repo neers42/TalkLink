@@ -131,8 +131,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ServerTime.cpp" />
     <ClCompile Include="src\LogHandler.cpp" />
-    <ClCompile Include="src\AES256.cpp" />
     <ClCompile Include="src\DataBaseAccesor.cpp" />
     <ClCompile Include="src\Sender.cpp" />
     <ClCompile Include="src\Receiver.cpp" />
@@ -145,7 +145,6 @@
     <ClCompile Include="src\TransmissionDataHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="inc\AES256.h" />
     <ClInclude Include="inc\DataBaseAccesor.h" />
     <ClInclude Include="inc\AppException.h" />
     <ClInclude Include="inc\ExceptionBase.h" />
@@ -158,6 +157,7 @@
     <ClInclude Include="inc\Receiver.h" />
     <ClInclude Include="inc\Sender.h" />
     <ClInclude Include="inc\LogHandler.h" />
+    <ClInclude Include="inc\ServerTime.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ini\socket_setting.ini" />

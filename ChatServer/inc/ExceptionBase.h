@@ -45,6 +45,9 @@ namespace exception
         const ErrorInfo& GetErrorInfo();
         /* エラー要因を取得 */
         virtual char const* what() const noexcept override;
+
+        std::string const what_for_str() const;
+
     protected:
         /* エラーメッセージ */
         std::string m_Message;

@@ -62,7 +62,7 @@ namespace exception
             std::string message = ss.str();
 
 #ifdef DEBUG
-            std::cout << "[DEBUG]" << message.c_str() << std::endl;
+            //std::cout << "[DEBUG]" << message.c_str() << std::endl;
 #endif // DEBUG
 
             return message.c_str();
@@ -72,6 +72,25 @@ namespace exception
         {
             /* エラーメッセージのみ出力 */
             return this->m_Message.c_str();
+        }
+    }
+
+
+    std::string const ExceptionBase::what_for_str() const
+    {
+        /* エラー情報が存在する場合 */
+        if (this->m_IsErrorInfoExists == true)
+        {
+            std::stringstream ss;
+            /* エラーメッセージに、エラー発生箇所(関数名、ファイルパス、ファイル行番号)を付加 */
+            ss << this->m_Message << " @ " << this->m_FunctionName << "[" << this->m_FilePath << ": L." << this->m_LineNumber << "]";
+            std::string message = ss.str();
+
+#ifdef DEBUG
+            //std::cout << "[DEBUG]" << message.c_str() << std::endl;
+#endif // DEBUG
+
+            return message;
         }
     }
 }

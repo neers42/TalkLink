@@ -1,5 +1,8 @@
 #include "ServerControlleFacade.h"
 
+std::time_t ServerTime::current_time;
+std::tm ServerTime::time_info;
+
 ServerControlleFacade::ServerControlleFacade()
 {
 
@@ -9,18 +12,19 @@ ServerControlleFacade::~ServerControlleFacade()
 {
 	delete m_receiver;
 	delete m_socket_handler;
+	delete m_server_time;
 	
 }
 
 //サーバプログラムの実行
 void ServerControlleFacade::run()
 {
-	std::cout << "[INFO]サーバのプログラムを起動します。" << std::endl;
+	std::cout << ServerTime::get_current_time() <<"[INFO]サーバのプログラムを起動します。" << std::endl;
 	//リッスンソケットの生成
 	m_socket_handler->generate_listen_socket();
 	m_socket_handler->active_listen_socket();
 	int receive_result = 0;
-	std::cout << "[INFO]クライアントからの要求の監視を開始します。" << std::endl;
+	std::cout << ServerTime::get_current_time() << "[INFO]クライアントからの要求の監視を開始します。" << std::endl;
 
 	//ディスクリプション監視スタート
 	while (1) {
