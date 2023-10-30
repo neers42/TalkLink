@@ -270,11 +270,12 @@ bool Receiver::store_receive_data()
 void Receiver::print_src_recv_data(const std::string& data, std::vector<SocketHandler::client_socket_info>& client_socket_info_list
 	, int& detection_num, int& receive_result)
 {
-#ifdef DEBUG
 	std::cout << ServerTime::get_current_time() << "[RECV]クライアントリスト[" << detection_num << "]"
 		<< "(IPアドレス：" << client_socket_info_list[detection_num].client_ip_addr <<
-		")から" << receive_result << "byteのメッセージ(" << data << ")を受信しました。" << std::endl;
-#endif // DEBUG
+		")から" << receive_result << "byteのメッセージを受信しました。" << std::endl;
 
+#ifdef DEBUG
+	std::cout << ServerTime::get_current_time() << "[DEBUG]メッセージの中身：" << data  << std::endl;
+#endif // DEBUG
 	
 }

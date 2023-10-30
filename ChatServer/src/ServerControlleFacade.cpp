@@ -19,10 +19,20 @@ ServerControlleFacade::~ServerControlleFacade()
 //サーバプログラムの実行
 void ServerControlleFacade::run()
 {
-	std::cout << ServerTime::get_current_time() <<"[INFO]サーバのプログラムを起動します。" << std::endl;
+	std::cout << ServerTime::get_current_time() <<"[INFO]Starting MyChat server version 1.0.0!!" << std::endl;
+
+	
 	//リッスンソケットの生成
-	m_socket_handler->generate_listen_socket();
-	m_socket_handler->active_listen_socket();
+	if (m_socket_handler->open_tcp_listen_socket() == true) {
+		std::cout << ServerTime::get_current_time() << "[INFO]TCP listen socket opening...";
+		std::cout << ServerTime::get_current_time() << "[OK]" << std::endl;;
+	}
+	else {
+		std::cerr << StringFormat("%s\033[31m[ERROR]\033[mThe TCP listening socket could not be opened properly, so the program is forcibly terminated. Please set it again.", ServerTime::get_current_time());
+		return;
+	}
+
+	
 	int receive_result = 0;
 	std::cout << ServerTime::get_current_time() << "[INFO]クライアントからの要求の監視を開始します。" << std::endl;
 
