@@ -131,30 +131,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ChatRoomHandler.cpp" />
+    <ClCompile Include="src\ClientHandler.cpp" />
     <ClCompile Include="src\ServerTime.cpp" />
     <ClCompile Include="src\LogHandler.cpp" />
     <ClCompile Include="src\DataBaseAccesor.cpp" />
     <ClCompile Include="src\Sender.cpp" />
-    <ClCompile Include="src\Receiver.cpp" />
+    <ClCompile Include="src\MT001Receiver.cpp" />
     <ClCompile Include="src\AppException.cpp" />
     <ClCompile Include="src\ExceptionBase.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\ClientInfomationListHandler.cpp" />
     <ClCompile Include="src\ServerControlleFacade.cpp" />
     <ClCompile Include="src\SocketHandler.cpp" />
     <ClCompile Include="src\TransmissionDataHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\ChatRoomHandler.h" />
+    <ClInclude Include="inc\ClientHandler.h" />
     <ClInclude Include="inc\DataBaseAccesor.h" />
     <ClInclude Include="inc\AppException.h" />
     <ClInclude Include="inc\ExceptionBase.h" />
-    <ClInclude Include="inc\ClientInfomationListHandler.h" />
     <ClInclude Include="inc\inicpp.h" />
     <ClInclude Include="inc\ServerControlleFacade.h" />
     <ClInclude Include="inc\SocketHandler.h" />
     <ClInclude Include="inc\StringFormat.h" />
     <ClInclude Include="inc\TransmissionDataHandler.h" />
-    <ClInclude Include="inc\Receiver.h" />
+    <ClInclude Include="inc\MT001Receiver.h" />
     <ClInclude Include="inc\Sender.h" />
     <ClInclude Include="inc\LogHandler.h" />
     <ClInclude Include="inc\ServerTime.h" />

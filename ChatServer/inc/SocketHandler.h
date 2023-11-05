@@ -12,9 +12,10 @@
 #include "ServerTime.h"
 #include <iphlpapi.h>
 #include "LogHandler.h"
+#include "ClientHandler.h"
 
 #define INIT_FILE_PASS  ".//ini/socket_setting.ini"
-#define MAX_CONNECT_NUM 10000
+//#define MAX_CONNECT_NUM 10000
 #define SELECT_TIME_OUT -2
 #define REQUEST_ACCEPT_CLIENT_DETECTION -3
 #define NOT_EXIST_IP_ADDRESS -1
@@ -111,8 +112,8 @@ private:
 	//クライアントリストの空いている箇所を探索
 	int check_next_invalid_socket();
 
-	//Acceptしたクライアントを接続リストに追加する【未実装】
-	void push_client_socket_list(const SOCKET new_client_socket);
+	//クライアントリストの空いている箇所を探索
+	int check_next_invalid_socket(const ClientHandler& client_handler);
 
 	//接続中のクライアント数を計算する【未実装】
 	int search_connect_client_socket_num(const std::string search_ip_addr);
@@ -134,15 +135,23 @@ private:
 	bool generate_tcp_listen_socket();
 
 	//クライアントのIPアドレスを抽出する
-	void extraction_client_ip(int client_num);
+	void extraction_client_ip(uint32_t client_num);
+
+	void extraction_client_ip(uint32_t client_num, ClientHandler::Client* new_client);
 
 	//クライアントの情報を初期化する
 	void init_client_net_info(int client_num);
 
+	//クライアントの情報を初期化する
+	void init_client_net_info(int client_num, ClientHandler* client_handler);
+
 	void print_client_net_info(int client_num);
 
 	//select関数の初期化
-	void set_select_info(SOCKET* socket, fd_set* fd, fd_set* fds);
+	void setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds);
+
+	//select関数の初期化
+	void setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds, const ClientHandler& client_handler);
 
 	
 
@@ -189,6 +198,9 @@ public:
 	//ファイルディスクリプタに変化がないか監視する
 	int monitor_socket();
 
+	//ファイルディスクリプタに変化がないか監視する
+	int monitor_socket(const ClientHandler& client_handler);
+
 	//リッスンソケットをアクティブにする
 	bool open_tcp_listen_socket();
 
@@ -207,12 +219,17 @@ public:
 	//Accept処理
 	bool accept_client_socket();
 
+	bool accept_client_socket(ClientHandler& client_handler);
+
 	std::vector<client_socket_info> get_client_socket_info_list() {
 		return client_socket_info_list;
 	}
 
-	//接続中のクライアントソケットをクローズする【未実装】
+	//接続中のクライアントソケットをクローズする
 	void disconnect_socket(int socket_num);
+
+	//接続中のクライアントソケットをクローズする
+	void disconnect_socket(ClientHandler& client_handler, int socket_num);
 
 };
 

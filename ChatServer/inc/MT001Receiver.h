@@ -1,5 +1,5 @@
-#ifndef RECEIVER_H_
-#define RECEIVER_H_
+#ifndef MT001RECEIVER_H_
+#define MT001RECEIVER_H_
 
 #include "TransmissionDataHandler.h"
 #include "SocketHandler.h"
@@ -7,6 +7,7 @@
 #include <WS2tcpip.h>
 #include "AppException.h"
 #include "StringFormat.h"
+#include "ClientHandler.h"
 
 
 #define DEBUG
@@ -14,7 +15,7 @@
 
 struct client_socket_info;
 
-class Receiver :
+class MT001Receiver :
     public TransmissionDataHandler
 {
 private:
@@ -48,16 +49,20 @@ private:
     void print_src_recv_data(const std::string& data, std::vector<SocketHandler::client_socket_info>& client_socket_info_list
         , int& detection_num, int& receive_result);
 
+    void print_src_recv_data(const std::string& data, const ClientHandler& client_handler, int& detection_num, int& receive_result);
+
 
 public:
-    Receiver();
-    ~Receiver();
+    MT001Receiver();
+    ~MT001Receiver();
 
     //データ受信処理
     int data_receive(std::vector<SocketHandler::client_socket_info> client_socket_info_list,int detection_num);
+    int data_receive(const ClientHandler& client_handler, int detection_num);
     
+    void data_parse(std::string& data) override;
 };
 
-#endif // !RECEIVER_H_
+#endif // !MT001RECEIVER_H_
 
 

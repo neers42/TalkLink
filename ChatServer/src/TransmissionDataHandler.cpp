@@ -21,12 +21,8 @@ const void TransmissionDataHandler::show_data_info_queue() const
 
 }
 
-TransmissionDataHandler::DataParser::DataParser()
+void TransmissionDataHandler::data_parse(std::string& data)
 {
-
 }
 
-TransmissionDataHandler::DataParser::~DataParser()
-{
 
-}
