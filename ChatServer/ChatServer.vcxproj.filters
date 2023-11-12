@@ -30,7 +30,7 @@
     <ClCompile Include="src\AppException.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\TransmissionDataHandler.cpp">
+    <ClCompile Include="src\Receiver.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\MT001Receiver.cpp">
@@ -74,7 +74,7 @@
     <ClInclude Include="inc\StringFormat.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\TransmissionDataHandler.h">
+    <ClInclude Include="inc\Receiver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="inc\MT001Receiver.h">

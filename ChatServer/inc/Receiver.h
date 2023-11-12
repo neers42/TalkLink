@@ -1,13 +1,17 @@
-#ifndef TRANSMISSIONDATAHANDLER_H_
-#define TRANSMISSIONDATAHANDLER_H_
+#ifndef RECEIVER_H_
+#define RECEIVER_H_
 #define MAX_GROUP_MEMBER_NUM 500
-
+#define MAX_RECEIVE_MESSAGE_LEN 2048
 #include <iostream>
 #include <string>
 #include <vector>
 #include <queue>
 #include "ServerTime.h"
-class TransmissionDataHandler
+#include "ClientHandler.h"
+#include "AppException.h"
+#include <tuple>
+#define DEBUG
+class Receiver
 {
 protected:
 	struct trans_data_info {
@@ -74,32 +78,27 @@ protected:
 			src_recv_data{scr_recv_data}, decrypted_recv_data{decrypted_recv_data},
 			scr_payload{ scr_payload }, decrypted_payload{""}, file_data{file_data}, file_name(file_name) {}
 
+
+
+		
 	};
+	protected:
+	virtual bool data_extraction(const std::string& data) = 0;
+	virtual bool extraction_src_ip(const std::string& data) = 0;
 
-	
 private:
-	//データキュー
-	static std::queue<trans_data_info> data_queue;
-
-	//受信データをキューにいれる(未実装)
-	bool push_data_queue(trans_data_info data_info);
-
-	//キューから処理済みデータを削除する
-	bool pop_data_queue();
+    static void show_receive_info(const std::string& data, const ClientHandler& client_handler, int& detection_num, int& receive_result);
 
 public:
 	
-	TransmissionDataHandler();
+	Receiver();
 
-	virtual ~TransmissionDataHandler();
-
-	const void show_data_info_queue()const;
-
-	virtual void data_parse(std::string& data);
-
+	virtual ~Receiver();	
+	static std::tuple<int32_t, std::string> receive_data(const ClientHandler& ch, int client_list_num);
+	static std::string extraction_mt(const std::string& data);
 
 
 };             
-#endif // !TRANSMISSIONDATAHANDLER_H_
+#endif // !RECEIVER_H_
 
 

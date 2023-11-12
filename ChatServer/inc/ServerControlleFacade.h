@@ -2,6 +2,7 @@
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
 #include "MT001Receiver.h"
+#include "Sender.h"
 #include "ServerTime.h"
 #include "ClientHandler.h"
 #include "ChatRoomHandler.h"
@@ -11,7 +12,8 @@ class ServerControlleFacade
 {
 private:
 	SocketHandler* m_socket_handler = new SocketHandler();
-	MT001Receiver* m_receiver = new MT001Receiver();
+	MT001Receiver* m_001receiver = new MT001Receiver();
+	Sender* m_sender = new Sender();
 	ServerTime* m_server_time = new ServerTime();
 	ClientHandler m_client_handler = ClientHandler();
 
@@ -30,7 +32,6 @@ public:
 
 	//サーバプログラム実行
 	void run();
-
 
 };
 

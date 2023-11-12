@@ -86,7 +86,7 @@ private:
 
 	//初期化用のsockaddr_in構造体
 	struct sockaddr_in init_sockaddr_in;
-
+	
 	//マルチキャスト用のsockaddr_in構造体
 	struct sockaddr_in multicast_tx_addr, multicast_rx_addr,
 					   bloadcast_tx_addr, bloadcast_rx_addr;
@@ -110,13 +110,8 @@ private:
 	bool bind_tcp_listen_socket();
 
 	//クライアントリストの空いている箇所を探索
-	int check_next_invalid_socket();
-
-	//クライアントリストの空いている箇所を探索
 	int check_next_invalid_socket(const ClientHandler& client_handler);
 
-	//接続中のクライアント数を計算する【未実装】
-	int search_connect_client_socket_num(const std::string search_ip_addr);
 
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(SOCKET request_socket);
@@ -135,20 +130,13 @@ private:
 	bool generate_tcp_listen_socket();
 
 	//クライアントのIPアドレスを抽出する
-	void extraction_client_ip(uint32_t client_num);
-
 	void extraction_client_ip(uint32_t client_num, ClientHandler::Client* new_client);
-
-	//クライアントの情報を初期化する
-	void init_client_net_info(int client_num);
 
 	//クライアントの情報を初期化する
 	void init_client_net_info(int client_num, ClientHandler* client_handler);
 
 	void print_client_net_info(int client_num);
 
-	//select関数の初期化
-	void setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds);
 
 	//select関数の初期化
 	void setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds, const ClientHandler& client_handler);
@@ -183,11 +171,6 @@ public:
 	~SocketHandler();
 
 	
-	//【getter】接続中のクライアントリスト(参照)
-	std::vector<SOCKET> get_client_socket_list() {
-		return client_socket_list;
-	}
-
 	SOCKET get_listen_socket() {
 		return tcp_listen_socket;
 	}
@@ -195,8 +178,6 @@ public:
 	//サーバのIPアドレスを表示する
 	void show_server_info();
 
-	//ファイルディスクリプタに変化がないか監視する
-	int monitor_socket();
 
 	//ファイルディスクリプタに変化がないか監視する
 	int monitor_socket(const ClientHandler& client_handler);
@@ -216,8 +197,6 @@ public:
 	//UDPブロードキャストの送信用ソケットをオープンにする。
 	bool open_udp_bloadcast_rx_socket();
 
-	//Accept処理
-	bool accept_client_socket();
 
 	bool accept_client_socket(ClientHandler& client_handler);
 
@@ -225,8 +204,9 @@ public:
 		return client_socket_info_list;
 	}
 
-	//接続中のクライアントソケットをクローズする
-	void disconnect_socket(int socket_num);
+	//接続中のクライアント数を計算する【未実装】
+	int search_connect_client_socket_num(const ClientHandler& client_handler, const std::string& search_ip_addr);
+
 
 	//接続中のクライアントソケットをクローズする
 	void disconnect_socket(ClientHandler& client_handler, int socket_num);

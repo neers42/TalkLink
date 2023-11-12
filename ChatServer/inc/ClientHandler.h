@@ -117,9 +117,9 @@ private:
 
 	};
 	friend class SocketHandler;
+	friend class Receiver;
 	friend class MT001Receiver;
-
-	
+	friend class Sender;
 
 
 	//接続中のクライアントリスト
