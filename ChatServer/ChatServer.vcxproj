@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\LoginHandler.cpp" />
     <ClCompile Include="src\ChatRoomHandler.cpp" />
     <ClCompile Include="src\ClientHandler.cpp" />
     <ClCompile Include="src\ServerTime.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="inc\Sender.h" />
     <ClInclude Include="inc\LogHandler.h" />
     <ClInclude Include="inc\ServerTime.h" />
+    <ClInclude Include="inc\LoginHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ini\socket_setting.ini" />

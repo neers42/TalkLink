@@ -114,13 +114,19 @@ private:
 			client_ipv4_addr = ipv4_addr;
 		}
 
+		bool operator==(const Client& other_client)const {
+			return this->client_id == other_client.client_id;
+		}
+	
 
+	
 	};
 	friend class SocketHandler;
 	friend class Receiver;
 	friend class MT001Receiver;
 	friend class Sender;
-
+	friend class ChatroomHandler;
+	friend class LoginHandler;
 
 	//接続中のクライアントリスト
 	std::vector<Client> connected_client_list;

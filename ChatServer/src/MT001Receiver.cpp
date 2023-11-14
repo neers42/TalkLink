@@ -147,6 +147,7 @@ int MT001Receiver::data_receive(const ClientHandler& client_handler, int detecti
  **********************************************************************************/
 bool MT001Receiver::extraction_trans_type(const std::string& data)
 {
+	//TODO エラー処理を実装
 	std::string trans_type_string = data.substr(3, 1);
 	int trans_type_int = std::stoi(trans_type_string);
 	mt001_data.set_trans_type(trans_type_int);
@@ -165,6 +166,7 @@ bool MT001Receiver::extraction_trans_type(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_data_type(const std::string& data)
 {
+	//TODO：エラー処理を実装
 	std::string data_type_string = data.substr(4, 1);
 	int data_type_int = std::stoi(data_type_string);
 	mt001_data.set_data_type(data_type_int);
@@ -183,6 +185,7 @@ bool MT001Receiver::extraction_data_type(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_dst_ip(const std::string& data)
 {
+	//TODO：エラー処理を実装
 	std::string dst_ip = data.substr(5, 15);
 	std::string corrected_dst_ip = remove_zero_padding(dst_ip);
 	mt001_data.set_dst_ip_address(corrected_dst_ip);
@@ -200,6 +203,7 @@ bool MT001Receiver::extraction_dst_ip(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_src_ip(const std::string& data)
 {
+	//TODO：エラー処理を実装
 	std::string src_ip = data.substr(20, 15);
 	std::string corrected_src_ip = remove_zero_padding(src_ip);
 	mt001_data.set_src_ip_address(corrected_src_ip);
@@ -218,6 +222,7 @@ bool MT001Receiver::extraction_src_ip(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_dst_chatroom_id(const std::string& data)
 {
+	//TODO：エラー処理を実装
 	std::string chatroom_id = data.substr(35, 19);
 	mt001_data.set_dst_chatroom_id(chatroom_id);
 	return true;
@@ -236,6 +241,7 @@ bool MT001Receiver::extraction_dst_chatroom_id(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_main_data(const std::string& data)
 {
+	//エラー処理を実装する
 	std::string main_data = data.substr(54);
 	mt001_data.set_main_data(main_data);
 	return true;
