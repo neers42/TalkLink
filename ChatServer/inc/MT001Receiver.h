@@ -93,6 +93,7 @@ public:
                 return 2;
                 break;
             default:
+                return -1;
                 break;
             }
         }
@@ -113,6 +114,7 @@ public:
                 return 3;
                 break;
             default:
+                return -1;
                 break;
             }
         }
@@ -180,6 +182,10 @@ public:
     }
     const std::string& get_dst_ip_address() {
         return mt001_data.get_dst_ip();
+    }
+
+    const int get_trans_type() {
+        return mt001_data.get_trans_type();
     }
 
 };

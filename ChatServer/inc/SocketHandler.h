@@ -66,20 +66,8 @@ private:
 	//UDPブロードキャスト送信用ソケット
 	SOCKET udp_bloadcast_tx_socket;
 
-	//UDPブロードキャスト受信用ソケット
-	SOCKET udp_bloadcast_rx_socket;
-
 	//UDPマルチキャスト送信用ソケット
 	SOCKET udp_multicast_tx_socket;
-
-	//UDPマルチキャスト受信用ソケット
-	SOCKET udp_multicast_rx_socket;
-
-	//接続中のクライアントソケットリスト
-	std::vector<SOCKET> client_socket_list;
-
-	//接続中のクライアントリスト
-	std::vector<client_socket_info> client_socket_info_list;
 
 	//サーバのアプリケーションポート番号
 	int port = 0;
@@ -88,8 +76,7 @@ private:
 	struct sockaddr_in init_sockaddr_in;
 	
 	//マルチキャスト用のsockaddr_in構造体
-	struct sockaddr_in multicast_tx_addr, multicast_rx_addr,
-					   bloadcast_tx_addr, bloadcast_rx_addr;
+	struct sockaddr_in multicast_tx_addr, bloadcast_tx_addr;
 
 	//ローカルIPアドレス
 	DWORD i_count;
@@ -97,6 +84,8 @@ private:
 	DWORD dw_size = 0;
 	DWORD dw_ret_val = 0;
 	std::string local_ip_addr = "";
+
+	int ttl = 0;
 
 
 /*
@@ -141,19 +130,11 @@ private:
 	//select関数の初期化
 	void setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds, const ClientHandler& client_handler);
 
-	
-
 	bool generate_udp_multicast_tx_socket();
-
-	bool generate_udp_multicast_rx_socket();
 
 	bool generate_udp_bloadcast_tx_socket();
 
-	bool generate_udp_bloadcast_rx_socket();
-
 	bool obtain_local_ip_addr();
-
-
 
 public:
 /*
@@ -175,9 +156,12 @@ public:
 		return tcp_listen_socket;
 	}
 
+	SOCKET get_udp_multicast_tx_socket() {
+		return udp_multicast_tx_socket;
+	}
+
 	//サーバのIPアドレスを表示する
 	void show_server_info();
-
 
 	//ファイルディスクリプタに変化がないか監視する
 	int monitor_socket(const ClientHandler& client_handler);
@@ -185,29 +169,14 @@ public:
 	//リッスンソケットをアクティブにする
 	bool open_tcp_listen_socket();
 
-	//UDPマルチキャストの送信用ソケットをオープンにする。
-	bool open_udp_muticast_tx_socket();
-
-	//UDPマルチキャストの受信用ソケットをオープンにする。
-	bool open_udp_multicast_rx_socket();
-
-	//UDPブロードキャストの送信用ソケットをオープンにする。
-	bool open_udp_bloadcast_tx_socket();
-
-	//UDPブロードキャストの送信用ソケットをオープンにする。
-	bool open_udp_bloadcast_rx_socket();
-
-
 	bool accept_client_socket(ClientHandler& client_handler);
 
-	std::vector<client_socket_info> get_client_socket_info_list() {
-		return client_socket_info_list;
-	}
+	//接続中のクライアント数を計算する【未実装】
+	int search_connect_client_socket_num_from_ip(const ClientHandler& client_handler, const std::string& search_client_ip);
 
 	//接続中のクライアント数を計算する【未実装】
-	int search_connect_client_socket_num(const ClientHandler& client_handler, const std::string& search_ip_addr);
-
-
+	int search_connect_client_socket_num_from_id(const ClientHandler& client_handler, const std::string& search_client_id);
+	
 	//接続中のクライアントソケットをクローズする
 	void disconnect_socket(ClientHandler& client_handler, int socket_num);
 

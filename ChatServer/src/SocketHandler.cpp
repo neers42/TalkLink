@@ -67,39 +67,14 @@ SocketHandler::SocketHandler()
 	//UDPブロードキャスト送信用ソケットの初期化
 	udp_bloadcast_tx_socket = INVALID_SOCKET;
 
-	//UDPブロードキャスト受信用ソケット
-	udp_bloadcast_rx_socket = INVALID_SOCKET;
-
 	//UDPマルチキャスト送信用ソケット
 	udp_multicast_tx_socket = INVALID_SOCKET;
-
-	//UDPマルチキャスト受信用ソケット
-	udp_multicast_rx_socket = INVALID_SOCKET;
-
-	//クライアントのリスト初期化
-	client_socket_list.reserve(MAX_CONNECT_NUM);
-	client_socket_list.push_back(INVALID_SOCKET);
 
 	//ソケット初期化用の変数の初期化
 	init_sockaddr_in.sin_family = AF_INET;
 	init_sockaddr_in.sin_port = 0;
 	init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
-	client_socket_info init_net_info(INVALID_SOCKET, init_sockaddr_in);
-	client_socket_info_list.reserve(MAX_CONNECT_NUM);
-
-	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-		client_socket_info_list.push_back(init_net_info);
-
-	}
-	
-	
-#ifdef DEBUG
-	for (int i = 0; i < 10; i++) {
-		std::cout << "クライアントリスト[" << i << "]Socket : " << client_socket_info_list[i].client_socket << std::endl;
-}
-
-#endif // DEBUG
 
 	
 }
@@ -159,17 +134,11 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	//リッスンソケットの初期化
 	tcp_listen_socket = INVALID_SOCKET;
 
-	//クライアントのリスト初期化
-	client_socket_list.reserve(10000);
-	client_socket_list.push_back(INVALID_SOCKET);
 
 	init_sockaddr_in.sin_family = AF_INET;
 	init_sockaddr_in.sin_port = 50000;
 	init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
-	client_socket_info init_net_info(INVALID_SOCKET, init_sockaddr_in);
-	client_socket_info_list.reserve(MAX_CONNECT_NUM);
-	client_socket_info_list.push_back(init_net_info);
 }
 
 //デストラクタ
@@ -177,6 +146,7 @@ SocketHandler::~SocketHandler()
 {
 	freeaddrinfo(result);
 	closesocket(get_listen_socket());
+	closesocket(get_udp_multicast_tx_socket());
 	WSACleanup();
 }
 
@@ -341,7 +311,7 @@ bool SocketHandler::setting_tcp_listen_socket(const std::string& file_pass)
 #endif // DEBUG
 	}
 	else {
-		std::cout << "\033[31m [ERROR]\033[m" << std::endl;
+		std::cout << "\033[31m [ERROR] \033[m" << std::endl;
 		return false;
 	}
 	std::cout << "\033[32m [OK] \033[m" << std::endl;
@@ -388,10 +358,9 @@ bool SocketHandler::setting_multicast_tx_socket(const std::string& file_pass)
 	std::cout << StringFormat("%s[INFO]The file for initial configuration was successfully loaded.", ServerTime::get_current_time()) << std::endl;
 
 	//アドレスファミリの設定(socket関数の引数設定)
-	std::string temp_af = multicast_socket_setting_ini["MulticastTX_SocketSetting"]["af"].as<std::string>();
+	std::string temp_af = multicast_socket_setting_ini["MulticastTX_SocketSetting"]["sin_family"].as<std::string>();
 	if (std::equal(temp_af.begin(), temp_af.end(), "AF_INET")) {
 		multicast_tx_param.ai_family = AF_INET;
-		multicast_tx_addr.sin_family = AF_INET;
 		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)param：afはAF_INET(IPv4)に設定されました。" << std::endl;
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_IPX")) {
@@ -443,10 +412,35 @@ bool SocketHandler::setting_multicast_tx_socket(const std::string& file_pass)
 		return false;
 	}
 
+	//マルチキャストアドレスのsockaddr_inのパラメータを設定する。
+	multicast_tx_addr.sin_family = AF_INET;
+
+	//マルチキャストのポートを設定する。
+	try
+	{
+		int temp_port = multicast_socket_setting_ini["MulticastTX_SocketSetting"]["port"].as<int>();
+		if (temp_port < 0 || temp_port > 65535) {
+
+			THROW_APP_EXCEPTION("The port number is set out of range. Reset to the range of 0 - 65535.");
+		}
+
+		if (temp_port == port) {
+			THROW_APP_EXCEPTION("There is a conflict between the application port used for TCP and the application port used for UDP multicast. Please reset the settings.");
+		}
+
+		multicast_tx_addr.sin_port = temp_port;
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str());
+		return false;
+	}
+
+
 	std::string temp_multicast_addr = multicast_socket_setting_ini["MulticastTX_SocketSetting"]["multicast_address"].as<std::string>();
 	//multicast_tx_addr.sin_addr.S_un.S_addr = inet_addr(temp_multicast_addr.c_str());
 
-
+	//inet_addrの設定
 	try
 	{
 		int inet_pton_result = inet_pton(multicast_tx_param.ai_family, temp_multicast_addr.c_str(), &multicast_tx_addr.sin_addr);
@@ -470,6 +464,7 @@ bool SocketHandler::setting_multicast_tx_socket(const std::string& file_pass)
 		}
 		//IPアドレスのバイナリ化が正常に終了した場合
 		else {
+
 			;
 		}
 	}
@@ -477,6 +472,7 @@ bool SocketHandler::setting_multicast_tx_socket(const std::string& file_pass)
 	{
 		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 	}
+
 
 	return true;
 	
@@ -541,10 +537,6 @@ void SocketHandler::init_client_net_info(int client_num, ClientHandler* client_h
 
 }
 
-void SocketHandler::print_client_net_info(int client_num)
-{
-	std::cout << ServerTime::get_current_time() <<"[INFO]client_net番号[" << client_num << "] IPアドレス(" << client_socket_info_list[client_num].client_ip_addr <<")" << std::endl;
-}
 
 
 void SocketHandler::setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds, const ClientHandler& client_handler)
@@ -570,13 +562,202 @@ void SocketHandler::setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds,
 
 bool SocketHandler::generate_udp_multicast_tx_socket()
 {
-	return false;
+	if (!setting_multicast_tx_socket(INIT_FILE_PASS)) {
+		std::cerr << StringFormat("%s\033[31m[ERROR]The socket configuration for multicast transmission was not completed successfully and will be terminated.");
+		return false;
+	}
+
+	try
+	{
+		std::cout << StringFormat("%s[INFO]Creating UDP Multicast TX socket...") << std::endl;
+		SOCKET result_socket = socket(multicast_tx_param.ai_family, multicast_tx_param.ai_socktype, 0);
+		if (result_socket == INVALID_SOCKET) {
+			switch (WSAGetLastError())
+			{
+			case WSANOTINITIALISED:
+				THROW_APP_EXCEPTION("A successful WSAStartup call must occur before using this function.");
+				break;
+
+			case WSAENETDOWN:
+				THROW_APP_EXCEPTION("The network subsystem or the associated service provider has failed.");
+				break;
+
+			case WSAEAFNOSUPPORT:
+				THROW_APP_EXCEPTION("The specified address family is not supported. For example, an application tried to create a socket for the AF_IRDA address family but an infrared adapter and device driver is not installed on the local computer.");
+				break;
+
+			case WSAEINPROGRESS:
+				THROW_APP_EXCEPTION("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
+				break;
+
+			case WSAEMFILE:
+				THROW_APP_EXCEPTION("No more socket descriptors are available.");
+				break;
+
+			case WSAEINVAL:
+				THROW_APP_EXCEPTION("An invalid argument was supplied. This error is returned if the af parameter is set to AF_UNSPEC and the type and protocol parameter are unspecified.");
+				break;
+
+			case WSAEINVALIDPROVIDER:
+				THROW_APP_EXCEPTION("The service provider returned a version other than 2.2.");
+				break;
+
+			case WSAENOBUFS:
+				THROW_APP_EXCEPTION("The service provider returned an invalid or incomplete procedure table to the WSPStartup.");
+				break;
+
+			case WSAEPROTONOSUPPORT:
+				THROW_APP_EXCEPTION("No buffer space is available. The socket cannot be created.");
+				break;
+
+			case WSAEPROTOTYPE:
+				THROW_APP_EXCEPTION("The specified protocol is not supported.");
+				break;
+
+			case WSAEPROVIDERFAILEDINIT:
+				THROW_APP_EXCEPTION("The specified protocol is the wrong type for this socket.");
+				break;
+
+			case WSAESOCKTNOSUPPORT:
+				THROW_APP_EXCEPTION("The specified socket type is not supported in this address family.");
+				break;
+
+
+			default:
+				udp_multicast_tx_socket = result_socket;
+				std::cout << "\033[32m [OK] \033[m" << std::endl;
+				break;
+			}
+		
+		
+		}
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str());
+		return false;
+	}
+	
+	//setsocloptの設定
+	try
+	{
+		int multicast_if_set_sockopt_result = setsockopt(this->udp_multicast_tx_socket, 
+											IPPROTO_IP, IP_MULTICAST_IF,
+											this->local_ip_addr.c_str(), 
+											sizeof(this->local_ip_addr.c_str()));
+		if (!multicast_if_set_sockopt_result) {
+			switch (WSAGetLastError())
+			{
+			case WSANOTINITIALISED:
+				THROW_APP_EXCEPTION("A successful WSAStartup call must occur before using this function.");
+				break;
+
+			case WSAENETDOWN:
+				THROW_APP_EXCEPTION("The network subsystem has failed.");
+				break;
+
+			case WSAEFAULT:
+				THROW_APP_EXCEPTION("The buffer pointed to by the optval parameter is not in a valid part of the process address space or the optlen parameter is too small.");
+				break;
+
+			case WSAEINPROGRESS:
+				THROW_APP_EXCEPTION("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
+				break;
+
+			case WSAEINVAL:
+				THROW_APP_EXCEPTION("The level parameter is not valid, or the information in the buffer pointed to by the optval parameter is not valid.");
+				break;
+
+			case WSAENETRESET:
+				THROW_APP_EXCEPTION("The connection has timed out when SO_KEEPALIVE is set.");
+				break;
+
+			case WSAENOPROTOOPT:
+				THROW_APP_EXCEPTION("The option is unknown or unsupported for the specified provider or socket (see SO_GROUP_PRIORITY limitations).");
+				break;
+
+			case WSAENOTCONN:
+				THROW_APP_EXCEPTION("The connection has been reset when SO_KEEPALIVE is set.");
+				break;
+
+			case WSAENOTSOCK:
+				THROW_APP_EXCEPTION("The descriptor is not a socket.");
+				break;
+
+			default:
+				break;
+			}
+		}
+
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cerr << StringFormat("%s\033[31m[ERORR][m%s", ServerTime::get_current_time(), ex.what_for_str());
+		
+		//TODOネットワークインタフェースの数で戻り値を変えたい
+	}
+	
+	try
+	{
+		int multicast_ttl_set_sockopt_result = setsockopt(udp_multicast_tx_socket,
+			IPPROTO_IP,
+			IP_MULTICAST_TTL,
+			(char*)&ttl,
+			sizeof(ttl));
+
+		if (!multicast_ttl_set_sockopt_result) {
+			switch (WSAGetLastError())
+			{
+			case WSANOTINITIALISED:
+				THROW_APP_EXCEPTION("A successful WSAStartup call must occur before using this function.");
+				break;
+
+			case WSAENETDOWN:
+				THROW_APP_EXCEPTION("The network subsystem has failed.");
+				break;
+
+			case WSAEFAULT:
+				THROW_APP_EXCEPTION("The buffer pointed to by the optval parameter is not in a valid part of the process address space or the optlen parameter is too small.");
+				break;
+
+			case WSAEINPROGRESS:
+				THROW_APP_EXCEPTION("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
+				break;
+
+			case WSAEINVAL:
+				THROW_APP_EXCEPTION("The level parameter is not valid, or the information in the buffer pointed to by the optval parameter is not valid.");
+				break;
+
+			case WSAENETRESET:
+				THROW_APP_EXCEPTION("The connection has timed out when SO_KEEPALIVE is set.");
+				break;
+
+			case WSAENOPROTOOPT:
+				THROW_APP_EXCEPTION("The option is unknown or unsupported for the specified provider or socket (see SO_GROUP_PRIORITY limitations).");
+				break;
+
+			case WSAENOTCONN:
+				THROW_APP_EXCEPTION("The connection has been reset when SO_KEEPALIVE is set.");
+				break;
+
+			case WSAENOTSOCK:
+				THROW_APP_EXCEPTION("The descriptor is not a socket.");
+				break;
+
+			default:
+				break;
+			}
+
+		}
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cerr << StringFormat("%s\033[31m[ERORR][m%s", ServerTime::get_current_time(), ex.what_for_str());
+	}
+
+	return true;
 }
 
-bool SocketHandler::generate_udp_multicast_rx_socket()
-{
-	return false;
-}
 
 bool SocketHandler::obtain_local_ip_addr()
 {
@@ -837,16 +1018,23 @@ int SocketHandler::check_next_invalid_socket(const ClientHandler& client_handler
  *
  * @detail
  **********************************************************************************/
-int SocketHandler::search_connect_client_socket_num(const ClientHandler& client_handler, const std::string& search_ip_addr)
+int SocketHandler::search_connect_client_socket_num_from_ip(const ClientHandler& client_handler, const std::string& search_client_ip)
 {
 	for (int search_result = 0; search_result < MAX_CONNECT_NUM; search_result++) {
 
-		if (client_handler.connected_client_list[search_result].get_client_ipv4_addr() == search_ip_addr) {
+		if (client_handler.connected_client_list[search_result].get_client_ipv4_addr() == search_client_ip) {
 			return search_result;
 		}
 	}
 	return NOT_EXIST_IP_ADDRESS;
 }
+
+int SocketHandler::search_connect_client_socket_num_from_id(const ClientHandler& client_handler, const std::string& search_client_id)
+{
+
+	return 0;
+}
+
 
 void SocketHandler::disconnect_socket(ClientHandler& client_handler, int socket_num)
 {
@@ -1077,7 +1265,7 @@ bool SocketHandler::open_tcp_listen_socket()
 			freeaddrinfo(result);
 			closesocket(tcp_listen_socket);
 			WSACleanup();
-			THROW_APP_EXCEPTION("Listenソケットが何らかの理由でSOCKET_ERRORの状態になりました。");
+			THROW_APP_EXCEPTION("Tcp Listen socket has been SOCKET_ERROR for some reason.");
 
 		}
 		else
@@ -1092,22 +1280,3 @@ bool SocketHandler::open_tcp_listen_socket()
 	return true;
 }
 
-bool SocketHandler::open_udp_muticast_tx_socket()
-{
-	return false;
-}
-
-bool SocketHandler::open_udp_multicast_rx_socket()
-{
-	return false;
-}
-
-bool SocketHandler::open_udp_bloadcast_tx_socket()
-{
-	return false;
-}
-
-bool SocketHandler::open_udp_bloadcast_rx_socket()
-{
-	return false;
-}

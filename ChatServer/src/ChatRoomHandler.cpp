@@ -11,7 +11,19 @@ ChatroomHandler::ChatRoom::~ChatRoom()
 
 bool ChatroomHandler::ChatRoom::add_client_chatroom(const ClientHandler::Client& client)
 {
-	this->client_list.push_back(client);
+	try
+	{
+		this->client_list.push_back(client);
+	}
+	catch (const std::bad_alloc&)
+	{
+		THROW_APP_EXCEPTION("Failed to allocate memory while adding a client to a chat room.");
+	}
+	catch (const exception::ExceptionBase& ex) {
+		std::cerr << StringFormat("%s\033[m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str());
+		return false;
+	}
+	
 	return true;
 }
 

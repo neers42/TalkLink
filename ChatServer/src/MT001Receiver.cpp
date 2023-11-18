@@ -167,7 +167,7 @@ bool MT001Receiver::extraction_trans_type(const std::string& data)
 bool MT001Receiver::extraction_data_type(const std::string& data)
 {
 	//TODO：エラー処理を実装
-	std::string data_type_string = data.substr(4, 1);
+	std::string data_type_string = data.substr(53, 1);
 	int data_type_int = std::stoi(data_type_string);
 	mt001_data.set_data_type(data_type_int);
 	return true;
@@ -186,7 +186,7 @@ bool MT001Receiver::extraction_data_type(const std::string& data)
 bool MT001Receiver::extraction_dst_ip(const std::string& data)
 {
 	//TODO：エラー処理を実装
-	std::string dst_ip = data.substr(5, 15);
+	std::string dst_ip = data.substr(4, 15);
 	std::string corrected_dst_ip = remove_zero_padding(dst_ip);
 	mt001_data.set_dst_ip_address(corrected_dst_ip);
 	return true;
@@ -204,7 +204,7 @@ bool MT001Receiver::extraction_dst_ip(const std::string& data)
 bool MT001Receiver::extraction_src_ip(const std::string& data)
 {
 	//TODO：エラー処理を実装
-	std::string src_ip = data.substr(20, 15);
+	std::string src_ip = data.substr(19, 15);
 	std::string corrected_src_ip = remove_zero_padding(src_ip);
 	mt001_data.set_src_ip_address(corrected_src_ip);
 	return true;
@@ -223,7 +223,7 @@ bool MT001Receiver::extraction_src_ip(const std::string& data)
 bool MT001Receiver::extraction_dst_chatroom_id(const std::string& data)
 {
 	//TODO：エラー処理を実装
-	std::string chatroom_id = data.substr(35, 19);
+	std::string chatroom_id = data.substr(34, 19);
 	mt001_data.set_dst_chatroom_id(chatroom_id);
 	return true;
 }
@@ -279,11 +279,11 @@ bool MT001Receiver::data_extraction(const std::string& data)
 	this->extraction_dst_chatroom_id(data);
 	this->extraction_main_data(data);
 #ifdef DEBUG
-	std::cout << StringFormat("%s[DEBUG]Trans Type(0: unicast 1: multicast, 2:bloadcast) : %d", ServerTime::get_current_time(), this->mt001_data.get_trans_type()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Data_type(0: message 1: image 2: video 3: contact_details) : %d", ServerTime::get_current_time(), this->mt001_data.get_data_type()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Dst IP Adress : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_ip()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Src IP Adress : %s", ServerTime::get_current_time(), this->mt001_data.get_src_ip()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Dst Chatroom ID : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_chatroom_id()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Transport Type(0: unicast 1: multicast, 2:bloadcast) : %d", ServerTime::get_current_time(), this->mt001_data.get_trans_type()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Data Type(0: message 1: image 2: video 3: contact_details) : %d", ServerTime::get_current_time(), this->mt001_data.get_data_type()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Dist IP Adress : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_ip()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Source IP Adress : %s", ServerTime::get_current_time(), this->mt001_data.get_src_ip()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Dist Chatroom ID : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_chatroom_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Main Data : %s", ServerTime::get_current_time(), this->mt001_data.get_main_data()) << std::endl;
 #endif // DEBUG
 

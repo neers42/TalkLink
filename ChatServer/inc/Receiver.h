@@ -96,6 +96,7 @@ public:
 	virtual ~Receiver();	
 	static std::tuple<int32_t, std::string> receive_data(const ClientHandler& ch, int client_list_num);
 	static std::string extraction_mt(const std::string& data);
+	static std::string extraction_trans_type(const std::string& data);
 
 
 };             

@@ -132,3 +132,9 @@ std::string Receiver::extraction_mt(const std::string& data)
 	return mt;
 }
 
+std::string Receiver::extraction_trans_type(const std::string& data)
+{
+	std::string trans_type = data.substr(53, 1);
+	return trans_type;
+}
+

@@ -38,6 +38,7 @@ void ServerControlleFacade::run()
 	int receive_result = 0;
 	std::string receive_data = "";
 	std::string mt = "";
+	std::string trans_type = "";
 	std::cout << ServerTime::get_current_time() << "[INFO]Start monitoring requests from clients." << std::endl;
 
 	//ディスクリプション監視スタート
@@ -78,14 +79,35 @@ void ServerControlleFacade::run()
 			//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
 			else {
 				mt = Receiver::extraction_mt(receive_data);
+				trans_type = Receiver::extraction_trans_type(receive_data);
 
+				//TODO⇒メッセージをsendするときに
 				if (std::equal(mt.begin(), mt.end(), "001")) {
 					if (m_001receiver->data_extraction(receive_data)) {
-						m_sender->unicast_data(m_client_handler, 
+						switch (m_001receiver->get_trans_type())
+						{
+						//TCPユニキャスト
+						case 0:
+							m_sender->tcp_unicast_data(m_client_handler, 
 												receive_data, receive_result,
-												m_socket_handler->search_connect_client_socket_num(m_client_handler,
+												m_socket_handler->search_connect_client_socket_num_from_ip(m_client_handler,
 													this->m_001receiver->get_dst_ip_address()));
-					}
+
+							break;
+
+						//TCPでマルチキャスト
+						case 1:
+							break;
+
+						//UDPブロードキャスト
+						case 2:
+							break;
+
+						default:
+							std::cerr << StringFormat("%s\033[31m[ERROR]\033[mThe communication type is different.") << std::endl;
+							break;
+						}
+											}
 					else {
 						break;
 					}
