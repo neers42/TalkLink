@@ -118,6 +118,7 @@ void ServerControlleFacade::run()
 						}
 											}
 					else {
+						std::cerr << StringFormat("%s[INFO]The message receiving process was suspended.", ServerTime::get_current_time()) << std::endl;
 						break;
 					}
 					

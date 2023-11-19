@@ -159,9 +159,7 @@ private:
     //ユニキャストorマルチキャストなのかをデータから抽出する
     bool extraction_trans_type(const std::string& data);
 
-    //データタイプを抽出する(未実装)
-    bool extraction_data_type(const std::string& data);
-
+   
     //送信先のIPアドレスを抽出する(未実装)
     bool extraction_dst_ip(const std::string &data);
 
@@ -175,7 +173,9 @@ private:
     //送信先のグループIDを抽出する
     bool extraction_dst_chatroom_id(const std::string& data);
 
-    
+    //データタイプを抽出する(未実装)
+    bool extraction_data_type(const std::string& data);
+ 
     //暗号化されているペイロードを抽出する
     bool extraction_main_data(const std::string& data);
 

@@ -30,8 +30,6 @@ int MT001Receiver::data_receive(const ClientHandler& client_handler, int detecti
 		memset(temp_recv_data, '\0', sizeof(temp_recv_data));
 		int receive_result = recv(client_handler.connected_client_list[detection_num].get_client_socket(), temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
 
-		//ERROR検証用←デバック完了したら以下を消す
-		//receive_result = SOCKET_ERROR;
 
 #ifdef DEBUG
 		std::cout << ServerTime::get_current_time() << "[DEBUG]receive_result = " << receive_result << std::endl;
@@ -149,61 +147,28 @@ bool MT001Receiver::extraction_trans_type(const std::string& data)
 {
 	try
 	{
-		std::string trans_type_string = data.substr(3, 1);
+		int start_pos_split = 3, end_pos_split = 1;
+		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+		std::string trans_type_string = data.substr(start_pos_split, end_pos_split);
 		int trans_type_int = std::stoi(trans_type_string);
 		if (trans_type_int < 0 || trans_type_int > 2) {
-			throw std::invalid_argument(StringFormat("The value of Trans type is invalid.(trans_type_int contains : %d)", trans_type_int));
+			THROW_APP_EXCEPTION(StringFormat("The value of Trans type is invalid.(\033[31mtrans_type_int contains : %d\033[m)", trans_type_int));
+			//throw std::invalid_argument(StringFormat("The value of Trans type is invalid.(trans_type_int contains : %d)", trans_type_int));
 		}
 		mt001_data.set_trans_type(trans_type_int);
 	}
 	
-	catch (const std::exception& ex) 
-	{
-		THROW_APP_EXCEPTION(ex.what());
-	}
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	
 	return true;
 }
 
-/**********************************************************************************
- * @fn	  extraction_data_type
- * @brief 受信データからデータタイプを抽出する
- *
- * @param [in] std::string& data
- *             受信データ
- * 
- * @return [out]
- *
- **********************************************************************************/
-bool MT001Receiver::extraction_data_type(const std::string& data)
-{
-	try
-	{
-		std::string data_type_string = data.substr(77, 1);
-		int data_type_int = std::stoi(data_type_string);
-		if (data_type_int < 0 || data_type_int > 3) {
-			throw std::invalid_argument(StringFormat("The value of Data type is invalid.(data_type_int contains : %d", data_type_int));
-		}
-		mt001_data.set_data_type(data_type_int);
-
-	}
-	catch (const std::exception& ex) 
-	{
-		THROW_APP_EXCEPTION(ex.what());
-	}
-	catch(const exception::ExceptionBase& ex)
-	{
-		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
-		return false;
-	}
-
-	return true;
-}
 
 
 /**********************************************************************************
@@ -220,7 +185,12 @@ bool MT001Receiver::extraction_dst_ip(const std::string& data)
 	//TODO：エラー処理を実装
 	try
 	{
-		std::string dst_ip = data.substr(4, 15);
+		int start_pos_split = 4, end_pos_split = 15;
+		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+
+		std::string dst_ip = data.substr(start_pos_split, end_pos_split);
 		std::string corrected_dst_ip = remove_zero_padding(dst_ip);
 		mt001_data.set_dst_ip_address(corrected_dst_ip);
 
@@ -231,7 +201,7 @@ bool MT001Receiver::extraction_dst_ip(const std::string& data)
 	}
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -248,28 +218,41 @@ bool MT001Receiver::extraction_dst_ip(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_src_ip(const std::string& data)
 {
-	//TODO：エラー処理を実装
-	std::string src_ip = data.substr(19, 15);
-	std::string corrected_src_ip = remove_zero_padding(src_ip);
-	mt001_data.set_src_ip_address(corrected_src_ip);
-	return true;
+	try
+	{
+		int start_pos_split = 19, end_pos_split = 15;
+		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+		std::string src_ip = data.substr(start_pos_split, end_pos_split);
+		std::string corrected_src_ip = remove_zero_padding(src_ip);
+		mt001_data.set_src_ip_address(corrected_src_ip);
+
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		return false;
+	}
+		return true;
 }
 
 bool MT001Receiver::extraction_dst_client_id(const std::string& data)
 {
 	try
 	{
-		std::string dst_client_id = data.substr(34, 12);
+		int start_pos_split = 34, end_pos_split = 12;
+		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+
+		std::string dst_client_id = data.substr(start_pos_split, end_pos_split);
 		mt001_data.set_dst_client_id(dst_client_id);
 
 	}
-	catch (const std::exception& ex) 
-	{
-		THROW_APP_EXCEPTION(ex.what());
-	}
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -279,17 +262,17 @@ bool MT001Receiver::extraction_src_clinet_id(const std::string& data)
 {
 	try
 	{
-		std::string src_client_id = data.substr(46, 12);
-		mt001_data.set_src_client_id(src_client_id);
+		int start_pos_split = 46, end_pos_split = 12;
+		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
 
-	}
-	catch (const std::exception& ex) 
-	{
-		THROW_APP_EXCEPTION(ex.what());
+		std::string src_client_id = data.substr(start_pos_split, end_pos_split);
+		mt001_data.set_src_client_id(src_client_id);
 	}
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 
@@ -308,17 +291,65 @@ bool MT001Receiver::extraction_src_clinet_id(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_dst_chatroom_id(const std::string& data)
 {
-	//TODO：エラー処理を実装
-	std::string chatroom_id = data.substr(58, 19);
-	mt001_data.set_dst_chatroom_id(chatroom_id);
+	try
+	{
+		int start_pos_split = 58, end_pos_split = 19;
+		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+
+		std::string chatroom_id = data.substr(start_pos_split, end_pos_split);
+		mt001_data.set_dst_chatroom_id(chatroom_id);
+
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		return false;
+	}
+		return true;
+}
+
+/**********************************************************************************
+ * @fn	  extraction_data_type
+ * @brief 受信データからデータタイプを抽出する
+ *
+ * @param [in] std::string& data
+ *             受信データ
+ * 
+ * @return [out]
+ *
+ **********************************************************************************/
+bool MT001Receiver::extraction_data_type(const std::string& data)
+{
+	try
+	{
+		int start_pos_split = 77, end_pos_split = 1;
+		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+
+		std::string data_type_string = data.substr(start_pos_split, end_pos_split);
+		int data_type_int = std::stoi(data_type_string);
+		if (data_type_int < 0 || data_type_int > 3) {
+			THROW_APP_EXCEPTION(StringFormat("The value of Data type is invalid.(\033[31mdata_type_int contains : %d\033[m", data_type_int));
+		}
+		mt001_data.set_data_type(data_type_int);
+
+	}
+	catch(const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		return false;
+	}
+
 	return true;
 }
 
 
-
 /**********************************************************************************
- * @fn	  extraction_scr_ip
- * @brief
+ * @fn	  extraction_main_data
+ * @brief 受信データからメインのデータを抽出する。 
  *
  * @param [in]
  *
@@ -327,9 +358,20 @@ bool MT001Receiver::extraction_dst_chatroom_id(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_main_data(const std::string& data)
 {
-	//エラー処理を実装する
-	std::string main_data = data.substr(78);
-	mt001_data.set_main_data(main_data);
+	try
+	{
+		int start_pos_split = 78;
+		if (start_pos_split > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+
+		std::string main_data = data.substr(start_pos_split);
+		mt001_data.set_main_data(main_data);
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+	}
 	return true;
 }
 
@@ -358,22 +400,30 @@ void MT001Receiver::print_src_recv_data(const std::string& data, const ClientHan
 
 bool MT001Receiver::data_extraction(const std::string& data)
 {
-	this->extraction_trans_type(data);
-	this->extraction_data_type(data);
-	this->extraction_src_ip(data);
-	this->extraction_dst_ip(data);
-	this->extraction_dst_client_id(data);
-	this->extraction_src_clinet_id(data);
-	this->extraction_dst_chatroom_id(data);
-	this->extraction_main_data(data);
+
+	bool trans_type_ex_ret = this->extraction_trans_type(data);
+	bool dst_ip_ex_ret = this->extraction_dst_ip(data);
+	bool src_ip_ex_ret = this->extraction_src_ip(data);
+	bool dst_client_id_ret = this->extraction_dst_client_id(data);
+	bool src_client_id_ret = this->extraction_src_clinet_id(data);
+	bool chatroom_id_ex_ret = this->extraction_dst_chatroom_id(data);
+	bool data_type_ex_ret = this->extraction_data_type(data);
+	bool main_data_ex_ret = this->extraction_main_data(data);
+
+	if (trans_type_ex_ret == false || data_type_ex_ret == false
+		|| dst_ip_ex_ret == false || src_ip_ex_ret == false
+		|| dst_client_id_ret == false || src_client_id_ret == false
+		|| chatroom_id_ex_ret == false || main_data_ex_ret == false) {
+		return false;
+	}
 #ifdef DEBUG
 	std::cout << StringFormat("%s[DEBUG]Transport Type(0: unicast 1: multicast, 2:bloadcast) : %d", ServerTime::get_current_time(), this->mt001_data.get_trans_type()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Data Type(0: message 1: image 2: video 3: contact_details) : %d", ServerTime::get_current_time(), this->mt001_data.get_data_type()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Dist IP Adress : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_ip()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Source IP Adress : %s", ServerTime::get_current_time(), this->mt001_data.get_src_ip()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Dist Client ID : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_client_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Source Client ID : %s", ServerTime::get_current_time(), this->mt001_data.get_src_client_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Dist Chatroom ID : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_chatroom_id()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Data Type(0: message 1: image 2: video 3: contact_details) : %d", ServerTime::get_current_time(), this->mt001_data.get_data_type()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Main Data : %s", ServerTime::get_current_time(), this->mt001_data.get_main_data()) << std::endl;
 #endif // DEBUG
 

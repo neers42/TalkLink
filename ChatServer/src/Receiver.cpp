@@ -19,9 +19,6 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const ClientHandler& ch,
 		memset(temp_recv_data, '\0', sizeof(temp_recv_data));
 		int receive_result = recv(ch.connected_client_list[client_list_num].get_client_socket(), temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
 
-		//ERROR検証用←デバック完了したら以下を消す
-		//receive_result = SOCKET_ERROR;
-
 #ifdef DEBUG
 		std::cout << ServerTime::get_current_time() << "[DEBUG]receive_result = " << receive_result << std::endl;
 #endif // DEBUG
