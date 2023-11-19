@@ -16,6 +16,7 @@ private:
 	class Client
 	{
 
+		//Client private変数
 	private:
 		std::string client_id;
 		std::string client_name;
@@ -24,11 +25,14 @@ private:
 		struct sockaddr_in client_sockaddr_in;
 		socklen_t socket_addr_in_length = sizeof(client_sockaddr_in);
 		std::string client_ipv4_addr = "";
+
+		//Clientprivate関数
 		std::string generate_client_id();
 
 	public:
 		explicit Client();
 		explicit Client(const std::string id, const std::string name, const std::string gmail, const SOCKET socket, const struct sockaddr_in sockaddr_in, const std::string client_ipv4_addr);
+		explicit Client(const SOCKET socket, const struct sockaddr_in sockaddr_in, const socklen_t length);
 		~Client();
 
 
@@ -117,9 +121,6 @@ private:
 		bool operator==(const Client& other_client)const {
 			return this->client_id == other_client.client_id;
 		}
-	
-
-	
 	};
 	friend class SocketHandler;
 	friend class Receiver;
@@ -127,7 +128,9 @@ private:
 	friend class Sender;
 	friend class ChatroomHandler;
 	friend class LoginHandler;
+	friend class ServerControlleFacade;
 
+	
 	//接続中のクライアントリスト
 	std::vector<Client> connected_client_list;
 	Client init_client = Client();

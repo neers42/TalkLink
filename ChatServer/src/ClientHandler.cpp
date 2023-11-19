@@ -18,6 +18,13 @@ ClientHandler::Client::Client(std::string id, std::string name, std::string gmai
 
 }
 
+ClientHandler::Client::Client(const SOCKET socket, const sockaddr_in sockaddr_in, const socklen_t length):
+	client_id{""},client_name{""}, client_gmail{""},
+	client_socket{socket}, client_sockaddr_in{sockaddr_in}, socket_addr_in_length{length}, client_ipv4_addr{""}
+{
+
+}
+
 std::string ClientHandler::Client::generate_client_id()
 {
 

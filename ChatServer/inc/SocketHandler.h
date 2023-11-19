@@ -118,9 +118,7 @@ private:
 	//Listenソケットを生成する
 	bool generate_tcp_listen_socket();
 
-	//クライアントのIPアドレスを抽出する
-	void extraction_client_ip(uint32_t client_num, ClientHandler::Client* new_client);
-
+	
 	//クライアントの情報を初期化する
 	void init_client_net_info(int client_num, ClientHandler* client_handler);
 
@@ -169,7 +167,11 @@ public:
 	//リッスンソケットをアクティブにする
 	bool open_tcp_listen_socket();
 
-	bool accept_client_socket(ClientHandler& client_handler);
+	//クライアントのIPアドレスを抽出する
+	void extraction_client_ip(uint32_t client_num, ClientHandler::Client* new_client);
+
+
+	std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> accept_client_socket_(ClientHandler& client_handler);
 
 	//接続中のクライアント数を計算する【未実装】
 	int search_connect_client_socket_num_from_ip(const ClientHandler& client_handler, const std::string& search_client_ip);

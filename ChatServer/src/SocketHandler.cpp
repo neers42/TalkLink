@@ -886,7 +886,8 @@ bool SocketHandler::bind_tcp_listen_socket()
  *
  * @detail 
  **********************************************************************************/
-bool SocketHandler::accept_client_socket(ClientHandler& client_handler)
+
+std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> SocketHandler::accept_client_socket_(ClientHandler& client_handler)
 {
 	/*if (client_handler == nullptr) {
 		std::cerr << StringFormat("%s\033[31m[ERROR][mThe value of the client handler passed in the argument is nullptr.Exit accept.") << std::endl;
@@ -899,19 +900,18 @@ bool SocketHandler::accept_client_socket(ClientHandler& client_handler)
 		try
 		{
 			ClientHandler::Client new_client = ClientHandler::Client();
-
-			SOCKET temp_client_socket;
-			struct sockaddr_in temp_sockaddr_in;
-			socklen_t temp_socket_addr_in_length = client_handler.get_client_list()[check_n_invalid_socket_result].get_sockaddr_in_length();
-			temp_client_socket = accept(tcp_listen_socket,(struct sockaddr*)&temp_sockaddr_in, &temp_socket_addr_in_length);
-			new_client.set_client_socket(temp_client_socket);
+			SOCKET accept_client_socket_result;
+			struct sockaddr_in accept_sockaddr_in_result;
+			socklen_t accept_socket_addr_in_length_rength_result = client_handler.get_client_list()[check_n_invalid_socket_result].get_sockaddr_in_length();
+			accept_client_socket_result = accept(tcp_listen_socket,(struct sockaddr*)&accept_sockaddr_in_result, &accept_socket_addr_in_length_rength_result);
+		/*	new_client.set_client_socket(temp_client_socket);
 			new_client.set_client_sockaddr_in(temp_sockaddr_in);
-			new_client.set_socket_addr_in_length(temp_socket_addr_in_length);
+			new_client.set_socket_addr_in_length(temp_socket_addr_in_length);*/
 
 			
 
 			//acceptしたソケットがINVALID_SOCKETである場合
-			if (temp_client_socket == INVALID_SOCKET) {
+			if (accept_client_socket_result == INVALID_SOCKET) {
 			//if (client_handler->get_client_list()[check_n_invalid_socket_result].get_client_socket() == INVALID_SOCKET) {
 
 				switch (WSAGetLastError())
@@ -971,25 +971,17 @@ bool SocketHandler::accept_client_socket(ClientHandler& client_handler)
 			}
 			else {
 				//acceptが成功した場合
-				extraction_client_ip(check_n_invalid_socket_result, &new_client);
-
-				//クライアント情報の更新
-				client_handler.add_client(new_client, check_n_invalid_socket_result);
-
-				std::cout << ServerTime::get_current_time() << "[INFO]Registered on the client list[" << check_n_invalid_socket_result
-					<< "] => IP:" << client_handler.get_client_list()[check_n_invalid_socket_result].get_client_ipv4_addr() << "." << std::endl;
-
-				return true;
+				return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result, accept_socket_addr_in_length_rength_result, check_n_invalid_socket_result);
 			}
 		}
 		catch (const exception::ExceptionBase& ex)
 		{
 			std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+			struct sockaddr_in error_addr_in = { 0 };
+			return std::make_tuple(INVALID_SOCKET, error_addr_in, sizeof(error_addr_in), -1);
 		}
 
 	}
-
-	return false;
 }
 
 
@@ -1000,7 +992,6 @@ int SocketHandler::check_next_invalid_socket(const ClientHandler& client_handler
 	for (int n_invalid_socket = 0; n_invalid_socket < MAX_CONNECT_NUM; n_invalid_socket++) {
 
 		if (client_handler.get_client_list()[n_invalid_socket].get_client_socket() == INVALID_SOCKET)
-		
 			return n_invalid_socket;
 	}
 	return -1;

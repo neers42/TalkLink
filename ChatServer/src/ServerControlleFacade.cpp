@@ -35,10 +35,6 @@ void ServerControlleFacade::run()
 	}
 
 	
-	int receive_result = 0;
-	std::string receive_data = "";
-	std::string mt = "";
-	std::string trans_type = "";
 	std::cout << ServerTime::get_current_time() << "[INFO]Start monitoring requests from clients." << std::endl;
 
 	//ディスクリプション監視スタート
@@ -54,17 +50,30 @@ void ServerControlleFacade::run()
 		case SOCKET_ERROR:
 			break;
 
-		//アクセプト要求があった場合
+			//アクセプト要求があった場合
 		case REQUEST_ACCEPT_CLIENT_DETECTION:
+		{
 			//m_socket_handler->accept_client_socket();
-			m_socket_handler->accept_client_socket(m_client_handler);
+			SOCKET new_client_socket = INVALID_SOCKET;
+			struct sockaddr_in new_client_sockaddr_in = { 0 };
+			socklen_t new_client_socklen_t = 0;
+			uint32_t check_invalid_result = 0;
+			//m_socket_handler->accept_client_socket(m_client_handler);
+			std::tie(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, check_invalid_result) = m_socket_handler->accept_client_socket_(m_client_handler);
+			ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
+			m_socket_handler->extraction_client_ip(check_invalid_result, &new_client);
+			m_client_handler.add_client(new_client, check_invalid_result);
+			std::cout << ServerTime::get_current_time() << "[INFO]Registered on the client list[" << check_invalid_result
+				<< "] => IP:" << m_client_handler.get_client_list()[check_invalid_result].get_client_ipv4_addr() << "." << std::endl;
+		};
 			break;
 		
 		//接続中のクライアントリストから通知があった場合
 		default:
 			//receive_result = m_receiver->data_receive(m_socket_handler->get_client_socket_info_list(), monitor_result);
-			
-			std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
+				int receive_result = 0;
+				std::string receive_data, mt, trans_type = "";
+				std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
 			
 
 			//receive_result = m_001receiver->data_receive(m_client_handler ,monitor_result);

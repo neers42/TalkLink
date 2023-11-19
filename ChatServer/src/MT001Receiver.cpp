@@ -147,10 +147,26 @@ int MT001Receiver::data_receive(const ClientHandler& client_handler, int detecti
  **********************************************************************************/
 bool MT001Receiver::extraction_trans_type(const std::string& data)
 {
-	//TODO エラー処理を実装
-	std::string trans_type_string = data.substr(3, 1);
-	int trans_type_int = std::stoi(trans_type_string);
-	mt001_data.set_trans_type(trans_type_int);
+	try
+	{
+		std::string trans_type_string = data.substr(3, 1);
+		int trans_type_int = std::stoi(trans_type_string);
+		if (trans_type_int < 0 || trans_type_int > 2) {
+			throw std::invalid_argument(StringFormat("The value of Trans type is invalid.(trans_type_int contains : %d)", trans_type_int));
+		}
+		mt001_data.set_trans_type(trans_type_int);
+	}
+	
+	catch (const std::exception& ex) 
+	{
+		THROW_APP_EXCEPTION(ex.what());
+	}
+	catch(const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		return false;
+	}
+	
 	return true;
 }
 
@@ -166,10 +182,26 @@ bool MT001Receiver::extraction_trans_type(const std::string& data)
  **********************************************************************************/
 bool MT001Receiver::extraction_data_type(const std::string& data)
 {
-	//TODO：エラー処理を実装
-	std::string data_type_string = data.substr(53, 1);
-	int data_type_int = std::stoi(data_type_string);
-	mt001_data.set_data_type(data_type_int);
+	try
+	{
+		std::string data_type_string = data.substr(77, 1);
+		int data_type_int = std::stoi(data_type_string);
+		if (data_type_int < 0 || data_type_int > 3) {
+			throw std::invalid_argument(StringFormat("The value of Data type is invalid.(data_type_int contains : %d", data_type_int));
+		}
+		mt001_data.set_data_type(data_type_int);
+
+	}
+	catch (const std::exception& ex) 
+	{
+		THROW_APP_EXCEPTION(ex.what());
+	}
+	catch(const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		return false;
+	}
+
 	return true;
 }
 
@@ -186,9 +218,22 @@ bool MT001Receiver::extraction_data_type(const std::string& data)
 bool MT001Receiver::extraction_dst_ip(const std::string& data)
 {
 	//TODO：エラー処理を実装
-	std::string dst_ip = data.substr(4, 15);
-	std::string corrected_dst_ip = remove_zero_padding(dst_ip);
-	mt001_data.set_dst_ip_address(corrected_dst_ip);
+	try
+	{
+		std::string dst_ip = data.substr(4, 15);
+		std::string corrected_dst_ip = remove_zero_padding(dst_ip);
+		mt001_data.set_dst_ip_address(corrected_dst_ip);
+
+	}
+	catch (const std::exception& ex) 
+	{
+		THROW_APP_EXCEPTION(ex.what());
+	}
+	catch(const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		return false;
+	}
 	return true;
 }
 
@@ -210,6 +255,47 @@ bool MT001Receiver::extraction_src_ip(const std::string& data)
 	return true;
 }
 
+bool MT001Receiver::extraction_dst_client_id(const std::string& data)
+{
+	try
+	{
+		std::string dst_client_id = data.substr(34, 12);
+		mt001_data.set_dst_client_id(dst_client_id);
+
+	}
+	catch (const std::exception& ex) 
+	{
+		THROW_APP_EXCEPTION(ex.what());
+	}
+	catch(const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		return false;
+	}
+	return true;
+}
+
+bool MT001Receiver::extraction_src_clinet_id(const std::string& data)
+{
+	try
+	{
+		std::string src_client_id = data.substr(46, 12);
+		mt001_data.set_src_client_id(src_client_id);
+
+	}
+	catch (const std::exception& ex) 
+	{
+		THROW_APP_EXCEPTION(ex.what());
+	}
+	catch(const exception::ExceptionBase& ex)
+	{
+		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str());
+		return false;
+	}
+
+	return true;
+}
+
 
 /**********************************************************************************
  * @fn	  extraction_scr_ip
@@ -223,7 +309,7 @@ bool MT001Receiver::extraction_src_ip(const std::string& data)
 bool MT001Receiver::extraction_dst_chatroom_id(const std::string& data)
 {
 	//TODO：エラー処理を実装
-	std::string chatroom_id = data.substr(34, 19);
+	std::string chatroom_id = data.substr(58, 19);
 	mt001_data.set_dst_chatroom_id(chatroom_id);
 	return true;
 }
@@ -242,7 +328,7 @@ bool MT001Receiver::extraction_dst_chatroom_id(const std::string& data)
 bool MT001Receiver::extraction_main_data(const std::string& data)
 {
 	//エラー処理を実装する
-	std::string main_data = data.substr(54);
+	std::string main_data = data.substr(78);
 	mt001_data.set_main_data(main_data);
 	return true;
 }
@@ -276,6 +362,8 @@ bool MT001Receiver::data_extraction(const std::string& data)
 	this->extraction_data_type(data);
 	this->extraction_src_ip(data);
 	this->extraction_dst_ip(data);
+	this->extraction_dst_client_id(data);
+	this->extraction_src_clinet_id(data);
 	this->extraction_dst_chatroom_id(data);
 	this->extraction_main_data(data);
 #ifdef DEBUG
@@ -283,6 +371,8 @@ bool MT001Receiver::data_extraction(const std::string& data)
 	std::cout << StringFormat("%s[DEBUG]Data Type(0: message 1: image 2: video 3: contact_details) : %d", ServerTime::get_current_time(), this->mt001_data.get_data_type()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Dist IP Adress : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_ip()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Source IP Adress : %s", ServerTime::get_current_time(), this->mt001_data.get_src_ip()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Dist Client ID : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_client_id()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Source Client ID : %s", ServerTime::get_current_time(), this->mt001_data.get_src_client_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Dist Chatroom ID : %s", ServerTime::get_current_time(), this->mt001_data.get_dst_chatroom_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Main Data : %s", ServerTime::get_current_time(), this->mt001_data.get_main_data()) << std::endl;
 #endif // DEBUG
@@ -370,6 +460,16 @@ void MT001Receiver::MT001Data::set_dst_ip_address(const std::string& dst_ip)
 void MT001Receiver::MT001Data::set_src_ip_address(const std::string& src_ip)
 {
 	this->src_ip_address = src_ip;
+}
+
+void MT001Receiver::MT001Data::set_dst_client_id(const std::string& dst_client_id)
+{
+	this->dst_client_id = dst_client_id;
+}
+
+void MT001Receiver::MT001Data::set_src_client_id(const std::string& src_client_id)
+{
+	this->src_client_id = src_client_id;
 }
 
 void MT001Receiver::MT001Data::set_dst_chatroom_id(const std::string& dst_chatroom_id)

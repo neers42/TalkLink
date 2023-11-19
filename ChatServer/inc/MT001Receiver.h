@@ -58,6 +58,12 @@ class MT001Receiver :
         //送信元IPアドレス
         std::string src_ip_address;
 
+        //送信先クライアントID
+        std::string dst_client_id;
+
+        //送信元クライアントID
+        std::string src_client_id;
+
         //送信先チャットルームID
         std::string dst_chatroom_id;
 
@@ -75,6 +81,10 @@ public:
         void set_dst_ip_address(const std::string& dst_ip);
 
         void set_src_ip_address(const std::string& src_ip);
+
+        void set_dst_client_id(const std::string& dst_client_id);
+
+        void set_src_client_id(const std::string& src_client_id);
 
         void set_dst_chatroom_id(const std::string& dst_chatroom_id);
 
@@ -125,6 +135,12 @@ public:
         std::string& get_src_ip() {
             return src_ip_address;
         }
+        std::string& get_dst_client_id() {
+            return dst_client_id;
+        }
+        std::string& get_src_client_id() {
+            return src_client_id;
+        }
         std::string& get_dst_chatroom_id() {
             return dst_chatroom_id;
         }
@@ -151,6 +167,10 @@ private:
 
     //送信元のIPアドレスを抽出する
     bool extraction_src_ip(const std::string& data) override;
+
+    bool extraction_dst_client_id(const std::string& data);
+
+    bool extraction_src_clinet_id(const std::string& data);
         
     //送信先のグループIDを抽出する
     bool extraction_dst_chatroom_id(const std::string& data);
