@@ -59,7 +59,7 @@ void ServerControlleFacade::run()
 			socklen_t new_client_socklen_t = 0;
 			uint32_t check_invalid_result = 0;
 			//m_socket_handler->accept_client_socket(m_client_handler);
-			std::tie(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, check_invalid_result) = m_socket_handler->accept_client_socket_(m_client_handler);
+			std::tie(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, check_invalid_result) = m_socket_handler->accept_client_socket(m_client_handler);
 			ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
 			m_socket_handler->extraction_client_ip(check_invalid_result, &new_client);
 			m_client_handler.add_client(new_client, check_invalid_result);

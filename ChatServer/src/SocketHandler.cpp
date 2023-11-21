@@ -887,7 +887,7 @@ bool SocketHandler::bind_tcp_listen_socket()
  * @detail 
  **********************************************************************************/
 
-std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> SocketHandler::accept_client_socket_(ClientHandler& client_handler)
+std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> SocketHandler::accept_client_socket(ClientHandler& client_handler)
 {
 	/*if (client_handler == nullptr) {
 		std::cerr << StringFormat("%s\033[31m[ERROR][mThe value of the client handler passed in the argument is nullptr.Exit accept.") << std::endl;

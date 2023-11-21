@@ -171,7 +171,7 @@ public:
 	void extraction_client_ip(uint32_t client_num, ClientHandler::Client* new_client);
 
 
-	std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> accept_client_socket_(ClientHandler& client_handler);
+	std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> accept_client_socket(ClientHandler& client_handler);
 
 	//Ú‘±’†‚ÌƒNƒ‰ƒCƒAƒ“ƒg”‚ğŒvZ‚·‚éy–¢À‘•z
 	int search_connect_client_socket_num_from_ip(const ClientHandler& client_handler, const std::string& search_client_ip);
