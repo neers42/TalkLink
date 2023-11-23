@@ -1,215 +1,93 @@
-#ifndef MT001RECEIVER_H_
-#define MT001RECEIVER_H_
-
+#pragma once
 #include "Receiver.h"
-#include "SocketHandler.h"
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-#include "AppException.h"
-#include "StringFormat.h"
-#include "ClientHandler.h"
-#include <tuple>
-#include <string>
-
-
-#define DEBUG
-#define MAX_RECEIVE_MESSAGE_LEN 2048
-
-struct client_socket_info;
-
 class MT001Receiver :
     public Receiver
 {
-    class MT001Data
-    {
-    
-    public:
-    enum class trans_type
-        {
-            unicast,
-            multicast,
-            bloadcast
-        };
 
-		//データタイプ
-        enum class data_type {
+	class MT001Data
+	{
+	public:
+		MT001Data();
+		~MT001Data();
 
-			//メッセージ
-			message,
-			//イメージファイル
-			image,
-			//動画ファイル
-			video,
-            //連絡先
-            contact_details
-        };
+		//private変数
+	private:
+		enum class SIGN_TYPE
+		{
+			sign_up,
+			sign_in,
+			sign_out
+		};
+		SIGN_TYPE m_sign_type;
+		uint8_t m_client_name_byte_size;
+		std::string m_client_name;
+		uint8_t m_client_gmail_byte_size;
+		std::string m_client_gmail;
+		uint8_t m_client_password_byte_size;
+		std::string m_client_password;
 
-        
+	public:
+		const int get_sign_type() {
+			switch (m_sign_type) {
+			case SIGN_TYPE::sign_up:
+				return 0;
+				break;
+			case SIGN_TYPE::sign_in:
+				return 1;
+				break;
+			case SIGN_TYPE::sign_out:
+				return 2;
+				break;
+			default:
+				return -1;
+				break;
+			}
+		}
 
-    private:
-        
-        trans_type trans_type;
+		//getter
+		const uint8_t get_client_name_byte_size() {
+			return this->m_client_name_byte_size;
+		}
 
-        data_type data_type;
+		const std::string& get_client_name() {
+			return this->m_client_name;
+		}
 
-        //送信先ipアドレス
-        std::string dst_ip_address;
+		const uint8_t get_client_gmail_byte_size() {
+			return this->m_client_gmail_byte_size;
+		}
 
-        //送信元IPアドレス
-        std::string src_ip_address;
+		const std::string& get_client_gmail() {
+			return this->m_client_gmail;
+		}
 
-        //送信先クライアントID
-        std::string dst_client_id;
+		const uint8_t get_client_password_byte_size() {
+			return this->m_client_password_byte_size;
+		}
 
-        //送信元クライアントID
-        std::string src_client_id;
+		const std::string& get_client_password() {
+			return this->m_client_password;
+		}
+		
+		void set_sign_type(const uint8_t& sign_type);
+		void set_client_name_byte_size(const uint8_t& name_byte_size);
+		void set_client_name(const std::string& name);
+		void set_client_gmail_byte_size(const uint8_t& gmail_byte_size);
+		void set_client_gmail(const std::string& gmail);
+		void set_client_password_byte_size(const uint8_t& password_byte_size);
+		void set_client_password(const std::string& password);
 
-        //送信先チャットルームID
-        std::string dst_chatroom_id;
 
-        std::string main_data;
+		//setter
 
-public:
-        MT001Data();
-        ~MT001Data();
-
-        
-        void set_trans_type(const int& trans_type);
-
-        void set_data_type(const int& data_type);
-
-        void set_dst_ip_address(const std::string& dst_ip);
-
-        void set_src_ip_address(const std::string& src_ip);
-
-        void set_dst_client_id(const std::string& dst_client_id);
-
-        void set_src_client_id(const std::string& src_client_id);
-
-        void set_dst_chatroom_id(const std::string& dst_chatroom_id);
-
-        void set_main_data(const std::string& main_data);
-
-        const int get_trans_type() {
-            switch (trans_type)
-            {
-            case MT001Receiver::MT001Data::trans_type::unicast:
-                return 0;
-                break;
-            case MT001Receiver::MT001Data::trans_type::multicast:
-                return 1;
-                break;
-            case MT001Receiver::MT001Data::trans_type::bloadcast:
-                return 2;
-                break;
-            default:
-                return -1;
-                break;
-            }
-        }
-
-        const int get_data_type() {
-            switch (data_type)
-            {
-            case MT001Receiver::MT001Data::data_type::message:
-                return 0;
-                break;
-            case MT001Receiver::MT001Data::data_type::image:
-                return 1;
-                break;
-            case MT001Receiver::MT001Data::data_type::video:
-                return 2;
-                break;
-            case MT001Receiver::MT001Data::data_type::contact_details:
-                return 3;
-                break;
-            default:
-                return -1;
-                break;
-            }
-        }
-
-        std::string& get_dst_ip() {
-            return dst_ip_address;
-        }
-        std::string& get_src_ip() {
-            return src_ip_address;
-        }
-        std::string& get_dst_client_id() {
-            return dst_client_id;
-        }
-        std::string& get_src_client_id() {
-            return src_client_id;
-        }
-        std::string& get_dst_chatroom_id() {
-            return dst_chatroom_id;
-        }
-        std::string& get_main_data() {
-            return main_data;
-        }
-    };
+		
+	};
 
 private:
-    MT001Data mt001_data;
-    
-
-
-private:
-    
-    //ユニキャストorマルチキャストなのかをデータから抽出する
-    bool extraction_trans_type(const std::string& data);
-
-   
-    //送信先のIPアドレスを抽出する(未実装)
-    bool extraction_dst_ip(const std::string &data);
-
-    //送信元のIPアドレスを抽出する
-    bool extraction_src_ip(const std::string& data) override;
-
-    bool extraction_dst_client_id(const std::string& data);
-
-    bool extraction_src_clinet_id(const std::string& data);
-        
-    //送信先のグループIDを抽出する
-    bool extraction_dst_chatroom_id(const std::string& data);
-
-    //データタイプを抽出する(未実装)
-    bool extraction_data_type(const std::string& data);
- 
-    //暗号化されているペイロードを抽出する
-    bool extraction_main_data(const std::string& data);
-
-    //データを送信する
-    bool store_receive_data();
-
-   
-    void print_src_recv_data(const std::string& data, const ClientHandler& client_handler, int& detection_num, int& receive_result);
-   
-
-    std::string remove_zero_padding(std::string& ip_address);
+	MT001Data mt001_data;
 
 public:
     MT001Receiver();
     ~MT001Receiver();
-
-    //データ受信処理
-    int data_receive(const ClientHandler& client_handler, int detection_num);
-    
-    bool data_extraction(const std::string& data) override;
-
-    const MT001Data& get_mt001_data() {
-        return this->mt001_data;
-    }
-    const std::string& get_dst_ip_address() {
-        return mt001_data.get_dst_ip();
-    }
-
-    const int get_trans_type() {
-        return mt001_data.get_trans_type();
-    }
-
 };
-
-#endif // !MT001RECEIVER_H_
-
 

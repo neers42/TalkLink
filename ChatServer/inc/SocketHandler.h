@@ -52,40 +52,40 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	//リッスンソケット生成用のパラメータ
-	struct addrinfo *result = NULL, param, multicast_tx_param, bloadcast_tx_param;
+	struct addrinfo *m_result = NULL, m_param, m_multicast_tx_param, m_bloadcast_tx_param;
 
-	WSADATA wsa_data;
+	WSADATA m_wsa_data;
 
-	fd_set fds, fd_read;
+	fd_set m_fds, m_fd_read;
 
-	timeval timeout;
+	timeval m_timeout;
 
 	//リッスンソケット
-	SOCKET tcp_listen_socket;
+	SOCKET m_tcp_listen_socket;
 
 	//UDPブロードキャスト送信用ソケット
-	SOCKET udp_bloadcast_tx_socket;
+	SOCKET m_udp_bloadcast_tx_socket;
 
 	//UDPマルチキャスト送信用ソケット
-	SOCKET udp_multicast_tx_socket;
+	SOCKET m_udp_multicast_tx_socket;
 
 	//サーバのアプリケーションポート番号
-	int port = 0;
+	int m_port = 0;
 
 	//初期化用のsockaddr_in構造体
-	struct sockaddr_in init_sockaddr_in;
+	struct sockaddr_in m_init_sockaddr_in;
 	
 	//マルチキャスト用のsockaddr_in構造体
-	struct sockaddr_in multicast_tx_addr, bloadcast_tx_addr;
+	struct sockaddr_in m_multicast_tx_addr, m_bloadcast_tx_addr;
 
 	//ローカルIPアドレス
-	DWORD i_count;
-	PMIB_IPADDRTABLE ip_addr_table;
-	DWORD dw_size = 0;
-	DWORD dw_ret_val = 0;
-	std::string local_ip_addr = "";
+	DWORD m_i_count;
+	PMIB_IPADDRTABLE m_ip_addr_table;
+	DWORD m_dw_size = 0;
+	DWORD m_dw_ret_val = 0;
+	std::string m_local_ip_addr = "";
 
-	int ttl = 0;
+	int m_ttl = 0;
 
 
 /*
@@ -151,11 +151,11 @@ public:
 
 	
 	SOCKET get_listen_socket() {
-		return tcp_listen_socket;
+		return m_tcp_listen_socket;
 	}
 
 	SOCKET get_udp_multicast_tx_socket() {
-		return udp_multicast_tx_socket;
+		return m_udp_multicast_tx_socket;
 	}
 
 	//サーバのIPアドレスを表示する

@@ -1,6 +1,6 @@
 #ifndef SENDER_H_
 #define SENDER_H_
-#include "MT001Receiver.h"
+#include "MT002Receiver.h"
 #include "ClientHandler.h"
 #include "AppException.h"
 class Sender

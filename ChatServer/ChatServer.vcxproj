@@ -111,7 +111,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;Ws2_32.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;Ws2_32.lib;iphlpapi.lib;Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\MT001Receiver.cpp" />
     <ClCompile Include="src\LoginHandler.cpp" />
     <ClCompile Include="src\ChatRoomHandler.cpp" />
     <ClCompile Include="src\ClientHandler.cpp" />
@@ -138,7 +139,7 @@
     <ClCompile Include="src\LogHandler.cpp" />
     <ClCompile Include="src\DataBaseAccesor.cpp" />
     <ClCompile Include="src\Sender.cpp" />
-    <ClCompile Include="src\MT001Receiver.cpp" />
+    <ClCompile Include="src\MT002Receiver.cpp" />
     <ClCompile Include="src\AppException.cpp" />
     <ClCompile Include="src\ExceptionBase.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -157,11 +158,12 @@
     <ClInclude Include="inc\SocketHandler.h" />
     <ClInclude Include="inc\StringFormat.h" />
     <ClInclude Include="inc\Receiver.h" />
-    <ClInclude Include="inc\MT001Receiver.h" />
+    <ClInclude Include="inc\MT002Receiver.h" />
     <ClInclude Include="inc\Sender.h" />
     <ClInclude Include="inc\LogHandler.h" />
     <ClInclude Include="inc\ServerTime.h" />
     <ClInclude Include="inc\LoginHandler.h" />
+    <ClInclude Include="inc\MT001Receiver.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ini\socket_setting.ini" />

@@ -7,7 +7,13 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <memory>
+#include <rpcdce.h>
+#include "AppException.h"
+#include "StringFormat.h"
+#include "ServerTime.h"
 #define MAX_CONNECT_NUM 50000
+
+#define DEBUG
 
 class ClientHandler
 {
@@ -18,16 +24,14 @@ private:
 
 		//Client private•Ï”
 	private:
-		std::string client_id;
-		std::string client_name;
-		std::string client_gmail;
-		SOCKET client_socket;
-		struct sockaddr_in client_sockaddr_in;
-		socklen_t socket_addr_in_length = sizeof(client_sockaddr_in);
-		std::string client_ipv4_addr = "";
+		std::string m_client_id;
+		std::string m_client_name;
+		std::string m_client_gmail;
+		SOCKET m_client_socket;
+		struct sockaddr_in m_client_sockaddr_in;
+		socklen_t m_socket_addr_in_length = sizeof(m_client_sockaddr_in);
+		std::string m_client_ipv4_addr = "";
 
-		//ClientprivateŠÖ”
-		std::string generate_client_id();
 
 	public:
 		explicit Client();
@@ -38,93 +42,95 @@ private:
 
 		//getter
 		std::string get_client_id() {
-			return client_id;
+			return m_client_id;
 		}
 
 		const std::string get_client_id() const {
-			return client_id;
+			return m_client_id;
 		}
 
 		std::string get_client_name() {
-			return client_name;
+			return m_client_name;
 		}
 		const std::string get_client_name() const{
-			return client_name;
+			return m_client_name;
 		}
 
 		std::string get_client_gmail() {
-			return client_gmail;
+			return m_client_gmail;
 		}
 
 		const std::string get_client_gmail() const{
-			return client_gmail;
+			return m_client_gmail;
 		}
 
 		SOCKET get_client_socket() {
-			return client_socket;
+			return m_client_socket;
 		}
 
 		const SOCKET get_client_socket() const{
-			return client_socket;
+			return m_client_socket;
 		}
 
 		struct sockaddr_in get_sockaddr_in() {
-			return client_sockaddr_in;
+			return m_client_sockaddr_in;
 		}
 
 		const struct sockaddr_in get_sockaddr_in() const {
-			return client_sockaddr_in;
+			return m_client_sockaddr_in;
 		}
 
 		socklen_t get_sockaddr_in_length() {
-			return socket_addr_in_length;
+			return m_socket_addr_in_length;
 		}
 
 		const socklen_t get_sockaddr_in_length() const{
-			return socket_addr_in_length;
+			return m_socket_addr_in_length;
 		}
 
 		std::string get_client_ipv4_addr() {
-			return client_ipv4_addr;
+			return m_client_ipv4_addr;
 		}
 
 		const std::string get_client_ipv4_addr() const{
-			return client_ipv4_addr;
+			return m_client_ipv4_addr;
 		}
 
 		//setter
 		void set_client_id(std::string id) {
-			client_id = id;
+			m_client_id = id;
 		}
 		
 		void set_client_name(std::string name) {
-			client_name = name;
+			m_client_name = name;
 		}
 
 		void set_client_gmail(std::string gmail) {
-			client_gmail = gmail;
+			m_client_gmail = gmail;
 		}
 		void set_client_socket(SOCKET socket) {
-			client_socket = socket;
+			m_client_socket = socket;
 		}
 		void set_client_sockaddr_in(struct sockaddr_in sock_in) {
-			client_sockaddr_in = sock_in;
+			m_client_sockaddr_in = sock_in;
 		}
 
 		void set_socket_addr_in_length(socklen_t length) {
-			socket_addr_in_length = length;
+			m_socket_addr_in_length = length;
 		}
 		void set_client_ipv4_addr(std::string ipv4_addr) {
-			client_ipv4_addr = ipv4_addr;
+			m_client_ipv4_addr = ipv4_addr;
 		}
 
 		bool operator==(const Client& other_client)const {
-			return this->client_id == other_client.client_id;
+			return this->m_client_id == other_client.m_client_id;
 		}
+		
+
 	};
 	friend class SocketHandler;
 	friend class Receiver;
-	friend class MT001Receiver;
+	friend class MT002Receiver;
 	friend class Sender;
 	friend class ChatroomHandler;
 	friend class LoginHandler;
@@ -136,11 +142,15 @@ private:
 	Client init_client = Client();
 	Client client_for_setting = Client();
 
+	//ClientprivateŠÖ”
+	std::string generate_client_id();
+
+
 public:
 	ClientHandler();
 	~ClientHandler();
-	void add_client(const Client& client, std::uint32_t add_num);
-	void delete_client(Client client);
+	bool add_client(const Client& client, std::uint32_t add_num);
+	bool delete_client(const Client& client);
 
 	std::vector<Client> get_client_list() {
 		return connected_client_list;

@@ -12,7 +12,7 @@ ServerControlleFacade::~ServerControlleFacade()
 {
 
 	delete m_socket_handler;
-	delete m_001receiver;
+	delete m_mt002receiver;
 	delete m_sender;
 	delete m_server_time;
 	
@@ -92,15 +92,18 @@ void ServerControlleFacade::run()
 
 				//TODO⇒メッセージをsendするときに
 				if (std::equal(mt.begin(), mt.end(), "001")) {
-					if (m_001receiver->data_extraction(receive_data)) {
-						switch (m_001receiver->get_trans_type())
+									
+				}
+				else if (std::equal(mt.begin(), mt.end(), "002")) {
+					if (m_mt002receiver->data_extraction(receive_data)) {
+						switch (m_mt002receiver->get_trans_type())
 						{
 						//TCPユニキャスト
 						case 0:
 							m_sender->tcp_unicast_data(m_client_handler, 
 												receive_data, receive_result,
 												m_socket_handler->search_connect_client_socket_num_from_ip(m_client_handler,
-													this->m_001receiver->get_dst_ip_address()));
+													this->m_mt002receiver->get_dst_ip_address()));
 
 							break;
 
@@ -121,9 +124,6 @@ void ServerControlleFacade::run()
 						std::cerr << StringFormat("%s[INFO]The message receiving process was suspended.", ServerTime::get_current_time()) << std::endl;
 						break;
 					}
-					
-				}
-				else if (std::equal(mt.begin(), mt.end(), "002")) {
 
 				}
 				break;

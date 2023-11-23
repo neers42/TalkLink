@@ -1,7 +1,7 @@
 #ifndef SERVERCONTROLLFACADE_H_
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
-#include "MT001Receiver.h"
+#include "MT002Receiver.h"
 #include "Sender.h"
 #include "ServerTime.h"
 #include "ClientHandler.h"
@@ -12,7 +12,7 @@ class ServerControlleFacade
 {
 private:
 	SocketHandler* m_socket_handler = new SocketHandler();
-	MT001Receiver* m_001receiver = new MT001Receiver();
+	MT002Receiver* m_mt002receiver = new MT002Receiver();
 	Sender* m_sender = new Sender();
 	ServerTime* m_server_time = new ServerTime();
 	ClientHandler m_client_handler = ClientHandler();

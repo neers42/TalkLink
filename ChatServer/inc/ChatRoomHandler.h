@@ -22,8 +22,8 @@ private:
 		
 		//コンストラクタ
 		template<typename...Args>
-		ChatRoom(const std::string& chatroom_name, Args... args) : chatroom_name{chatroom_name} {
-			this->chatroom_id = issue_chatroom_id();
+		ChatRoom(const std::string& chatroom_name, Args... args) : m_chatroom_name{chatroom_name} {
+			this->m_chatroom_id = issue_chatroom_id();
 			client_list.push_back(args...);
 		}
 
@@ -39,9 +39,11 @@ private:
 
 
 	private:
-		std::string chatroom_id = "";
-		std::string chatroom_name;
+		std::string m_chatroom_id = "";
+		std::string m_chatroom_name = "";
 		std::vector<ClientHandler::Client> client_list;
+
+	private:
 		std::vector<ClientHandler::Client>::iterator search_client_form_chatroom(const ClientHandler::Client& client);
 		
 	};
@@ -56,7 +58,7 @@ public:
 
 	//private変数
 private:
-	std::vector<ChatRoom> chatroom_list;
+	std::vector<ChatRoom> m_chatroom_list;
 
 	//private関数
 private:
