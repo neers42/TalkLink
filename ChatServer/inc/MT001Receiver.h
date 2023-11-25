@@ -29,7 +29,7 @@ class MT001Receiver :
 		uint8_t m_client_name_byte_size;
 		std::string m_client_name;
 		uint8_t m_client_mail_byte_size;
-		std::string m_client_gmail;
+		std::string m_client_mail_addr;
 		uint8_t m_client_password_byte_size;
 		std::string m_client_password;
 
@@ -48,8 +48,8 @@ class MT001Receiver :
 		void set_sign_type(const uint8_t& sign_type);
 		void set_client_name_byte_size(const uint8_t& name_byte_size);
 		void set_client_name(const std::string& name);
-		void set_client_mail_addr_byte_size(const uint8_t& gmail_byte_size);
-		void set_client_mail_addr(const std::string& gmail);
+		void set_client_mail_addr_byte_size(const uint8_t& mail_addr_byte_size);
+		void set_client_mail_addr(const std::string& mail_addr);
 		void set_client_password_byte_size(const uint8_t& password_byte_size);
 		void set_client_password(const std::string& password);
 
@@ -72,5 +72,6 @@ public:
     ~MT001Receiver();
 
 	bool data_extraction(const std::string& data) override;
+	MT001Data& get_mt001_data();
 };
 

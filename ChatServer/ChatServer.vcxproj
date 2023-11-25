@@ -131,8 +131,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\FirebaseAuthHandler.cpp" />
     <ClCompile Include="src\MT001Receiver.cpp" />
-    <ClCompile Include="src\LoginHandler.cpp" />
     <ClCompile Include="src\ChatRoomHandler.cpp" />
     <ClCompile Include="src\ClientHandler.cpp" />
     <ClCompile Include="src\ServerTime.cpp" />
@@ -148,6 +148,7 @@
     <ClCompile Include="src\Receiver.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\FirebaseAuthHandler.h" />
     <ClInclude Include="inc\ChatRoomHandler.h" />
     <ClInclude Include="inc\ClientHandler.h" />
     <ClInclude Include="inc\DataBaseAccesor.h" />
@@ -162,7 +163,6 @@
     <ClInclude Include="inc\Sender.h" />
     <ClInclude Include="inc\LogHandler.h" />
     <ClInclude Include="inc\ServerTime.h" />
-    <ClInclude Include="inc\LoginHandler.h" />
     <ClInclude Include="inc\MT001Receiver.h" />
   </ItemGroup>
   <ItemGroup>

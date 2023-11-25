@@ -34,11 +34,12 @@ bool MT001Receiver::data_extraction(const std::string& data)
 	std::cout << StringFormat("%s[DEBUG]Client Mail Addr Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_mail_addr_byte_size()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Client Mail Address : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_mail_addr()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Client Password Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_password_byte_size()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Client Password : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_password()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Client Password : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_password()) << std::endl;
 #endif // DEBUG_MT001_CONTAIN
 
 	return true;
 }
+
 
 MT001Receiver::MT001Data::MT001Data()
 {
@@ -88,7 +89,7 @@ const uint8_t MT001Receiver::MT001Data::get_client_mail_addr_byte_size()
 
 const std::string& MT001Receiver::MT001Data::get_client_mail_addr()
 {
-	return this->m_client_gmail;
+	return this->m_client_mail_addr;
 }
 
 const uint8_t MT001Receiver::MT001Data::get_client_password_byte_size()
@@ -123,7 +124,7 @@ void MT001Receiver::MT001Data::set_sign_type(const uint8_t& sign_type)
 
 void MT001Receiver::MT001Data::set_client_name_byte_size(const uint8_t& name_byte_size)
 {
-	this->m_client_mail_byte_size = name_byte_size;
+	this->m_client_name_byte_size = name_byte_size;
 }
 
 void MT001Receiver::MT001Data::set_client_name(const std::string& name)
@@ -131,14 +132,14 @@ void MT001Receiver::MT001Data::set_client_name(const std::string& name)
 	this->m_client_name = name;
 }
 
-void MT001Receiver::MT001Data::set_client_mail_addr_byte_size(const uint8_t& gmail_byte_size)
+void MT001Receiver::MT001Data::set_client_mail_addr_byte_size(const uint8_t& mail_addr_byte_size)
 {
-	this->m_client_mail_byte_size = gmail_byte_size;
+	this->m_client_mail_byte_size = mail_addr_byte_size;
 }
 
-void MT001Receiver::MT001Data::set_client_mail_addr(const std::string& gmail)
+void MT001Receiver::MT001Data::set_client_mail_addr(const std::string& mail_addr)
 {
-	this->m_client_gmail = gmail;
+	this->m_client_mail_addr = mail_addr;
 }
 
 void MT001Receiver::MT001Data::set_client_password_byte_size(const uint8_t& password_byte_size)
@@ -182,7 +183,7 @@ bool MT001Receiver::extraction_client_name_byte_size(const std::string& data)
 		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
-		
+		std::string client_namebs_str = data.substr(start_pos_split, end_pos_split);
 		uint8_t client_name_byte_size = std::stoi(data.substr(start_pos_split, end_pos_split));
 		this->m_mt001_data.set_client_name_byte_size(client_name_byte_size);
 	}
@@ -231,8 +232,8 @@ bool MT001Receiver::extraction_client_mail_addr_byte_size(const std::string& dat
 			return false;
 		}
 		uint8_t start_pos_split = CLIENT_NAME_START_POS + this->m_mt001_data.get_client_name_byte_size();
-		uint8_t client_gmail_byte_size = std::stoi(data.substr(start_pos_split, CLIENT_MAIL_ADDRESS_BYTE_SIZE));
-		this->m_mt001_data.set_client_mail_addr_byte_size(client_gmail_byte_size);
+		uint8_t client_mail_byte_size = std::stoi(data.substr(start_pos_split, CLIENT_MAIL_ADDRESS_BYTE_SIZE));
+		this->m_mt001_data.set_client_mail_addr_byte_size(client_mail_byte_size);
 	}
 	catch (const std::invalid_argument& ia_ex) {
 		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
@@ -282,8 +283,8 @@ bool MT001Receiver::extraction_client_password_byte_size(const std::string& data
 								+ this->m_mt001_data.get_client_name_byte_size()
 								+ CLIENT_MAIL_ADDRESS_BYTE_SIZE 
 								+ this->m_mt001_data.get_client_mail_addr_byte_size();
-		uint8_t client_gmail_byte_size = std::stoi(data.substr(start_pos_split, CLIENT_PASSWORD_BYTE_SIZE));
-		this->m_mt001_data.set_client_mail_addr_byte_size(client_gmail_byte_size);
+		uint8_t client_password_byte_size = std::stoi(data.substr(start_pos_split, CLIENT_PASSWORD_BYTE_SIZE));
+		this->m_mt001_data.set_client_password_byte_size(client_password_byte_size);
 	}
 	catch (const std::invalid_argument& ia_ex) {
 		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
@@ -311,6 +312,7 @@ bool MT001Receiver::extraction_client_password(const std::string& data)
 			+ CLIENT_PASSWORD_BYTE_SIZE;
 		uint8_t end_pos_split = this->m_mt001_data.get_client_password_byte_size();
 		std::string new_client_password = data.substr(start_pos_split, end_pos_split);
+		this->m_mt001_data.set_client_password(new_client_password);
 	}
 	catch (const std::out_of_range& oor_ex) {
 		THROW_APP_EXCEPTION(StringFormat("Out of rangeF%s", oor_ex.what()));
@@ -324,3 +326,9 @@ bool MT001Receiver::extraction_client_password(const std::string& data)
 	}
 	return true;
 }
+
+MT001Receiver::MT001Data& MT001Receiver::get_mt001_data()
+{
+	return this->m_mt001_data;
+}
+

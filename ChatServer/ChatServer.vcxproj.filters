@@ -54,10 +54,10 @@
     <ClCompile Include="src\ChatRoomHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\LoginHandler.cpp">
+    <ClCompile Include="src\MT001Receiver.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\MT001Receiver.cpp">
+    <ClCompile Include="src\FirebaseAuthHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -104,10 +104,10 @@
     <ClInclude Include="inc\ChatRoomHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\LoginHandler.h">
+    <ClInclude Include="inc\MT001Receiver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\MT001Receiver.h">
+    <ClInclude Include="inc\FirebaseAuthHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

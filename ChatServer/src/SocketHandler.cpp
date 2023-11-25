@@ -902,7 +902,7 @@ std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> SocketHandler::accept_clien
 			ClientHandler::Client new_client = ClientHandler::Client();
 			SOCKET accept_client_socket_result;
 			struct sockaddr_in accept_sockaddr_in_result;
-			socklen_t accept_socket_addr_in_length_rength_result = client_handler.get_client_list()[check_n_invalid_socket_result].get_sockaddr_in_length();
+			socklen_t accept_socket_addr_in_length_rength_result = client_handler.get_connected_client_list()[check_n_invalid_socket_result].get_sockaddr_in_length();
 			accept_client_socket_result = accept(m_tcp_listen_socket,(struct sockaddr*)&accept_sockaddr_in_result, &accept_socket_addr_in_length_rength_result);
 		/*	new_client.set_client_socket(temp_client_socket);
 			new_client.set_client_sockaddr_in(temp_sockaddr_in);
@@ -991,7 +991,7 @@ int SocketHandler::check_next_invalid_socket(const ClientHandler& client_handler
 
 	for (int n_invalid_socket = 0; n_invalid_socket < MAX_CONNECT_NUM; n_invalid_socket++) {
 
-		if (client_handler.get_client_list()[n_invalid_socket].get_client_socket() == INVALID_SOCKET)
+		if (client_handler.get_connected_client_list()[n_invalid_socket].get_client_socket() == INVALID_SOCKET)
 			return n_invalid_socket;
 	}
 	return -1;

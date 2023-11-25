@@ -58,26 +58,20 @@ void ServerControlleFacade::run()
 			struct sockaddr_in new_client_sockaddr_in = { 0 };
 			socklen_t new_client_socklen_t = 0;
 			uint32_t check_invalid_result = 0;
-			//m_socket_handler->accept_client_socket(m_client_handler);
 			std::tie(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, check_invalid_result) = m_socket_handler->accept_client_socket(m_client_handler);
 			ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
 			m_socket_handler->extraction_client_ip(check_invalid_result, &new_client);
 			m_client_handler.add_client(new_client, check_invalid_result);
 			std::cout << ServerTime::get_current_time() << "[INFO]Registered on the client list[" << check_invalid_result
-				<< "] => IP:" << m_client_handler.get_client_list()[check_invalid_result].get_client_ipv4_addr() << "." << std::endl;
+				<< "] => IP:" << m_client_handler.get_connected_client_list()[check_invalid_result].get_client_ipv4_addr() << "." << std::endl;
 		};
 			break;
 		
 		//接続中のクライアントリストから通知があった場合
 		default:
-			//receive_result = m_receiver->data_receive(m_socket_handler->get_client_socket_info_list(), monitor_result);
 				int receive_result = 0;
 				std::string receive_data, mt, trans_type = "";
 				std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
-			
-
-			//receive_result = m_001receiver->data_receive(m_client_handler ,monitor_result);
-				
 			if (receive_result == 0) {
 				m_socket_handler->disconnect_socket(m_client_handler, monitor_result);
 			}
@@ -88,25 +82,42 @@ void ServerControlleFacade::run()
 			//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
 			else {
 				mt = Receiver::extraction_mt(receive_data);
-				trans_type = Receiver::extraction_trans_type(receive_data);
 
-				//TODO⇒メッセージをsendするときに
+				//MTごとに処理を変更する
 				if (std::equal(mt.begin(), mt.end(), "001")) {
 					if (m_mt001receiver->data_extraction(receive_data)) {
+						switch (m_mt001receiver->get_mt001_data().get_sign_type())
+						{
+						case 0:			//sign up
+							break;
 
+						case 1:			//sign in
+							break;
+
+						case 2:			//sign out
+							break;
+
+						default:
+							break;
+						}
+					}
+					else
+					{
+						std::cerr << StringFormat("%s\033[31m[ERORR]\033[mMT001 received processing was not completed normally.");
+						break;
 					}
 				}
 				else if (std::equal(mt.begin(), mt.end(), "002")) {
+					trans_type = Receiver::extraction_trans_type(receive_data);
 					if (m_mt002receiver->data_extraction(receive_data)) {
 						switch (m_mt002receiver->get_trans_type())
 						{
 						//TCPユニキャスト
 						case 0:
 							m_sender->tcp_unicast_data(m_client_handler, 
-												receive_data, receive_result,
-												m_socket_handler->search_connect_client_socket_num_from_ip(m_client_handler,
-													this->m_mt002receiver->get_dst_ip_address()));
-
+														receive_data, receive_result,
+														m_socket_handler->search_connect_client_socket_num_from_ip(m_client_handler,
+														this->m_mt002receiver->get_dst_ip_address()));
 							break;
 
 						//TCPでマルチキャスト
@@ -118,7 +129,7 @@ void ServerControlleFacade::run()
 							break;
 
 						default:
-							std::cerr << StringFormat("%s\033[31m[ERROR]\033[mThe communication type is different.") << std::endl;
+							std::cerr << StringFormat("%s\033[31m[ERORR]\033[mThe communication type is different.") << std::endl;
 							break;
 						}
 											}

@@ -430,6 +430,7 @@ bool MT002Receiver::data_extraction(const std::string& data)
 	return true;
 }
 
+
 std::string MT002Receiver::remove_zero_padding(std::string& ip_address)
 {
 	std::stringstream ss(ip_address);
@@ -531,3 +532,91 @@ void MT002Receiver::MT002Data::set_main_data(const std::string& main_data)
 {
 	this->m_main_data = main_data;
 }
+
+const int MT002Receiver::MT002Data::get_trans_type()
+{
+     switch (m_trans_type)
+     {
+	 case MT002Receiver::MT002Data::trans_type::unicast:
+		 break;
+	 case MT002Receiver::MT002Data::trans_type::multicast:
+		 return 1;
+		 break;
+	 case MT002Receiver::MT002Data::trans_type::bloadcast:
+		 return 2;
+		 break;
+	 default:
+		 return -1;
+		 break;
+	 }
+	return 0;
+}
+
+const int MT002Receiver::MT002Data::get_data_type()
+{
+	switch (m_data_type)
+	{
+	case MT002Receiver::MT002Data::data_type::message:
+		return 0;
+		break;
+	case MT002Receiver::MT002Data::data_type::image:
+		return 1;
+		break;
+	case MT002Receiver::MT002Data::data_type::video:
+		return 2;
+		break;
+	case MT002Receiver::MT002Data::data_type::contact_details:
+		return 3;
+		break;
+	default:
+		return -1;
+		break;
+	}
+	return 0;
+}
+
+std::string& MT002Receiver::MT002Data::get_dst_ip()
+{
+	return this->m_dst_ip_address;
+}
+
+std::string& MT002Receiver::MT002Data::get_src_ip()
+{
+	return this->m_src_ip_address;
+}
+
+std::string& MT002Receiver::MT002Data::get_dst_client_id()
+{
+	return this->m_dst_client_id;
+}
+
+std::string& MT002Receiver::MT002Data::get_src_client_id()
+{
+	return this->m_src_client_id;
+}
+
+std::string& MT002Receiver::MT002Data::get_dst_chatroom_id()
+{
+	return this->m_dst_chatroom_id;
+}
+
+std::string& MT002Receiver::MT002Data::get_main_data()
+{
+	return this->m_main_data;
+}
+
+const MT002Receiver::MT002Data& MT002Receiver::get_mt002_data()
+{
+	return this->m_mt002_data;
+}
+
+const std::string& MT002Receiver::get_dst_ip_address()
+{
+	return this->m_mt002_data.get_dst_ip();
+}
+
+const int MT002Receiver::get_trans_type()
+{
+	return this->m_mt002_data.get_trans_type();
+}
+

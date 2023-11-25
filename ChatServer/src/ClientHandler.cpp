@@ -12,8 +12,118 @@ ClientHandler::Client::~Client()
 
 }
 
-ClientHandler::Client::Client(std::string id, std::string name, std::string gmail, SOCKET socket, sockaddr_in sockaddr_in, std::string ipv4_addr) :
-	m_client_id{id}, m_client_name{name}, m_client_mail_addr{gmail}, m_client_socket{socket}, m_client_sockaddr_in{sockaddr_in}, m_client_ipv4_addr{ipv4_addr}
+std::string ClientHandler::Client::get_client_id()
+{
+	return this->m_client_id;
+}
+
+const std::string ClientHandler::Client::get_client_id() const
+{
+	return this->m_client_id;
+}
+
+std::string ClientHandler::Client::get_client_name()
+{
+	return this->m_client_name;
+}
+
+const std::string ClientHandler::Client::get_client_name() const
+{
+	return this->m_client_name;
+}
+
+std::string ClientHandler::Client::get_client_mail_addr()
+{
+	return this->m_client_mail_addr;
+}
+
+const std::string ClientHandler::Client::get_client_mail_addr() const
+{
+	return this->m_client_mail_addr;
+}
+
+SOCKET ClientHandler::Client::get_client_socket()
+{
+	return this->m_client_socket;
+}
+
+const SOCKET ClientHandler::Client::get_client_socket() const
+{
+	return this->m_client_socket;
+}
+
+sockaddr_in ClientHandler::Client::get_sockaddr_in()
+{
+	return this->m_client_sockaddr_in;
+}
+
+const sockaddr_in ClientHandler::Client::get_sockaddr_in() const
+{
+	return this->m_client_sockaddr_in;
+}
+
+socklen_t ClientHandler::Client::get_sockaddr_in_length()
+{
+	return this->m_socket_addr_in_length;
+}
+
+const socklen_t ClientHandler::Client::get_sockaddr_in_length() const
+{
+	return this->m_socket_addr_in_length;
+}
+
+std::string ClientHandler::Client::get_client_ipv4_addr()
+{
+	return this->m_client_ipv4_addr;
+}
+
+const std::string ClientHandler::Client::get_client_ipv4_addr() const
+{
+	return this->m_client_ipv4_addr;
+}
+
+void ClientHandler::Client::set_client_id(std::string id)
+{
+	this->m_client_id = id;
+}
+
+void ClientHandler::Client::set_client_name(std::string name)
+{
+	this->m_client_name = name;
+}
+
+void ClientHandler::Client::set_client_mail_addr(std::string mail_addr)
+{
+	this->m_client_mail_addr = mail_addr;
+}
+
+void ClientHandler::Client::set_client_socket(SOCKET socket)
+{
+	this->m_client_socket = socket;
+}
+
+void ClientHandler::Client::set_client_sockaddr_in(sockaddr_in sock_in)
+{
+	this->m_client_sockaddr_in = sock_in;
+}
+
+void ClientHandler::Client::set_socket_addr_in_length(socklen_t length)
+{
+	this->m_socket_addr_in_length = length;
+}
+
+void ClientHandler::Client::set_client_ipv4_addr(std::string ipv4_addr)
+{
+	this->m_client_ipv4_addr = ipv4_addr;
+}
+
+bool ClientHandler::Client::operator==(const Client& other_client) const
+{
+	return this->m_client_id == other_client.m_client_id;
+}
+
+ClientHandler::Client::Client(std::string id, std::string name, std::string mail_addr, SOCKET socket, sockaddr_in sockaddr_in, std::string ipv4_addr) :
+	m_client_id{id}, m_client_name{name}, m_client_mail_addr{mail_addr}, m_client_socket{socket}, m_client_sockaddr_in{sockaddr_in}, m_client_ipv4_addr{ipv4_addr}
 {
 
 }
@@ -124,8 +234,65 @@ bool ClientHandler::add_client(const Client& client, std::uint32_t add_num)
 	return true;
 }
 
-bool ClientHandler::delete_client(const Client& client)
+bool ClientHandler::delete_client(const Client& client, uint32_t delete_num)
 {
 
 	return true;
 }
+
+std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list()
+{
+	return this->connected_client_list;
+}
+
+const std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list() const
+{
+	return this->connected_client_list;
+}
+
+ClientHandler::Client ClientHandler::get_init_client()
+{
+	return this->init_client;
+}
+
+const ClientHandler::Client ClientHandler::get_init_client() const
+{
+	return this->init_client;
+}
+
+void ClientHandler::set_client_id(std::string id, uint32_t list_num)
+{
+	this->connected_client_list[list_num].set_client_id(id);
+}
+
+void ClientHandler::set_client_name(std::string name, uint32_t list_num)
+{
+	this->connected_client_list[list_num].set_client_name(name);
+}
+
+void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
+{
+	this->connected_client_list[list_num].set_client_mail_addr(mail_addr);
+}
+
+void ClientHandler::set_clietn_socket(SOCKET socket, uint32_t list_num)
+{
+	this->connected_client_list[list_num].set_client_socket(socket);
+}
+
+void ClientHandler::set_client_sockaddr_in(sockaddr_in sock_in, uint32_t list_num)
+{
+	this->connected_client_list[list_num].set_client_sockaddr_in(sock_in);
+}
+
+void ClientHandler::set_socket_addr_in_length(socklen_t length, uint32_t list_num)
+{
+	this->connected_client_list[list_num].set_socket_addr_in_length(length);
+}
+
+void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num)
+{
+	this->connected_client_list[list_num].set_client_ipv4_addr(ipv4_addr);
+}
+
+
