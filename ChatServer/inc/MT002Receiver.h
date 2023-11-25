@@ -12,7 +12,7 @@
 #include <string>
 
 
-#define DEBUG
+#define DEBUG_MT002_CONTAIN
 #define MAX_RECEIVE_MESSAGE_LEN 2048
 
 struct client_socket_info;
@@ -164,7 +164,7 @@ private:
     bool extraction_dst_ip(const std::string &data);
 
     //送信元のIPアドレスを抽出する
-    bool extraction_src_ip(const std::string& data) override;
+    bool extraction_src_ip(const std::string& data);
 
     bool extraction_dst_client_id(const std::string& data);
 

@@ -201,7 +201,7 @@ bool MT002Receiver::extraction_dst_ip(const std::string& data)
 	}
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -401,22 +401,22 @@ void MT002Receiver::print_src_recv_data(const std::string& data, const ClientHan
 bool MT002Receiver::data_extraction(const std::string& data)
 {
 
-	bool trans_type_ex_ret = this->extraction_trans_type(data);
-	bool dst_ip_ex_ret = this->extraction_dst_ip(data);
-	bool src_ip_ex_ret = this->extraction_src_ip(data);
-	bool dst_client_id_ret = this->extraction_dst_client_id(data);
-	bool src_client_id_ret = this->extraction_src_clinet_id(data);
-	bool chatroom_id_ex_ret = this->extraction_dst_chatroom_id(data);
-	bool data_type_ex_ret = this->extraction_data_type(data);
-	bool main_data_ex_ret = this->extraction_main_data(data);
+	bool trans_type_ex_res = this->extraction_trans_type(data);
+	bool dst_ip_ex_res = this->extraction_dst_ip(data);
+	bool src_ip_ex_res = this->extraction_src_ip(data);
+	bool dst_client_id_res = this->extraction_dst_client_id(data);
+	bool src_client_id_res = this->extraction_src_clinet_id(data);
+	bool chatroom_id_ex_res = this->extraction_dst_chatroom_id(data);
+	bool data_type_ex_res = this->extraction_data_type(data);
+	bool main_data_ex_res = this->extraction_main_data(data);
 
-	if (trans_type_ex_ret == false || data_type_ex_ret == false
-		|| dst_ip_ex_ret == false || src_ip_ex_ret == false
-		|| dst_client_id_ret == false || src_client_id_ret == false
-		|| chatroom_id_ex_ret == false || main_data_ex_ret == false) {
+	if (trans_type_ex_res == false || data_type_ex_res == false
+		|| dst_ip_ex_res == false || src_ip_ex_res == false
+		|| dst_client_id_res == false || src_client_id_res == false
+		|| chatroom_id_ex_res == false || main_data_ex_res == false) {
 		return false;
 	}
-#ifdef DEBUG
+#ifdef DEBUG_MT002_CONTAIN
 	std::cout << StringFormat("%s[DEBUG]Transport Type(0: unicast 1: multicast, 2:bloadcast) : %d", ServerTime::get_current_time(), this->m_mt002_data.get_trans_type()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Dist IP Adress : %s", ServerTime::get_current_time(), this->m_mt002_data.get_dst_ip()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Source IP Adress : %s", ServerTime::get_current_time(), this->m_mt002_data.get_src_ip()) << std::endl;

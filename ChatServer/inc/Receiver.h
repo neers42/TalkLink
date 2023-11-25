@@ -84,7 +84,6 @@ protected:
 	};
 	protected:
 	virtual bool data_extraction(const std::string& data) = 0;
-	virtual bool extraction_src_ip(const std::string& data) = 0;
 
 private:
     static void show_receive_info(const std::string& data, const ClientHandler& client_handler, int& detection_num, int& receive_result);

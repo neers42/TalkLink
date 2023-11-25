@@ -92,7 +92,9 @@ void ServerControlleFacade::run()
 
 				//TODO⇒メッセージをsendするときに
 				if (std::equal(mt.begin(), mt.end(), "001")) {
-									
+					if (m_mt001receiver->data_extraction(receive_data)) {
+
+					}
 				}
 				else if (std::equal(mt.begin(), mt.end(), "002")) {
 					if (m_mt002receiver->data_extraction(receive_data)) {

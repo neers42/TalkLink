@@ -1,6 +1,6 @@
 #include "ClientHandler.h"
 
-ClientHandler::Client::Client():m_client_id{""}, m_client_name{""}, m_client_gmail{""}, m_client_socket{INVALID_SOCKET}, m_client_ipv4_addr{""}
+ClientHandler::Client::Client():m_client_id{""}, m_client_name{""}, m_client_mail_addr{""}, m_client_socket{INVALID_SOCKET}, m_client_ipv4_addr{""}
 {
 	this -> m_client_sockaddr_in.sin_family = AF_INET;
 	this->m_client_sockaddr_in.sin_port = 0;
@@ -13,13 +13,13 @@ ClientHandler::Client::~Client()
 }
 
 ClientHandler::Client::Client(std::string id, std::string name, std::string gmail, SOCKET socket, sockaddr_in sockaddr_in, std::string ipv4_addr) :
-	m_client_id{id}, m_client_name{name}, m_client_gmail{gmail}, m_client_socket{socket}, m_client_sockaddr_in{sockaddr_in}, m_client_ipv4_addr{ipv4_addr}
+	m_client_id{id}, m_client_name{name}, m_client_mail_addr{gmail}, m_client_socket{socket}, m_client_sockaddr_in{sockaddr_in}, m_client_ipv4_addr{ipv4_addr}
 {
 
 }
 
 ClientHandler::Client::Client(const SOCKET socket, const sockaddr_in sockaddr_in, const socklen_t length):
-	m_client_id{""},m_client_name{""}, m_client_gmail{""},
+	m_client_id{""},m_client_name{""}, m_client_mail_addr{""},
 	m_client_socket{socket}, m_client_sockaddr_in{sockaddr_in}, m_socket_addr_in_length{length}, m_client_ipv4_addr{""}
 {
 
@@ -78,7 +78,7 @@ std::string ClientHandler::generate_client_id()
 	}
 
 	std::string converted_uuid_str(reinterpret_cast<char*>(uuid_str));
-#ifdef DEBUG
+#ifdef DEBUG_UUID
 	std::cout << StringFormat("%s[DEBUG]The UUID has been successfully generated. UUIDF%s", ServerTime::get_current_time(), converted_uuid_str) << std::endl;
 #endif // DEBUG
 	
@@ -89,14 +89,22 @@ std::string ClientHandler::generate_client_id()
 
 ClientHandler::ClientHandler()
 {
-	//Client *init_client = new Client();
-	//std::shared_ptr<Client> init_client = std::make_shared<Client>();
-	
-	this->connected_client_list.reserve(MAX_CONNECT_NUM);
-	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-		connected_client_list.push_back(init_client);
+	try
+	{
+		this->connected_client_list.reserve(MAX_CONNECT_NUM);
+		for (int i = 0; i < MAX_CONNECT_NUM; i++) {
+			connected_client_list.push_back(init_client);
+		}
+
 	}
-	
+	catch (const std::length_error& le) {
+		THROW_APP_EXCEPTION(StringFormat("Length ErrorF%s", le.what()));
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cerr << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+	}
+		
 
 }
 

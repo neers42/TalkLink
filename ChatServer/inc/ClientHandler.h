@@ -13,8 +13,8 @@
 #include "ServerTime.h"
 #define MAX_CONNECT_NUM 50000
 
-#define DEBUG
-
+//#define DEBUG
+#define DEBUG_UUID
 class ClientHandler
 {
 private:
@@ -26,7 +26,7 @@ private:
 	private:
 		std::string m_client_id;
 		std::string m_client_name;
-		std::string m_client_gmail;
+		std::string m_client_mail_addr;
 		SOCKET m_client_socket;
 		struct sockaddr_in m_client_sockaddr_in;
 		socklen_t m_socket_addr_in_length = sizeof(m_client_sockaddr_in);
@@ -56,12 +56,12 @@ private:
 			return m_client_name;
 		}
 
-		std::string get_client_gmail() {
-			return m_client_gmail;
+		std::string get_client_mail_addr() {
+			return m_client_mail_addr;
 		}
 
-		const std::string get_client_gmail() const{
-			return m_client_gmail;
+		const std::string get_client_mail_addr() const{
+			return m_client_mail_addr;
 		}
 
 		SOCKET get_client_socket() {
@@ -105,8 +105,8 @@ private:
 			m_client_name = name;
 		}
 
-		void set_client_gmail(std::string gmail) {
-			m_client_gmail = gmail;
+		void set_client_gmail(std::string mail) {
+			m_client_mail_addr = mail;
 		}
 		void set_client_socket(SOCKET socket) {
 			m_client_socket = socket;
@@ -173,8 +173,8 @@ public:
 		client_for_setting.set_client_name(name);
 	}
 
-	void set_client_gmail(std::string gmail) {
-		client_for_setting.set_client_gmail(gmail);
+	void set_client_gmail(std::string mail) {
+		client_for_setting.set_client_gmail(mail);
 	}
 	void set_clietn_socket(SOCKET socket) {
 		client_for_setting.set_client_socket(socket);

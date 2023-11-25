@@ -182,6 +182,7 @@ public:
 	//接続中のクライアントソケットをクローズする
 	void disconnect_socket(ClientHandler& client_handler, int socket_num);
 
+	int check_client_socket_invalid();
 };
 
 #endif // !SOCKETHANDLER_H_

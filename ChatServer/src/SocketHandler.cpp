@@ -1077,6 +1077,11 @@ void SocketHandler::disconnect_socket(ClientHandler& client_handler, int socket_
 
 }
 
+int SocketHandler::check_client_socket_invalid()
+{
+	return 0;
+}
+
 bool SocketHandler::check_valid_socket(SOCKET request_socket)
 {
 	if (request_socket == INVALID_SOCKET)
