@@ -2,6 +2,9 @@
 #define FIREBASEAUTHHANDLER
 class FirebaseAuthHandler
 {
+private:
+
+
 
 public:
 	FirebaseAuthHandler();

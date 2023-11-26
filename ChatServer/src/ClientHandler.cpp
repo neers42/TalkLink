@@ -122,6 +122,19 @@ bool ClientHandler::Client::operator==(const Client& other_client) const
 	return this->m_client_id == other_client.m_client_id;
 }
 
+ClientHandler::Client& ClientHandler::Client::operator=(const Client& other_client)
+{
+	m_client_id = other_client.m_client_id;
+	m_client_name = other_client.m_client_name;
+	m_client_mail_addr = other_client.m_client_mail_addr;
+	m_client_socket = other_client.m_client_socket;
+	m_client_sockaddr_in = other_client.m_client_sockaddr_in;
+	m_socket_addr_in_length = other_client.m_socket_addr_in_length;
+	m_client_ipv4_addr = other_client.m_client_ipv4_addr;
+	return *this;
+}
+
+
 ClientHandler::Client::Client(std::string id, std::string name, std::string mail_addr, SOCKET socket, sockaddr_in sockaddr_in, std::string ipv4_addr) :
 	m_client_id{id}, m_client_name{name}, m_client_mail_addr{mail_addr}, m_client_socket{socket}, m_client_sockaddr_in{sockaddr_in}, m_client_ipv4_addr{ipv4_addr}
 {

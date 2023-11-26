@@ -65,6 +65,7 @@ private:
 		void set_socket_addr_in_length(socklen_t length);
 		void set_client_ipv4_addr(std::string ipv4_addr);
 		bool operator==(const Client& other_client)const;
+		Client &operator=(const Client& other_client);
 
 	};
 	friend class SocketHandler;

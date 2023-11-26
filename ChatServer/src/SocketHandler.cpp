@@ -904,16 +904,9 @@ std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> SocketHandler::accept_clien
 			struct sockaddr_in accept_sockaddr_in_result;
 			socklen_t accept_socket_addr_in_length_rength_result = client_handler.get_connected_client_list()[check_n_invalid_socket_result].get_sockaddr_in_length();
 			accept_client_socket_result = accept(m_tcp_listen_socket,(struct sockaddr*)&accept_sockaddr_in_result, &accept_socket_addr_in_length_rength_result);
-		/*	new_client.set_client_socket(temp_client_socket);
-			new_client.set_client_sockaddr_in(temp_sockaddr_in);
-			new_client.set_socket_addr_in_length(temp_socket_addr_in_length);*/
-
-			
-
+	
 			//acceptしたソケットがINVALID_SOCKETである場合
 			if (accept_client_socket_result == INVALID_SOCKET) {
-			//if (client_handler->get_client_list()[check_n_invalid_socket_result].get_client_socket() == INVALID_SOCKET) {
-
 				switch (WSAGetLastError())
 				{
 				case WSANOTINITIALISED:

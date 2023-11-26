@@ -12,6 +12,7 @@ ServerControlleFacade::~ServerControlleFacade()
 {
 
 	delete m_socket_handler;
+	delete m_mt001receiver;
 	delete m_mt002receiver;
 	delete m_sender;
 	delete m_server_time;
