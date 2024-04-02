@@ -57,8 +57,6 @@ public:
         //setter
         void set_trans_type(const int& trans_type);
         void set_data_type(const int& data_type);
-        void set_dst_ip_address(const std::string& dst_ip);
-        void set_src_ip_address(const std::string& src_ip);
         void set_dst_client_id(const std::string& dst_client_id);
         void set_src_client_id(const std::string& src_client_id);
         void set_dst_chatroom_id(const std::string& dst_chatroom_id);
@@ -67,8 +65,6 @@ public:
         //getter
         const int get_trans_type();
         const int get_data_type();
-        std::string& get_dst_ip();
-        std::string& get_src_ip();
         std::string& get_dst_client_id();
         std::string& get_src_client_id();
         std::string& get_dst_chatroom_id();
@@ -81,8 +77,6 @@ private:
 private:
     
     bool extraction_trans_type(const std::string& data);
-    bool extraction_dst_ip(const std::string &data);
-    bool extraction_src_ip(const std::string& data);
     bool extraction_dst_client_id(const std::string& data);
     bool extraction_src_clinet_id(const std::string& data);
     bool extraction_dst_chatroom_id(const std::string& data);
@@ -102,7 +96,7 @@ public:
     bool data_extraction(const std::string& data) override;
 
     const MT002Data& get_mt002_data();
-    const std::string& get_dst_ip_address();
+    const std::string& get_dst_id();
     const int get_trans_type();
 
 };

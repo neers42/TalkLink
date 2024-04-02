@@ -7,11 +7,12 @@
 #include "ServerTime.h"
 #include "ClientHandler.h"
 #include "ChatRoomHandler.h"
-
+#include "FirebaseAuthHandler.h"
 
 class ServerControlleFacade
 {
 private:
+	FirebaseAuthHandler* m_firebase_auth_handler = new FirebaseAuthHandler();
 	SocketHandler* m_socket_handler = new SocketHandler();
 	MT001Receiver* m_mt001receiver = new MT001Receiver();
 	MT002Receiver* m_mt002receiver = new MT002Receiver();

@@ -6,6 +6,8 @@
 
 int main()
 {
+	std::cout << ServerTime::get_current_time() <<"[INFO]Starting MyChat server version 1.0.0!!" << std::endl;
+
     ServerControlleFacade* server_cont_facade = new ServerControlleFacade();
     server_cont_facade->run();
 

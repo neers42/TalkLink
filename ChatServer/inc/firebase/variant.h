@@ -798,7 +798,8 @@ class Variant {
     size_t len = strlen(value);
     if (len < kMaxSmallStringSize) {
       Clear(static_cast<Type>(kInternalTypeSmallString));
-      strncpy(value_.small_string, value, len + 1);
+      //strncpy(value_.small_string, value, len + 1);
+      strcpy_s(value_.small_string, len + 1, value);
     } else {
       set_mutable_string(std::string(value, len));
     }
@@ -824,7 +825,8 @@ class Variant {
                           bool use_small_string = true) {
     if (value.size() < kMaxSmallStringSize && use_small_string) {
       Clear(static_cast<Type>(kInternalTypeSmallString));
-      strncpy(value_.small_string, value.data(), value.size() + 1);
+      //strncpy(value_.small_string, value.data(), value.size() + 1);
+      strcpy_s(value_.small_string, value.size() + 1, value.data());
     } else {
       Clear(kTypeMutableString);
       *value_.mutable_string_value = value;

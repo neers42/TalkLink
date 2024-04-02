@@ -13,6 +13,8 @@ MT001Receiver::~MT001Receiver()
 bool MT001Receiver::data_extraction(const std::string& data)
 {
 	bool sign_type_ex_res = this->extraction_sign_type(data);
+	bool auth_type_ex_res = this->extraction_auth_type(data);
+	bool client_id_ex_res = this->extraction_client_id(data);
 	bool client_name_byte_size_ex_res = this->extraction_client_name_byte_size(data);
 	bool client_name_ex_res = this->extraction_client_name(data);
 	bool client_mail_addr_byte_size_ex_res = this->extraction_client_mail_addr_byte_size(data);
@@ -20,7 +22,8 @@ bool MT001Receiver::data_extraction(const std::string& data)
 	bool client_password_byte_size_ex_res = this->extraction_client_password_byte_size(data);
 	bool client_password_ex_res = this->extraction_client_password(data);
 
-	if (sign_type_ex_res == false || client_name_byte_size_ex_res == false
+	if (sign_type_ex_res == false || auth_type_ex_res == false
+		||client_id_ex_res == false ||client_name_byte_size_ex_res == false
 		|| client_name_ex_res == false || client_mail_addr_byte_size_ex_res == false
 		|| client_mail_addr_ex_res == false || client_password_byte_size_ex_res == false
 		|| client_password_ex_res == false) {
@@ -29,6 +32,8 @@ bool MT001Receiver::data_extraction(const std::string& data)
 
 #ifdef DEBUG_MT001_CONTAIN
 	std::cout << StringFormat("%s[DEBUG]SIGN Type(0: sign up 1: sign in, 2: sign out) : %d", ServerTime::get_current_time(), this->m_mt001_data.get_sign_type()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]AUTH type : %d", ServerTime::get_current_time(), this->m_mt001_data.get_auth_type()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG]Client ID : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Client Name Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_name_byte_size()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Client Name : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_name()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Client Mail Addr Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_mail_addr_byte_size()) << std::endl;
@@ -69,7 +74,45 @@ const int MT001Receiver::MT001Data::get_sign_type()
 			break;
 		}
 
-	return 0;
+}
+
+const int MT001Receiver::MT001Data::get_auth_type()
+{
+	switch (m_auth_type)
+	{
+	case MT001Receiver::MT001Data::AUTH_TYPE::normal_auth:
+		return 0;
+		break;
+
+	case MT001Receiver::MT001Data::AUTH_TYPE::google_auth:
+		return 1;
+		break;
+
+	case MT001Receiver::MT001Data::AUTH_TYPE::facebook_auth:
+		return 2;
+		break;
+
+	case MT001Receiver::MT001Data::AUTH_TYPE::twitter_auth:
+		return 3;
+		break;
+
+	case MT001Receiver::MT001Data::AUTH_TYPE::microsoft_auth:
+		return 4;
+		break;
+
+	case MT001Receiver::MT001Data::AUTH_TYPE::yahoo_auth:
+		return 5;
+		break;
+
+	default:
+		return -1;
+		break;
+	}
+}
+
+const std::string MT001Receiver::MT001Data::get_client_id()
+{
+	return this->m_client_id;
 }
 
 const uint8_t MT001Receiver::MT001Data::get_client_name_byte_size()
@@ -120,6 +163,44 @@ void MT001Receiver::MT001Data::set_sign_type(const uint8_t& sign_type)
 	default:
 		break;
 	}
+}
+
+void MT001Receiver::MT001Data::set_auth_type(const uint8_t& auth_type)
+{
+	switch (auth_type)
+	{
+	case 0:
+		this->m_auth_type = AUTH_TYPE::normal_auth;
+		break;
+
+	case 1:
+		this->m_auth_type = AUTH_TYPE::google_auth;
+		break;
+
+	case 2:
+		this->m_auth_type = AUTH_TYPE::facebook_auth;
+		break;
+
+	case 3:
+		this->m_auth_type = AUTH_TYPE::twitter_auth;
+		break;
+
+	case 4:
+		this->m_auth_type = AUTH_TYPE::microsoft_auth;
+		break;
+
+	case 5:
+		this->m_auth_type = AUTH_TYPE::yahoo_auth;
+		break;
+
+	default:
+		break;
+	}
+}
+
+void MT001Receiver::MT001Data::set_client_id(const std::string& id)
+{
+	this->m_client_id = id;
 }
 
 void MT001Receiver::MT001Data::set_client_name_byte_size(const uint8_t& name_byte_size)
@@ -175,11 +256,57 @@ bool MT001Receiver::extraction_sign_type(const std::string& data)
 	return true;
 }
 
+bool MT001Receiver::extraction_auth_type(const std::string& data)
+{
+	try
+	{
+		int start_pos_split = 4, end_pos_split = 1;
+		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+		std::string auth_type_str = data.substr(start_pos_split, end_pos_split);
+		int auth_type_int = std::stoi(auth_type_str);
+		if (auth_type_int < 0 || auth_type_int > 5) {
+			THROW_APP_EXCEPTION(StringFormat("The value of Trans type is invalid.(\033[31msign_type_int contains : %d\033[m)", auth_type_int));
+		}
+		m_mt001_data.set_auth_type(auth_type_int);
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool MT001Receiver::extraction_client_id(const std::string& data)
+{
+	try
+	{
+		uint8_t end_pos_split = 36;
+		if (CLIENT_ID_START_POS > data.size() || (CLIENT_ID_START_POS + end_pos_split) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+		std::string new_client_id = data.substr(CLIENT_ID_START_POS, end_pos_split);
+		this->m_mt001_data.set_client_id(new_client_id);
+
+	}
+	catch (const std::out_of_range& oor_ex) {
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeÅF%s", oor_ex.what()));
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		return false;
+	}
+	return true;
+}
+
 bool MT001Receiver::extraction_client_name_byte_size(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 4, end_pos_split = 2;
+		int start_pos_split = 41, end_pos_split = 2;
 		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}

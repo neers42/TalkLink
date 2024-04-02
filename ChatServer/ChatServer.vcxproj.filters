@@ -368,9 +368,13 @@
     <ClInclude Include="inc\firebase\version.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\..\..\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\shared\ws2def.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ini\socket_setting.ini" />
+    <None Include="assets\google-services.json" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\firebase\MD\x64\Debug\firebase_analytics.lib" />

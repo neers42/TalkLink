@@ -19,6 +19,7 @@
 #define SELECT_TIME_OUT -2
 #define REQUEST_ACCEPT_CLIENT_DETECTION -3
 #define NOT_EXIST_IP_ADDRESS -1
+#define NOT_EXIST_CLIENT_ID -1
 
 
 class SocketHandler

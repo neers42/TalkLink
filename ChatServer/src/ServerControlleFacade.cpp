@@ -10,7 +10,7 @@ ServerControlleFacade::ServerControlleFacade()
 
 ServerControlleFacade::~ServerControlleFacade()
 {
-
+	delete m_firebase_auth_handler;
 	delete m_socket_handler;
 	delete m_mt001receiver;
 	delete m_mt002receiver;
@@ -23,8 +23,6 @@ ServerControlleFacade::~ServerControlleFacade()
 //サーバプログラムの実行
 void ServerControlleFacade::run()
 {
-	std::cout << ServerTime::get_current_time() <<"[INFO]Starting MyChat server version 1.0.0!!" << std::endl;
-
 	
 	//リッスンソケットの生成
 	if (m_socket_handler->open_tcp_listen_socket() == true) {
@@ -73,9 +71,13 @@ void ServerControlleFacade::run()
 				int receive_result = 0;
 				std::string receive_data, mt, trans_type = "";
 				std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
+
+			//receive_result == 0の場合
 			if (receive_result == 0) {
+				//std::cout << ServerTime::get_current_time() << "[INFO]Start monitoring requests from clients." << std::endl;
 				m_socket_handler->disconnect_socket(m_client_handler, monitor_result);
-			}
+				break; 
+						}
 			//ソケットエラーの場合
 			else if (receive_result == SOCKET_ERROR) {
 				m_socket_handler->disconnect_socket(m_client_handler, monitor_result);
@@ -90,6 +92,13 @@ void ServerControlleFacade::run()
 						switch (m_mt001receiver->get_mt001_data().get_sign_type())
 						{
 						case 0:			//sign up
+							//メッセージがsign_upの場合の処理を追記
+#ifdef DEBUG
+							m_client_handler.connected_client_list[monitor_result].set_client_id(m_mt001receiver->get_mt001_data().get_client_id());
+							std::cout << StringFormat("client_list[%d].client_id : %s", monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_id());
+#endif // DEBUG
+
+							
 							break;
 
 						case 1:			//sign in
@@ -115,10 +124,16 @@ void ServerControlleFacade::run()
 						{
 						//TCPユニキャスト
 						case 0:
-							m_sender->tcp_unicast_data(m_client_handler, 
+							
+						/*	m_sender->tcp_unicast_data(m_client_handler, 
 														receive_data, receive_result,
 														m_socket_handler->search_connect_client_socket_num_from_ip(m_client_handler,
-														this->m_mt002receiver->get_dst_ip_address()));
+														this->m_mt002receiver->get_dst_ip_address()));*/
+
+							m_sender->tcp_unicast_data(m_client_handler,
+														receive_data, receive_result,
+														m_socket_handler->search_connect_client_socket_num_from_id(m_client_handler,
+														this->m_mt002receiver->get_dst_id()));
 							break;
 
 						//TCPでマルチキャスト

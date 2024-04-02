@@ -170,78 +170,11 @@ bool MT002Receiver::extraction_trans_type(const std::string& data)
 }
 
 
-
-/**********************************************************************************
- * @fn	  extraction_dst_ip
- * @brief
- *
- * @param [in]
- *
- * @return [out]
- *
- **********************************************************************************/
-bool MT002Receiver::extraction_dst_ip(const std::string& data)
-{
-	//TODOFƒGƒ‰[ˆ—‚ðŽÀ‘•
-	try
-	{
-		int start_pos_split = 4, end_pos_split = 15;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
-			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
-		}
-
-		std::string dst_ip = data.substr(start_pos_split, end_pos_split);
-		std::string corrected_dst_ip = remove_zero_padding(dst_ip);
-		m_mt002_data.set_dst_ip_address(corrected_dst_ip);
-
-	}
-	catch (const std::exception& ex) 
-	{
-		THROW_APP_EXCEPTION(ex.what());
-	}
-	catch(const exception::ExceptionBase& ex)
-	{
-		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
-	}
-	return true;
-}
-
-/**********************************************************************************
- * @fn	  extraction_scr_ip
- * @brief
- *
- * @param [in]
- *
- * @return [out]
- *
- **********************************************************************************/
-bool MT002Receiver::extraction_src_ip(const std::string& data)
-{
-	try
-	{
-		int start_pos_split = 19, end_pos_split = 15;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
-			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
-		}
-		std::string src_ip = data.substr(start_pos_split, end_pos_split);
-		std::string corrected_src_ip = remove_zero_padding(src_ip);
-		m_mt002_data.set_src_ip_address(corrected_src_ip);
-
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		std::cout << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
-	}
-		return true;
-}
-
 bool MT002Receiver::extraction_dst_client_id(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 34, end_pos_split = 36;
+		int start_pos_split = 4, end_pos_split = 36;
 		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
@@ -262,7 +195,7 @@ bool MT002Receiver::extraction_src_clinet_id(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 70, end_pos_split = 36;
+		int start_pos_split = 40, end_pos_split = 36;
 		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
@@ -293,7 +226,7 @@ bool MT002Receiver::extraction_dst_chatroom_id(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 106, end_pos_split = 36;
+		int start_pos_split = 76, end_pos_split = 36;
 		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
@@ -324,7 +257,7 @@ bool MT002Receiver::extraction_data_type(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 142, end_pos_split = 1;
+		int start_pos_split = 112, end_pos_split = 1;
 		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
@@ -360,7 +293,7 @@ bool MT002Receiver::extraction_main_data(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 143;
+		int start_pos_split = 113;
 		if (start_pos_split > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
@@ -402,8 +335,6 @@ bool MT002Receiver::data_extraction(const std::string& data)
 {
 
 	bool trans_type_ex_res = this->extraction_trans_type(data);
-	bool dst_ip_ex_res = this->extraction_dst_ip(data);
-	bool src_ip_ex_res = this->extraction_src_ip(data);
 	bool dst_client_id_res = this->extraction_dst_client_id(data);
 	bool src_client_id_res = this->extraction_src_clinet_id(data);
 	bool chatroom_id_ex_res = this->extraction_dst_chatroom_id(data);
@@ -411,15 +342,12 @@ bool MT002Receiver::data_extraction(const std::string& data)
 	bool main_data_ex_res = this->extraction_main_data(data);
 
 	if (trans_type_ex_res == false || data_type_ex_res == false
-		|| dst_ip_ex_res == false || src_ip_ex_res == false
 		|| dst_client_id_res == false || src_client_id_res == false
 		|| chatroom_id_ex_res == false || main_data_ex_res == false) {
 		return false;
 	}
 #ifdef DEBUG_MT002_CONTAIN
 	std::cout << StringFormat("%s[DEBUG]Transport Type(0: unicast 1: multicast, 2:bloadcast) : %d", ServerTime::get_current_time(), this->m_mt002_data.get_trans_type()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Dist IP Adress : %s", ServerTime::get_current_time(), this->m_mt002_data.get_dst_ip()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Source IP Adress : %s", ServerTime::get_current_time(), this->m_mt002_data.get_src_ip()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Dist Client ID : %s", ServerTime::get_current_time(), this->m_mt002_data.get_dst_client_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Source Client ID : %s", ServerTime::get_current_time(), this->m_mt002_data.get_src_client_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Dist Chatroom ID : %s", ServerTime::get_current_time(), this->m_mt002_data.get_dst_chatroom_id()) << std::endl;
@@ -503,15 +431,6 @@ void MT002Receiver::MT002Data::set_data_type(const int& data_type)
 	}
 }
 
-void MT002Receiver::MT002Data::set_dst_ip_address(const std::string& dst_ip)
-{
-	this->m_dst_ip_address = dst_ip;
-}
-
-void MT002Receiver::MT002Data::set_src_ip_address(const std::string& src_ip)
-{
-	this->m_src_ip_address = src_ip;
-}
 
 void MT002Receiver::MT002Data::set_dst_client_id(const std::string& dst_client_id)
 {
@@ -575,15 +494,6 @@ const int MT002Receiver::MT002Data::get_data_type()
 	return 0;
 }
 
-std::string& MT002Receiver::MT002Data::get_dst_ip()
-{
-	return this->m_dst_ip_address;
-}
-
-std::string& MT002Receiver::MT002Data::get_src_ip()
-{
-	return this->m_src_ip_address;
-}
 
 std::string& MT002Receiver::MT002Data::get_dst_client_id()
 {
@@ -610,13 +520,17 @@ const MT002Receiver::MT002Data& MT002Receiver::get_mt002_data()
 	return this->m_mt002_data;
 }
 
-const std::string& MT002Receiver::get_dst_ip_address()
+
+const std::string& MT002Receiver::get_dst_id()
 {
-	return this->m_mt002_data.get_dst_ip();
+	return this->m_mt002_data.get_dst_client_id();
+
 }
 
 const int MT002Receiver::get_trans_type()
 {
 	return this->m_mt002_data.get_trans_type();
 }
+
+
 

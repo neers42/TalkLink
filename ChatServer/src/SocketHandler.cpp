@@ -1015,8 +1015,13 @@ int SocketHandler::search_connect_client_socket_num_from_ip(const ClientHandler&
 
 int SocketHandler::search_connect_client_socket_num_from_id(const ClientHandler& client_handler, const std::string& search_client_id)
 {
+	for (int search_result = 0; search_result < MAX_CONNECT_NUM; search_result++) {
 
-	return 0;
+		if (client_handler.connected_client_list[search_result].get_client_id() == search_client_id) {
+			return search_result;
+		}
+	}
+	return NOT_EXIST_CLIENT_ID;
 }
 
 
