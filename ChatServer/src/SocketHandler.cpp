@@ -527,36 +527,62 @@ void SocketHandler::extraction_client_ip(uint32_t client_num, ClientHandler::Cli
 	}
 }
 
-
-void SocketHandler::init_client_net_info(int client_num, ClientHandler* client_handler)
+std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size)
 {
-	
-	//client_handler->get_client_list()[client_num].set_clietn_socket(INVALID_SOCKET);
-	//client_handler->get_client_list()[client_num]
-	client_handler->connected_client_list[client_num] = client_handler->init_client;
+	try
+	{
+		char client_ip_addr_char[100];
+		struct sockaddr_in temp_paddr = client_sockaddr_in;
+		PCSTR iresult;
+		iresult = inet_ntop(temp_paddr.sin_family, &temp_paddr.sin_addr,
+			client_ip_addr_char,ipv4_addr_size);
+		std::string client_ip_addr_str(client_ip_addr_char);
+		//client_handler->get_client_list()[client_num].set_client_ipv4_addr(temp_ip_addr_char);
+		//new_client->set_client_ipv4_addr(temp_ip_addr_char);
+		if (iresult == NULL) {
+			switch (WSAGetLastError())
+			{
+			case WSAEAFNOSUPPORT:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEAFNOSUPPORT(Family パラメーターで指定されたアドレス ファミリ はサポートされていません。 このエラーは、指定された Family パラメーターが AF_INET または AF_INET6されていない場合に返されます。)");
+				break;
 
-}
+			case ERROR_INVALID_PARAMETER:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:ERROR_INVALID_PARAMETER(無効なパラメーターが関数に渡されました。 このエラーは、pStringBuf で NULL ポインターが渡された場合、または StringBufSize パラメーターが 0 の場合に返されます。 このエラーは、 pStringBuf パラメーターが指すバッファーの長さが IP アドレスの文字列表現を受け取るのに十分な大きさでない場合にも返されます。)");
+				break;
 
-
-
-void SocketHandler::setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds, const ClientHandler& client_handler)
-{
-	FD_ZERO(fd);
-	FD_SET(*socket, fd);
-
-	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-
-	//有効なソケットにFDSETを実行する
-	if (client_handler.connected_client_list[i].get_client_socket() != INVALID_SOCKET) {
-		//SOCKET temp_monitor_socket = client_handler.get_client_list()[i].get_client_socket();
-		//FD_SET(client_handler.get_client_list()[i].get_client_socket(), fd);
-		FD_SET(client_handler.connected_client_list[i].get_client_socket(), fd);
+			default:
+				break;
+			}
+		}else {
+			return client_ip_addr_str;
 		}
 	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+	}
+}
 
-	memcpy(fds, fd, sizeof(fd_set));
+
+void SocketHandler::setting_select_info_to_listen_socket()
+{
+	FD_ZERO(&this->m_fd_read);
+	FD_SET(this->m_tcp_listen_socket, &this->m_fd_read);
+	
 
 }
+
+void SocketHandler::setting_select_info_to_client_socket(const SOCKET& client_socket, fd_set* fd)
+{
+	FD_SET(client_socket, fd);
+	
+}
+
+void SocketHandler::copy_fd_read_to_fds()
+{
+	memcpy(&this->m_fds, &this->m_fd_read, sizeof(fd_set));
+}
+
 
 
 
@@ -1025,12 +1051,11 @@ int SocketHandler::search_connect_client_socket_num_from_id(const ClientHandler&
 }
 
 
-void SocketHandler::disconnect_socket(ClientHandler& client_handler, int socket_num)
+void SocketHandler::disconnect_socket(SOCKET client_socket, std::string client_ip_address, int monitor_result)
 {
 	try
 	{
-		std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << socket_num << "](IP address: " << client_handler.connected_client_list[socket_num].get_client_ipv4_addr() << ") has been disconnected, so initializing client list." << std::endl;
-		int close_socket_result = closesocket(client_handler.connected_client_list[socket_num].get_client_socket());
+		int close_socket_result = closesocket(client_socket);
 		if (close_socket_result == SOCKET_ERROR) {
 			switch (WSAGetLastError())
 			{
@@ -1069,23 +1094,12 @@ void SocketHandler::disconnect_socket(ClientHandler& client_handler, int socket_
 		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 	}
 
-	init_client_net_info(socket_num, &client_handler);
 	std::cout << ServerTime::get_current_time() << "[INFO]Successfully initialized the information in the client list." << std::endl;
 
 
 }
 
-int SocketHandler::check_client_socket_invalid()
-{
-	return 0;
-}
 
-bool SocketHandler::check_valid_socket(SOCKET request_socket)
-{
-	if (request_socket == INVALID_SOCKET)
-		return false;
-	return true;
-}
 
 bool SocketHandler::generate_tcp_listen_socket()
 {
@@ -1171,7 +1185,6 @@ int SocketHandler::monitor_socket(const ClientHandler& client_handler)
 {
 	try
 	{
-		setting_select_info(&m_tcp_listen_socket, &m_fd_read, &m_fds, client_handler);
 		int select_result = 0;
 		select_result = select(0, &m_fds, NULL, NULL, &m_timeout);
 
@@ -1271,6 +1284,20 @@ bool SocketHandler::open_tcp_listen_socket()
 	{
 		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 	}
+	return true;
+}
+
+/**********************************************************************************
+ * @fn	  check_client_socket(SOCKET socket)
+ * socketが閉じているか確認する。
+ * @brief socketが閉じているか確認する。
+ * @param [in] SOCKET socket
+ * @return
+ **********************************************************************************/
+bool SocketHandler::check_valid_socket(SOCKET request_socket)
+{
+	if (request_socket == INVALID_SOCKET)
+		return false;
 	return true;
 }
 

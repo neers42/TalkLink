@@ -36,6 +36,8 @@ public:
 	//サーバプログラム実行
 	void run();
 
+	void client_select_setting();
+
 };
 
 

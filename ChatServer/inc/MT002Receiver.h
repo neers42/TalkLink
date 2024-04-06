@@ -15,7 +15,7 @@
 #define DEBUG_MT002_CONTAIN
 #define MAX_RECEIVE_MESSAGE_LEN 2048
 
-struct client_socket_info;
+//struct client_socket_info;
 
 class MT002Receiver :
     public Receiver

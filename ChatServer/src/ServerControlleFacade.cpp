@@ -39,6 +39,8 @@ void ServerControlleFacade::run()
 	//ディスクリプション監視スタート
 	while (1) {
 		//int monitor_result = m_socket_handler->monitor_socket();
+		this->m_socket_handler->setting_select_info_to_listen_socket();
+		this->client_select_setting();
 		int monitor_result = m_socket_handler->monitor_socket(m_client_handler);
 		switch (monitor_result)
 		{
@@ -59,7 +61,8 @@ void ServerControlleFacade::run()
 			uint32_t check_invalid_result = 0;
 			std::tie(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, check_invalid_result) = m_socket_handler->accept_client_socket(m_client_handler);
 			ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
-			m_socket_handler->extraction_client_ip(check_invalid_result, &new_client);
+			//m_socket_handler->extraction_client_ip(check_invalid_result, &new_client);
+			new_client.set_client_ipv4_addr(m_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
 			m_client_handler.add_client(new_client, check_invalid_result);
 			std::cout << ServerTime::get_current_time() << "[INFO]Registered on the client list[" << check_invalid_result
 				<< "] => IP:" << m_client_handler.get_connected_client_list()[check_invalid_result].get_client_ipv4_addr() << "." << std::endl;
@@ -73,15 +76,20 @@ void ServerControlleFacade::run()
 				std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
 
 			//receive_result == 0の場合
-			if (receive_result == 0) {
-				//std::cout << ServerTime::get_current_time() << "[INFO]Start monitoring requests from clients." << std::endl;
-				m_socket_handler->disconnect_socket(m_client_handler, monitor_result);
-				break; 
-						}
-			//ソケットエラーの場合
-			else if (receive_result == SOCKET_ERROR) {
-				m_socket_handler->disconnect_socket(m_client_handler, monitor_result);
-			}
+				if (receive_result == 0) {
+
+					std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << monitor_result << "](IP address: " << m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr() << ") has been disconnected, so initializing client list." << std::endl;
+					m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
+					m_client_handler.delete_client(monitor_result);
+					break;
+				}
+				//ソケットエラーの場合
+				else if (receive_result == SOCKET_ERROR) {
+					std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << monitor_result << "](IP address: " << m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr() << ") is SOCKET_ERROR now, so initializing client list." << std::endl;
+					m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
+					m_client_handler.delete_client(monitor_result);
+
+				}
 			//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
 			else {
 				mt = Receiver::extraction_mt(receive_data);
@@ -161,4 +169,16 @@ void ServerControlleFacade::run()
 
 	}
 	
+}
+
+void ServerControlleFacade::client_select_setting()
+{
+	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
+		//有効なソケットにFDSETを実行する
+		if (this->m_client_handler.connected_client_list[i].get_client_socket() != INVALID_SOCKET) {
+			m_socket_handler->setting_select_info_to_client_socket(this->m_client_handler.connected_client_list[i].get_client_socket(), &m_socket_handler->get_fd_read());
+			}
+	}
+
+	this->m_socket_handler->copy_fd_read_to_fds();
 }

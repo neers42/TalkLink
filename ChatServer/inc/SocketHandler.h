@@ -24,27 +24,6 @@
 
 class SocketHandler
 {
-public:
-
-	//接続中のクライアント情報
-	struct client_socket_info {
-		//コンストラクタ
-		client_socket_info(SOCKET socket, sockaddr_in sockaddr) :
-			client_socket{ socket }, client_sockaadr_in{ sockaddr } {}
-
-		//接続中のクライアントソケット
-		SOCKET client_socket;
-
-		//接続中のクライアントソケット情報
-		struct sockaddr_in client_sockaadr_in;
-
-		//接続中のクライアントソケットのサイズ
-		socklen_t socket_addr_in_length = sizeof(client_sockaadr_in);
-
-		std::string client_ip_addr = "";
-	};
-
-
 
 private:
 /*
@@ -102,10 +81,6 @@ private:
 	//クライアントリストの空いている箇所を探索
 	int check_next_invalid_socket(const ClientHandler& client_handler);
 
-
-	//ソケットが有効であるか判定する【未実装】
-	bool check_valid_socket(SOCKET request_socket);
-
 	//tcp listenソケットの設定を読み込む
 	bool setting_tcp_listen_socket(const std::string& file_pass);
 
@@ -119,15 +94,8 @@ private:
 	//Listenソケットを生成する
 	bool generate_tcp_listen_socket();
 
-	
-	//クライアントの情報を初期化する
-	void init_client_net_info(int client_num, ClientHandler* client_handler);
-
-	void print_client_net_info(int client_num);
 
 
-	//select関数の初期化
-	void setting_select_info(SOCKET* socket, fd_set* fd, fd_set* fds, const ClientHandler& client_handler);
 
 	bool generate_udp_multicast_tx_socket();
 
@@ -159,6 +127,14 @@ public:
 		return m_udp_multicast_tx_socket;
 	}
 
+	fd_set& get_fd_read() {
+		return m_fd_read;
+	}
+
+	const fd_set& get_fds(){
+		return m_fds;
+	}
+
 	//サーバのIPアドレスを表示する
 	void show_server_info();
 
@@ -171,6 +147,8 @@ public:
 	//クライアントのIPアドレスを抽出する
 	void extraction_client_ip(uint32_t client_num, ClientHandler::Client* new_client);
 
+	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);
+
 
 	std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> accept_client_socket(ClientHandler& client_handler);
 
@@ -181,9 +159,18 @@ public:
 	int search_connect_client_socket_num_from_id(const ClientHandler& client_handler, const std::string& search_client_id);
 	
 	//接続中のクライアントソケットをクローズする
-	void disconnect_socket(ClientHandler& client_handler, int socket_num);
+	void disconnect_socket(SOCKET client_socket, std::string client_ip_address, int monitor_result);
 
-	int check_client_socket_invalid();
+	//ソケットが有効であるか判定する【未実装】
+	bool check_valid_socket(SOCKET request_socket);
+
+
+	//select関数の初期化
+	void setting_select_info_to_listen_socket();
+
+	void setting_select_info_to_client_socket(const SOCKET& client_socket, fd_set* fd);
+
+	void copy_fd_read_to_fds();
 };
 
 #endif // !SOCKETHANDLER_H_

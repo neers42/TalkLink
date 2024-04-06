@@ -247,11 +247,16 @@ bool ClientHandler::add_client(const Client& client, std::uint32_t add_num)
 	return true;
 }
 
-bool ClientHandler::delete_client(const Client& client, uint32_t delete_num)
+bool ClientHandler::delete_client(const uint32_t delete_num)
 {
-
-	return true;
+	this->connected_client_list[delete_num] = init_client;
+	if (this->connected_client_list[delete_num].get_client_id() == "" && 
+		this->connected_client_list[delete_num].get_client_socket() == INVALID_SOCKET) {
+		return true;
+	}
+	return false;
 }
+
 
 std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list()
 {
@@ -272,6 +277,7 @@ const ClientHandler::Client ClientHandler::get_init_client() const
 {
 	return this->init_client;
 }
+
 
 void ClientHandler::set_client_id(std::string id, uint32_t list_num)
 {

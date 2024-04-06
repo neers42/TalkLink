@@ -154,6 +154,7 @@
     <ClCompile Include="src\ServerControlleFacade.cpp" />
     <ClCompile Include="src\SocketHandler.cpp" />
     <ClCompile Include="src\Receiver.cpp" />
+    <ClCompile Include="src\ThreadPoolHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\..\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\shared\ws2def.h" />
@@ -259,6 +260,7 @@
     <ClInclude Include="inc\LogHandler.h" />
     <ClInclude Include="inc\ServerTime.h" />
     <ClInclude Include="inc\MT001Receiver.h" />
+    <ClInclude Include="inc\ThreadPoolHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />

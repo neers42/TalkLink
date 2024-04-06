@@ -94,7 +94,7 @@ public:
 	const std::vector<Client> get_connected_client_list() const;
 	Client get_init_client();
 	const Client get_init_client() const;
-
+	
 	//setter
 	void set_client_id(std::string id, uint32_t list_num);
 	void set_client_name(std::string name, uint32_t list_num);
@@ -106,8 +106,8 @@ public:
 
 	//other
 	bool add_client(const Client& client, std::uint32_t add_num);
-	bool delete_client(const Client& client, std::uint32_t delete_num);
-	
+	bool delete_client(const std::uint32_t delete_num);
+
 
 	
 };
