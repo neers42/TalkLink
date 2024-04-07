@@ -45,7 +45,6 @@ void ServerControlleFacade::run()
 		switch (monitor_result)
 		{
 		case SELECT_TIME_OUT:
-			//std::cout << "SELECT_TIME_OUT" << std::endl;
 			break;
 
 		case SOCKET_ERROR:
@@ -54,14 +53,14 @@ void ServerControlleFacade::run()
 			//アクセプト要求があった場合
 		case REQUEST_ACCEPT_CLIENT_DETECTION:
 		{
-			//m_socket_handler->accept_client_socket();
 			SOCKET new_client_socket = INVALID_SOCKET;
 			struct sockaddr_in new_client_sockaddr_in = { 0 };
 			socklen_t new_client_socklen_t = 0;
-			uint32_t check_invalid_result = 0;
-			std::tie(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, check_invalid_result) = m_socket_handler->accept_client_socket(m_client_handler);
+			uint32_t check_invalid_result = this->m_client_handler.check_next_invalid_socket();
+			
+			std::tie(new_client_socket, new_client_sockaddr_in) = m_socket_handler->accept_client_socket(check_invalid_result, this->m_client_handler.connected_client_list[check_invalid_result].get_sockaddr_in_length());
+
 			ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
-			//m_socket_handler->extraction_client_ip(check_invalid_result, &new_client);
 			new_client.set_client_ipv4_addr(m_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
 			m_client_handler.add_client(new_client, check_invalid_result);
 			std::cout << ServerTime::get_current_time() << "[INFO]Registered on the client list[" << check_invalid_result
@@ -103,7 +102,7 @@ void ServerControlleFacade::run()
 							//メッセージがsign_upの場合の処理を追記
 #ifdef DEBUG
 							m_client_handler.connected_client_list[monitor_result].set_client_id(m_mt001receiver->get_mt001_data().get_client_id());
-							std::cout << StringFormat("client_list[%d].client_id : %s", monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_id());
+							std::cout << StringFormat("%s[DEBUG]client_list[%d].client_id : %s", ServerTime::get_current_time(), monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_id()) << std::endl;
 #endif // DEBUG
 
 							
@@ -140,8 +139,8 @@ void ServerControlleFacade::run()
 
 							m_sender->tcp_unicast_data(m_client_handler,
 														receive_data, receive_result,
-														m_socket_handler->search_connect_client_socket_num_from_id(m_client_handler,
-														this->m_mt002receiver->get_dst_id()));
+														//m_socket_handler->search_connect_client_socket_num_from_id(m_client_handler,
+														m_client_handler.search_connect_client_socket_num_from_id(this->m_mt002receiver->get_dst_id()));
 							break;
 
 						//TCPでマルチキャスト
@@ -182,3 +181,4 @@ void ServerControlleFacade::client_select_setting()
 
 	this->m_socket_handler->copy_fd_read_to_fds();
 }
+

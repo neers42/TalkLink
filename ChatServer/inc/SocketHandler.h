@@ -19,7 +19,7 @@
 #define SELECT_TIME_OUT -2
 #define REQUEST_ACCEPT_CLIENT_DETECTION -3
 #define NOT_EXIST_IP_ADDRESS -1
-#define NOT_EXIST_CLIENT_ID -1
+
 
 
 class SocketHandler
@@ -77,9 +77,6 @@ private:
 
 	//Listenソケットをbindする【未実装】
 	bool bind_tcp_listen_socket();
-
-	//クライアントリストの空いている箇所を探索
-	int check_next_invalid_socket(const ClientHandler& client_handler);
 
 	//tcp listenソケットの設定を読み込む
 	bool setting_tcp_listen_socket(const std::string& file_pass);
@@ -145,18 +142,13 @@ public:
 	bool open_tcp_listen_socket();
 
 	//クライアントのIPアドレスを抽出する
-	void extraction_client_ip(uint32_t client_num, ClientHandler::Client* new_client);
-
 	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);
 
+	//accept処理
+	//std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> accept_client_socket(ClientHandler& client_handler);
 
-	std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> accept_client_socket(ClientHandler& client_handler);
+	std::tuple<SOCKET, sockaddr_in> accept_client_socket(int check_next_invalid_result, socklen_t client_sockaddr_in_length);
 
-	//接続中のクライアント数を計算する【未実装】
-	int search_connect_client_socket_num_from_ip(const ClientHandler& client_handler, const std::string& search_client_ip);
-
-	//接続中のクライアント数を計算する【未実装】
-	int search_connect_client_socket_num_from_id(const ClientHandler& client_handler, const std::string& search_client_id);
 	
 	//接続中のクライアントソケットをクローズする
 	void disconnect_socket(SOCKET client_socket, std::string client_ip_address, int monitor_result);

@@ -493,39 +493,6 @@ bool SocketHandler::setting_bloadcast_tx_socket(const std::string& file_pass)
  *
  * @detail
  **********************************************************************************/
-void SocketHandler::extraction_client_ip(uint32_t client_num, ClientHandler::Client* new_client)
-{
-	try
-	{
-		char temp_ip_addr_char[100];
-		struct sockaddr_in temp_paddr = new_client->get_sockaddr_in();
-		PCSTR iresult;
-			iresult = inet_ntop(temp_paddr.sin_family, &temp_paddr.sin_addr,
-			temp_ip_addr_char, sizeof(new_client->get_client_ipv4_addr()));
-
-		//client_handler->get_client_list()[client_num].set_client_ipv4_addr(temp_ip_addr_char);
-		new_client->set_client_ipv4_addr(temp_ip_addr_char);
-		if (iresult == NULL) {
-			switch (WSAGetLastError())
-			{
-			case WSAEAFNOSUPPORT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEAFNOSUPPORT(Family パラメーターで指定されたアドレス ファミリ はサポートされていません。 このエラーは、指定された Family パラメーターが AF_INET または AF_INET6されていない場合に返されます。)");
-				break;
-
-			case ERROR_INVALID_PARAMETER:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:ERROR_INVALID_PARAMETER(無効なパラメーターが関数に渡されました。 このエラーは、pStringBuf で NULL ポインターが渡された場合、または StringBufSize パラメーターが 0 の場合に返されます。 このエラーは、 pStringBuf パラメーターが指すバッファーの長さが IP アドレスの文字列表現を受け取るのに十分な大きさでない場合にも返されます。)");
-				break;
-
-			default:
-				break;
-			}
-		}
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-	}
-}
 
 std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size)
 {
@@ -913,24 +880,17 @@ bool SocketHandler::bind_tcp_listen_socket()
  * @detail 
  **********************************************************************************/
 
-std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> SocketHandler::accept_client_socket(ClientHandler& client_handler)
+std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(int check_next_invalid_result, socklen_t client_sockaddr_in_length)
 {
-	/*if (client_handler == nullptr) {
-		std::cerr << StringFormat("%s\033[31m[ERROR][mThe value of the client handler passed in the argument is nullptr.Exit accept.") << std::endl;
-		return false;
-	}*/
-	//接続リストの空き状況を確認する
-	uint32_t check_n_invalid_socket_result = check_next_invalid_socket(client_handler);
-
-	if (check_n_invalid_socket_result != -1) {
+	if (check_next_invalid_result != -1) {
 		try
 		{
-			ClientHandler::Client new_client = ClientHandler::Client();
+			//ClientHandler::Client new_client = ClientHandler::Client();
 			SOCKET accept_client_socket_result;
 			struct sockaddr_in accept_sockaddr_in_result;
-			socklen_t accept_socket_addr_in_length_rength_result = client_handler.get_connected_client_list()[check_n_invalid_socket_result].get_sockaddr_in_length();
-			accept_client_socket_result = accept(m_tcp_listen_socket,(struct sockaddr*)&accept_sockaddr_in_result, &accept_socket_addr_in_length_rength_result);
-	
+			//socklen_t accept_socket_addr_in_length_rength_result = client_handler.get_connected_client_list()[check_n_invalid_socket_result].get_sockaddr_in_length();
+			accept_client_socket_result = accept(m_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
+
 			//acceptしたソケットがINVALID_SOCKETである場合
 			if (accept_client_socket_result == INVALID_SOCKET) {
 				switch (WSAGetLastError())
@@ -990,14 +950,14 @@ std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> SocketHandler::accept_clien
 			}
 			else {
 				//acceptが成功した場合
-				return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result, accept_socket_addr_in_length_rength_result, check_n_invalid_socket_result);
+				return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result);
 			}
 		}
 		catch (const exception::ExceptionBase& ex)
 		{
 			std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 			struct sockaddr_in error_addr_in = { 0 };
-			return std::make_tuple(INVALID_SOCKET, error_addr_in, sizeof(error_addr_in), -1);
+			return std::make_tuple(INVALID_SOCKET, error_addr_in);
 		}
 
 	}
@@ -1005,50 +965,7 @@ std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> SocketHandler::accept_clien
 
 
 
-int SocketHandler::check_next_invalid_socket(const ClientHandler& client_handler)
-{
 
-	for (int n_invalid_socket = 0; n_invalid_socket < MAX_CONNECT_NUM; n_invalid_socket++) {
-
-		if (client_handler.get_connected_client_list()[n_invalid_socket].get_client_socket() == INVALID_SOCKET)
-			return n_invalid_socket;
-	}
-	return -1;
-}
-
-
-/**********************************************************************************
- * @fn	  search_connect_client_socket_num
- * SEARCH要求があったクライアントのソケット番号を返す
- * @brief accept処理
- *
- * @param [in] なし
- * @return 処理結果(接続中のクライアントにSEARCH要求があったIPアドレスがあれば、リストの番号を返す)
- * 　　　　IPアドレスがない場合は、
- *
- * @detail
- **********************************************************************************/
-int SocketHandler::search_connect_client_socket_num_from_ip(const ClientHandler& client_handler, const std::string& search_client_ip)
-{
-	for (int search_result = 0; search_result < MAX_CONNECT_NUM; search_result++) {
-
-		if (client_handler.connected_client_list[search_result].get_client_ipv4_addr() == search_client_ip) {
-			return search_result;
-		}
-	}
-	return NOT_EXIST_IP_ADDRESS;
-}
-
-int SocketHandler::search_connect_client_socket_num_from_id(const ClientHandler& client_handler, const std::string& search_client_id)
-{
-	for (int search_result = 0; search_result < MAX_CONNECT_NUM; search_result++) {
-
-		if (client_handler.connected_client_list[search_result].get_client_id() == search_client_id) {
-			return search_result;
-		}
-	}
-	return NOT_EXIST_CLIENT_ID;
-}
 
 
 void SocketHandler::disconnect_socket(SOCKET client_socket, std::string client_ip_address, int monitor_result)

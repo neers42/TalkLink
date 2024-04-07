@@ -257,6 +257,27 @@ bool ClientHandler::delete_client(const uint32_t delete_num)
 	return false;
 }
 
+int ClientHandler::check_next_invalid_socket()
+{
+	for (int n_invalid_socket = 0; n_invalid_socket < MAX_CONNECT_NUM; n_invalid_socket++) {
+
+		if (this->connected_client_list[n_invalid_socket].get_client_socket() == INVALID_SOCKET)
+			return n_invalid_socket;
+	}
+	return -1;
+}
+
+int ClientHandler::search_connect_client_socket_num_from_id(const std::string& search_client_id)
+{
+	for (int search_result = 0; search_result < MAX_CONNECT_NUM; search_result++) {
+
+		if (this->connected_client_list[search_result].get_client_id() == search_client_id) {
+			return search_result;
+		}
+	}
+	return NOT_EXIST_CLIENT_ID;
+}
+
 
 std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list()
 {

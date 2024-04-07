@@ -12,6 +12,7 @@
 #include "StringFormat.h"
 #include "ServerTime.h"
 #define MAX_CONNECT_NUM 50000
+#define NOT_EXIST_CLIENT_ID -1
 
 //#define DEBUG
 #define DEBUG_UUID
@@ -107,7 +108,8 @@ public:
 	//other
 	bool add_client(const Client& client, std::uint32_t add_num);
 	bool delete_client(const std::uint32_t delete_num);
-
+	int check_next_invalid_socket();
+	int search_connect_client_socket_num_from_id(const std::string& search_client_id);
 
 	
 };
