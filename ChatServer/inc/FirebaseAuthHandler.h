@@ -21,7 +21,7 @@ private:
 public:
 	FirebaseAuthHandler();
 	~FirebaseAuthHandler();
-	bool create_user_with_email_and_password(const std::string& email, const std::string& password);
+	std::string create_user_with_email_and_password(const std::string& email, const std::string& password);
 	void create_user_callback(const firebase::Future<firebase::auth::AuthResult*>& result, void* user_data);
 
 	

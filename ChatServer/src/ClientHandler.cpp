@@ -254,11 +254,11 @@ ClientHandler::~ClientHandler()
 bool ClientHandler::add_client(const Client& client, std::uint32_t add_num)
 {
 	this->connected_client_list[add_num] = client;
-	std::string new_client_id = generate_client_id();
-	if (new_client_id == "") {
-		return false;
-	}
-	this->connected_client_list[add_num].set_client_id(new_client_id);
+	//std::string new_client_id = generate_client_id();
+	//if (new_client_id == "") {
+	//	return false;
+	//}
+	//this->connected_client_list[add_num].set_client_id(new_client_id);
 	return true;
 }
 
@@ -291,6 +291,14 @@ int ClientHandler::search_connect_client_socket_num_from_id(const std::string& s
 		}
 	}
 	return NOT_EXIST_CLIENT_ID;
+}
+
+void ClientHandler::show_client_info(const int& client_num)
+{
+	std::cout << StringFormat("%s[DEBUG INFO]Client list[%d] ID : %s", ServerTime::get_current_time(), client_num, this->connected_client_list[client_num].get_client_id()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG INFO]Client list[%d] Name : %s", ServerTime::get_current_time(), client_num, this->connected_client_list[client_num].get_client_name()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG INFO]Client list[%d] Mail : %s", ServerTime::get_current_time(), client_num, this->connected_client_list[client_num].get_client_mail_addr()) << std::endl;
+	std::cout << StringFormat("%s[DEBUG INFO]Client list[%d] Password : %s", ServerTime::get_current_time(), client_num, this->connected_client_list[client_num].get_client_password()) << std::endl;
 }
 
 

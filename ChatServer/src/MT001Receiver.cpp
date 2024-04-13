@@ -14,7 +14,7 @@ bool MT001Receiver::data_extraction(const std::string& data)
 {
 	bool sign_type_ex_res = this->extraction_sign_type(data);
 	bool auth_type_ex_res = this->extraction_auth_type(data);
-	bool client_id_ex_res = this->extraction_client_id(data);
+	//bool client_id_ex_res = this->extraction_client_id(data);
 	bool client_name_byte_size_ex_res = this->extraction_client_name_byte_size(data);
 	bool client_name_ex_res = this->extraction_client_name(data);
 	bool client_mail_addr_byte_size_ex_res = this->extraction_client_mail_addr_byte_size(data);
@@ -23,7 +23,7 @@ bool MT001Receiver::data_extraction(const std::string& data)
 	bool client_password_ex_res = this->extraction_client_password(data);
 
 	if (sign_type_ex_res == false || auth_type_ex_res == false
-		||client_id_ex_res == false ||client_name_byte_size_ex_res == false
+		||client_name_byte_size_ex_res == false
 		|| client_name_ex_res == false || client_mail_addr_byte_size_ex_res == false
 		|| client_mail_addr_ex_res == false || client_password_byte_size_ex_res == false
 		|| client_password_ex_res == false) {
@@ -33,7 +33,7 @@ bool MT001Receiver::data_extraction(const std::string& data)
 #ifdef DEBUG_MT001_CONTAIN
 	std::cout << StringFormat("%s[DEBUG]SIGN Type(0: sign up 1: sign in, 2: sign out) : %d", ServerTime::get_current_time(), this->m_mt001_data.get_sign_type()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]AUTH type : %d", ServerTime::get_current_time(), this->m_mt001_data.get_auth_type()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Client ID : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_id()) << std::endl;
+	//std::cout << StringFormat("%s[DEBUG]Client ID : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_id()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Client Name Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_name_byte_size()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Client Name : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_name()) << std::endl;
 	std::cout << StringFormat("%s[DEBUG]Client Mail Addr Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_mail_addr_byte_size()) << std::endl;
@@ -237,11 +237,11 @@ bool MT001Receiver::extraction_sign_type(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 3, end_pos_split = 1;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+		//int start_pos_split = 3, end_pos_split = 1;
+		if (SIGN_TYPE_START_POS > data.size() || (SIGN_TYPE_START_POS + SIGN_TYPE_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
-		std::string sign_type_str = data.substr(start_pos_split, end_pos_split);
+		std::string sign_type_str = data.substr(SIGN_TYPE_START_POS, SIGN_TYPE_BYTE_SIZE);
 		int sign_type_int = std::stoi(sign_type_str);
 		if (sign_type_int < 0 || sign_type_int > 2) {
 			THROW_APP_EXCEPTION(StringFormat("The value of Trans type is invalid.(\033[31msign_type_int contains : %d\033[m)", sign_type_int));
@@ -260,11 +260,11 @@ bool MT001Receiver::extraction_auth_type(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 4, end_pos_split = 1;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+		//int start_pos_split = 4, end_pos_split = 1;
+		if (AUTH_TYPE_START_POS > data.size() || (AUTH_TYPE_START_POS + AUTH_TYPE_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
-		std::string auth_type_str = data.substr(start_pos_split, end_pos_split);
+		std::string auth_type_str = data.substr(AUTH_TYPE_START_POS, AUTH_TYPE_BYTE_SIZE);
 		int auth_type_int = std::stoi(auth_type_str);
 		if (auth_type_int < 0 || auth_type_int > 5) {
 			THROW_APP_EXCEPTION(StringFormat("The value of Trans type is invalid.(\033[31msign_type_int contains : %d\033[m)", auth_type_int));
@@ -306,12 +306,12 @@ bool MT001Receiver::extraction_client_name_byte_size(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 41, end_pos_split = 2;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+		//int start_pos_split = 5, end_pos_split = 2;
+		if (CLIENT_NAME_BYTE_SIZE_START_POS> data.size() || (CLIENT_NAME_BYTE_SIZE_START_POS + CLIENT_NAME_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
-		std::string client_namebs_str = data.substr(start_pos_split, end_pos_split);
-		uint8_t client_name_byte_size = std::stoi(data.substr(start_pos_split, end_pos_split));
+		std::string client_namebs_str = data.substr(CLIENT_NAME_BYTE_SIZE_START_POS, CLIENT_NAME_BYTE_SIZE);
+		uint8_t client_name_byte_size = std::stoi(data.substr(CLIENT_NAME_BYTE_SIZE_START_POS, CLIENT_NAME_BYTE_SIZE));
 		this->m_mt001_data.set_client_name_byte_size(client_name_byte_size);
 	}
 	catch (const std::invalid_argument& ia_ex) {

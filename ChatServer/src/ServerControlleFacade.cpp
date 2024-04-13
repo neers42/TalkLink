@@ -77,6 +77,7 @@ void ServerControlleFacade::run()
 		default:
 			int receive_result = 0;
 			std::string receive_data, mt, trans_type = "";
+			std::string user_id = "";
 			std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
 
 			//receive_result == 0の場合
@@ -97,7 +98,7 @@ void ServerControlleFacade::run()
 			//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
 			else {
 				mt = Receiver::extraction_mt(receive_data);
-
+				
 				//MTごとに処理を変更する
 				if (std::equal(mt.begin(), mt.end(), "001")) {
 					if (m_mt001receiver->data_extraction(receive_data)) {
@@ -106,16 +107,18 @@ void ServerControlleFacade::run()
 						case 0:			//sign up
 							//メッセージがsign_upの場合の処理を追記
 #ifdef DEBUG
-							
+							user_id = this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr(),this->m_mt001receiver->get_mt001_data().get_client_password());
+							if (user_id != "") {
+								//SIGN UPが成功した場合に、クライアント情報を登録する
+								m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
+								m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
+								m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(m_mt001receiver->get_mt001_data().get_client_mail_addr());
+								m_client_handler.connected_client_list[monitor_result].set_client_password(m_mt001receiver->get_mt001_data().get_client_password());
+							}
+							this->m_client_handler.show_client_info(monitor_result);
+							user_id = "";
 
-							m_client_handler.connected_client_list[monitor_result].set_client_id(m_mt001receiver->get_mt001_data().get_client_id());
-							m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
-							m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(m_mt001receiver->get_mt001_data().get_client_mail_addr());
-							m_client_handler.connected_client_list[monitor_result].set_client_password(m_mt001receiver->get_mt001_data().get_client_password());
-							//m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
-							std::cout << StringFormat("%s[DEBUG]client_list[%d].client_id : %s", ServerTime::get_current_time(), monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_id()) << std::endl;
-							this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_client_handler.connected_client_list[monitor_result].get_client_mail_addr()
-								, this->m_client_handler.connected_client_list[monitor_result].get_client_password());
+						
 
 
 
