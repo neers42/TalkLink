@@ -8,6 +8,7 @@
 #include "ClientHandler.h"
 #include "ChatRoomHandler.h"
 #include "FirebaseAuthHandler.h"
+#include "ThreadPoolHandler.h"
 
 class ServerControlleFacade
 {
@@ -19,6 +20,7 @@ private:
 	Sender* m_sender = new Sender();
 	ServerTime* m_server_time = new ServerTime();
 	ClientHandler m_client_handler = ClientHandler();
+	ThreadPoolHandler* m_thread_pool_handler = new ThreadPoolHandler(4);
 
 
 public:
@@ -37,6 +39,8 @@ public:
 	void run();
 
 	void client_select_setting();
+
+	void show_server_running_info();
 
 
 };

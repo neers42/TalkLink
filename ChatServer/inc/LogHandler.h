@@ -11,10 +11,13 @@
 
 class LogHandler
 {
+	enum class LogLebel { INFO, SERVER_ERROR, RECEIVE, SEND };
 
 public:
 	LogHandler();
 	~LogHandler();
+
+	static void logging_info();
 
 };
 

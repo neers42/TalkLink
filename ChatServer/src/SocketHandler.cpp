@@ -758,7 +758,11 @@ bool SocketHandler::obtain_local_ip_addr()
 	//IPアドレステーブルの取得
 	try
 	{
-		get_ip_addr_table_result = GetIpAddrTable(NULL, &m_dw_size, 0);
+		if (GetIpAddrTable(NULL, &m_dw_size, 0) == ERROR_INSUFFICIENT_BUFFER) {
+			m_ip_addr_table = (MIB_IPADDRTABLE*)malloc(m_dw_size);
+		}
+
+		get_ip_addr_table_result = GetIpAddrTable(m_ip_addr_table, &m_dw_size, 0);
 		switch (get_ip_addr_table_result)
 		{
 		case ERROR_INSUFFICIENT_BUFFER:
@@ -774,7 +778,7 @@ bool SocketHandler::obtain_local_ip_addr()
 			break;
 
 		case NO_ERROR:
-			std::cout << StringFormat("%s[INFO]Successfully acquired IP address table!!.", ServerTime::get_current_time());
+			std::cout << StringFormat("%s[INFO]Successfully acquired IP address table!!.", ServerTime::get_current_time()) << std::endl;
 			break;
 		default:
 			THROW_APP_EXCEPTION("ERROR CASE:Other(Use FormatMessage to obtain the message string for the returned error.)");
@@ -784,17 +788,10 @@ bool SocketHandler::obtain_local_ip_addr()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 
 	}
 
-	if (get_ip_addr_table_result == ERROR_INSUFFICIENT_BUFFER) {
-		m_ip_addr_table = (MIB_IPADDRTABLE*)malloc(m_dw_size);
-	}
-	else
-	{
-		return false;
-	}
 
 	//IPアドレステーブルの結果を格納
 	try
@@ -815,7 +812,10 @@ bool SocketHandler::obtain_local_ip_addr()
 			break;
 
 		case NO_ERROR:
+#ifdef DEBUG
 			std::cout << StringFormat("%s[INFO]Successfully acquired IP address table!!.", ServerTime::get_current_time()) << std::endl;
+#endif // DEBUG
+
 			break;
 
 		default:
@@ -824,23 +824,25 @@ bool SocketHandler::obtain_local_ip_addr()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR][m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 	}
 	if (m_ip_addr_table->dwNumEntries > 0) {
 		char temp_local_ip_addr[100];
 		for (m_i_count = 0; m_i_count < m_ip_addr_table->dwNumEntries; m_i_count++) {
 			//std::cout << StringFormat("Address : %s", inet_ntoa(*(struct in_addr*)&ip_addr_table->table[i_count].dwAddr));
 			inet_ntop(AF_INET, (struct in_addr*)&m_ip_addr_table->table[m_i_count].dwAddr, temp_local_ip_addr, sizeof(temp_local_ip_addr));
-			m_local_ip_addr = temp_local_ip_addr;
+			if (m_i_count == 0) {
+				m_local_ip_addr = temp_local_ip_addr;
+			}
 #ifdef DEBUG
 			std::cout << StringFormat("%s[INFO]Address : %s", ServerTime::get_current_time(), m_local_ip_addr) << std::endl;
 #endif // DEBUG
 		}
+		return true;
 	}
 	else{
 		return false;
 	}
-	return true;
 }
 
 
@@ -962,10 +964,6 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(int check_ne
 
 	}
 }
-
-
-
-
 
 
 void SocketHandler::disconnect_socket(SOCKET client_socket, std::string client_ip_address, int monitor_result)
@@ -1091,11 +1089,6 @@ bool SocketHandler::generate_tcp_listen_socket()
 	return true;
 }
 
-void SocketHandler::show_server_info()
-{
-	//showサーバー
-	std::cout << "" << std::endl;
-}
 
 
 int SocketHandler::monitor_socket(const ClientHandler& client_handler)

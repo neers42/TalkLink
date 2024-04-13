@@ -32,6 +32,7 @@ private:
 		struct sockaddr_in m_client_sockaddr_in;
 		socklen_t m_socket_addr_in_length = sizeof(m_client_sockaddr_in);
 		std::string m_client_ipv4_addr = "";
+		std::string m_client_password = "";
 
 
 	public:
@@ -56,6 +57,8 @@ private:
 		const socklen_t get_sockaddr_in_length() const;
 		std::string get_client_ipv4_addr();
 		const std::string get_client_ipv4_addr() const;
+		std::string get_client_password();
+		const std::string get_client_password() const;
 
 		//setter
 		void set_client_id(std::string id);
@@ -65,6 +68,7 @@ private:
 		void set_client_sockaddr_in(struct sockaddr_in sock_in);
 		void set_socket_addr_in_length(socklen_t length);
 		void set_client_ipv4_addr(std::string ipv4_addr);
+		void set_client_password(std::string password);
 		bool operator==(const Client& other_client)const;
 		Client &operator=(const Client& other_client);
 

@@ -16,6 +16,7 @@ ServerControlleFacade::~ServerControlleFacade()
 	delete m_mt002receiver;
 	delete m_sender;
 	delete m_server_time;
+	delete m_thread_pool_handler;
 	
 	
 }
@@ -23,7 +24,10 @@ ServerControlleFacade::~ServerControlleFacade()
 //サーバプログラムの実行
 void ServerControlleFacade::run()
 {
-	
+	//スレッドの実行は以下のように実施する
+    this->m_thread_pool_handler->enqueue_task([this]() {m_thread_pool_handler->exampleTask(); });
+	this->m_socket_handler->obtain_local_ip_addr();
+
 	//リッスンソケットの生成
 	if (m_socket_handler->open_tcp_listen_socket() == true) {
 		;
@@ -32,7 +36,8 @@ void ServerControlleFacade::run()
 		std::cerr << StringFormat("%s\033[31m[ERROR]\033[mThe TCP listening socket could not be opened properly, so the program is forcibly terminated. Please set it again.", ServerTime::get_current_time());
 		return;
 	}
-
+	
+	this->show_server_running_info();
 	
 	std::cout << ServerTime::get_current_time() << "[INFO]Start monitoring requests from clients." << std::endl;
 
@@ -70,25 +75,25 @@ void ServerControlleFacade::run()
 		
 		//接続中のクライアントリストから通知があった場合
 		default:
-				int receive_result = 0;
-				std::string receive_data, mt, trans_type = "";
-				std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
+			int receive_result = 0;
+			std::string receive_data, mt, trans_type = "";
+			std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
 
 			//receive_result == 0の場合
-				if (receive_result == 0) {
+			if (receive_result == 0) {
 
-					std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << monitor_result << "](IP address: " << m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr() << ") has been disconnected, so initializing client list." << std::endl;
-					m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
-					m_client_handler.delete_client(monitor_result);
-					break;
-				}
-				//ソケットエラーの場合
-				else if (receive_result == SOCKET_ERROR) {
-					std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << monitor_result << "](IP address: " << m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr() << ") is SOCKET_ERROR now, so initializing client list." << std::endl;
-					m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
-					m_client_handler.delete_client(monitor_result);
+				std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << monitor_result << "](IP address: " << m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr() << ") has been disconnected, so initializing client list." << std::endl;
+				m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
+				m_client_handler.delete_client(monitor_result);
+				break;
+			}
+			//ソケットエラーの場合
+			else if (receive_result == SOCKET_ERROR) {
+				std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << monitor_result << "](IP address: " << m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr() << ") is SOCKET_ERROR now, so initializing client list." << std::endl;
+				m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
+				m_client_handler.delete_client(monitor_result);
 
-				}
+			}
 			//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
 			else {
 				mt = Receiver::extraction_mt(receive_data);
@@ -101,11 +106,21 @@ void ServerControlleFacade::run()
 						case 0:			//sign up
 							//メッセージがsign_upの場合の処理を追記
 #ifdef DEBUG
+							
+
 							m_client_handler.connected_client_list[monitor_result].set_client_id(m_mt001receiver->get_mt001_data().get_client_id());
+							m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
+							m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(m_mt001receiver->get_mt001_data().get_client_mail_addr());
+							m_client_handler.connected_client_list[monitor_result].set_client_password(m_mt001receiver->get_mt001_data().get_client_password());
+							//m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
 							std::cout << StringFormat("%s[DEBUG]client_list[%d].client_id : %s", ServerTime::get_current_time(), monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_id()) << std::endl;
+							this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_client_handler.connected_client_list[monitor_result].get_client_mail_addr()
+								, this->m_client_handler.connected_client_list[monitor_result].get_client_password());
+
+
+
 #endif // DEBUG
 
-							
 							break;
 
 						case 1:			//sign in
@@ -131,15 +146,8 @@ void ServerControlleFacade::run()
 						{
 						//TCPユニキャスト
 						case 0:
-							
-						/*	m_sender->tcp_unicast_data(m_client_handler, 
-														receive_data, receive_result,
-														m_socket_handler->search_connect_client_socket_num_from_ip(m_client_handler,
-														this->m_mt002receiver->get_dst_ip_address()));*/
-
 							m_sender->tcp_unicast_data(m_client_handler,
 														receive_data, receive_result,
-														//m_socket_handler->search_connect_client_socket_num_from_id(m_client_handler,
 														m_client_handler.search_connect_client_socket_num_from_id(this->m_mt002receiver->get_dst_id()));
 							break;
 
@@ -180,5 +188,10 @@ void ServerControlleFacade::client_select_setting()
 	}
 
 	this->m_socket_handler->copy_fd_read_to_fds();
+}
+
+void ServerControlleFacade::show_server_running_info()
+{
+	std::cout << StringFormat("%s[SEVER_INFO]Server IPv4 address : %s", ServerTime::get_current_time(), this->m_socket_handler->get_server_ip_address()) << std::endl;
 }
 

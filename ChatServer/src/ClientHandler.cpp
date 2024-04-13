@@ -82,6 +82,16 @@ const std::string ClientHandler::Client::get_client_ipv4_addr() const
 	return this->m_client_ipv4_addr;
 }
 
+std::string ClientHandler::Client::get_client_password()
+{
+	return this->m_client_password;
+}
+
+const std::string ClientHandler::Client::get_client_password() const
+{
+	return this->m_client_password;
+}
+
 void ClientHandler::Client::set_client_id(std::string id)
 {
 	this->m_client_id = id;
@@ -115,6 +125,11 @@ void ClientHandler::Client::set_socket_addr_in_length(socklen_t length)
 void ClientHandler::Client::set_client_ipv4_addr(std::string ipv4_addr)
 {
 	this->m_client_ipv4_addr = ipv4_addr;
+}
+
+void ClientHandler::Client::set_client_password(std::string password)
+{
+	this->m_client_password = password;
 }
 
 bool ClientHandler::Client::operator==(const Client& other_client) const

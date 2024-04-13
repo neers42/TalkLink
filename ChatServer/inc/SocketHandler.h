@@ -90,15 +90,12 @@ private:
 
 	//Listenソケットを生成する
 	bool generate_tcp_listen_socket();
-
-
-
-
+	
 	bool generate_udp_multicast_tx_socket();
 
 	bool generate_udp_bloadcast_tx_socket();
 
-	bool obtain_local_ip_addr();
+
 
 public:
 /*
@@ -132,8 +129,11 @@ public:
 		return m_fds;
 	}
 
-	//サーバのIPアドレスを表示する
-	void show_server_info();
+
+	std::string& get_server_ip_address() {
+		return m_local_ip_addr;
+	}
+
 
 	//ファイルディスクリプタに変化がないか監視する
 	int monitor_socket(const ClientHandler& client_handler);
@@ -145,17 +145,13 @@ public:
 	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);
 
 	//accept処理
-	//std::tuple<SOCKET, sockaddr_in, socklen_t, uint32_t> accept_client_socket(ClientHandler& client_handler);
-
 	std::tuple<SOCKET, sockaddr_in> accept_client_socket(int check_next_invalid_result, socklen_t client_sockaddr_in_length);
 
-	
 	//接続中のクライアントソケットをクローズする
 	void disconnect_socket(SOCKET client_socket, std::string client_ip_address, int monitor_result);
 
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(SOCKET request_socket);
-
 
 	//select関数の初期化
 	void setting_select_info_to_listen_socket();
@@ -163,6 +159,8 @@ public:
 	void setting_select_info_to_client_socket(const SOCKET& client_socket, fd_set* fd);
 
 	void copy_fd_read_to_fds();
+
+	bool obtain_local_ip_addr();
 };
 
 #endif // !SOCKETHANDLER_H_
