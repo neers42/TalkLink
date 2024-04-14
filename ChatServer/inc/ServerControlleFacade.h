@@ -9,6 +9,9 @@
 #include "ChatRoomHandler.h"
 #include "FirebaseAuthHandler.h"
 #include "ThreadPoolHandler.h"
+#include <mutex>
+
+#define DISCONNECT_SOCKET 0
 
 class ServerControlleFacade
 {
@@ -21,7 +24,8 @@ private:
 	ServerTime* m_server_time = new ServerTime();
 	ClientHandler m_client_handler = ClientHandler();
 	ThreadPoolHandler* m_thread_pool_handler = new ThreadPoolHandler(4);
-
+	std::mutex m_connect_client_list_mutex;
+	std::mutex m_cout_mutex;
 
 public:
 	//コンストラクタ
@@ -41,6 +45,12 @@ public:
 	void client_select_setting();
 
 	void show_server_running_info();
+
+	void accept_client_socket_process();
+
+	void mt001_process_task(std::string& receive_data, int& monitor_result);
+
+	void mt002_process_task(std::string& receive_data, int& receive_result);
 
 
 

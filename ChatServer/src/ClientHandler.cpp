@@ -1,6 +1,6 @@
 #include "ClientHandler.h"
 
-ClientHandler::Client::Client():m_client_id{""}, m_client_name{""}, m_client_mail_addr{""}, m_client_socket{INVALID_SOCKET}, m_client_ipv4_addr{""}
+ClientHandler::Client::Client():m_client_id{""}, m_client_name{""}, m_client_mail_addr{""}, m_client_socket{INVALID_SOCKET}, m_client_ipv4_addr{""}, m_client_password{""}
 {
 	this -> m_client_sockaddr_in.sin_family = AF_INET;
 	this->m_client_sockaddr_in.sin_port = 0;
@@ -146,6 +146,7 @@ ClientHandler::Client& ClientHandler::Client::operator=(const Client& other_clie
 	m_client_sockaddr_in = other_client.m_client_sockaddr_in;
 	m_socket_addr_in_length = other_client.m_socket_addr_in_length;
 	m_client_ipv4_addr = other_client.m_client_ipv4_addr;
+	m_client_password = other_client.m_client_password;
 	return *this;
 }
 

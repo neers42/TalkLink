@@ -174,12 +174,12 @@ bool MT002Receiver::extraction_dst_client_id(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 4, end_pos_split = 36;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+		//int start_pos_split = 4, end_pos_split = 36;
+		if (CLIENT_DST_ID_START_POS > data.size() || (CLIENT_DST_ID_START_POS+ CLIENT_DST_ID_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
 
-		std::string dst_client_id = data.substr(start_pos_split, end_pos_split);
+		std::string dst_client_id = data.substr(CLIENT_DST_ID_START_POS, CLIENT_DST_ID_BYTE_SIZE);
 		m_mt002_data.set_dst_client_id(dst_client_id);
 
 	}
@@ -195,12 +195,12 @@ bool MT002Receiver::extraction_src_clinet_id(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 40, end_pos_split = 36;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+		//int start_pos_split = 40, end_pos_split = 36;
+		if (CLIENT_SRC_ID_START_POS > data.size() || (CLIENT_SRC_ID_START_POS + CLIENT_SRC_ID_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
 
-		std::string src_client_id = data.substr(start_pos_split, end_pos_split);
+		std::string src_client_id = data.substr(CLIENT_SRC_ID_START_POS, CLIENT_SRC_ID_BYTE_SIZE);
 		m_mt002_data.set_src_client_id(src_client_id);
 	}
 	catch(const exception::ExceptionBase& ex)
@@ -226,12 +226,12 @@ bool MT002Receiver::extraction_dst_chatroom_id(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 76, end_pos_split = 36;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+		//int start_pos_split = 76, end_pos_split = 36;
+		if (CHATROOM_ID_START_POS > data.size() || (CHATROOM_ID_START_POS + CHATROOM_ID_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
 
-		std::string chatroom_id = data.substr(start_pos_split, end_pos_split);
+		std::string chatroom_id = data.substr(CHATROOM_ID_START_POS, CHATROOM_ID_BYTE_SIZE);
 		m_mt002_data.set_dst_chatroom_id(chatroom_id);
 
 	}
@@ -257,12 +257,12 @@ bool MT002Receiver::extraction_data_type(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 112, end_pos_split = 1;
-		if (start_pos_split > data.size() || (start_pos_split + end_pos_split) > data.size()) {
+		//int start_pos_split = 112, end_pos_split = 1;
+		if (DATA_TYPE_START_POS > data.size() || (DATA_TYPE_START_POS + DATA_TYPE_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
 
-		std::string data_type_string = data.substr(start_pos_split, end_pos_split);
+		std::string data_type_string = data.substr(DATA_TYPE_START_POS, DATA_TYPE_BYTE_SIZE);
 		int data_type_int = std::stoi(data_type_string);
 		if (data_type_int < 0 || data_type_int > 3) {
 			THROW_APP_EXCEPTION(StringFormat("The value of Data type is invalid.(\033[31mdata_type_int contains : %d\033[m", data_type_int));
@@ -293,12 +293,12 @@ bool MT002Receiver::extraction_main_data(const std::string& data)
 {
 	try
 	{
-		int start_pos_split = 113;
-		if (start_pos_split > data.size()) {
+		//int start_pos_split = 113;
+		if (MAIN_DATA_START_POS > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
 
-		std::string main_data = data.substr(start_pos_split);
+		std::string main_data = data.substr(MAIN_DATA_START_POS);
 		m_mt002_data.set_main_data(main_data);
 	}
 	catch (const exception::ExceptionBase& ex)

@@ -2,6 +2,9 @@
 
 void FirebaseAuthHandler::initialize_firebase()
 {
+
+	//TODO
+	//jsonファイルから設定値を読み込んで初期化を実行するようにする
 	std::cout << ServerTime::get_current_time() << "[INFO]Creating Firebase Auth ...";
 	firebase::AppOptions options = firebase::AppOptions();
 	options.set_api_key("***REMOVED***");
