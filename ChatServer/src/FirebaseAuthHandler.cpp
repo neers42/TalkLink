@@ -28,8 +28,8 @@ std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::
 		if (result.status() == firebase::kFutureStatusComplete) {
 			if (result.error() == firebase::auth::kAuthErrorNone) {
 				const firebase::auth::AuthResult auth_result = *result.result();
-				std::cout << StringFormat("%s[INFO]Create user succeeded for email(UID : %s) : %s",
-					ServerTime::get_current_time(), auth_result.user.uid().c_str(), auth_result.user.email().c_str()) << std::endl;
+				std::cout << StringFormat("%s[INFO]Create user succeeded for email : %s(UID : %s)",
+					ServerTime::get_current_time(), auth_result.user.email(), auth_result.user.uid()) << std::endl;
 				user_id = auth_result.user.uid();
 			}
 			else {
@@ -42,27 +42,35 @@ std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::
 	return user_id;
 }
 
-void FirebaseAuthHandler::create_user_callback(const firebase::Future<firebase::auth::AuthResult*>& result, void* user_data)
-{
-	//if (result.error() == firebase::auth::kAuthErrorNone) {
-	//	// ユーザーの作成に成功した場合、UIDを取得
-	//	firebase::auth::User* user = *result.result();
-	//	std::string uid = user->uid();
-	//	std::cout << "UID: " << uid << std::endl;
-	//}
-	//else {
-	//	// ユーザーの作成に失敗した場合、エラーを表示
-	//	std::cout << "Error creating user: " << result.error_message() << std::endl;
-	//}
-}
 
-
-
-void FirebaseAuthHandler::sign_in_with_email_and_password(const std::string& email, const std::string& password)
+std::string FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string& email, const std::string& password)
 {
 	firebase::Future<firebase::auth::AuthResult> sign_in_result = auth->SignInWithEmailAndPassword(email.c_str(), password.c_str());
-	
+	firebase::Future<firebase::auth::AuthResult> result;
+	std::string user_id = "";
+
+	while (result.status() != firebase::kFutureStatusComplete)
+	{
+		result = auth->SignInWithEmailAndPasswordLastResult();
+		if (result.status() == firebase::kFutureStatusComplete) {
+			if (result.error() == firebase::auth::kAuthErrorNone) {
+				const firebase::auth::AuthResult auth_result = *result.result();
+				std::cout << StringFormat("%s[INFO]Sign in succeeded for email : %s(UID : %s)"
+				,ServerTime::get_current_time(), auth_result.user.email(), auth_result.user.uid()) << std::endl;
+				user_id = auth_result.user.uid();
+			}
+			else {
+				std::cerr << StringFormat("%s\033[31m[ERROR]Sign in failed with error : %s",
+					ServerTime::get_current_time(), result.error_message()) << std::endl;
+			}
+		}
+	}
+
+	return user_id;
 }
+
+
+
 
 
 FirebaseAuthHandler::FirebaseAuthHandler()

@@ -52,8 +52,11 @@ public:
 
 	void mt002_process_task(std::string& receive_data, int& receive_result);
 
+	
+private:
 
-
+	std::string sign_in_process(std::string& mail_addr, std::string& password);
+	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 
 };
 

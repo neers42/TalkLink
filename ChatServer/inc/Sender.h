@@ -10,7 +10,8 @@ public:
 	~Sender();
 	
 
-	bool tcp_unicast_data(const ClientHandler& client_handler,const std::string& send_data, const int send_data_length, int send_socket_num);
+	bool tcp_unicast_data(const SOCKET socket ,const std::string& send_data, const int send_data_length);
+	bool tcp_multicast_data(const std::vector<SOCKET> send_sockets, std::string& send_data, const int send_data_length);
 	bool udp_multicast_data();
 private:
 

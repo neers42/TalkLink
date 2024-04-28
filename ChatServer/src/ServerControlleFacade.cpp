@@ -153,6 +153,9 @@ void ServerControlleFacade::mt001_process_task(std::string& receive_data, int& m
 				m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
 				m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(m_mt001receiver->get_mt001_data().get_client_mail_addr());
 				m_client_handler.connected_client_list[monitor_result].set_client_password(m_mt001receiver->get_mt001_data().get_client_password());
+				
+				//データベースにユーザ情報を登録する。
+			
 			}
 			this->m_client_handler.show_client_info(monitor_result);
 
@@ -161,9 +164,22 @@ void ServerControlleFacade::mt001_process_task(std::string& receive_data, int& m
 			break;
 
 		case 1:			//sign in
+			user_id = this->m_firebase_auth_handler->sign_in_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr()
+				, this->m_mt001receiver->get_mt001_data().get_client_password());
+
+			if (user_id != "") {
+				//データベースからユーザ情報を読み取る。
+				std::string client_name, client_mail_addr, client_password;
+				m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
+				m_client_handler.connected_client_list[monitor_result].set_client_name(client_name);
+				m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(client_mail_addr);
+				m_client_handler.connected_client_list[monitor_result].set_client_password(client_password);
+			}
+			
 			break;
 
 		case 2:			//sign out
+			
 			break;
 
 		default:
@@ -182,17 +198,18 @@ void ServerControlleFacade::mt002_process_task(std::string& receive_data, int& r
 {
 	std::string trans_type = Receiver::extraction_trans_type(receive_data);
 	if (m_mt002receiver->data_extraction(receive_data)) {
+		int send_socket_num = m_client_handler.search_connect_client_socket_num_from_id(this->m_mt002receiver->get_dst_id());
 		switch (m_mt002receiver->get_trans_type())
 		{
 			//TCPユニキャスト
 		case 0:
-			m_sender->tcp_unicast_data(m_client_handler,
-				receive_data, receive_result,
-				m_client_handler.search_connect_client_socket_num_from_id(this->m_mt002receiver->get_dst_id()));
+			m_sender->tcp_unicast_data(m_client_handler.connected_client_list[send_socket_num].get_client_socket(),
+				receive_data, receive_result);
 			break;
 
 			//TCPでマルチキャスト
 		case 1:
+
 			break;
 
 			//UDPブロードキャスト
@@ -209,4 +226,38 @@ void ServerControlleFacade::mt002_process_task(std::string& receive_data, int& r
 		//break;
 	}
 }
+
+
+std::string ServerControlleFacade::sign_in_process(std::string& mail_addr, std::string& password)
+{
+	return std::string();
+}
+
+std::string ServerControlleFacade::sign_in_process(int& auth_type, const char* token, const char* secret)
+{
+	firebase::auth::Credential credential;
+	switch (auth_type)
+	{
+	case 1:		//google auth
+		credential = firebase::auth::GoogleAuthProvider::GetCredential(token, nullptr);
+		break;
+	case 2:		//facebook auth
+		credential = firebase::auth::FacebookAuthProvider::GetCredential(token);
+		break;
+	case 3:		//twitter auth
+		credential = firebase::auth::TwitterAuthProvider::GetCredential(token, secret);
+		break;
+	case 4:		//microsoft auth
+		
+		break;
+	case 5:		//yahoo auth
+		break;
+	default:
+		break;
+	}
+	return std::string();
+}
+
+
+
 
