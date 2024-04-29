@@ -12,8 +12,6 @@
 
 class ChatroomHandler
 {
-
-
 private:
 	class ChatRoom
 	{
@@ -36,6 +34,14 @@ private:
 		//クライアントルームからクライアントを削除する
 		bool delete_client_chatroom(const ClientHandler::Client& client);
 
+		std::string& get_chatroom_id();
+		const std::string& get_chatroom_id() const;
+
+		std::string& get_chatroom_name();
+		const std::string& get_chatroom_name() const;
+
+		std::vector<ClientHandler::Client>& get_client_list();
+		const std::vector < ClientHandler::Client>& get_client_list() const;
 
 
 	private:
@@ -48,27 +54,25 @@ private:
 		
 	};
 	
-
 	//public関数
 public:
 	ChatroomHandler();
 	~ChatroomHandler();
 	bool add_chatroom(const ChatRoom& chatroom);
 	bool delete_chatroom(const ChatRoom& chatroom);
+	std::vector<ClientHandler::Client>& get_client_list(int list_num);
+	std::vector<ChatRoom> get_chatroom_list();
+	int search_chatroom_id_from_list(const std::string& chatroom_id);
 
+	
 	//private変数
-private:
+public:
 	std::vector<ChatRoom> m_chatroom_list;
 
 	//private関数
 private:
 	//chatroomIDを発行する
 	std::string issue_chatroom_id();
-	
-	
-
-
-
 };
 #endif // !CHATROOMHANDLER_H_
 

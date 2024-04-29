@@ -9,15 +9,14 @@ Receiver::~Receiver()
 {
 }
 
-std::tuple<int32_t, std::string> Receiver::receive_data(const ClientHandler& ch, int client_list_num)
+std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_socket, int client_list_num, const std::string& ipv4_addr)
 {
-
 	try
 	{
 		//暗号化されたデータを受信
 		char temp_recv_data[MAX_RECEIVE_MESSAGE_LEN];
 		memset(temp_recv_data, '\0', sizeof(temp_recv_data));
-		int receive_result = recv(ch.connected_client_list[client_list_num].get_client_socket(), temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
+		int receive_result = recv(receive_socket, temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
 
 #ifdef DEBUG
 		std::cout << ServerTime::get_current_time() << "[DEBUG]receive_result = " << receive_result << std::endl;
@@ -90,7 +89,7 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const ClientHandler& ch,
 		else
 		{
 			//trans_di.src_recv_data = std::string(temp_recv_data);
-			show_receive_info(temp_recv_data, ch, client_list_num, receive_result);
+			show_receive_info(temp_recv_data, ipv4_addr, client_list_num, receive_result);
 		}
 		return std::make_tuple(receive_result, temp_recv_data);
 
@@ -111,11 +110,11 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const ClientHandler& ch,
 	}
 
 }
-void Receiver::show_receive_info(const std::string& data, const ClientHandler& client_handler, int& detection_num, int& receive_result)
+void Receiver::show_receive_info(const std::string& data, const std::string& ipv4_addr, int& detection_num, int& receive_result)
 {
 	
 	std::cout << ServerTime::get_current_time() << "[RECEIVE]" << receive_result<< "byte message was received from client list["  << detection_num << "]"
-		<< "(IP address：" << client_handler.connected_client_list[detection_num].get_client_ipv4_addr()<< ")" << std::endl;
+		<< "(IP address：" << ipv4_addr<< ")" << std::endl;
 
 #ifdef DEBUG
 	//std::cout << ServerTime::get_current_time() << "[DEBUG]The message contains：" << data << std::endl;

@@ -108,6 +108,7 @@ public:
     const MT002Data& get_mt002_data();
     const std::string& get_dst_id();
     const int get_trans_type();
+    const std::string& get_dst_chatroom_id();
 
 };
 

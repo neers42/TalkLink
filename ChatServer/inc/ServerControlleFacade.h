@@ -24,6 +24,7 @@ private:
 	ServerTime* m_server_time = new ServerTime();
 	ClientHandler m_client_handler = ClientHandler();
 	ThreadPoolHandler* m_thread_pool_handler = new ThreadPoolHandler(4);
+	ChatroomHandler* m_chat_room_handler = new ChatroomHandler();
 	std::mutex m_connect_client_list_mutex;
 	std::mutex m_cout_mutex;
 
@@ -55,7 +56,7 @@ public:
 	
 private:
 
-	std::string sign_in_process(std::string& mail_addr, std::string& password);
+	std::string sign_in_process(const std::string& mail_addr, const std::string& password);
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 
 };

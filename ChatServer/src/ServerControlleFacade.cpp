@@ -17,7 +17,7 @@ ServerControlleFacade::~ServerControlleFacade()
 	delete m_sender;
 	delete m_server_time;
 	delete m_thread_pool_handler;
-	
+	delete m_chat_room_handler;
 	
 }
 
@@ -58,7 +58,8 @@ void ServerControlleFacade::run()
 			//アクセプト要求があった場合
 		case REQUEST_ACCEPT_CLIENT_DETECTION:
 		{
-			this->accept_client_socket_process();
+			this->m_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
+			//this->accept_client_socket_process();
 		};
 			break;
 		
@@ -66,7 +67,8 @@ void ServerControlleFacade::run()
 		default:
 			int receive_result = 0;
 			std::string receive_data, mt;
-			std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler, monitor_result);
+			std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler.connected_client_list[monitor_result].get_client_socket()
+				, monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr());
 
 			//receive_result == 0の場合(クライアントのソケットが切断された場合)
 			if (receive_result == DISCONNECT_SOCKET) {
@@ -164,8 +166,7 @@ void ServerControlleFacade::mt001_process_task(std::string& receive_data, int& m
 			break;
 
 		case 1:			//sign in
-			user_id = this->m_firebase_auth_handler->sign_in_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr()
-				, this->m_mt001receiver->get_mt001_data().get_client_password());
+			user_id = this->sign_in_process(m_mt001receiver->get_mt001_data().get_client_mail_addr(), m_mt001receiver->get_mt001_data().get_client_password());
 
 			if (user_id != "") {
 				//データベースからユーザ情報を読み取る。
@@ -179,7 +180,7 @@ void ServerControlleFacade::mt001_process_task(std::string& receive_data, int& m
 			break;
 
 		case 2:			//sign out
-			
+			m_firebase_auth_handler->sign_out();
 			break;
 
 		default:
@@ -197,6 +198,8 @@ void ServerControlleFacade::mt001_process_task(std::string& receive_data, int& m
 void ServerControlleFacade::mt002_process_task(std::string& receive_data, int& receive_result)
 {
 	std::string trans_type = Receiver::extraction_trans_type(receive_data);
+	std::vector<SOCKET> send_sockets;
+	int chatroom_list_num = -1;
 	if (m_mt002receiver->data_extraction(receive_data)) {
 		int send_socket_num = m_client_handler.search_connect_client_socket_num_from_id(this->m_mt002receiver->get_dst_id());
 		switch (m_mt002receiver->get_trans_type())
@@ -209,11 +212,18 @@ void ServerControlleFacade::mt002_process_task(std::string& receive_data, int& r
 
 			//TCPでマルチキャスト
 		case 1:
-
+			//TODO　以下を実装する
+			//mt002のパケットの中身がTCPマルチキャストの場合(グループ内でのチャットの時)、グループチャットから
+			chatroom_list_num = this->m_chat_room_handler->search_chatroom_id_from_list(m_mt002receiver->get_dst_chatroom_id());
+			for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
+				send_sockets.push_back(client.get_client_socket());
+			}
+			m_sender->tcp_multicast_data(send_sockets, receive_data, receive_result);
 			break;
 
 			//UDPブロードキャスト
 		case 2:
+			//TODO　UDPのブロードキャストを実装する
 			break;
 
 		default:
@@ -228,9 +238,10 @@ void ServerControlleFacade::mt002_process_task(std::string& receive_data, int& r
 }
 
 
-std::string ServerControlleFacade::sign_in_process(std::string& mail_addr, std::string& password)
+std::string ServerControlleFacade::sign_in_process(const std::string& mail_addr, const std::string& password)
 {
-	return std::string();
+	std::string user_id = this->m_firebase_auth_handler->sign_in_user_with_email_and_password(mail_addr, password);
+	return user_id;
 }
 
 std::string ServerControlleFacade::sign_in_process(int& auth_type, const char* token, const char* secret)

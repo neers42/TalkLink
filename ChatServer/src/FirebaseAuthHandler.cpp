@@ -69,6 +69,11 @@ std::string FirebaseAuthHandler::sign_in_user_with_email_and_password(const std:
 	return user_id;
 }
 
+void FirebaseAuthHandler::sign_out()
+{
+	this->auth->SignOut();
+}
+
 
 
 

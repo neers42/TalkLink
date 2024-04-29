@@ -23,9 +23,7 @@ public:
 	
 	std::string create_user_with_email_and_password(const std::string& email, const std::string& password);
 	std::string sign_in_user_with_email_and_password(const std::string& email, const std::string& password);
-	bool sign_out();
-
-	
+	void sign_out();
 
 };
 #endif // !FIREBASEAUTHHANDLER

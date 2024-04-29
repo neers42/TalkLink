@@ -92,6 +92,11 @@ const std::string ClientHandler::Client::get_client_password() const
 	return this->m_client_password;
 }
 
+firebase::auth::Auth* ClientHandler::Client::get_client_auth()
+{
+	return this->client_auth;
+}
+
 void ClientHandler::Client::set_client_id(std::string id)
 {
 	this->m_client_id = id;

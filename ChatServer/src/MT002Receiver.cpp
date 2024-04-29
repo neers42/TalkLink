@@ -532,5 +532,10 @@ const int MT002Receiver::get_trans_type()
 	return this->m_mt002_data.get_trans_type();
 }
 
+const std::string& MT002Receiver::get_dst_chatroom_id()
+{
+	return this->m_mt002_data.get_dst_chatroom_id();
+}
+
 
 

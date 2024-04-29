@@ -11,6 +11,8 @@
 #include "AppException.h"
 #include "StringFormat.h"
 #include "ServerTime.h"
+#include "FirebaseAuthHandler.h"
+#include "firebase/auth.h"
 #define MAX_CONNECT_NUM 50000
 #define NOT_EXIST_CLIENT_ID -1
 
@@ -33,6 +35,7 @@ private:
 		socklen_t m_socket_addr_in_length = sizeof(m_client_sockaddr_in);
 		std::string m_client_ipv4_addr = "";
 		std::string m_client_password = "";
+		firebase::auth::Auth* client_auth;
 
 
 	public:
@@ -59,6 +62,7 @@ private:
 		const std::string get_client_ipv4_addr() const;
 		std::string get_client_password();
 		const std::string get_client_password() const;
+		firebase::auth::Auth* get_client_auth();
 
 		//setter
 		void set_client_id(std::string id);
