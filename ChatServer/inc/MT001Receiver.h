@@ -98,6 +98,7 @@ public:
     ~MT001Receiver();
 
 	bool data_extraction(const std::string& data) override;
+	void show_mt001_data();
 	MT001Data& get_mt001_data();
 };
 

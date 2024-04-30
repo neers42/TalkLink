@@ -5,6 +5,7 @@
 #include <string>
 #include <mutex>
 #include "stdlib.h"
+#include "LogHandler.h"
 
 //std::mutex cout_mtx;
 

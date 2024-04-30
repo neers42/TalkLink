@@ -31,18 +31,22 @@ bool MT001Receiver::data_extraction(const std::string& data)
 	}
 
 #ifdef DEBUG_MT001_CONTAIN
-	std::cout << StringFormat("%s[DEBUG]SIGN Type(0: sign up 1: sign in, 2: sign out) : %d", ServerTime::get_current_time(), this->m_mt001_data.get_sign_type()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]AUTH type : %d", ServerTime::get_current_time(), this->m_mt001_data.get_auth_type()) << std::endl;
-	//std::cout << StringFormat("%s[DEBUG]Client ID : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_id()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Client Name Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_name_byte_size()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Client Name : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_name()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Client Mail Addr Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_mail_addr_byte_size()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Client Mail Address : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_mail_addr()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Client Password Byte Size : %d", ServerTime::get_current_time(), this->m_mt001_data.get_client_password_byte_size()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Client Password : %s", ServerTime::get_current_time(), this->m_mt001_data.get_client_password()) << std::endl;
+	show_mt001_data();
 #endif // DEBUG_MT001_CONTAIN
 
 	return true;
+}
+
+void MT001Receiver::show_mt001_data()
+{
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("SIGN Type(0: sign up 1: sign in, 2: sign out) : %d", this->m_mt001_data.get_sign_type()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("AUTH type : %d", this->m_mt001_data.get_auth_type()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Name Byte Size : %d", this->m_mt001_data.get_client_name_byte_size()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Name : %s", this->m_mt001_data.get_client_name()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Mail Addr Byte Size : %d", this->m_mt001_data.get_client_mail_addr_byte_size()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Mail Address : %s", this->m_mt001_data.get_client_mail_addr()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Password Byte Size : %d", this->m_mt001_data.get_client_password_byte_size()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Password : %s", this->m_mt001_data.get_client_password()));
 }
 
 
@@ -251,7 +255,8 @@ bool MT001Receiver::extraction_sign_type(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -274,7 +279,8 @@ bool MT001Receiver::extraction_auth_type(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -297,7 +303,8 @@ bool MT001Receiver::extraction_client_id(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -323,7 +330,8 @@ bool MT001Receiver::extraction_client_name_byte_size(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+	//	std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -346,7 +354,8 @@ bool MT001Receiver::extraction_client_name(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -371,7 +380,8 @@ bool MT001Receiver::extraction_client_mail_addr_byte_size(const std::string& dat
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 
@@ -394,7 +404,8 @@ bool MT001Receiver::extraction_client_mail_addr(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 	return true;
@@ -422,7 +433,8 @@ bool MT001Receiver::extraction_client_password_byte_size(const std::string& data
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 	}
 
@@ -448,7 +460,8 @@ bool MT001Receiver::extraction_client_password(const std::string& data)
 
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return false;
 
 	}

@@ -19,13 +19,13 @@ void LogHandler::logging_info(LogType log_type, std::ostream& os, const std::str
 			os << StringFormat("%s[INFO]", ServerTime::get_current_time()) << log_message << std::endl;
 			break;
 		case LogHandler::LogType::SERVER_ERROR:
-			os << StringFormat("%s[ERROR]", ServerTime::get_current_time()) << log_message << std::endl;
+			os << StringFormat("%s\033[31m[ERROR]\033[m", ServerTime::get_current_time()) << log_message << std::endl;
 			break;
 		case LogHandler::LogType::RECEIVE:
-		os << StringFormat("%s[RECEIVE]", ServerTime::get_current_time()) << log_message << std::endl;
+		os << StringFormat("%s\033[32m[RECEIVE]\033[m", ServerTime::get_current_time()) << log_message << std::endl;
 			break;
 		case LogHandler::LogType::SEND:
-			os << StringFormat("%s[SEND]", ServerTime::get_current_time()) << log_message << std::endl;
+			os << StringFormat("%s\033[32m[SEND]\033[m", ServerTime::get_current_time()) << log_message << std::endl;
 			break;
 
 		case LogHandler::LogType::SIGN_UP:
@@ -35,6 +35,8 @@ void LogHandler::logging_info(LogType log_type, std::ostream& os, const std::str
 		case LogHandler::LogType::SIGN_IN:
 			os << StringFormat("%s[SIGN IN]", ServerTime::get_current_time()) << log_message << std::endl;
 			break;
+		case LogType::DEBUG_INFO:
+			os << StringFormat("%s[DEBUG INFO]", ServerTime::get_current_time()) << log_message << std::endl;
 		default:
 			break;
 		}

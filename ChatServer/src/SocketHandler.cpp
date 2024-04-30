@@ -166,6 +166,7 @@ bool SocketHandler::setting_tcp_listen_socket(const std::string& file_pass)
 	{
 		THROW_APP_EXCEPTION("iniファイルの読み込みに失敗しました。");
 	}
+
 	std::cout << StringFormat("%s[INFO]Loading setting init file ...", ServerTime::get_current_time());
 	
 	//フラッグの設定
@@ -277,8 +278,7 @@ bool SocketHandler::setting_tcp_listen_socket(const std::string& file_pass)
 
 	}
 	else{
-		std::cout << "\033[31m [ERROR]\033[m" << std::endl;
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeは設定されなかったため、プログラムを終了します。" << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("(tcp_listen setting)param：ai_socktypeは設定されなかったため、プログラムを終了します。"));
 		return false;
 	}
 	std::cout << "\033[32m [OK] \033[m" << std::endl;
@@ -335,7 +335,7 @@ bool SocketHandler::setting_tcp_listen_socket(const std::string& file_pass)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 
 		return false;
 	}
@@ -432,7 +432,7 @@ bool SocketHandler::setting_multicast_tx_socket(const std::string& file_pass)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str());
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 
@@ -470,7 +470,7 @@ bool SocketHandler::setting_multicast_tx_socket(const std::string& file_pass)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
 
@@ -526,7 +526,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 }
 
@@ -627,7 +627,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str());
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 	
@@ -745,7 +745,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERORR][m%s", ServerTime::get_current_time(), ex.what_for_str());
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
 	return true;
@@ -788,7 +788,7 @@ bool SocketHandler::obtain_local_ip_addr()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 
 	}
 
@@ -861,7 +861,7 @@ bool SocketHandler::bind_tcp_listen_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 	
@@ -957,7 +957,7 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(int check_ne
 		}
 		catch (const exception::ExceptionBase& ex)
 		{
-			std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 			struct sockaddr_in error_addr_in = { 0 };
 			return std::make_tuple(INVALID_SOCKET, error_addr_in);
 		}
@@ -1006,7 +1006,7 @@ void SocketHandler::disconnect_socket(SOCKET client_socket, std::string client_i
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
 	std::cout << ServerTime::get_current_time() << "[INFO]Successfully initialized the information in the client list." << std::endl;
@@ -1077,7 +1077,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s[ERROR]%s",ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		freeaddrinfo(m_result);
 		WSACleanup();
 		return false;
@@ -1158,7 +1158,7 @@ int SocketHandler::monitor_socket(const ClientHandler& client_handler)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return SOCKET_ERROR;
 	}
 
@@ -1192,7 +1192,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 	return true;
 }

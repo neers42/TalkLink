@@ -20,7 +20,7 @@ MT002Receiver::~MT002Receiver()
  * @return [out]
  *
  **********************************************************************************/
-int MT002Receiver::data_receive(const ClientHandler& client_handler, int detection_num)
+int MT002Receiver::data_receive(const SOCKET& client_socket, int detection_num, std::string& client_ipv4_addr)
 {
 	try
 	{
@@ -28,7 +28,7 @@ int MT002Receiver::data_receive(const ClientHandler& client_handler, int detecti
 		struct Receiver::trans_data_info trans_di;
 		char temp_recv_data[MAX_RECEIVE_MESSAGE_LEN];
 		memset(temp_recv_data, '\0', sizeof(temp_recv_data));
-		int receive_result = recv(client_handler.connected_client_list[detection_num].get_client_socket(), temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
+		int receive_result = recv(client_socket, temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
 
 
 #ifdef DEBUG
@@ -104,7 +104,7 @@ int MT002Receiver::data_receive(const ClientHandler& client_handler, int detecti
 
 			trans_di.src_recv_data = std::string(temp_recv_data);
 
-			print_src_recv_data(trans_di.src_recv_data, client_handler, detection_num, receive_result);
+			print_src_recv_data(trans_di.src_recv_data, client_ipv4_addr, detection_num, receive_result);
 
 			//データの復号を実施する(未実装)
 
@@ -115,17 +115,11 @@ int MT002Receiver::data_receive(const ClientHandler& client_handler, int detecti
 		return receive_result;
 
 	}
-	//catch (const std::exception& ex)
 	catch (const exception::ExceptionBase& ex)
 	{
 #ifdef DEBUG
-		//std::string temp_str = std::string(ex.what());
-		//std::cout << temp_str << std::endl;
-#endif // DEBUG
-
-
-		//std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
-		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+	#endif // DEBUG
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return SOCKET_ERROR;
 
 	}
@@ -155,14 +149,13 @@ bool MT002Receiver::extraction_trans_type(const std::string& data)
 		int trans_type_int = std::stoi(trans_type_string);
 		if (trans_type_int < 0 || trans_type_int > 2) {
 			THROW_APP_EXCEPTION(StringFormat("The value of Trans type is invalid.(\033[31mtrans_type_int contains : %d\033[m)", trans_type_int));
-			//throw std::invalid_argument(StringFormat("The value of Trans type is invalid.(trans_type_int contains : %d)", trans_type_int));
 		}
 		m_mt002_data.set_trans_type(trans_type_int);
 	}
 	
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 	
@@ -174,7 +167,6 @@ bool MT002Receiver::extraction_dst_client_id(const std::string& data)
 {
 	try
 	{
-		//int start_pos_split = 4, end_pos_split = 36;
 		if (CLIENT_DST_ID_START_POS > data.size() || (CLIENT_DST_ID_START_POS+ CLIENT_DST_ID_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
@@ -185,7 +177,7 @@ bool MT002Receiver::extraction_dst_client_id(const std::string& data)
 	}
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 	return true;
@@ -195,7 +187,6 @@ bool MT002Receiver::extraction_src_clinet_id(const std::string& data)
 {
 	try
 	{
-		//int start_pos_split = 40, end_pos_split = 36;
 		if (CLIENT_SRC_ID_START_POS > data.size() || (CLIENT_SRC_ID_START_POS + CLIENT_SRC_ID_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
@@ -205,7 +196,7 @@ bool MT002Receiver::extraction_src_clinet_id(const std::string& data)
 	}
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 
@@ -237,7 +228,7 @@ bool MT002Receiver::extraction_dst_chatroom_id(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 		return true;
@@ -272,7 +263,7 @@ bool MT002Receiver::extraction_data_type(const std::string& data)
 	}
 	catch(const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 
@@ -303,7 +294,7 @@ bool MT002Receiver::extraction_main_data(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cout << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 	return true;
 }
@@ -323,11 +314,9 @@ bool MT002Receiver::store_receive_data()
 }
 
 //受信した暗号化されたメッセージを表示する。
-void MT002Receiver::print_src_recv_data(const std::string& data, const ClientHandler& client_handler, int& detection_num, int& receive_result)
+void MT002Receiver::print_src_recv_data(const std::string& data, const std::string& dst_ipv4_addr, int& detection_num, int& receive_result)
 {
-	std::cout << ServerTime::get_current_time() << "[RECEIVE]" << receive_result<< "byte message was received from client list["  << detection_num << "]"
-		<< "(IP address：" << client_handler.connected_client_list[detection_num].get_client_ipv4_addr() << std::endl;
-
+	LogHandler::logging_info(LogHandler::LogType::RECEIVE, std::cout, StringFormat("%d byte message was received from client list[%d] (IP address：%s)", receive_result, detection_num, dst_ipv4_addr));
 }
 
 
@@ -347,12 +336,7 @@ bool MT002Receiver::data_extraction(const std::string& data)
 		return false;
 	}
 #ifdef DEBUG_MT002_CONTAIN
-	std::cout << StringFormat("%s[DEBUG]Transport Type(0: unicast 1: multicast, 2:bloadcast) : %d", ServerTime::get_current_time(), this->m_mt002_data.get_trans_type()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Dist Client ID : %s", ServerTime::get_current_time(), this->m_mt002_data.get_dst_client_id()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Source Client ID : %s", ServerTime::get_current_time(), this->m_mt002_data.get_src_client_id()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Dist Chatroom ID : %s", ServerTime::get_current_time(), this->m_mt002_data.get_dst_chatroom_id()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Data Type(0: message 1: image 2: video 3: contact_details) : %d", ServerTime::get_current_time(), this->m_mt002_data.get_data_type()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG]Main Data : %s", ServerTime::get_current_time(), this->m_mt002_data.get_main_data()) << std::endl;
+	show_mt002_data();
 #endif // DEBUG
 
 	return true;
@@ -536,6 +520,16 @@ const int MT002Receiver::get_trans_type()
 const std::string& MT002Receiver::get_dst_chatroom_id()
 {
 	return this->m_mt002_data.get_dst_chatroom_id();
+}
+
+void MT002Receiver::show_mt002_data()
+{
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Transport Type(0: unicast 1: multicast, 2:bloadcast) : %d", this->m_mt002_data.get_trans_type()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Dist Client ID : %s", this->m_mt002_data.get_dst_client_id()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Source Client ID : %s", this->m_mt002_data.get_src_client_id()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Dist Chatroom ID : %s", this->m_mt002_data.get_dst_chatroom_id()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Data Type(0: message 1: image 2: video 3: contact_details) : %d", this->m_mt002_data.get_data_type()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Main Data : %s", this->m_mt002_data.get_main_data()));
 }
 
 

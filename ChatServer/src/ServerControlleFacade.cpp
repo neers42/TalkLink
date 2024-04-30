@@ -106,26 +106,23 @@ void ServerControlleFacade::message_receive_process(int monitor_result)
 {
 	int receive_result = 0;
 	std::string receive_data, mt;
-	std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler.connected_client_list[monitor_result].get_client_socket()
-		, monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr());
-
+	{
+		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
+		std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler.connected_client_list[monitor_result].get_client_socket()
+			, monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr());
+	}
+	
 	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
 	if (receive_result == SOCKET_ERROR) {
-		{
-			std::unique_lock<std::mutex> lock(m_cout_mutex);
-			std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << monitor_result << "](IP address: " << m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr() << ") is SOCKET_ERROR now, so initializing client list." << std::endl;
-		}
-			m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
-			m_client_handler.delete_client(monitor_result);
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d](IP address : %s) is SOCKET_ERROR now, so initializing client list.", monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr()));
+		m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
+		m_client_handler.delete_client(monitor_result);
 	}
 	//receive_result == 0の場合(クライアントのソケットが切断された場合)
 	else if (receive_result == DISCONNECT_SOCKET) {
-		{
-			std::unique_lock<std::mutex> lock(m_cout_mutex);
-			std::cout << ServerTime::get_current_time() << "[INFO]Client list[" << monitor_result << "](IP address: " << m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr() << ") has been disconnected, so initializing client list." << std::endl;
-		}
-			m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
-			m_client_handler.delete_client(monitor_result);
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("[INFO]Client list[%d](IP address : %s) has been disconnected, so initializing client list.", monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr()));
+		m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
+		m_client_handler.delete_client(monitor_result);
 	}
 	//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
 	else {
