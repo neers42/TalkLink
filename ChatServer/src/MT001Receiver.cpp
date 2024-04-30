@@ -46,7 +46,8 @@ bool MT001Receiver::data_extraction(const std::string& data)
 }
 
 
-MT001Receiver::MT001Data::MT001Data()
+MT001Receiver::MT001Data::MT001Data(): m_sign_type{SIGN_TYPE::sign_up}, m_auth_type{AUTH_TYPE::normal_auth},m_client_id("")
+, m_client_name_byte_size{0}, m_client_name{""}, m_client_mail_byte_size{0}, m_client_mail_addr{""}, m_client_password_byte_size{0}, m_client_password{""}
 {
 
 }

@@ -2,22 +2,10 @@
 
 ThreadPoolHandler::ThreadPoolHandler(size_t threads) : stop(false)
 {
-    for (size_t i = 0; i < threads; ++i)
+    for (size_t i = 0; i < threads; ++i) {
         workers.emplace_back([this] {process_task(); });
-       /* for (;;) {
-            std::function<void()> task;
-
-            {
-                std::unique_lock<std::mutex> lock(this->queue_mutex);
-                this->condition.wait(lock, [this] { return this->stop || !this->tasks.empty(); });
-                if (this->stop && this->tasks.empty())
-                    return;
-                task = std::move(this->tasks.front());
-                this->tasks.pop();
-            }
-
-            task();
-        }*/
+    }
+    LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Replicating %d threads...\033[32m[OK]\033[m", threads));
 }
 
 ThreadPoolHandler::~ThreadPoolHandler()
@@ -52,22 +40,4 @@ void ThreadPoolHandler::process_task()
     }
 }
 
-
-//template<class F, class... Args>
-//void enqueue_task(F&& f, Args&&... args) {
-//    auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-//
-//    {
-//        //tasksにtaskを追加するため、mutexをlockする。中かっこを抜けるとmutexのロックは外れる
-//        std::unique_lock<std::mutex> lock(queue_mutex);
-//
-//        if (stop) {
-//            throw std::runtime_error("enqueue on stopped ThreadPool");
-//        }
-//
-//        //taskを追加する
-//        tasks.emplace(task);
-//    }
-//    condition.notify_one();
-//}
 

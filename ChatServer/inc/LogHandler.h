@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <string>
+#include <mutex>
+#include "ServerTime.h"
+#include "StringFormat.h"
 #define NC "\e[0m"
 #define RED "\e[0;31m"
 #define GRN "\e[0;32m"
@@ -11,14 +14,15 @@
 
 class LogHandler
 {
-	enum class LogLebel { INFO, SERVER_ERROR, RECEIVE, SEND };
+	static std::mutex cout_mutex;
 
 public:
 	LogHandler();
 	~LogHandler();
 
-	static void logging_info();
-
+	enum class LogType {INFO, SERVER_ERROR, RECEIVE, SEND, SIGN_UP, SIGN_IN};
+	
+	static void logging_info(LogType log_type, std::ostream& os, const std::string& log_message);
 };
 
 #endif // !LOGHANDLER_H_

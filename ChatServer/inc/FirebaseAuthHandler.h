@@ -7,6 +7,7 @@
 #include "AppException.h"
 #include "StringFormat.h"
 #include "ServerTime.h"
+#include "common.h"
 #include <iostream>
 
 

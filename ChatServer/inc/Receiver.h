@@ -9,6 +9,7 @@
 #include "ServerTime.h"
 #include "ClientHandler.h"
 #include "AppException.h"
+#include "common.h"
 #include <tuple>
 #include <queue>
 #define DEBUG

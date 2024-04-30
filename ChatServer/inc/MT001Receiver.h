@@ -1,5 +1,7 @@
 #pragma once
 #include "Receiver.h"
+#include "common.h"
+
 #define SIGN_TYPE_START_POS 3
 #define SIGN_TYPE_BYTE_SIZE 1
 #define AUTH_TYPE_START_POS 4

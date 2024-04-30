@@ -8,6 +8,7 @@
 #include "AppException.h"
 #include "StringFormat.h"
 #include "ClientHandler.h"
+#include "common.h"
 #include <tuple>
 #include <string>
 

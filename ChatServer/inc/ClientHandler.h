@@ -13,6 +13,7 @@
 #include "ServerTime.h"
 #include "FirebaseAuthHandler.h"
 #include "firebase/auth.h"
+#include "common.h"
 #define MAX_CONNECT_NUM 50000
 #define NOT_EXIST_CLIENT_ID -1
 

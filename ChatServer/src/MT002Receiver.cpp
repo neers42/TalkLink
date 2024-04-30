@@ -379,7 +379,8 @@ std::string MT002Receiver::remove_zero_padding(std::string& ip_address)
 	return new_ip_address;
 }
 
-MT002Receiver::MT002Data::MT002Data()
+MT002Receiver::MT002Data::MT002Data():m_trans_type{trans_type::unicast}, m_data_type{data_type::message}
+, m_dst_ip_address{""}, m_src_ip_address{""}, m_dst_client_id{""}, m_src_client_id{""}, m_dst_chatroom_id{""}, m_main_data{""}
 {
 
 }

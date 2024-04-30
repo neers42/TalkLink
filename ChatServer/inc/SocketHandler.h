@@ -13,6 +13,7 @@
 #include <iphlpapi.h>
 #include "LogHandler.h"
 #include "ClientHandler.h"
+#include "common.h"
 
 #define INIT_FILE_PASS  ".//ini/socket_setting.ini"
 //#define MAX_CONNECT_NUM 10000

@@ -9,6 +9,8 @@
 #include "ChatRoomHandler.h"
 #include "FirebaseAuthHandler.h"
 #include "ThreadPoolHandler.h"
+#include "common.h"
+#include "LogHandler.h"
 #include <mutex>
 
 #define DISCONNECT_SOCKET 0
@@ -23,8 +25,10 @@ private:
 	Sender* m_sender = new Sender();
 	ServerTime* m_server_time = new ServerTime();
 	ClientHandler m_client_handler = ClientHandler();
-	ThreadPoolHandler* m_thread_pool_handler = new ThreadPoolHandler(4);
+	ThreadPoolHandler* m_thread_pool_handler = new ThreadPoolHandler(10);
 	ChatroomHandler* m_chat_room_handler = new ChatroomHandler();
+
+
 	std::mutex m_connect_client_list_mutex;
 	std::mutex m_cout_mutex;
 
@@ -48,6 +52,8 @@ public:
 	void show_server_running_info();
 
 	void accept_client_socket_process();
+
+	void message_receive_process(int monitor_result);
 
 	void mt001_process_task(std::string& receive_data, int& monitor_result);
 

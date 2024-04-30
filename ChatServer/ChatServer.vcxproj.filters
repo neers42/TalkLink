@@ -377,6 +377,9 @@
     <ClInclude Include="inc\ThreadPoolHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="inc\common.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ini\socket_setting.ini" />

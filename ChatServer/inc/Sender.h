@@ -3,6 +3,7 @@
 #include "MT002Receiver.h"
 #include "ClientHandler.h"
 #include "AppException.h"
+#include "common.h"
 class Sender
 {
 public:

@@ -11,6 +11,8 @@
 #include "ServerTime.h"
 #include "AppException.h"
 #include <string>
+#include "common.h"
+#include "LogHandler.h"
 
 
 class ThreadPoolHandler
