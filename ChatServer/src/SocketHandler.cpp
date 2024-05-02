@@ -1008,9 +1008,7 @@ void SocketHandler::disconnect_socket(SOCKET client_socket, std::string client_i
 	{
 		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
-
-	std::cout << ServerTime::get_current_time() << "[INFO]Successfully initialized the information in the client list." << std::endl;
-
+	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Successfully initialized the information in the client list."));
 
 }
 

@@ -55,10 +55,11 @@ public:
 
 	void message_receive_process(int monitor_result);
 
-	void mt001_process_task(std::string& receive_data, int& monitor_result);
+	void mt001_process(std::string& receive_data, int& monitor_result);
 
-	void mt002_process_task(std::string& receive_data, int& receive_result);
+	void mt002_process(std::string& receive_data, int& receive_result);
 
+	void heart_beat_process();
 	
 private:
 

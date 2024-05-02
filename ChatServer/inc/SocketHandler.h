@@ -162,6 +162,8 @@ public:
 	void copy_fd_read_to_fds();
 
 	bool obtain_local_ip_addr();
+	
+
 };
 
 #endif // !SOCKETHANDLER_H_

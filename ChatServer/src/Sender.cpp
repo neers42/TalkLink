@@ -84,7 +84,7 @@ bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data,
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\33[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
 	return false;
@@ -165,7 +165,7 @@ bool Sender::tcp_multicast_data(const std::vector<SOCKET> send_sockets, std::str
 		}
 		catch (const exception::ExceptionBase& ex)
 		{
-			std::cerr << StringFormat("%s\33[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;;
+			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		}
 	}
 	return false;

@@ -35,6 +35,10 @@ void LogHandler::logging_info(LogType log_type, std::ostream& os, const std::str
 		case LogHandler::LogType::SIGN_IN:
 			os << StringFormat("%s[SIGN IN]", ServerTime::get_current_time()) << log_message << std::endl;
 			break;
+
+		case LogType::SIGN_OUT:
+			os << StringFormat("%s[SIGN OUT]", ServerTime::get_current_time()) << log_message << std::endl;
+			break;
 		case LogType::DEBUG_INFO:
 			os << StringFormat("%s[DEBUG INFO]", ServerTime::get_current_time()) << log_message << std::endl;
 		default:

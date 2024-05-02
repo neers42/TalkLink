@@ -301,10 +301,10 @@ int ClientHandler::search_connect_client_socket_num_from_id(const std::string& s
 
 void ClientHandler::show_client_info(const int& client_num)
 {
-	std::cout << StringFormat("%s[DEBUG INFO]Client list[%d] ID : %s", ServerTime::get_current_time(), client_num, this->connected_client_list[client_num].get_client_id()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG INFO]Client list[%d] Name : %s", ServerTime::get_current_time(), client_num, this->connected_client_list[client_num].get_client_name()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG INFO]Client list[%d] Mail : %s", ServerTime::get_current_time(), client_num, this->connected_client_list[client_num].get_client_mail_addr()) << std::endl;
-	std::cout << StringFormat("%s[DEBUG INFO]Client list[%d] Password : %s", ServerTime::get_current_time(), client_num, this->connected_client_list[client_num].get_client_password()) << std::endl;
+	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] ID : %s", client_num, this->connected_client_list[client_num].get_client_id()));
+	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Name : %s", client_num, this->connected_client_list[client_num].get_client_name()));
+	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Mail : %s", client_num, this->connected_client_list[client_num].get_client_mail_addr()));
+	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Password : %s", client_num, this->connected_client_list[client_num].get_client_password()));
 }
 
 

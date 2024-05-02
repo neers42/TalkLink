@@ -14,7 +14,6 @@ bool MT001Receiver::data_extraction(const std::string& data)
 {
 	bool sign_type_ex_res = this->extraction_sign_type(data);
 	bool auth_type_ex_res = this->extraction_auth_type(data);
-	//bool client_id_ex_res = this->extraction_client_id(data);
 	bool client_name_byte_size_ex_res = this->extraction_client_name_byte_size(data);
 	bool client_name_ex_res = this->extraction_client_name(data);
 	bool client_mail_addr_byte_size_ex_res = this->extraction_client_mail_addr_byte_size(data);

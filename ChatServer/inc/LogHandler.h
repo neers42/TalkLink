@@ -20,7 +20,7 @@ public:
 	LogHandler();
 	~LogHandler();
 
-	enum class LogType {INFO, SERVER_ERROR, RECEIVE, SEND, SIGN_UP, SIGN_IN, DEBUG_INFO};
+	enum class LogType {INFO, SERVER_ERROR, RECEIVE, SEND, SIGN_UP, SIGN_IN, SIGN_OUT, DEBUG_INFO};
 	
 	static void logging_info(LogType log_type, std::ostream& os, const std::string& log_message);
 };

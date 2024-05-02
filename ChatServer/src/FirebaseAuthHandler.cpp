@@ -27,14 +27,13 @@ std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::
 		result = auth->CreateUserWithEmailAndPasswordLastResult();
 		if (result.status() == firebase::kFutureStatusComplete) {
 			if (result.error() == firebase::auth::kAuthErrorNone) {
+
 				const firebase::auth::AuthResult auth_result = *result.result();
-				std::cout << StringFormat("%s[INFO]Create user succeeded for email : %s(UID : %s)",
-					ServerTime::get_current_time(), auth_result.user.email(), auth_result.user.uid()) << std::endl;
+				LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Create user succeeded for email : %s(UID : %s)", auth_result.user.email(), auth_result.user.uid()));
 				user_id = auth_result.user.uid();
 			}
 			else {
-				std::cerr <<StringFormat("%s\033[31m[ERROR]\033[mCreated user failed with error : %s", 
-					ServerTime::get_current_time(), result.error_message()) << std::endl;
+				LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Created user failed with error : %s", result.error_message()));
 			}
 		}
 	}
@@ -55,13 +54,11 @@ std::string FirebaseAuthHandler::sign_in_user_with_email_and_password(const std:
 		if (result.status() == firebase::kFutureStatusComplete) {
 			if (result.error() == firebase::auth::kAuthErrorNone) {
 				const firebase::auth::AuthResult auth_result = *result.result();
-				std::cout << StringFormat("%s[INFO]Sign in succeeded for email : %s(UID : %s)"
-				,ServerTime::get_current_time(), auth_result.user.email(), auth_result.user.uid()) << std::endl;
+				LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Sign in succeeded for email : %s(UID : %s)", auth_result.user.email(), auth_result.user.uid()));
 				user_id = auth_result.user.uid();
 			}
 			else {
-				std::cerr << StringFormat("%s\033[31m[ERROR]Sign in failed with error : %s",
-					ServerTime::get_current_time(), result.error_message()) << std::endl;
+				LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Sign in failed with error : %s", result.error_message()));
 			}
 		}
 	}
@@ -69,9 +66,10 @@ std::string FirebaseAuthHandler::sign_in_user_with_email_and_password(const std:
 	return user_id;
 }
 
-void FirebaseAuthHandler::sign_out()
+void FirebaseAuthHandler::sign_out(const std::string& client_id, const std::string& client_email_addr)
 {
 	this->auth->SignOut();
+	LogHandler::logging_info(LogHandler::LogType::SIGN_OUT, std::cout, StringFormat("Sign out succeeded for email : %s(UID : %s)", client_email_addr, client_id));
 }
 
 
