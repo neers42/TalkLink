@@ -15,6 +15,10 @@ void FirebaseAuthHandler::initialize_firebase()
 	std::cout << "\033[32m [OK] \033[m" << std::endl;
 }
 
+void FirebaseAuthHandler::load_initialize_info()
+{
+}
+
 std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::string& email, const std::string& password)
 {
 	//TODO

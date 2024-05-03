@@ -17,6 +17,7 @@ private:
 	firebase::App* app;
 	firebase::auth::Auth* auth;
 	void initialize_firebase();
+	void load_initialize_info();
 
 public:
 	FirebaseAuthHandler();

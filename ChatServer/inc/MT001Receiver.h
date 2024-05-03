@@ -15,8 +15,7 @@
 
 #define DEBUG_MT001_CONTAIN
 
-class MT001Receiver :
-    public Receiver
+class MT001Receiver : public Receiver
 {
 
 	class MT001Data
@@ -98,6 +97,7 @@ public:
     ~MT001Receiver();
 
 	bool data_extraction(const std::string& data) override;
+	void show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result) override;
 	void show_mt001_data();
 	MT001Data& get_mt001_data();
 };

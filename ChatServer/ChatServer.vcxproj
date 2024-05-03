@@ -139,6 +139,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\MT102Sender.cpp" />
+    <ClCompile Include="src\MT101Sender.cpp" />
     <ClCompile Include="src\FirebaseAuthHandler.cpp" />
     <ClCompile Include="src\MT001Receiver.cpp" />
     <ClCompile Include="src\ChatRoomHandler.cpp" />
@@ -157,7 +159,6 @@
     <ClCompile Include="src\ThreadPoolHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\..\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\shared\ws2def.h" />
     <ClInclude Include="inc\common.h" />
     <ClInclude Include="inc\FirebaseAuthHandler.h" />
     <ClInclude Include="inc\ChatRoomHandler.h" />
@@ -262,6 +263,8 @@
     <ClInclude Include="inc\ServerTime.h" />
     <ClInclude Include="inc\MT001Receiver.h" />
     <ClInclude Include="inc\ThreadPoolHandler.h" />
+    <ClInclude Include="inc\MT101Sender.h" />
+    <ClInclude Include="inc\MT102Sender.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />

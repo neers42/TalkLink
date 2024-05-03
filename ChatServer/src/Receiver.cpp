@@ -88,37 +88,23 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_so
 		//データ受信が正常に実施された際の処理
 		else
 		{
-			//trans_di.src_recv_data = std::string(temp_recv_data);
-			show_receive_info(temp_recv_data, ipv4_addr, client_list_num, receive_result);
+			return std::make_tuple(receive_result, temp_recv_data);
 		}
-		return std::make_tuple(receive_result, temp_recv_data);
-
+	
 	}
 	//catch (const std::exception& ex)
 	catch (const exception::ExceptionBase& ex)
 	{
-#ifdef DEBUG
-		//std::string temp_str = std::string(ex.what());
-		//std::cout << temp_str << std::endl;
-#endif // DEBUG
-
-
-		//std::cerr << StringFormat("[ERROR] %s", ex.what()) << std::endl;
-		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return std::make_tuple(SOCKET_ERROR, "");
 
 	}
 
 }
-void Receiver::show_receive_info(const std::string& data, const std::string& ipv4_addr, int& detection_num, int& receive_result)
+void Receiver::show_receive_info(const std::string& ipv4_addr, int& detection_num, int& receive_result)
 {
-	
 	std::cout << ServerTime::get_current_time() << "[RECEIVE]" << receive_result<< "byte message was received from client list["  << detection_num << "]"
 		<< "(IP address：" << ipv4_addr<< ")" << std::endl;
-
-#ifdef DEBUG
-	//std::cout << ServerTime::get_current_time() << "[DEBUG]The message contains：" << data << std::endl;
-#endif // DEBUG
 }
 
 

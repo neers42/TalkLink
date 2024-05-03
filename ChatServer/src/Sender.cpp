@@ -10,7 +10,7 @@ Sender::~Sender()
 {
 }
 
-bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data, const int send_data_length)
+bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data, const int send_data_length, const std::string& dst_client_id, const std::string& src_client_id)
 {
 	try
 	{
@@ -78,6 +78,7 @@ bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data,
 			}
 		}
 		else {
+			LogHandler::logging_info(LogHandler::LogType::SEND, std::cout, StringFormat("The server sent a message to the client. (src id : %s  =>  dst id : %s)", src_client_id, dst_client_id));
 			return true;
 		}
 
@@ -90,7 +91,7 @@ bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data,
 	return false;
 }
 
-bool Sender::tcp_multicast_data(const std::vector<SOCKET> send_sockets, std::string& send_data, const int send_data_length)
+bool Sender::tcp_multicast_data(const std::vector<SOCKET>& send_sockets, std::string& send_data, const int send_data_length, const std::vector<std::string>& dst_client_ids, const std::string& src_client_id)
 {
 	for (auto&& socket : send_sockets) {
 		try
@@ -159,6 +160,7 @@ bool Sender::tcp_multicast_data(const std::vector<SOCKET> send_sockets, std::str
 				}
 			}
 			else {
+				
 				return true;
 			}
 
@@ -168,6 +170,11 @@ bool Sender::tcp_multicast_data(const std::vector<SOCKET> send_sockets, std::str
 			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		}
 	}
+	return false;
+}
+
+bool Sender::udp_multicast_data()
+{
 	return false;
 }
 

@@ -46,10 +46,11 @@ namespace detail
     {
         /* フォーマット後の文字数を算出 */
         int str_len = std::snprintf(nullptr, 0, format.c_str(), std::forward<Args>(args) ...);
+        std::string error_msg = "String Formatting Error";
         /* フォーマット失敗 */
         if (str_len < 0)
         {
-            std::runtime_error("String Formatting Error");
+            std::runtime_error(error_msg.c_str());
         }
         else
         {

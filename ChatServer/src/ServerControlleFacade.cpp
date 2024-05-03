@@ -135,11 +135,16 @@ void ServerControlleFacade::message_receive_process(int monitor_result)
 		//MTごとに処理を変更する
 		//MT001の場合
 		if (std::equal(mt.begin(), mt.end(), "001")) {
+			m_mt001receiver->show_receive_info(m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result, receive_result);
 			this->mt001_process(receive_data, monitor_result);
 		}
 		//MT002の場合
 		else if (std::equal(mt.begin(), mt.end(), "002")) {
+			m_mt002receiver->show_receive_info(m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result, receive_result);
 			this->mt002_process(receive_data, receive_result);
+		}
+		else {
+			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The receive process was interrupted due to a bad message"));
 		}
 	}
 }
@@ -147,57 +152,66 @@ void ServerControlleFacade::message_receive_process(int monitor_result)
 void ServerControlleFacade::mt001_process(std::string& receive_data, int& monitor_result)
 {
 	std::string user_id = "";
-	if (m_mt001receiver->data_extraction(receive_data)) {
-		switch (m_mt001receiver->get_mt001_data().get_sign_type())
-		{
-		case 0:			//sign up
-			//メッセージがsign_upの場合の処理を追記
-		{
-			std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
-			user_id = this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr(), this->m_mt001receiver->get_mt001_data().get_client_password());
-			if (user_id != "") {
-				//SIGN UPが成功した場合に、クライアント情報を登録する
-				m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
-				m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
-				m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(m_mt001receiver->get_mt001_data().get_client_mail_addr());
-				m_client_handler.connected_client_list[monitor_result].set_client_password(m_mt001receiver->get_mt001_data().get_client_password());
+	try
+	{
+		if (m_mt001receiver->data_extraction(receive_data)) {
+			switch (m_mt001receiver->get_mt001_data().get_sign_type())
+			{
+			case 0:			//sign up
+				//メッセージがsign_upの場合の処理を追記
+			{
+				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
+				user_id = this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr(), this->m_mt001receiver->get_mt001_data().get_client_password());
+				if (user_id != "") {
+					//SIGN UPが成功した場合に、クライアント情報を登録する
+					m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
+					m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
+					m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(m_mt001receiver->get_mt001_data().get_client_mail_addr());
+					m_client_handler.connected_client_list[monitor_result].set_client_password(m_mt001receiver->get_mt001_data().get_client_password());
 
-				//データベースにユーザ情報を登録する。
-				//TODO　データべース処理を追記する。
+					//データベースにユーザ情報を登録する。
+					//TODO　データべース処理を追記する。
+				}
+				this->m_client_handler.show_client_info(monitor_result);
 			}
-			this->m_client_handler.show_client_info(monitor_result);
-		}
 			break;
 
-		case 1:			//sign in
-		{
-			std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
-			user_id = this->sign_in_process(m_mt001receiver->get_mt001_data().get_client_mail_addr(), m_mt001receiver->get_mt001_data().get_client_password());
+			case 1:			//sign in
+			{
+				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
+				user_id = this->sign_in_process(m_mt001receiver->get_mt001_data().get_client_mail_addr(), m_mt001receiver->get_mt001_data().get_client_password());
 
-			if (user_id != "") {
-				//データベースからユーザ情報を読み取る。
-				std::string client_name, client_mail_addr, client_password;
-				m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
-				m_client_handler.connected_client_list[monitor_result].set_client_name(client_name);
-				m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(client_mail_addr);
-				m_client_handler.connected_client_list[monitor_result].set_client_password(client_password);
+				if (user_id != "") {
+					//データベースからユーザ情報を読み取る。
+					std::string client_name, client_mail_addr, client_password;
+					m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
+					m_client_handler.connected_client_list[monitor_result].set_client_name(client_name);
+					m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(client_mail_addr);
+					m_client_handler.connected_client_list[monitor_result].set_client_password(client_password);
+				}
+			}
+			break;
+
+			case 2:			//sign out
+			{
+				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
+				m_firebase_auth_handler->sign_out(m_client_handler.connected_client_list[monitor_result].get_client_id(), m_client_handler.connected_client_list[monitor_result].get_client_mail_addr());
+				break;
+			}
+			default:
+				THROW_APP_EXCEPTION("MT001 authentication data region is in violation.");
+				break;
 			}
 		}
-			break;
-
-		case 2:			//sign out
+		else
 		{
-			std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
-			m_firebase_auth_handler->sign_out(m_client_handler.connected_client_list[monitor_result].get_client_id(), m_client_handler.connected_client_list[monitor_result].get_client_mail_addr());
-			break;
-		}
-		default:
-			break;
+			THROW_APP_EXCEPTION("MT001 data extraction failed.");
 		}
 	}
-	else
+	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("MT001 received processing was not completed normally."));
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The MT001 message data receiving process was suspended."));
 	}
 
 }
@@ -206,44 +220,56 @@ void ServerControlleFacade::mt002_process(std::string& receive_data, int& receiv
 {
 	std::string trans_type = Receiver::extraction_trans_type(receive_data);
 	std::vector<SOCKET> send_sockets;
+	std::vector<std::string> dst_clients;
 	int chatroom_list_num = -1;
 
-	if (m_mt002receiver->data_extraction(receive_data)) {
-		{
-			std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
-			int send_socket_num = m_client_handler.search_connect_client_socket_num_from_id(this->m_mt002receiver->get_dst_id());
-			switch (m_mt002receiver->get_trans_type())
+	try
+	{
+		if (m_mt002receiver->data_extraction(receive_data)) {
 			{
-				//TCPユニキャスト
-			case 0:
-				m_sender->tcp_unicast_data(m_client_handler.connected_client_list[send_socket_num].get_client_socket(),
-					receive_data, receive_result);
-				break;
+				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
+				int send_socket_num = m_client_handler.search_connect_client_socket_num_from_id(this->m_mt002receiver->get_dst_id());
+				switch (m_mt002receiver->get_trans_type())
+				{
+					//TCPユニキャスト
+				case 0:
+					m_sender->tcp_unicast_data(m_client_handler.connected_client_list[send_socket_num].get_client_socket(),
+						receive_data, receive_result, m_mt002receiver->get_dst_id(), m_mt002receiver->get_src_id());
+					break;
 
-				//TCPでマルチキャスト
-			case 1:
-				//TODO　以下を実装する
-				//mt002のパケットの中身がTCPマルチキャストの場合(グループ内でのチャットの時)、グループチャットから
-				chatroom_list_num = this->m_chat_room_handler->search_chatroom_id_from_list(m_mt002receiver->get_dst_chatroom_id());
-				for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
-					send_sockets.push_back(client.get_client_socket());
+					//TCPでマルチキャスト
+				case 1:
+					//TODO　以下を実装する
+					//mt002のパケットの中身がTCPマルチキャストの場合(グループ内でのチャットの時)、グループチャットから
+					chatroom_list_num = this->m_chat_room_handler->search_chatroom_id_from_list(m_mt002receiver->get_dst_chatroom_id());
+					for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
+						send_sockets.push_back(client.get_client_socket());
+					}
+					for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
+						dst_clients.push_back(client.get_client_id());
+					}
+					m_sender->tcp_multicast_data(send_sockets, receive_data, receive_result, dst_clients, m_mt002receiver->get_src_id());
+					break;
+
+					//UDPブロードキャスト
+				case 2:
+					//TODO　UDPのブロードキャストを実装する
+					break;
+
+				default:
+					THROW_APP_EXCEPTION("The region of the MT002 communication method data is violated.");
+					break;
 				}
-				m_sender->tcp_multicast_data(send_sockets, receive_data, receive_result);
-				break;
-
-				//UDPブロードキャスト
-			case 2:
-				//TODO　UDPのブロードキャストを実装する
-				break;
-
-			default:
-				LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The communication type is different."));
-				break;
 			}
 		}
+		else {
+			THROW_APP_EXCEPTION("MT002 data extraction failed.");
+		}
 	}
-	else {
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The message receiving process was suspended."));
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The MT002 message data receiving process was suspended."));
 	}
 }
 

@@ -84,17 +84,15 @@ protected:
 		std::queue<std::string> message_queue;
 		
 	};
-	protected:
+protected:
 	virtual bool data_extraction(const std::string& data) = 0;
 
 private:
-    static void show_receive_info(const std::string& data, const std::string& ipv4_addr, int& detection_num, int& receive_result);
+    virtual void show_receive_info(const std::string& ipv4_addr, int& detection_num, int& receive_result);
 
 public:
-	
 	Receiver();
-
-	virtual ~Receiver();	
+	virtual ~Receiver();
 	static std::tuple<int32_t, std::string> receive_data(const SOCKET& receive_socket, int client_list_num, const std::string& ipv4_addr);
 	static std::string extraction_mt(const std::string& data);
 	static std::string extraction_trans_type(const std::string& data);

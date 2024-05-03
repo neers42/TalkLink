@@ -28,8 +28,7 @@
 
 //struct client_socket_info;
 
-class MT002Receiver :
-    public Receiver
+class MT002Receiver : public Receiver
 {
     class MT002Data
     {
@@ -94,22 +93,20 @@ private:
     bool extraction_data_type(const std::string& data);
     bool extraction_main_data(const std::string& data);
     bool store_receive_data();
-
     void print_src_recv_data(const std::string& data, const std::string& dst_ipv4_addr, int& detection_num, int& receive_result);
-   
     std::string remove_zero_padding(std::string& ip_address);
 
 public:
     MT002Receiver();
     ~MT002Receiver();
 
-    int data_receive(const SOCKET& client_socket, int detection_num, std::string& client_ipv4_addr);
     bool data_extraction(const std::string& data) override;
-
     const MT002Data& get_mt002_data();
     const std::string& get_dst_id();
+    const std::string& get_src_id();
     const int get_trans_type();
     const std::string& get_dst_chatroom_id();
+    void show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result) override;
     void show_mt002_data();
 
 };

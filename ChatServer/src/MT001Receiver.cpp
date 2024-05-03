@@ -36,6 +36,11 @@ bool MT001Receiver::data_extraction(const std::string& data)
 	return true;
 }
 
+void MT001Receiver::show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result)
+{
+	LogHandler::logging_info(LogHandler::LogType::RECEIVE, std::cout, StringFormat("MT001 received from client list [%d] (CLIENT(IP:%s) Ë SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
+}
+
 void MT001Receiver::show_mt001_data()
 {
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("SIGN Type(0: sign up 1: sign in, 2: sign out) : %d", this->m_mt001_data.get_sign_type()));
