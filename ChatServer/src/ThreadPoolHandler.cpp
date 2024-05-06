@@ -4,6 +4,7 @@ ThreadPoolHandler::ThreadPoolHandler(size_t threads) : stop(false)
 {
     for (size_t i = 0; i < threads; ++i) {
         workers.emplace_back([this] {process_task(); });
+        LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Thread ID : %d", workers[i].get_id()));
     }
     LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Replicating %d threads...\033[32m[OK]\033[m", threads));
 }
@@ -29,6 +30,7 @@ void ThreadPoolHandler::process_task()
         {
             //queue_mutex‚ðŠl“¾‚µ‚ÄA”r‘¼§Œä‚·‚éB
             std::unique_lock<std::mutex> lock(queue_mutex);
+
             //task‚ª’Ç‰Á‚³‚ê‚é‚Ü‚Å‘Ò‹@‚·‚é
             condition.wait(lock, [this] { return !tasks.empty(); });
 

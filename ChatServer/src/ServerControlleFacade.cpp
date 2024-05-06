@@ -84,6 +84,8 @@ void ServerControlleFacade::show_server_running_info()
 
 void ServerControlleFacade::accept_client_socket_process()
 {
+	std::thread::id this_thread_id = std::this_thread::get_id();
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 	SOCKET new_client_socket = INVALID_SOCKET;
 	struct sockaddr_in new_client_sockaddr_in = { 0 };
 	socklen_t new_client_socklen_t = 0;
@@ -94,13 +96,15 @@ void ServerControlleFacade::accept_client_socket_process()
 	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
 	new_client.set_client_ipv4_addr(m_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
 	m_client_handler.add_client(new_client, check_invalid_result);
-
-	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Registered on the client list[%d] => IP : %s.",check_invalid_result, m_client_handler.connected_client_list[check_invalid_result].get_client_ipv4_addr()));
 	
+	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Registered on the client list[%d] => IP : %s.",check_invalid_result, m_client_handler.connected_client_list[check_invalid_result].get_client_ipv4_addr()));
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 }
 
 void ServerControlleFacade::message_receive_process(int monitor_result)
 {
+	std::thread::id this_thread_id = std::this_thread::get_id();
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 	int receive_result = 0;
 	std::string receive_data, mt;
 	{
@@ -147,10 +151,12 @@ void ServerControlleFacade::message_receive_process(int monitor_result)
 			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The receive process was interrupted due to a bad message"));
 		}
 	}
+	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 }
 
 void ServerControlleFacade::mt001_process(std::string& receive_data, int& monitor_result)
 {
+	
 	std::string user_id = "";
 	try
 	{

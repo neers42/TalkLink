@@ -389,10 +389,172 @@
     <ClInclude Include="inc\MT102Sender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\build_config.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\callback.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\config.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\connection.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\datatype.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\driver.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\exception.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\metadata.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\parameter_metadata.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\prepared_statement.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\resultset.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\resultset_metadata.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\sqlstring.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\statement.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\variant.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\version_info.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\cppconn\warning.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\mysql_connection.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\mysql_driver.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\jdbc\mysql_error.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysql\jdbc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\common\api.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\common\error.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\common\op_if.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\common\settings.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\common\util.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\common\value.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\detail\crud.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\detail\error.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\detail\result.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\detail\row.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\detail\session.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\detail\settings.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\collations.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\collection_crud.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\common.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\crud.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\document.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\error.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\executable.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\mysql_charsets.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\mysql_collations.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\result.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\row.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\settings.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\devapi\table_crud.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\common.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\common_constants.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\version_info.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\xapi.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\mysqlx\xdevapi.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ini\socket_setting.ini" />
     <None Include="assets\google-services.json" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\libcrypto-3-x64.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\libssl-3-x64.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn8-2-vs14.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn8-2-vs14.pdb" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn-9-vs14.pdb" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_kerberos_client.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_ldap_sasl_client.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_oci_client.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_webauthn_client.dll" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\firebase\MD\x64\Debug\firebase_analytics.lib" />
@@ -421,5 +583,11 @@
     <Library Include="lib\firebase\MD\x64\Release\firebase_messaging.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_remote_config.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\libcrypto.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\libssl.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn8.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn8-static.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn-static.lib" />
   </ItemGroup>
 </Project>

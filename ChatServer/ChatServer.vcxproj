@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\libcrypto-3-x64.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\libssl-3-x64.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn-9-vs14.pdb" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn8-2-vs14.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn8-2-vs14.pdb" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_kerberos_client.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_ldap_sasl_client.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_oci_client.dll" />
+    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_webauthn_client.dll" />
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -116,8 +125,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;Rpcrt4.lib;firebase_auth.lib;firebase_app.lib;firebase_app_check.lib;firebase_firestore.lib;firebase_functions.lib;firebase_database.lib;firebase_remote_config.lib;firebase_storage.lib;firebase_analytics.lib;firebase_dynamic_links.lib;firebase_gma.lib;firebase_installations.lib;firebase_messaging.lib;crypt32.lib;rpcrt4.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;icu.lib;ws2_32.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjevtDir)\lib\firebase\MD\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;Rpcrt4.lib;firebase_auth.lib;firebase_app.lib;firebase_app_check.lib;firebase_firestore.lib;firebase_functions.lib;firebase_database.lib;firebase_remote_config.lib;firebase_storage.lib;firebase_analytics.lib;firebase_dynamic_links.lib;firebase_gma.lib;firebase_installations.lib;firebase_messaging.lib;crypt32.lib;rpcrt4.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;icu.lib;ws2_32.lib;Ws2_32.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjevtDir)\lib\firebase\MD\x64\Debug;$(ProjectDir)\lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14;$(ProjectDir)\lib\mysql-connector-c++-8.4.0-winx64\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -253,6 +262,57 @@
     <ClInclude Include="inc\firebase\variant.h" />
     <ClInclude Include="inc\firebase\version.h" />
     <ClInclude Include="inc\inicpp.h" />
+    <ClInclude Include="inc\jdbc\cppconn\build_config.h" />
+    <ClInclude Include="inc\jdbc\cppconn\callback.h" />
+    <ClInclude Include="inc\jdbc\cppconn\config.h" />
+    <ClInclude Include="inc\jdbc\cppconn\connection.h" />
+    <ClInclude Include="inc\jdbc\cppconn\datatype.h" />
+    <ClInclude Include="inc\jdbc\cppconn\driver.h" />
+    <ClInclude Include="inc\jdbc\cppconn\exception.h" />
+    <ClInclude Include="inc\jdbc\cppconn\metadata.h" />
+    <ClInclude Include="inc\jdbc\cppconn\parameter_metadata.h" />
+    <ClInclude Include="inc\jdbc\cppconn\prepared_statement.h" />
+    <ClInclude Include="inc\jdbc\cppconn\resultset.h" />
+    <ClInclude Include="inc\jdbc\cppconn\resultset_metadata.h" />
+    <ClInclude Include="inc\jdbc\cppconn\sqlstring.h" />
+    <ClInclude Include="inc\jdbc\cppconn\statement.h" />
+    <ClInclude Include="inc\jdbc\cppconn\variant.h" />
+    <ClInclude Include="inc\jdbc\cppconn\version_info.h" />
+    <ClInclude Include="inc\jdbc\cppconn\warning.h" />
+    <ClInclude Include="inc\jdbc\mysql_connection.h" />
+    <ClInclude Include="inc\jdbc\mysql_driver.h" />
+    <ClInclude Include="inc\jdbc\mysql_error.h" />
+    <ClInclude Include="inc\mysqlx\common.h" />
+    <ClInclude Include="inc\mysqlx\common\api.h" />
+    <ClInclude Include="inc\mysqlx\common\error.h" />
+    <ClInclude Include="inc\mysqlx\common\op_if.h" />
+    <ClInclude Include="inc\mysqlx\common\settings.h" />
+    <ClInclude Include="inc\mysqlx\common\util.h" />
+    <ClInclude Include="inc\mysqlx\common\value.h" />
+    <ClInclude Include="inc\mysqlx\common_constants.h" />
+    <ClInclude Include="inc\mysqlx\devapi\collations.h" />
+    <ClInclude Include="inc\mysqlx\devapi\collection_crud.h" />
+    <ClInclude Include="inc\mysqlx\devapi\common.h" />
+    <ClInclude Include="inc\mysqlx\devapi\crud.h" />
+    <ClInclude Include="inc\mysqlx\devapi\detail\crud.h" />
+    <ClInclude Include="inc\mysqlx\devapi\detail\error.h" />
+    <ClInclude Include="inc\mysqlx\devapi\detail\result.h" />
+    <ClInclude Include="inc\mysqlx\devapi\detail\row.h" />
+    <ClInclude Include="inc\mysqlx\devapi\detail\session.h" />
+    <ClInclude Include="inc\mysqlx\devapi\detail\settings.h" />
+    <ClInclude Include="inc\mysqlx\devapi\document.h" />
+    <ClInclude Include="inc\mysqlx\devapi\error.h" />
+    <ClInclude Include="inc\mysqlx\devapi\executable.h" />
+    <ClInclude Include="inc\mysqlx\devapi\mysql_charsets.h" />
+    <ClInclude Include="inc\mysqlx\devapi\mysql_collations.h" />
+    <ClInclude Include="inc\mysqlx\devapi\result.h" />
+    <ClInclude Include="inc\mysqlx\devapi\row.h" />
+    <ClInclude Include="inc\mysqlx\devapi\settings.h" />
+    <ClInclude Include="inc\mysqlx\devapi\table_crud.h" />
+    <ClInclude Include="inc\mysqlx\version_info.h" />
+    <ClInclude Include="inc\mysqlx\xapi.h" />
+    <ClInclude Include="inc\mysqlx\xdevapi.h" />
+    <ClInclude Include="inc\mysql\jdbc.h" />
     <ClInclude Include="inc\ServerControlleFacade.h" />
     <ClInclude Include="inc\SocketHandler.h" />
     <ClInclude Include="inc\StringFormat.h" />
@@ -303,6 +363,12 @@
     <Library Include="lib\firebase\MD\x64\Release\firebase_messaging.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_remote_config.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\libcrypto.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\libssl.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn-static.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn8-static.lib" />
+    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn8.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

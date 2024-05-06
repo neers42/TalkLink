@@ -15,7 +15,7 @@ bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data,
 	try
 	{
 		int send_result = send(socket, send_data.c_str(), send_data_length, 0);
-		if (send_result == SOCKET_ERROR) {
+		if (send_result ==SOCKET_ERROR) {
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:

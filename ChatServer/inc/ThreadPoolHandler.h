@@ -61,22 +61,11 @@ public:
 		
 		catch (const exception::ExceptionBase& ex) {
 			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-			//std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str());
 		}
-	
 
 		//新しいタスクが追加されたことをスレッドに通知する
 		condition.notify_one();
 	}
-
-
-
-	void exampleTask() {
-		//std::cout << StringFormat("%s[INFO]Processing task by PID : %s", ServerTime::get_current_time(), std::this_thread::get_id() )<< std::endl;
-		std::cout << StringFormat("%s[INFO]Processing task by PID ", ServerTime::get_current_time()) << std::endl;
-	
-	}
-
 
 };
 
