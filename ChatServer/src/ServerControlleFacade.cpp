@@ -167,7 +167,8 @@ void ServerControlleFacade::mt001_process(std::string& receive_data, int& monito
 				//メッセージがsign_upの場合の処理を追記
 			{
 				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
-				user_id = this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr(), this->m_mt001receiver->get_mt001_data().get_client_password());
+				user_id = this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr(), this->m_mt001receiver->get_mt001_data().get_client_password()
+					, &FirebaseAuthHandler::on_create_callback);
 				if (user_id != "") {
 					//SIGN UPが成功した場合に、クライアント情報を登録する
 					m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);

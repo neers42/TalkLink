@@ -46,6 +46,24 @@ std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::
 }
 
 
+std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::string& email, const std::string& password, void (FirebaseAuthHandler::*callback_func)(const firebase::Future<firebase::auth::AuthResult>&, std::string*))
+{
+	firebase::Future<firebase::auth::AuthResult> create_result = this->auth->CreateUserWithEmailAndPassword(email.c_str(), password.c_str());
+	firebase::Future<firebase::auth::AuthResult> result;
+	std::string user_id = "";
+
+	while (result.status() != firebase::kFutureStatusComplete) {
+		result = auth->CreateUserWithEmailAndPasswordLastResult();
+		if (result.status() == firebase::kFutureStatusComplete) {
+			(this->*callback_func)(result, &user_id);
+		}
+	}
+
+	return user_id;
+}
+
+
+
 std::string FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string& email, const std::string& password)
 {
 	firebase::Future<firebase::auth::AuthResult> sign_in_result = auth->SignInWithEmailAndPassword(email.c_str(), password.c_str());
@@ -74,6 +92,19 @@ void FirebaseAuthHandler::sign_out(const std::string& client_id, const std::stri
 {
 	this->auth->SignOut();
 	LogHandler::logging_info(LogHandler::LogType::SIGN_OUT, std::cout, StringFormat("Sign out succeeded for email : %s(UID : %s)", client_email_addr, client_id));
+}
+
+void FirebaseAuthHandler::on_create_callback(const firebase::Future<firebase::auth::AuthResult>& result, std::string* user_id)
+{
+	assert(result.status() == firebase::kFutureStatusComplete);
+	if (result.error() == firebase::auth::kAuthErrorNone) {
+		const firebase::auth::AuthResult auth_result = *result.result();
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Sign in succeeded for email : %s(UID : %s)", auth_result.user.email(), auth_result.user.uid()));
+		*user_id = auth_result.user.uid();
+	}
+	else {
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Sign in failed with error : %s", result.error_message()));
+	}
 }
 
 

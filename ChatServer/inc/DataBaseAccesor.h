@@ -15,7 +15,17 @@
 class DataBaseAccesor
 {
 private:
-	sql::mysql::MySQL_Driver* m_mysql_driver = sql::mysql::get_mysql_driver_instance();
+	sql::mysql::MySQL_Driver* m_mysql_drv = sql::mysql::get_mysql_driver_instance();
+	sql::mysql::MySQL_Connection* m_mysql_con;
+	sql::mysql::MySQL_Statement* m_mysql_stmt;
+	sql::ResultSet* m_mysql_res;
+	sql::mysql::MySQL_Prepared_Statement* m_prep_stmt;
+	
+	std::string m_host;
+	std::string m_db_name;
+	std::string m_port;
+	std::string m_user;
+	std::string m_password;
 
 public:
 	DataBaseAccesor();
