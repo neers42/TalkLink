@@ -10,8 +10,25 @@ Sender::~Sender()
 {
 }
 
+std::string Sender::generate_heart_beat_message()
+{
+	std::string heart_beat_message = StringFormat("000[%s]HeartBeat from server.", ServerTime::get_current_time());
+	return heart_beat_message;
+}
+
+std::vector<SOCKET> Sender::send_heart_beat_message(const std::vector<SOCKET> sockets)
+{
+	std::vector<SOCKET> fail_send_heart_beat_message_socket_list;
+	std::string heart_beat_message = this->generate_heart_beat_message();
+	fail_send_heart_beat_message_socket_list = this->tcp_multicast_data(sockets, heart_beat_message, heart_beat_message.size());
+	return fail_send_heart_beat_message_socket_list;
+}
+
+
 bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data, const int send_data_length, const std::string& dst_client_id, const std::string& src_client_id)
 {
+	//TODO
+	//送信失敗したときに、失敗したsocketの番号を返すように改修する
 	try
 	{
 		int send_result = send(socket, send_data.c_str(), send_data_length, 0);
@@ -91,8 +108,9 @@ bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data,
 	return false;
 }
 
-bool Sender::tcp_multicast_data(const std::vector<SOCKET>& send_sockets, std::string& send_data, const int send_data_length, const std::vector<std::string>& dst_client_ids, const std::string& src_client_id)
+std::vector<SOCKET> Sender::tcp_multicast_data(const std::vector<SOCKET>& send_sockets, const std::string& send_data, const int send_data_length)
 {
+	std::vector<SOCKET> fail_send_sockets;
 	for (auto&& socket : send_sockets) {
 		try
 		{
@@ -156,12 +174,10 @@ bool Sender::tcp_multicast_data(const std::vector<SOCKET>& send_sockets, std::st
 					break;
 
 				default:
+					THROW_APP_EXCEPTION("Failed to multicast the message for some reason");
 					break;
 				}
-			}
-			else {
-				
-				return true;
+				fail_send_sockets.push_back(socket);
 			}
 
 		}
@@ -170,7 +186,7 @@ bool Sender::tcp_multicast_data(const std::vector<SOCKET>& send_sockets, std::st
 			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		}
 	}
-	return false;
+	return fail_send_sockets;
 }
 
 bool Sender::udp_multicast_data()

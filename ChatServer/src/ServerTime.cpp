@@ -26,14 +26,18 @@ std::string ServerTime::get_current_time()
 
     //timeInfo = std::localtime_s(&currentTime);
 
-    char timeStr[100];
-    std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", &time_info);
+    char time_str[100];
+    std::strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
 
     // ミリ秒を取り出して表示
-    int millisecondsPart = milliseconds % 1000;
+    int milliseconds_part = milliseconds % 1000;
+
+    // ミリ秒の桁数を合わせるために左に0を埋める
+    std::string milliseconds_str = std::to_string(milliseconds_part);
+    milliseconds_str = std::string(3 - milliseconds_str.length(), '0') + milliseconds_str;
     
     std::string ss;
-    ss = "[" + std::string(timeStr) + "." + std::to_string(millisecondsPart) + "]";
+    ss = "[" + std::string(time_str) + "." + milliseconds_str + "]";
 
     return ss;
 

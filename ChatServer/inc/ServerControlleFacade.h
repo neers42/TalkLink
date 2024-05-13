@@ -53,16 +53,21 @@ public:
 
 	void accept_client_socket_process();
 
-	void message_receive_process(int monitor_result);
+	void message_receive_process(int detection_num);
 
 	void mt001_process(std::string& receive_data, int& monitor_result);
 
 	void mt002_process(std::string& receive_data, int& receive_result);
 
 	void heart_beat_process();
+
+	void heart_beat_send_process();
+
+	void heart_beat_receive_process();
+
 	
 private:
-
+	std::string sign_up_process(const std::string& mail_addr, const std::string& password);
 	std::string sign_in_process(const std::string& mail_addr, const std::string& password);
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 

@@ -166,6 +166,7 @@
     <ClCompile Include="src\SocketHandler.cpp" />
     <ClCompile Include="src\Receiver.cpp" />
     <ClCompile Include="src\ThreadPoolHandler.cpp" />
+    <ClCompile Include="src\TimerHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\common.h" />
@@ -325,6 +326,7 @@
     <ClInclude Include="inc\ThreadPoolHandler.h" />
     <ClInclude Include="inc\MT101Sender.h" />
     <ClInclude Include="inc\MT102Sender.h" />
+    <ClInclude Include="inc\TimerHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />

@@ -225,7 +225,7 @@ std::string ClientHandler::generate_client_id()
 #ifdef DEBUG_UUID
 	std::cout << StringFormat("%s[DEBUG]The UUID has been successfully generated. UUIDF%s", ServerTime::get_current_time(), converted_uuid_str) << std::endl;
 #endif // DEBUG
-	
+
 	RpcStringFreeA(&uuid_str);
 
 	return converted_uuid_str;
@@ -248,7 +248,7 @@ ClientHandler::ClientHandler()
 	{
 		std::cerr << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 	}
-		
+
 
 }
 
@@ -271,7 +271,7 @@ bool ClientHandler::add_client(const Client& client, std::uint32_t add_num)
 bool ClientHandler::delete_client(const uint32_t delete_num)
 {
 	this->connected_client_list[delete_num] = init_client;
-	if (this->connected_client_list[delete_num].get_client_id() == "" && 
+	if (this->connected_client_list[delete_num].get_client_id() == "" &&
 		this->connected_client_list[delete_num].get_client_socket() == INVALID_SOCKET) {
 		return true;
 	}
@@ -305,6 +305,17 @@ void ClientHandler::show_client_info(const int& client_num)
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Name : %s", client_num, this->connected_client_list[client_num].get_client_name()));
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Mail : %s", client_num, this->connected_client_list[client_num].get_client_mail_addr()));
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Password : %s", client_num, this->connected_client_list[client_num].get_client_password()));
+}
+
+std::vector<SOCKET> ClientHandler::extract_conneted_sockets()
+{
+	std::vector<SOCKET> connected_socket_list;
+	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
+		if (this->connected_client_list[i].get_client_socket() != NULL) {
+			connected_socket_list.push_back(this->connected_client_list[i].get_client_socket());
+		}
+	}
+	return connected_socket_list;
 }
 
 

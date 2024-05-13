@@ -42,7 +42,9 @@ private:
 	timeval m_timeout;
 
 	//リッスンソケット
-	SOCKET m_tcp_listen_socket;
+	SOCKET m_tcp_listen_for_msg_socket;
+
+	SOCKET m_tcp_listen_for_hb_socket;
 
 	//UDPブロードキャスト送信用ソケット
 	SOCKET m_udp_bloadcast_tx_socket;
@@ -80,7 +82,7 @@ private:
 	bool bind_tcp_listen_socket();
 
 	//tcp listenソケットの設定を読み込む
-	bool setting_tcp_listen_socket(const std::string& file_pass);
+	bool setting_tcp_listen_socket_param(const std::string& file_pass);
 
 	//udpマルチキャスト送信用のソケット設定を読み込む
 	bool setting_multicast_tx_socket(const std::string& file_pass);
@@ -90,12 +92,21 @@ private:
 
 
 	//Listenソケットを生成する
-	bool generate_tcp_listen_socket();
+	bool generate_tcp_listen_socket_for_message();
 	
 	bool generate_udp_multicast_tx_socket();
 
 	bool generate_udp_bloadcast_tx_socket();
 
+	bool setting_flags(ini::IniFile tcp_listen_socket_param_setting_ini);
+
+	bool setting_family(ini::IniFile tcp_listen_socket_param_setting_ini);
+
+	bool setting_socktype(ini::IniFile tcp_listen_socket_param_setting_ini);
+
+	bool setting_protocol(ini::IniFile tcp_listen_socket_param_setting_ini);
+
+	bool setting_port(ini::IniFile tcp_listen_socket_param_setting_ini);
 
 
 public:
@@ -115,7 +126,7 @@ public:
 
 	
 	SOCKET get_listen_socket() {
-		return m_tcp_listen_socket;
+		return m_tcp_listen_for_msg_socket;
 	}
 
 	SOCKET get_udp_multicast_tx_socket() {
@@ -137,10 +148,10 @@ public:
 
 
 	//ファイルディスクリプタに変化がないか監視する
-	int monitor_socket(const ClientHandler& client_handler);
+	int monitor_descriptor(const ClientHandler& client_handler);
 
 	//リッスンソケットをアクティブにする
-	bool open_tcp_listen_socket();
+	bool open_tcp_listen_socket_for_message();
 
 	//クライアントのIPアドレスを抽出する
 	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);

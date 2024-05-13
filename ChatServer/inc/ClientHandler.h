@@ -120,6 +120,7 @@ public:
 	int check_next_invalid_socket();
 	int search_connect_client_socket_num_from_id(const std::string& search_client_id);
 	void show_client_info(const int& client_num);
+	std::vector<SOCKET> extract_conneted_sockets();
 	
 };
 

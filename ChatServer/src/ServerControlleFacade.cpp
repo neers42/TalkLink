@@ -28,20 +28,20 @@ void ServerControlleFacade::run()
 	this->m_socket_handler->obtain_local_ip_addr();
 
 	//リッスンソケットの生成
-	if (!m_socket_handler->open_tcp_listen_socket()) {
+	if (!m_socket_handler->open_tcp_listen_socket_for_message()) {
 		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cout, StringFormat("The TCP listening socket could not be opened properly, so the program is forcibly terminated. Please set it again."));
 		exit(1);
 	}
 	
 	this->show_server_running_info();
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, "Start monitoring requests from clients.");
-
+	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_process(); });
 	//ディスクリプション監視スタート
 	while (1) {
 		this->m_socket_handler->setting_select_info_to_listen_socket();
 		this->client_select_setting();
-		int monitor_result = m_socket_handler->monitor_socket(m_client_handler);
-		switch (monitor_result)
+		int detection_num = m_socket_handler->monitor_descriptor(m_client_handler);
+		switch (detection_num)
 		{
 		case SELECT_TIME_OUT:
 			break;
@@ -58,7 +58,7 @@ void ServerControlleFacade::run()
 		
 		//接続中のクライアントリストから通知があった場合
 		default:
-			this->m_thread_pool_handler->enqueue_task([this, monitor_result]() {message_receive_process(monitor_result); });
+			this->m_thread_pool_handler->enqueue_task([this, detection_num]() {message_receive_process(detection_num); });
 		}
 
 	}
@@ -101,7 +101,7 @@ void ServerControlleFacade::accept_client_socket_process()
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 }
 
-void ServerControlleFacade::message_receive_process(int monitor_result)
+void ServerControlleFacade::message_receive_process(int detection_num)
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
@@ -109,27 +109,27 @@ void ServerControlleFacade::message_receive_process(int monitor_result)
 	std::string receive_data, mt;
 	{
 		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
-		std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler.connected_client_list[monitor_result].get_client_socket()
-			, monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr());
+		std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler.connected_client_list[detection_num].get_client_socket()
+			, detection_num, m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr());
 	}
 	
 	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
 	if (receive_result == SOCKET_ERROR) {
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d](IP address : %s) is SOCKET_ERROR now, so initializing client list.", monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr()));
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d](IP address : %s) is SOCKET_ERROR now, so initializing client list.", detection_num, m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr()));
 		
 		{
 			std::unique_lock <std::mutex> lock(this->m_connect_client_list_mutex);
-			m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
-			m_client_handler.delete_client(monitor_result);
+			m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[detection_num].get_client_socket(), m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr(), detection_num);
+			m_client_handler.delete_client(detection_num);
 		}
 	}
 	//receive_result == 0の場合(クライアントのソケットが切断された場合)
 	else if (receive_result == DISCONNECT_SOCKET) {
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d](IP address : %s) has been disconnected, so initializing client list.", monitor_result, m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr()));
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d](IP address : %s) has been disconnected, so initializing client list.", detection_num, m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr()));
 		{
 			std::unique_lock <std::mutex> lock(this->m_connect_client_list_mutex);
-			m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[monitor_result].get_client_socket(), m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result);
-			m_client_handler.delete_client(monitor_result);
+			m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[detection_num].get_client_socket(), m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr(), detection_num);
+			m_client_handler.delete_client(detection_num);
 		}
 	}
 	//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
@@ -137,14 +137,17 @@ void ServerControlleFacade::message_receive_process(int monitor_result)
 		mt = Receiver::extraction_mt(receive_data);
 
 		//MTごとに処理を変更する
+		if (std::equal(mt.begin(), mt.end(), "000")) {
+			this->heart_beat_process();
+		}
 		//MT001の場合
 		if (std::equal(mt.begin(), mt.end(), "001")) {
-			m_mt001receiver->show_receive_info(m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result, receive_result);
-			this->mt001_process(receive_data, monitor_result);
+			m_mt001receiver->show_receive_info(m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr(), detection_num, receive_result);
+			this->mt001_process(receive_data, detection_num);
 		}
 		//MT002の場合
 		else if (std::equal(mt.begin(), mt.end(), "002")) {
-			m_mt002receiver->show_receive_info(m_client_handler.connected_client_list[monitor_result].get_client_ipv4_addr(), monitor_result, receive_result);
+			m_mt002receiver->show_receive_info(m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr(), detection_num, receive_result);
 			this->mt002_process(receive_data, receive_result);
 		}
 		else {
@@ -167,8 +170,7 @@ void ServerControlleFacade::mt001_process(std::string& receive_data, int& monito
 				//メッセージがsign_upの場合の処理を追記
 			{
 				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
-				user_id = this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr(), this->m_mt001receiver->get_mt001_data().get_client_password()
-					, &FirebaseAuthHandler::on_create_callback);
+				user_id = this->sign_up_process(m_mt001receiver->get_mt001_data().get_client_mail_addr(), m_mt001receiver->get_mt001_data().get_client_password());
 				if (user_id != "") {
 					//SIGN UPが成功した場合に、クライアント情報を登録する
 					m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
@@ -255,7 +257,7 @@ void ServerControlleFacade::mt002_process(std::string& receive_data, int& receiv
 					for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
 						dst_clients.push_back(client.get_client_id());
 					}
-					m_sender->tcp_multicast_data(send_sockets, receive_data, receive_result, dst_clients, m_mt002receiver->get_src_id());
+					m_sender->tcp_multicast_data(send_sockets, receive_data, receive_result);
 					break;
 
 					//UDPブロードキャスト
@@ -284,13 +286,63 @@ void ServerControlleFacade::heart_beat_process()
 {
 	//TODO
 	//接続中のクライアントに10秒に1回heart beat messageを送る
-	//30秒返信がない場合は、
+	//heartbeat送信処理
+	int i = 0;
+	while (true) {
+		auto abs_time = std::chrono::system_clock::now() + std::chrono::seconds(10);
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("count : %d", i));
+		i++;
+		std::this_thread::sleep_until(abs_time);
+	}
+
+	//クライアント～のheartbeat受信処理
+	//スレッドを分ける
+	//30秒に
+
+}
+
+void ServerControlleFacade::heart_beat_send_process()
+{
+	while (true) {
+		auto abs_time = std::chrono::system_clock::now() + std::chrono::seconds(10);
+		//送信処理を以下に記載する
+		//①接続されているsocketを集計する
+		std::vector<SOCKET> con_sockets = this->m_client_handler.extract_conneted_sockets();
+		//②socketリストにマルチキャストをする
+		if (con_sockets.size() > 0) {	//接続中のクライアントがいる場合ハートビートメッセージを送る
+			this->m_sender->send_heart_beat_message(con_sockets);
+			
+		}
+		std::this_thread::sleep_until(abs_time);
+
+	}
+}
+
+void ServerControlleFacade::heart_beat_receive_process()
+{
+	while (true) {
+		auto abs_time = std::chrono::system_clock::now() + std::chrono::seconds(30);
+		//受信処理を以下に記載する
+		//①30秒カウント開始する
+		//②クライアントから返信があったリストの該当箇所のステータスをconnectにする
+		//③クライアントから返信がない場合はステータスをdisconnectにする
+
+		std::this_thread::sleep_until(abs_time);
+	}
 }
 
 
+
+std::string ServerControlleFacade::sign_up_process(const std::string& mail_addr, const std::string& password)
+{
+	std::string user_id = this->m_firebase_auth_handler->create_user_with_email_and_password(this->m_mt001receiver->get_mt001_data().get_client_mail_addr(), this->m_mt001receiver->get_mt001_data().get_client_password()
+		, &FirebaseAuthHandler::on_auth_callback);
+	return user_id;
+}
+
 std::string ServerControlleFacade::sign_in_process(const std::string& mail_addr, const std::string& password)
 {
-	std::string user_id = this->m_firebase_auth_handler->sign_in_user_with_email_and_password(mail_addr, password);
+	std::string user_id = this->m_firebase_auth_handler->sign_in_user_with_email_and_password(mail_addr, password, &FirebaseAuthHandler::on_auth_callback);
 	return user_id;
 }
 

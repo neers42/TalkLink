@@ -15,7 +15,11 @@
  * @return [out]なし
  *
  **********************************************************************************/
-SocketHandler::SocketHandler()
+SocketHandler::SocketHandler() : 
+	m_tcp_listen_for_hb_socket{INVALID_SOCKET}, 
+	m_tcp_listen_for_msg_socket{INVALID_SOCKET},
+	m_udp_bloadcast_tx_socket{ INVALID_SOCKET },
+	m_udp_multicast_tx_socket{INVALID_SOCKET}
 {
 	ZeroMemory(&m_param, sizeof(m_param));
 
@@ -49,7 +53,7 @@ SocketHandler::SocketHandler()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(),ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
@@ -62,7 +66,7 @@ SocketHandler::SocketHandler()
 	m_timeout.tv_usec = 500 * 1000;
 
 	//リッスンソケットの初期化
-	m_tcp_listen_socket = INVALID_SOCKET;
+	m_tcp_listen_for_msg_socket = INVALID_SOCKET;
 
 	//UDPブロードキャスト送信用ソケットの初期化
 	m_udp_bloadcast_tx_socket = INVALID_SOCKET;
@@ -132,7 +136,7 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	m_timeout.tv_usec = tv_usec;
 	
 	//リッスンソケットの初期化
-	m_tcp_listen_socket = INVALID_SOCKET;
+	m_tcp_listen_for_msg_socket = INVALID_SOCKET;
 
 
 	m_init_sockaddr_in.sin_family = AF_INET;
@@ -153,193 +157,36 @@ SocketHandler::~SocketHandler()
 
 //ここのtry構文見直す
 //設定値の読み込み
-bool SocketHandler::setting_tcp_listen_socket(const std::string& file_pass)
+bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass)
 {
 
 	//iniファイルの読み込み
-	ini::IniFile tcp_listen_socket_setting_ini;
+	ini::IniFile tcp_listen_socket_param_setting_ini;
 	try
 	{
-		tcp_listen_socket_setting_ini.load(file_pass);
+		std::cout << StringFormat("%s[INFO]Loading setting init file ...", ServerTime::get_current_time());
+		tcp_listen_socket_param_setting_ini.load(file_pass);
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
 		THROW_APP_EXCEPTION("iniファイルの読み込みに失敗しました。");
 	}
-
-	std::cout << StringFormat("%s[INFO]Loading setting init file ...", ServerTime::get_current_time());
-	
-	//フラッグの設定
-	std::string temp_flag = tcp_listen_socket_setting_ini["SocketSetting"]["flags"].as<std::string>();
-	std::cout << "\033[32m [OK] \033[m" << std::endl;
-	
-	std::cout << StringFormat("%s[INFO]Setting flag in parameter...", ServerTime::get_current_time());
-	if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_PASSIVE")) {
-		m_param.ai_flags = AI_PASSIVE;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_PASSIVEに設定されました。" << std::endl;
-#endif // DEBUG
-	}
-	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_CANONNAME")) {
-		m_param.ai_flags = AI_CANONNAME;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_CANONNAMEに設定されました。" << std::endl;
-#endif // DEBUG
-
-	}
-	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_NUMERICHOST")) {
-		m_param.ai_flags = AI_NUMERICHOST;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_NUMERICHOSTに設定されました。" << std::endl;
-#endif // DEBUG
-	}
-	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_ALL")) {
-		m_param.ai_flags = AI_ALL;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_ALLに設定されました。" << std::endl;
-#endif // DEBUG
-
-	}
-	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_ADDRCONFIG")) {
-		m_param.ai_flags = AI_ADDRCONFIG;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_ADDRCONFIGに設定されました。" << std::endl;
-#endif // DEBUG	
-	}
-	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_V4MAPPED")) {
-		m_param.ai_flags = AI_V4MAPPED;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_V4MAPPEDに設定されました。" << std::endl;
-#endif // DEBUG
-	}
-	else {
-		std::cout << "\033[31m [ERROR]\033[m" << std::endl;
+	if (this->setting_flags(tcp_listen_socket_param_setting_ini) == false) {
 		return false;
 	}
-	std::cout << "\033[32m [OK] \033[m" << std::endl;
-
-	std::cout << StringFormat("%s[INFO]Setting the address family in the parameters...", ServerTime::get_current_time());
-	//iniファイルの各セクションからキーを読み込む
-	//アドレスファミリの設定(ipv4 or ipv6)
-	std::string temp_family = tcp_listen_socket_setting_ini["SocketSetting"]["family"].as<std::string>();
-
-	//通信プロトコル
-	if (std::equal(temp_family.begin(), temp_family.end(), "AF_INET") ){
-		m_param.ai_family = AF_INET;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_INET(アドレスファミリはipv4に設定されました)に設定されました。" << std::endl;
-#endif // DEBUG
-
-	}
-	//通信プロトコルをipv6に設定する場合
-	else if (std::equal(temp_family.begin(), temp_family.end(), "AF_INET6")) {
-		m_param.ai_family = AF_INET6;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_INET6(アドレスファミリはipv6に設定されました)に設定されました。" << std::endl;
-#endif // DEBUG
-		
-	}
-	//通信プロトコルがaf_unspecに設定された場合(ipv4とipv6に対応)
-	//通信プロトコルがどちらにも設定していない場合及び読み取れなかった場合(af_unspecに設定)
-	else if(std::equal(temp_family.begin(), temp_family.end(), "AF_UNSPEC")) {
-		m_param.ai_family = AF_UNSPEC;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_UNSPEC(アドレスファミリはAF=UNSPECに設定されました)に設定されました。" << std::endl;
-#endif // DEBUG
-	}
-	else {
-		std::cout << "\033[31m [ERROR]\033[m" << std::endl;
+	if (this->setting_family(tcp_listen_socket_param_setting_ini) == false) {
 		return false;
 	}
-	std::cout << "\033[32m [OK] \033[m" << std::endl;
-
-
-	std::cout << StringFormat("%s[INFO]Setting the socket type in the parameters...", ServerTime::get_current_time());
-	//ソケット型の設定
-	std::string temp_socket_type = tcp_listen_socket_setting_ini["SocketSetting"]["socktype"].as<std::string>();
-	if (std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_STREAM")) {
-		m_param.ai_socktype = SOCK_STREAM;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはSOCK_STREAM(TCPプロトコルを使用)に設定されました。" << std::endl;
-#endif // DEBUG		
-	}
-	else if(std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_DGRAM")) {
-		m_param.ai_socktype = SOCK_DGRAM;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはsock_dgram(UDPプロトコルを使用)に設定されました。" << std::endl;
-#endif // DEBUG
-
-	}
-	else if (std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_RDM")) {
-		m_param.ai_socktype = SOCK_RDM;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはSOCK_RDM(RDMプロトコルを使用)に設定されました。" << std::endl;
-#endif // DEBUG
-
-	}
-	else{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("(tcp_listen setting)param：ai_socktypeは設定されなかったため、プログラムを終了します。"));
+	if (this->setting_socktype(tcp_listen_socket_param_setting_ini) == false) {
 		return false;
 	}
-	std::cout << "\033[32m [OK] \033[m" << std::endl;
-
-	std::cout << StringFormat("%s[INFO]Setting the protocol in the parameters...", ServerTime::get_current_time());
-	//プロトコルの設定
-	std::string temp_protocol = tcp_listen_socket_setting_ini["SocketSetting"]["protocol"].as<std::string>();
-	//std::equal(temp_family.begin(), temp_family.end(), "AF_INET")
-	//プロトコルをtcpに設定する場合
-	if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_TCP")) && ((m_param.ai_family == AF_INET || m_param.ai_family == AF_INET6)&& m_param.ai_socktype == SOCK_STREAM)) {
-		m_param.ai_protocol = IPPROTO_TCP;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはIPPROTO_TCP(tcpプロトコルを使用)に設定されました。" << std::endl;
-#endif // DEBUG
-	}
-
-	//プロトコルをudpに設定する場合
-	else if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_UDP")) && ((m_param.ai_family == AF_INET || m_param.ai_family == AF_INET6)&& m_param.ai_socktype == SOCK_DGRAM)) {
-		m_param.ai_protocol = IPPROTO_UDP;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはipproto_tcp(tcpプロトコルを使用)に設定されました。" << std::endl;
-#endif // DEBUG
-	}
-	//プロトコルをpgmに設定する場合
-	else if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_PGM")) && m_param.ai_family == AF_INET && m_param.ai_socktype == SOCK_RDM) {
-		m_param.ai_protocol = IPPROTO_PGM;
-
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはipproto_pgm(pgmプロトコルを使用)に設定されました。" << std::endl;
-#endif // DEBUG
-	}
-	else {
-		std::cout << "\033[31m [ERROR] \033[m" << std::endl;
+	if (this->setting_protocol(tcp_listen_socket_param_setting_ini) == false) {
 		return false;
 	}
-	std::cout << "\033[32m [OK] \033[m" << std::endl;
-
-	std::cout << StringFormat("%s[INFO]Setting the port in the parameters...", ServerTime::get_current_time());
-	//ポートの設定
-	try
-	{
-		int temp_port = tcp_listen_socket_setting_ini["SocketSetting"]["port"].as<int>();
-
-		if (temp_port < 0 || temp_port > 65535) {
-
-			THROW_APP_EXCEPTION("The port number is set out of range. Reset to the range of 0~65535.");
-		}
-		m_port = temp_port;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：アプリケーションポートは" << m_port << "が割り当てられました。" << std::endl;
-
-#endif // DEBUG
-		
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-
+	if (this->setting_port(tcp_listen_socket_param_setting_ini) == false) {
 		return false;
 	}
-	std::cout << "\033[32m [OK] \033[m" << std::endl;
+
 	return true;
 }
 
@@ -534,7 +381,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 void SocketHandler::setting_select_info_to_listen_socket()
 {
 	FD_ZERO(&this->m_fd_read);
-	FD_SET(this->m_tcp_listen_socket, &this->m_fd_read);
+	FD_SET(this->m_tcp_listen_for_msg_socket, &this->m_fd_read);
 	
 
 }
@@ -751,6 +598,202 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	return true;
 }
 
+bool SocketHandler::generate_udp_bloadcast_tx_socket()
+{
+	return false;
+}
+
+bool SocketHandler::setting_flags(ini::IniFile tcp_listen_socket_param_setting_ini)
+{
+	//フラッグの設定
+	std::string temp_flag = tcp_listen_socket_param_setting_ini["SocketSetting"]["flags"].as<std::string>();
+	std::cout << "\033[32m [OK] \033[m" << std::endl;
+
+	std::cout << StringFormat("%s[INFO]Setting flag in parameter...", ServerTime::get_current_time());
+	if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_PASSIVE")) {
+		m_param.ai_flags = AI_PASSIVE;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_PASSIVEに設定されました。" << std::endl;
+#endif // DEBUG
+	}
+	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_CANONNAME")) {
+		m_param.ai_flags = AI_CANONNAME;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_CANONNAMEに設定されました。" << std::endl;
+#endif // DEBUG
+
+	}
+	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_NUMERICHOST")) {
+		m_param.ai_flags = AI_NUMERICHOST;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_NUMERICHOSTに設定されました。" << std::endl;
+#endif // DEBUG
+	}
+	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_ALL")) {
+		m_param.ai_flags = AI_ALL;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_ALLに設定されました。" << std::endl;
+#endif // DEBUG
+
+	}
+	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_ADDRCONFIG")) {
+		m_param.ai_flags = AI_ADDRCONFIG;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_ADDRCONFIGに設定されました。" << std::endl;
+#endif // DEBUG	
+	}
+	else if (std::equal(temp_flag.begin(), temp_flag.end(), "AI_V4MAPPED")) {
+		m_param.ai_flags = AI_V4MAPPED;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_V4MAPPEDに設定されました。" << std::endl;
+#endif // DEBUG
+	}
+	else {
+		std::cout << "\033[31m [ERROR]\033[m" << std::endl;
+		return false;
+	}
+	std::cout << "\033[32m [OK] \033[m" << std::endl;
+	return true;
+}
+
+bool SocketHandler::setting_family(ini::IniFile tcp_listen_socket_param_setting_ini)
+{
+	std::cout << StringFormat("%s[INFO]Setting the address family in the parameters...", ServerTime::get_current_time());
+	//iniファイルの各セクションからキーを読み込む
+	//アドレスファミリの設定(ipv4 or ipv6)
+	std::string temp_family = tcp_listen_socket_param_setting_ini["SocketSetting"]["family"].as<std::string>();
+
+	//通信プロトコル
+	if (std::equal(temp_family.begin(), temp_family.end(), "AF_INET")) {
+		m_param.ai_family = AF_INET;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_INET(アドレスファミリはipv4に設定されました)に設定されました。" << std::endl;
+#endif // DEBUG
+
+	}
+	//通信プロトコルをipv6に設定する場合
+	else if (std::equal(temp_family.begin(), temp_family.end(), "AF_INET6")) {
+		m_param.ai_family = AF_INET6;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_INET6(アドレスファミリはipv6に設定されました)に設定されました。" << std::endl;
+#endif // DEBUG
+
+	}
+	//通信プロトコルがaf_unspecに設定された場合(ipv4とipv6に対応)
+	//通信プロトコルがどちらにも設定していない場合及び読み取れなかった場合(af_unspecに設定)
+	else if (std::equal(temp_family.begin(), temp_family.end(), "AF_UNSPEC")) {
+		m_param.ai_family = AF_UNSPEC;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_UNSPEC(アドレスファミリはAF=UNSPECに設定されました)に設定されました。" << std::endl;
+#endif // DEBUG
+}
+	else {
+		std::cout << "\033[31m [ERROR]\033[m" << std::endl;
+		return false;
+	}
+	std::cout << "\033[32m [OK] \033[m" << std::endl;
+	return true;
+}
+
+bool SocketHandler::setting_socktype(ini::IniFile tcp_listen_socket_param_setting_ini)
+{
+	std::cout << StringFormat("%s[INFO]Setting the socket type in the parameters...", ServerTime::get_current_time());
+	//ソケット型の設定
+	std::string temp_socket_type = tcp_listen_socket_param_setting_ini["SocketSetting"]["socktype"].as<std::string>();
+	if (std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_STREAM")) {
+		m_param.ai_socktype = SOCK_STREAM;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはSOCK_STREAM(TCPプロトコルを使用)に設定されました。" << std::endl;
+#endif // DEBUG		
+	}
+	else if (std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_DGRAM")) {
+		m_param.ai_socktype = SOCK_DGRAM;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはsock_dgram(UDPプロトコルを使用)に設定されました。" << std::endl;
+#endif // DEBUG
+
+	}
+	else if (std::equal(temp_socket_type.begin(), temp_socket_type.end(), "SOCK_RDM")) {
+		m_param.ai_socktype = SOCK_RDM;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはSOCK_RDM(RDMプロトコルを使用)に設定されました。" << std::endl;
+#endif // DEBUG
+
+	}
+	else {
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("(tcp_listen setting)param：ai_socktypeは設定されなかったため、プログラムを終了します。"));
+		return false;
+	}
+	std::cout << "\033[32m [OK] \033[m" << std::endl;
+	return true;
+}
+
+bool SocketHandler::setting_protocol(ini::IniFile tcp_listen_socket_param_setting_ini)
+{
+	std::cout << StringFormat("%s[INFO]Setting the protocol in the parameters...", ServerTime::get_current_time());
+	//プロトコルの設定
+	std::string temp_protocol = tcp_listen_socket_param_setting_ini["SocketSetting"]["protocol"].as<std::string>();
+	//std::equal(temp_family.begin(), temp_family.end(), "AF_INET")
+	//プロトコルをtcpに設定する場合
+	if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_TCP")) && ((m_param.ai_family == AF_INET || m_param.ai_family == AF_INET6) && m_param.ai_socktype == SOCK_STREAM)) {
+		m_param.ai_protocol = IPPROTO_TCP;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはIPPROTO_TCP(tcpプロトコルを使用)に設定されました。" << std::endl;
+#endif // DEBUG
+	}
+
+	//プロトコルをudpに設定する場合
+	else if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_UDP")) && ((m_param.ai_family == AF_INET || m_param.ai_family == AF_INET6) && m_param.ai_socktype == SOCK_DGRAM)) {
+		m_param.ai_protocol = IPPROTO_UDP;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはipproto_tcp(tcpプロトコルを使用)に設定されました。" << std::endl;
+#endif // DEBUG
+	}
+	//プロトコルをpgmに設定する場合
+	else if ((std::equal(temp_protocol.begin(), temp_protocol.end(), "IPPROTO_PGM")) && m_param.ai_family == AF_INET && m_param.ai_socktype == SOCK_RDM) {
+		m_param.ai_protocol = IPPROTO_PGM;
+
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはipproto_pgm(pgmプロトコルを使用)に設定されました。" << std::endl;
+#endif // DEBUG
+	}
+	else {
+		std::cout << "\033[31m [ERROR] \033[m" << std::endl;
+		return false;
+	}
+	std::cout << "\033[32m [OK] \033[m" << std::endl;
+	return true;
+}
+
+bool SocketHandler::setting_port(ini::IniFile tcp_listen_socket_param_setting_ini)
+{
+	std::cout << StringFormat("%s[INFO]Setting the port in the parameters...", ServerTime::get_current_time());
+	//ポートの設定
+	try
+	{
+		int temp_port = tcp_listen_socket_param_setting_ini["SocketSetting"]["port"].as<int>();
+
+		if (temp_port < 0 || temp_port > 65535) {
+
+			THROW_APP_EXCEPTION("The port number is set out of range. Reset to the range of 0~65535.");
+		}
+		m_port = temp_port;
+#ifdef DEBUG
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：アプリケーションポートは" << m_port << "が割り当てられました。" << std::endl;
+
+#endif // DEBUG
+
+}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+
+		return false;
+	}
+	std::cout << "\033[32m [OK] \033[m" << std::endl;
+	return true;
+}
+
 
 bool SocketHandler::obtain_local_ip_addr()
 {
@@ -851,7 +894,7 @@ bool SocketHandler::bind_tcp_listen_socket()
 	std::cout << StringFormat("%s[INFO]Bind a TCP listening socket ...", ServerTime::get_current_time());
 	try
 	{
-		int bind_result = bind(m_tcp_listen_socket, m_result->ai_addr, (int)m_result->ai_addrlen);
+		int bind_result = bind(m_tcp_listen_for_msg_socket, m_result->ai_addr, (int)m_result->ai_addrlen);
 		if (bind_result == SOCKET_ERROR) {
 			std::stringstream socket_error_msg;
 			socket_error_msg << "An error occurred while binding the TCP listening socket. WSAGetLastError Code : " << std::to_string(WSAGetLastError());
@@ -891,7 +934,7 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(int check_ne
 			SOCKET accept_client_socket_result;
 			struct sockaddr_in accept_sockaddr_in_result;
 			//socklen_t accept_socket_addr_in_length_rength_result = client_handler.get_connected_client_list()[check_n_invalid_socket_result].get_sockaddr_in_length();
-			accept_client_socket_result = accept(m_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
+			accept_client_socket_result = accept(m_tcp_listen_for_msg_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
 
 			//acceptしたソケットがINVALID_SOCKETである場合
 			if (accept_client_socket_result == INVALID_SOCKET) {
@@ -1014,10 +1057,10 @@ void SocketHandler::disconnect_socket(SOCKET client_socket, std::string client_i
 
 
 
-bool SocketHandler::generate_tcp_listen_socket()
+bool SocketHandler::generate_tcp_listen_socket_for_message()
 {
 	//パラメータ設定
-	if (!setting_tcp_listen_socket(INIT_FILE_PASS)) {
+	if (!setting_tcp_listen_socket_param(INIT_FILE_PASS)) {
 		return false;
 	}
 
@@ -1068,8 +1111,8 @@ bool SocketHandler::generate_tcp_listen_socket()
 
 		std::cout << StringFormat("%s[INFO]Creating TCP listening socket...", ServerTime::get_current_time());
 		//リッスンソケットの生成
-		m_tcp_listen_socket = socket(m_result -> ai_family, m_result -> ai_socktype, m_result->ai_protocol);
-		if (m_tcp_listen_socket == INVALID_SOCKET) {
+		m_tcp_listen_for_msg_socket = socket(m_result -> ai_family, m_result -> ai_socktype, m_result->ai_protocol);
+		if (m_tcp_listen_for_msg_socket == INVALID_SOCKET) {
 			THROW_APP_EXCEPTION("The generated listening socket is not valid.");
 		}
 	}
@@ -1089,7 +1132,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 
 
 
-int SocketHandler::monitor_socket(const ClientHandler& client_handler)
+int SocketHandler::monitor_descriptor(const ClientHandler& client_handler)
 {
 	try
 	{
@@ -1138,7 +1181,7 @@ int SocketHandler::monitor_socket(const ClientHandler& client_handler)
 
 			//ディスクリプションに変化が起こった場合
 		default:
-			if (FD_ISSET(m_tcp_listen_socket, &m_fds)) {
+			if (FD_ISSET(m_tcp_listen_for_msg_socket, &m_fds)) {
 				std::cout << ServerTime::get_current_time() << "[INFO]There was a request to connect to the server from a new client." << std::endl;
 				return REQUEST_ACCEPT_CLIENT_DETECTION;
 			}
@@ -1163,10 +1206,10 @@ int SocketHandler::monitor_socket(const ClientHandler& client_handler)
 	return 0;
 }
 
-bool SocketHandler::open_tcp_listen_socket()
+bool SocketHandler::open_tcp_listen_socket_for_message()
 {
 	//tcp_listen_socketのオープンに失敗した場合
-	if (!generate_tcp_listen_socket()) {
+	if (!generate_tcp_listen_socket_for_message()) {
 		//std::cerr << StringFormat("%s[ERROR]tcp_listen_socketのオープンに失敗しました。") << std::endl;
 		return false;
 	}
@@ -1175,10 +1218,10 @@ bool SocketHandler::open_tcp_listen_socket()
 	std::cout << StringFormat("%s[INFO]Open a TCP listening socket...", ServerTime::get_current_time());
 	try
 	{
-		if (listen(m_tcp_listen_socket, SOMAXCONN) == SOCKET_ERROR) {
+		if (listen(m_tcp_listen_for_msg_socket, SOMAXCONN) == SOCKET_ERROR) {
 
 			freeaddrinfo(m_result);
-			closesocket(m_tcp_listen_socket);
+			closesocket(m_tcp_listen_for_msg_socket);
 			WSACleanup();
 			THROW_APP_EXCEPTION("Tcp Listen socket has been SOCKET_ERROR for some reason.");
 
