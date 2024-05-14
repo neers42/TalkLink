@@ -33,7 +33,8 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	//リッスンソケット生成用のパラメータ
-	struct addrinfo *m_result = NULL, m_param, m_multicast_tx_param, m_bloadcast_tx_param;
+	struct addrinfo *m_result_msg = NULL, m_param_msg, m_multicast_tx_param, m_bloadcast_tx_param;
+	struct addrinfo *m_result_hb = NULL, m_param_hb;
 
 	WSADATA m_wsa_data;
 
@@ -53,7 +54,9 @@ private:
 	SOCKET m_udp_multicast_tx_socket;
 
 	//サーバのアプリケーションポート番号
-	int m_port = 0;
+	int m_message_port = 0;
+
+	int m_heart_beat_port = 0;
 
 	//初期化用のsockaddr_in構造体
 	struct sockaddr_in m_init_sockaddr_in;
@@ -78,8 +81,8 @@ private:
 */
 	
 
-	//Listenソケットをbindする【未実装】
-	bool bind_tcp_listen_socket();
+	//Listenソケットをbindする
+	bool bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinfo* result);
 
 	//tcp listenソケットの設定を読み込む
 	bool setting_tcp_listen_socket_param(const std::string& file_pass);
@@ -92,8 +95,10 @@ private:
 
 
 	//Listenソケットを生成する
-	bool generate_tcp_listen_socket_for_message();
-	
+	bool generate_tcp_listen_socket_msg();
+
+	bool generate_tcp_listen_socket_heart_beat();
+
 	bool generate_udp_multicast_tx_socket();
 
 	bool generate_udp_bloadcast_tx_socket();
@@ -106,7 +111,9 @@ private:
 
 	bool setting_protocol(ini::IniFile tcp_listen_socket_param_setting_ini);
 
-	bool setting_port(ini::IniFile tcp_listen_socket_param_setting_ini);
+	bool setting_port_for_message(ini::IniFile tcp_listen_socket_param_setting_ini);
+
+	bool setting_port_for_heart_beat(ini::IniFile tcp_listen_socket_param_setting_ini);
 
 
 public:
@@ -125,8 +132,12 @@ public:
 	~SocketHandler();
 
 	
-	SOCKET get_listen_socket() {
+	SOCKET get_listen_socket_for_msg() {
 		return m_tcp_listen_for_msg_socket;
+	}
+
+	SOCKET get_listen_socket_for_hb() {
+		return m_tcp_listen_for_hb_socket;
 	}
 
 	SOCKET get_udp_multicast_tx_socket() {
@@ -148,16 +159,22 @@ public:
 
 
 	//ファイルディスクリプタに変化がないか監視する
-	int monitor_descriptor(const ClientHandler& client_handler);
+	int monitor_descriptor_for_message(const ClientHandler& client_handler);
 
-	//リッスンソケットをアクティブにする
+	//メッセージ用のリッスンソケットをアクティブにする
 	bool open_tcp_listen_socket_for_message();
+
+	//ハートビート用のリッスンソケットをアクティブにする
+	bool open_tcp_listen_socket_for_heart_beat();
 
 	//クライアントのIPアドレスを抽出する
 	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);
 
-	//accept処理
-	std::tuple<SOCKET, sockaddr_in> accept_client_socket(int check_next_invalid_result, socklen_t client_sockaddr_in_length);
+	//accept処理(メッセージ用のソケット)
+	std::tuple<SOCKET, sockaddr_in> accept_client_socket_msg(int check_next_invalid_result, socklen_t client_sockaddr_in_length);
+
+	//accept処理(ハートビート用のソケット)
+	std::tuple<SOCKET, sockaddr_in> accept_client_socket_hb(socklen_t client_sockaddr_in_hb_length);
 
 	//接続中のクライアントソケットをクローズする
 	void disconnect_socket(SOCKET client_socket, std::string client_ip_address, int monitor_result);

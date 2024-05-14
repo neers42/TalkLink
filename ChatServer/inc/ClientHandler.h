@@ -89,6 +89,11 @@ private:
 	
 	//接続中のクライアントリスト
 	std::vector<Client> connected_client_list;
+
+	//ハートビート用のソケットリスト
+	std::vector<SOCKET> heart_beat_list;
+
+	//初期化用のクライアント
 	Client init_client = Client();
 
 	//private関数

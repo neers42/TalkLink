@@ -29,18 +29,26 @@ void ServerControlleFacade::run()
 
 	//リッスンソケットの生成
 	if (!m_socket_handler->open_tcp_listen_socket_for_message()) {
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cout, StringFormat("The TCP listening socket could not be opened properly, so the program is forcibly terminated. Please set it again."));
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again."));
+		exit(1);
+	}
+
+	if (!m_socket_handler->open_tcp_listen_socket_for_heart_beat()) {
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The TCP listening socket for heart beat could not be opened properly, so the program is forcibly terminated. Please set it again."));
 		exit(1);
 	}
 	
 	this->show_server_running_info();
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, "Start monitoring requests from clients.");
 	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_process(); });
+
+
+	//this->m_socket_handler->setting_select_info_to_listen_socket();
 	//ディスクリプション監視スタート
 	while (1) {
 		this->m_socket_handler->setting_select_info_to_listen_socket();
 		this->client_select_setting();
-		int detection_num = m_socket_handler->monitor_descriptor(m_client_handler);
+		int detection_num = m_socket_handler->monitor_descriptor_for_message(m_client_handler);
 		switch (detection_num)
 		{
 		case SELECT_TIME_OUT:
@@ -59,6 +67,7 @@ void ServerControlleFacade::run()
 		//接続中のクライアントリストから通知があった場合
 		default:
 			this->m_thread_pool_handler->enqueue_task([this, detection_num]() {message_receive_process(detection_num); });
+			break;
 		}
 
 	}
@@ -82,6 +91,7 @@ void ServerControlleFacade::show_server_running_info()
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Server IPv4 address : %s", this->m_socket_handler->get_server_ip_address()));
 }
 
+
 void ServerControlleFacade::accept_client_socket_process()
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
@@ -91,11 +101,12 @@ void ServerControlleFacade::accept_client_socket_process()
 	socklen_t new_client_socklen_t = 0;
 	uint32_t check_invalid_result = this->m_client_handler.check_next_invalid_socket();
 
-	std::tie(new_client_socket, new_client_sockaddr_in) = m_socket_handler->accept_client_socket(check_invalid_result, this->m_client_handler.connected_client_list[check_invalid_result].get_sockaddr_in_length());
+	std::tie(new_client_socket, new_client_sockaddr_in) = m_socket_handler->accept_client_socket_msg(check_invalid_result, this->m_client_handler.connected_client_list[check_invalid_result].get_sockaddr_in_length());
 
 	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
 	new_client.set_client_ipv4_addr(m_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
 	m_client_handler.add_client(new_client, check_invalid_result);
+	
 	
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Registered on the client list[%d] => IP : %s.",check_invalid_result, m_client_handler.connected_client_list[check_invalid_result].get_client_ipv4_addr()));
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));

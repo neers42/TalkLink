@@ -51,6 +51,7 @@ public:
 
 	void show_server_running_info();
 
+
 	void accept_client_socket_process();
 
 	void message_receive_process(int detection_num);
