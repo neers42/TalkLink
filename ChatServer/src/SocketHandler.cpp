@@ -61,6 +61,9 @@ SocketHandler::SocketHandler() :
 	FD_ZERO(&m_fds_msg);
 	FD_ZERO(&m_fd_read_msg);
 
+	FD_ZERO(&m_fds_hb);
+	FD_ZERO(&m_fd_read_hb);
+
 	//select関数のタイムアウト初期設定(tv_sec=秒の指定　tv_usec=マイクロ秒の指定)
 	//デフォルトコンストラクタでは500マイクロ秒 * 1000　⇒ 500ミリ秒に設定
 	m_timeout.tv_sec = 0;
@@ -132,6 +135,9 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	//ファイルディスクリプタキャッチ用のfdsを初期化
 	FD_ZERO(&m_fds_msg);
 	FD_ZERO(&m_fd_read_msg);
+
+	FD_ZERO(&m_fds_hb);
+	FD_ZERO(&m_fd_read_hb);
 
 	//select関数のタイムアウト初期設定(tv_sec=秒の指定　tv_usec=マイクロ秒の指定)
 	m_timeout.tv_sec = tv_sec;
@@ -1393,7 +1399,78 @@ int SocketHandler::monitor_descriptor_for_message(const ClientHandler& client_ha
 		return SOCKET_ERROR;
 	}
 
-	return 0;
+}
+
+int SocketHandler::monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, int>>& client_hb_socket_list)
+{
+	try
+	{
+		int select_result = 0;
+		select_result = select(0, &m_fds_msg, NULL, NULL, &m_timeout);
+
+		switch (select_result)
+		{
+			//fd_set構造体に含まれているソケット ハンドルの合計数、期限切れの場合
+		case 0:
+			//THROW_APP_EXCEPTION("CASE:SELECT FUNCTION ERROR(fd_set構造体に含まれているソケット ハンドルの合計数、期限切れです。)");
+			return SELECT_TIME_OUT;
+			break;
+
+			//エラーが発生した場合
+		case SOCKET_ERROR:
+			switch (WSAGetLastError())
+			{
+			case WSANOTINITIALISED:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが成功する必要があります。)");
+				break;
+			case WSAEFAULT:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(Windows ソケットの実装では、内部操作に必要なリソースを割り当てることができませんでした。または、 readfds、 writefds、 exceptfds、または timeval パラメーターがユーザー アドレス空間の一部ではありません。)");
+				break;
+			case ENETDOWN:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:ENETDOWN(ネットワーク サブシステムが失敗しました。)");
+				break;
+			case WSAEINVAL:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(タイムアウト値が無効であるか、3 つの記述子パラメーターがすべて null でした。)");
+				break;
+			case WSAEINTR:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、Windows ソケット 1.1 呼び出しのブロックが取り消されました。)");
+				break;
+			case WSAEINPROGRESS:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロック中の Windows ソケット 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+				break;
+			case WSAENOTSOCK:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子セットの 1 つに、ソケットではないエントリが含まれています。)");
+				break;
+			default:
+				break;
+			}
+			break;
+
+
+
+			//ディスクリプションに変化が起こった場合
+		default:
+			if (FD_ISSET(m_tcp_listen_for_hb_socket, &m_fds_msg)) {
+				std::cout << ServerTime::get_current_time() << "[INFO]There was a request to connect to the server from a heart beat socket" << std::endl;
+				return REQUEST_ACCEPT_CLIENT_DETECTION;
+			}
+			else {
+				//接続中のクライアントリストのどのクライアントからの通知かを判定する
+				for (int detection_hb_list_num = 0; detection_hb_list_num < client_hb_socket_list.size(); detection_hb_list_num++) {
+					if (std::get<0>(client_hb_socket_list[detection_hb_list_num]) != INVALID_SOCKET && FD_ISSET(std::get<0>(client_hb_socket_list[detection_hb_list_num]), &m_fds_hb)) {
+						//std::cout << ServerTime::get_current_time() << "[REQUEST]接続中のクライアント(client_net_info_list[" << detection_client_num << "])から要求がありました" << std::endl;
+						return detection_hb_list_num;
+					}
+				}
+			}
+			break;
+		}
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return SOCKET_ERROR;
+	}
 }
 
 bool SocketHandler::open_tcp_listen_socket_for_message()

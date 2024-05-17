@@ -355,6 +355,7 @@ void ServerControlleFacade::heart_beat_receive_process()
 
 		this->m_socket_handler->setting_select_info_to_listen_socket_for_hb();
 		this->setting_select_info_to_client_msg();
+		this->setting_select_info_to_client_hb();
 		int detection_num = m_socket_handler->monitor_descriptor_for_message(m_client_handler);
 		switch (detection_num)
 		{
