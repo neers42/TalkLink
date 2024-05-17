@@ -58,8 +58,8 @@ SocketHandler::SocketHandler() :
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
-	FD_ZERO(&m_fds);
-	FD_ZERO(&m_fd_read);
+	FD_ZERO(&m_fds_msg);
+	FD_ZERO(&m_fd_read_msg);
 
 	//select関数のタイムアウト初期設定(tv_sec=秒の指定　tv_usec=マイクロ秒の指定)
 	//デフォルトコンストラクタでは500マイクロ秒 * 1000　⇒ 500ミリ秒に設定
@@ -126,12 +126,12 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s[ERROR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
-	FD_ZERO(&m_fds);
-	FD_ZERO(&m_fd_read);
+	FD_ZERO(&m_fds_msg);
+	FD_ZERO(&m_fd_read_msg);
 
 	//select関数のタイムアウト初期設定(tv_sec=秒の指定　tv_usec=マイクロ秒の指定)
 	m_timeout.tv_sec = tv_sec;
@@ -384,23 +384,33 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 }
 
 
-void SocketHandler::setting_select_info_to_listen_socket()
+void SocketHandler::setting_select_info_to_listen_socket_for_msg()
 {
-	FD_ZERO(&this->m_fd_read);
-	FD_SET(this->m_tcp_listen_for_msg_socket, &this->m_fd_read);
+	FD_ZERO(&this->m_fd_read_msg);
+	FD_SET(this->m_tcp_listen_for_msg_socket, &this->m_fd_read_msg);
 	
 
 }
 
-void SocketHandler::setting_select_info_to_client_socket(const SOCKET& client_socket, fd_set* fd)
+void SocketHandler::setting_select_info_to_listen_socket_for_hb()
 {
-	FD_SET(client_socket, fd);
-	
+	FD_ZERO(&this->m_fd_read_hb);
+	FD_ZERO(&this->m_tcp_listen_for_hb_socket, &this->m_fd_read_hb);
+}
+
+void SocketHandler::bind_select_info_to_socket(const SOCKET& socket, fd_set* fd)
+{
+	FD_SET(socket, fd);
 }
 
 void SocketHandler::copy_fd_read_to_fds()
 {
-	memcpy(&this->m_fds, &this->m_fd_read, sizeof(fd_set));
+	memcpy(&this->m_fds_msg, &this->m_fd_read_msg, sizeof(fd_set));
+}
+
+void SocketHandler::copy_fd_read_to_fds(fd_set* fds, fd_set* fd)
+{
+	memcpy(fds, fd, sizeof(fd_set));
 }
 
 
@@ -1317,7 +1327,7 @@ int SocketHandler::monitor_descriptor_for_message(const ClientHandler& client_ha
 	try
 	{
 		int select_result = 0;
-		select_result = select(0, &m_fds, NULL, NULL, &m_timeout);
+		select_result = select(0, &m_fds_msg, NULL, NULL, &m_timeout);
 
 		switch (select_result)
 		{
@@ -1361,14 +1371,14 @@ int SocketHandler::monitor_descriptor_for_message(const ClientHandler& client_ha
 
 			//ディスクリプションに変化が起こった場合
 		default:
-			if (FD_ISSET(m_tcp_listen_for_msg_socket, &m_fds)) {
+			if (FD_ISSET(m_tcp_listen_for_msg_socket, &m_fds_msg)) {
 				std::cout << ServerTime::get_current_time() << "[INFO]There was a request to connect to the server from a new client." << std::endl;
 				return REQUEST_ACCEPT_CLIENT_DETECTION;
 			}
 			else {
 				//接続中のクライアントリストのどのクライアントからの通知かを判定する
 				for (int detection_client_num = 0; detection_client_num < MAX_CONNECT_NUM; detection_client_num++) {
-					if (client_handler.connected_client_list[detection_client_num].get_client_socket() != INVALID_SOCKET && FD_ISSET(client_handler.connected_client_list[detection_client_num].get_client_socket(), &m_fds)) {
+					if (client_handler.connected_client_list[detection_client_num].get_client_socket() != INVALID_SOCKET && FD_ISSET(client_handler.connected_client_list[detection_client_num].get_client_socket(), &m_fds_msg)) {
 						//std::cout << ServerTime::get_current_time() << "[REQUEST]接続中のクライアント(client_net_info_list[" << detection_client_num << "])から要求がありました" << std::endl;
 						return detection_client_num;
 					}
@@ -1448,7 +1458,6 @@ bool SocketHandler::open_tcp_listen_socket_for_heart_beat()
 			closesocket(m_tcp_listen_for_hb_socket);
 			WSACleanup();
 			THROW_APP_EXCEPTION("Tcp Listen socket has been SOCKET_ERROR for some reason.");
-
 		}
 		else
 		{

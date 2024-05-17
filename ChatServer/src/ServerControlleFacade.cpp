@@ -46,8 +46,8 @@ void ServerControlleFacade::run()
 	//this->m_socket_handler->setting_select_info_to_listen_socket();
 	//ディスクリプション監視スタート
 	while (1) {
-		this->m_socket_handler->setting_select_info_to_listen_socket();
-		this->client_select_setting();
+		this->m_socket_handler->setting_select_info_to_listen_socket_for_msg();
+		this->setting_select_info_to_client_msg();
 		int detection_num = m_socket_handler->monitor_descriptor_for_message(m_client_handler);
 		switch (detection_num)
 		{
@@ -74,16 +74,27 @@ void ServerControlleFacade::run()
 	
 }
 
-void ServerControlleFacade::client_select_setting()
+void ServerControlleFacade::setting_select_info_to_client_msg()
 {
 	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
 		//有効なソケットにFDSETを実行する
 		if (this->m_client_handler.connected_client_list[i].get_client_socket() != INVALID_SOCKET) {
-			m_socket_handler->setting_select_info_to_client_socket(this->m_client_handler.connected_client_list[i].get_client_socket(), &m_socket_handler->get_fd_read());
+			m_socket_handler->bind_select_info_to_socket(this->m_client_handler.connected_client_list[i].get_client_socket(), &m_socket_handler->get_fd_read_msg());
 			}
 	}
 
-	this->m_socket_handler->copy_fd_read_to_fds();
+	this->m_socket_handler->copy_fd_read_to_fds(&(m_socket_handler->get_fds_msg()), &(m_socket_handler->get_fd_read_msg()));
+	//this->m_socket_handler->copy_fd_read_to_fds();
+}
+
+void ServerControlleFacade::setting_select_info_to_client_hb()
+{
+	for (int i = 0; i < this->m_client_handler.heart_beat_list.size(); i++) {
+		if (std::get<0>(this->m_client_handler.heart_beat_list[i]) != INVALID_SOCKET) {
+			m_socket_handler->bind_select_info_to_socket(std::get<0>(this->m_client_handler.heart_beat_list[i]), &m_socket_handler->get_fd_read_hb());
+		}
+	}
+	this->m_socket_handler->copy_fd_read_to_fds(&(m_socket_handler->get_fds_hb()), &(m_socket_handler->get_fd_read_hb()));
 }
 
 void ServerControlleFacade::show_server_running_info()
@@ -331,7 +342,9 @@ void ServerControlleFacade::heart_beat_send_process()
 
 void ServerControlleFacade::heart_beat_receive_process()
 {
+	int detection_num_hb = -1;
 	while (true) {
+
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::seconds(30);
 		//受信処理を以下に記載する
 		//①30秒カウント開始する
@@ -339,6 +352,30 @@ void ServerControlleFacade::heart_beat_receive_process()
 		//③クライアントから返信がない場合はステータスをdisconnectにする
 
 		std::this_thread::sleep_until(abs_time);
+
+		this->m_socket_handler->setting_select_info_to_listen_socket_for_hb();
+		this->setting_select_info_to_client_msg();
+		int detection_num = m_socket_handler->monitor_descriptor_for_message(m_client_handler);
+		switch (detection_num)
+		{
+		case SELECT_TIME_OUT:
+			break;
+
+		case SOCKET_ERROR:
+			break;
+
+			//アクセプト要求があった場合
+		case REQUEST_ACCEPT_CLIENT_DETECTION:
+		{
+			this->m_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
+		};
+		break;
+
+		//接続中のクライアントリストから通知があった場合
+		default:
+			this->m_thread_pool_handler->enqueue_task([this, detection_num]() {message_receive_process(detection_num); });
+			break;
+		}
 	}
 }
 

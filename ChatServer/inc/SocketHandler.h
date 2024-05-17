@@ -38,7 +38,8 @@ private:
 
 	WSADATA m_wsa_data;
 
-	fd_set m_fds, m_fd_read;
+	fd_set m_fds_msg, m_fd_read_msg;
+	fd_set m_fds_hb, m_fd_read_hb;
 
 	timeval m_timeout;
 
@@ -144,14 +145,23 @@ public:
 		return m_udp_multicast_tx_socket;
 	}
 
-	fd_set& get_fd_read() {
-		return m_fd_read;
+	fd_set& get_fd_read_msg() {
+		return m_fd_read_msg;
 	}
 
-	const fd_set& get_fds(){
-		return m_fds;
+	fd_set& get_fd_read_hb() {
+		return m_fd_read_hb;
 	}
 
+	fd_set& get_fds_msg(){
+		return m_fds_msg;
+	}
+
+	fd_set& get_fds_hb() {
+		return m_fds_hb;
+	}
+	
+	
 
 	std::string& get_server_ip_address() {
 		return m_local_ip_addr;
@@ -183,11 +193,15 @@ public:
 	bool check_valid_socket(SOCKET request_socket);
 
 	//selectŠÖ”‚Ì‰Šú‰»
-	void setting_select_info_to_listen_socket();
+	void setting_select_info_to_listen_socket_for_msg();
 
-	void setting_select_info_to_client_socket(const SOCKET& client_socket, fd_set* fd);
+	void setting_select_info_to_listen_socket_for_hb();
 
+	void bind_select_info_to_socket(const SOCKET& socket, fd_set* fd);
+	
 	void copy_fd_read_to_fds();
+
+	void copy_fd_read_to_fds(fd_set* fds, fd_set* fd);
 
 	bool obtain_local_ip_addr();
 	

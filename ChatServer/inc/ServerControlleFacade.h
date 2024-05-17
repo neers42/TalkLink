@@ -47,7 +47,9 @@ public:
 	//サーバプログラム実行
 	void run();
 
-	void client_select_setting();
+	void setting_select_info_to_client_msg();
+
+	void setting_select_info_to_client_hb();
 
 	void show_server_running_info();
 
