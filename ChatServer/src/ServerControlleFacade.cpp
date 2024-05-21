@@ -138,12 +138,13 @@ bool ServerControlleFacade::accept_client_socket_for_heart_beat_process()
 	SOCKET new_client_socket_hb = INVALID_SOCKET;
 	struct sockaddr_in new_client_hb_sockaddr_in = { 0 };
 	socklen_t new_client_socklen_t = 0;
+	std::string new_client_id = "";
 	std::tie(new_client_socket_hb, new_client_hb_sockaddr_in) = m_socket_handler->accept_client_socket_hb(sizeof(new_client_hb_sockaddr_in));
 	if (new_client_socket_hb == INVALID_SOCKET) {
 		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The accepted socket for heart beat could not be added to the list because it was an INVALID SOCKET"));
 		return ACCEPT_FAILED;
 	}
-	this->m_client_handler.heart_beat_list.push_back(std::tuple<SOCKET, struct sockaddr_in, int>(new_client_socket_hb, new_client_hb_sockaddr_in, 0));
+	this->m_client_handler.heart_beat_list.push_back(std::tuple<SOCKET, struct sockaddr_in, int, std::string>(new_client_socket_hb, new_client_hb_sockaddr_in, 0, new_client_id));
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Successfully accept client socket for heartbeat (SOCKET : %d)", new_client_socket_hb));
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 	return ACCEPT_SUCCEEDED;

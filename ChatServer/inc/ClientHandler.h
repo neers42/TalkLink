@@ -92,7 +92,7 @@ private:
 
 	
 	//ハートビート用のソケットリスト
-	std::vector<std::tuple<SOCKET, struct sockaddr_in, int>> heart_beat_list;
+	std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>> heart_beat_list;
 
 	//初期化用のクライアント
 	Client init_client = Client();

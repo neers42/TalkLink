@@ -251,9 +251,7 @@ ClientHandler::ClientHandler()
 		std::cerr << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 	}
 	
-	struct sockaddr_in init_sockaddr_in = { AF_INET, htons(8080), htonl(INADDR_ANY)};
-	std::tuple<SOCKET, struct sockaddr_in, int> init_heart_beat_list(INVALID_SOCKET, init_sockaddr_in, 0);
-	heart_beat_list = { init_heart_beat_list };
+	
 
 }
 

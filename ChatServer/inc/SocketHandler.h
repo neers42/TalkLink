@@ -171,7 +171,7 @@ public:
 	//ファイルディスクリプタに変化がないか監視する
 	int monitor_descriptor_for_message(const ClientHandler& client_handler);
 
-	int monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, struct sockaddr_in, int>>& client_hb_socket_list);
+	int monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>>& client_hb_socket_list);
 
 	//メッセージ用のリッスンソケットをアクティブにする
 	bool open_tcp_listen_socket_for_message();

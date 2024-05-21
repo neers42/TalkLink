@@ -1414,7 +1414,7 @@ int SocketHandler::monitor_descriptor_for_message(const ClientHandler& client_ha
 
 }
 
-int SocketHandler::monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, struct sockaddr_in, int>>& client_hb_socket_list)
+int SocketHandler::monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>>& client_hb_socket_list)
 {
 	try
 	{
