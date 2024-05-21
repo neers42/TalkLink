@@ -171,7 +171,7 @@ public:
 	//ファイルディスクリプタに変化がないか監視する
 	int monitor_descriptor_for_message(const ClientHandler& client_handler);
 
-	int monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, int>>& client_hb_socket_list);
+	int monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, struct sockaddr_in, int>>& client_hb_socket_list);
 
 	//メッセージ用のリッスンソケットをアクティブにする
 	bool open_tcp_listen_socket_for_message();
@@ -189,7 +189,7 @@ public:
 	std::tuple<SOCKET, sockaddr_in> accept_client_socket_hb(socklen_t client_sockaddr_in_hb_length);
 
 	//接続中のクライアントソケットをクローズする
-	void disconnect_socket(SOCKET client_socket, std::string client_ip_address, int monitor_result);
+	void disconnect_socket(SOCKET client_socket,  int monitor_result);
 
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(SOCKET request_socket);

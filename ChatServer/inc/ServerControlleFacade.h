@@ -14,6 +14,8 @@
 #include <mutex>
 
 #define DISCONNECT_SOCKET 0
+#define ACCEPT_FAILED 0
+#define ACCEPT_SUCCEEDED 1
 
 class ServerControlleFacade
 {
@@ -54,7 +56,9 @@ public:
 	void show_server_running_info();
 
 
-	void accept_client_socket_process();
+	bool accept_client_socket_for_msg_process();
+
+	bool accept_client_socket_for_heart_beat_process();
 
 	void message_receive_process(int detection_num);
 
@@ -62,11 +66,11 @@ public:
 
 	void mt002_process(std::string& receive_data, int& receive_result);
 
-	void heart_beat_process();
+	void heart_beat_monitor_process();
 
 	void heart_beat_send_process();
 
-	void heart_beat_receive_process();
+	void heart_beat_receive_process(int detection_num);
 
 	
 private:

@@ -5,6 +5,8 @@ ClientHandler::Client::Client():m_client_id{""}, m_client_name{""}, m_client_mai
 	this -> m_client_sockaddr_in.sin_family = AF_INET;
 	this->m_client_sockaddr_in.sin_port = 0;
 	this->m_client_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+
+	
 }
 
 ClientHandler::Client::~Client()
@@ -248,7 +250,10 @@ ClientHandler::ClientHandler()
 	{
 		std::cerr << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 	}
-
+	
+	struct sockaddr_in init_sockaddr_in = { AF_INET, htons(8080), htonl(INADDR_ANY)};
+	std::tuple<SOCKET, struct sockaddr_in, int> init_heart_beat_list(INVALID_SOCKET, init_sockaddr_in, 0);
+	heart_beat_list = { init_heart_beat_list };
 
 }
 
@@ -260,15 +265,11 @@ ClientHandler::~ClientHandler()
 bool ClientHandler::add_client(const Client& client, std::uint32_t add_num)
 {
 	this->connected_client_list[add_num] = client;
-	//std::string new_client_id = generate_client_id();
-	//if (new_client_id == "") {
-	//	return false;
-	//}
-	//this->connected_client_list[add_num].set_client_id(new_client_id);
 	return true;
 }
 
-bool ClientHandler::delete_client(const uint32_t delete_num)
+
+bool ClientHandler::delete_client_from_con_list(const uint32_t delete_num)
 {
 	this->connected_client_list[delete_num] = init_client;
 	if (this->connected_client_list[delete_num].get_client_id() == "" &&
@@ -286,6 +287,11 @@ int ClientHandler::check_next_invalid_socket()
 			return n_invalid_socket;
 	}
 	return -1;
+}
+
+void ClientHandler::delete_client_hbsock_from_hb_list(const std::uint32_t delete_num)
+{
+	this->heart_beat_list.erase(this->heart_beat_list.begin() + delete_num);
 }
 
 int ClientHandler::search_connect_client_socket_num_from_id(const std::string& search_client_id)

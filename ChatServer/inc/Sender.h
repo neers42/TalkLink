@@ -15,6 +15,7 @@ public:
 	virtual bool tcp_unicast_data(const SOCKET socket ,const std::string& send_data, const int send_data_length, const std::string& dst_client_id, const std::string& src_client_id);
 	virtual std::vector<SOCKET> tcp_multicast_data(const std::vector<SOCKET>& send_sockets, const std::string& send_data, const int send_data_length);
 	virtual bool udp_multicast_data();
+
 private:
 
 

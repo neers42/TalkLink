@@ -9,17 +9,17 @@ Receiver::~Receiver()
 {
 }
 
-std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_socket, int client_list_num, const std::string& ipv4_addr)
+std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_socket, int client_list_num)
 {
 	try
 	{
 		//暗号化されたデータを受信
-		char temp_recv_data[MAX_RECEIVE_MESSAGE_LEN];
-		memset(temp_recv_data, '\0', sizeof(temp_recv_data));
-		int receive_result = recv(receive_socket, temp_recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
+		char recv_data[MAX_RECEIVE_MESSAGE_LEN];
+		memset(recv_data, '\0', sizeof(recv_data));
+		int receive_result = recv(receive_socket, recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
 
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[DEBUG]receive_result = " << receive_result << std::endl;
+		LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("receive_result = %d", receive_result));
 #endif // DEBUG
 
 
@@ -86,9 +86,8 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_so
 			return std::make_tuple(receive_result, "");
 		}
 		//データ受信が正常に実施された際の処理
-		else
-		{
-			return std::make_tuple(receive_result, temp_recv_data);
+		else{
+			return std::make_tuple(receive_result, recv_data);
 		}
 	
 	}
@@ -103,8 +102,7 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_so
 }
 void Receiver::show_receive_info(const std::string& ipv4_addr, int& detection_num, int& receive_result)
 {
-	std::cout << ServerTime::get_current_time() << "[RECEIVE]" << receive_result<< "byte message was received from client list["  << detection_num << "]"
-		<< "(IP address：" << ipv4_addr<< ")" << std::endl;
+	LogHandler::logging_info(LogHandler::LogType::RECEIVE, std::cout, StringFormat("%d byte message was received from client list[%d](IP Address : %s)", receive_result, detection_num, ipv4_addr));
 }
 
 
