@@ -41,16 +41,16 @@ void ServerControlleFacade::run()
 	this->show_server_running_info();
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, "Start monitoring requests from clients.");
 	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_monitor_process(); });
+	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_send_process(); });
+	this->m_thread_pool_handler->enqueue_task([this]() {m_thread_pool_handler->monitor_worker(); });
 
-
-	//this->m_socket_handler->setting_select_info_to_listen_socket();
 	//ディスクリプション監視スタート
 	while (1) {
-
-		//heart_beat_monitor_process();
+		//auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->m_socket_handler->setting_select_info_to_listen_socket_for_msg();
 		this->setting_select_info_to_client_msg();
 		int detection_num = m_socket_handler->monitor_descriptor_for_message(m_client_handler);
+
 		switch (detection_num)
 		{
 		case SELECT_TIME_OUT:
@@ -72,6 +72,7 @@ void ServerControlleFacade::run()
 			break;
 		}
 		
+		//std::this_thread::sleep_until(abs_time);
 
 	}
 	
@@ -124,7 +125,6 @@ bool ServerControlleFacade::accept_client_socket_for_msg_process()
 	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
 	new_client.set_client_ipv4_addr(m_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
 	m_client_handler.add_client(new_client, check_invalid_result);
-	
 	
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Registered on the client list[%d] => IP : %s.",check_invalid_result, m_client_handler.connected_client_list[check_invalid_result].get_client_ipv4_addr()));
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
@@ -363,18 +363,41 @@ void ServerControlleFacade::heart_beat_monitor_process()
 
 void ServerControlleFacade::heart_beat_send_process()
 {
+	std::vector<SOCKET> send_sockets, fail_send_sockets;
 	while (true) {
-		auto abs_time = std::chrono::system_clock::now() + std::chrono::seconds(10);
+		auto time_now = std::chrono::system_clock::now();
+		auto abs_time_5 = time_now + std::chrono::seconds(5);
+		auto abs_time_10 = time_now + std::chrono::seconds(10);
+
 		//送信処理を以下に記載する
 		//①接続されているsocketを集計する
-		std::vector<SOCKET> con_sockets = this->m_client_handler.extract_conneted_sockets();
-		//②socketリストにマルチキャストをする
-		if (con_sockets.size() > 0) {	//接続中のクライアントがいる場合ハートビートメッセージを送る
-			this->m_sender->send_heart_beat_message(con_sockets);
-			
-		}
-		std::this_thread::sleep_until(abs_time);
 
+		{
+			std::unique_lock<std::mutex> lock(m_hb_connect_list_mutex);
+			if (this->m_client_handler.heart_beat_list.size() > 0) {
+				for (int i = 0; i < this->m_client_handler.heart_beat_list.size(); i++) {
+					send_sockets.push_back(std::get<0>(this->m_client_handler.heart_beat_list[i]));
+				}
+			}
+		}
+		
+		//②socketリストにマルチキャストをする
+		if (send_sockets.size() > 0) {	//接続中のクライアントがいる場合ハートビートメッセージを送る
+			fail_send_sockets = this->m_sender->send_heart_beat_message(send_sockets);
+			LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("The server sent a heartbeat message to the client."));
+		}
+		
+		//5秒後に再送処理をする
+		std::this_thread::sleep_until(abs_time_5);
+		if (fail_send_sockets.size() > 0) {
+			LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Heartbeat message was resent from server to client"));
+			this->m_sender->send_heart_beat_message(fail_send_sockets);
+		}
+		std::this_thread::sleep_until(abs_time_10);
+		send_sockets.clear();
+		fail_send_sockets.clear();
+		assert(send_sockets.empty());
+		assert(fail_send_sockets.empty());
 	}
 }
 
@@ -385,7 +408,7 @@ void ServerControlleFacade::heart_beat_receive_process(int detection_num)
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 	int receive_result = 0;
-	std::string receive_data, mt;
+	std::string receive_data;
 	{
 		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
 		std::tie(receive_result, receive_data) = Receiver::receive_data(std::get<0>(m_client_handler.heart_beat_list[detection_num]), detection_num);
@@ -412,8 +435,8 @@ void ServerControlleFacade::heart_beat_receive_process(int detection_num)
 	}
 	//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
 	else {
-
-		}
+		
+	}
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 }
 

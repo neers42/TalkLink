@@ -313,6 +313,7 @@ void ClientHandler::show_client_info(const int& client_num)
 
 std::vector<SOCKET> ClientHandler::extract_conneted_sockets()
 {
+
 	std::vector<SOCKET> connected_socket_list;
 	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
 		if (this->connected_client_list[i].get_client_socket() != NULL) {

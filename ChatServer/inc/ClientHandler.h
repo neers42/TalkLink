@@ -90,7 +90,8 @@ private:
 	//接続中のクライアントリスト
 	std::vector<Client> connected_client_list;
 
-	
+	//std::mutex heart_beat_list_mutex;
+
 	//ハートビート用のソケットリスト
 	std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>> heart_beat_list;
 
@@ -105,11 +106,15 @@ public:
 	ClientHandler();
 	~ClientHandler();
 
+	
+
+
 	//getter
 	std::vector<Client> get_connected_client_list();
 	const std::vector<Client> get_connected_client_list() const;
 	Client get_init_client();
 	const Client get_init_client() const;
+
 	
 	//setter
 	void set_client_id(std::string id, uint32_t list_num);

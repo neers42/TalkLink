@@ -12,14 +12,16 @@ Sender::~Sender()
 
 std::string Sender::generate_heart_beat_message()
 {
-	std::string heart_beat_message = StringFormat("000[%s]HeartBeat from server.", ServerTime::get_current_time());
+	std::string heart_beat_message = StringFormat("100%sHeartBeat from server.", ServerTime::get_current_time());
 	return heart_beat_message;
 }
 
 std::vector<SOCKET> Sender::send_heart_beat_message(const std::vector<SOCKET> sockets)
 {
 	std::vector<SOCKET> fail_send_heart_beat_message_socket_list;
+	//ハートビート用のメッセージを生成
 	std::string heart_beat_message = this->generate_heart_beat_message();
+
 	fail_send_heart_beat_message_socket_list = this->tcp_multicast_data(sockets, heart_beat_message, heart_beat_message.size());
 	return fail_send_heart_beat_message_socket_list;
 }

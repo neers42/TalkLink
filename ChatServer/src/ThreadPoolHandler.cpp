@@ -42,4 +42,17 @@ void ThreadPoolHandler::process_task()
     }
 }
 
+void ThreadPoolHandler::monitor_worker()
+{
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            if (!tasks.empty()) {
+                condition.notify_one();
+            }
+        }
+        
+    }
+}
+
 

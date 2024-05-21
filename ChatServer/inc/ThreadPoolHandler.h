@@ -28,6 +28,7 @@ private:
 
 	//関数
 	void process_task();
+	
 
 public:
 
@@ -66,6 +67,8 @@ public:
 		//新しいタスクが追加されたことをスレッドに通知する
 		condition.notify_one();
 	}
+
+	void monitor_worker();
 
 };
 

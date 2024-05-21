@@ -32,6 +32,7 @@ private:
 
 
 	std::mutex m_connect_client_list_mutex;
+	std::mutex m_hb_connect_list_mutex;
 	std::mutex m_cout_mutex;
 
 public:
