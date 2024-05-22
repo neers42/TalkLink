@@ -292,7 +292,7 @@ void ClientHandler::delete_client_hbsock_from_hb_list(const std::uint32_t delete
 	this->heart_beat_list.erase(this->heart_beat_list.begin() + delete_num);
 }
 
-int ClientHandler::search_connect_client_socket_num_from_id(const std::string& search_client_id)
+int ClientHandler::search_client_id_from_con_list(const std::string& search_client_id)
 {
 	for (int search_result = 0; search_result < MAX_CONNECT_NUM; search_result++) {
 
@@ -379,5 +379,20 @@ void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_nu
 {
 	this->connected_client_list[list_num].set_client_ipv4_addr(ipv4_addr);
 }
+
+
+void ClientHandler::set_count_hb_list(int list_num)
+{
+	int& count_ = std::get<2>(this->heart_beat_list[list_num]);
+	count_++;
+}
+
+
+void ClientHandler::set_client_id_to_hb_list(const std::string& id, int list_num) 
+{
+	std::string& change_id = std::get<3>(this->heart_beat_list[list_num]);
+	change_id = id;
+}
+
 
 

@@ -1148,7 +1148,7 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket_hb(socklen_t
 }
 
 
-void SocketHandler::disconnect_socket(SOCKET client_socket, int monitor_result)
+void SocketHandler::disconnect_socket(SOCKET client_socket)
 {
 	try
 	{

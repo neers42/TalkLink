@@ -125,12 +125,18 @@ public:
 	void set_socket_addr_in_length(socklen_t length, uint32_t list_num);
 	void set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num);
 
+	
+	void set_count_hb_list(int list_num);
+	
+	void set_client_id_to_hb_list(const std::string& id, int list_num);
+	
+
 	//other
 	bool add_client(const Client& client, std::uint32_t add_num);
 	bool delete_client_from_con_list(const std::uint32_t delete_num);
 	void delete_client_hbsock_from_hb_list(const std::uint32_t delete_num);
 	int check_next_invalid_socket();
-	int search_connect_client_socket_num_from_id(const std::string& search_client_id);
+	int search_client_id_from_con_list(const std::string& search_client_id);
 	void show_client_info(const int& client_num);
 	std::vector<SOCKET> extract_conneted_sockets();
 	

@@ -189,7 +189,7 @@ public:
 	std::tuple<SOCKET, sockaddr_in> accept_client_socket_hb(socklen_t client_sockaddr_in_hb_length);
 
 	//接続中のクライアントソケットをクローズする
-	void disconnect_socket(SOCKET client_socket,  int monitor_result);
+	void disconnect_socket(SOCKET client_socket);
 
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(SOCKET request_socket);

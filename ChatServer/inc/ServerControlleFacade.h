@@ -73,6 +73,8 @@ public:
 
 	void heart_beat_receive_process(int detection_num);
 
+	void heart_beat_check_process();
+
 	
 private:
 	std::string sign_up_process(const std::string& mail_addr, const std::string& password);
