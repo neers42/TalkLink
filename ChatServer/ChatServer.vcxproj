@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\MT000Receiver.cpp" />
     <ClCompile Include="src\MT102Sender.cpp" />
     <ClCompile Include="src\MT101Sender.cpp" />
     <ClCompile Include="src\FirebaseAuthHandler.cpp" />
@@ -325,6 +326,7 @@
     <ClInclude Include="inc\ThreadPoolHandler.h" />
     <ClInclude Include="inc\MT101Sender.h" />
     <ClInclude Include="inc\MT102Sender.h" />
+    <ClInclude Include="inc\MT000Receiver.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />

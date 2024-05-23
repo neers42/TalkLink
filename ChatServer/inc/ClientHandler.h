@@ -37,6 +37,7 @@ private:
 		std::string m_client_ipv4_addr = "";
 		std::string m_client_password = "";
 		firebase::auth::Auth* client_auth;
+		int m_heart_beat_count;
 
 
 	public:
@@ -64,6 +65,8 @@ private:
 		std::string get_client_password();
 		const std::string get_client_password() const;
 		firebase::auth::Auth* get_client_auth();
+		int get_client_heart_beat_count();
+		const int get_client_heart_beat_count() const;
 
 		//setter
 		void set_client_id(std::string id);
@@ -74,6 +77,8 @@ private:
 		void set_socket_addr_in_length(socklen_t length);
 		void set_client_ipv4_addr(std::string ipv4_addr);
 		void set_client_password(std::string password);
+		void incliment_heart_beat_count();
+		void clear_heart_beat_count();
 		bool operator==(const Client& other_client)const;
 		Client &operator=(const Client& other_client);
 
@@ -124,6 +129,9 @@ public:
 	void set_client_sockaddr_in(struct sockaddr_in sock_in, uint32_t list_num);
 	void set_socket_addr_in_length(socklen_t length, uint32_t list_num);
 	void set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num);
+	void incliment_heart_beat_count(uint32_t list_num);
+	void clear_heart_beat_count(uint32_t list_num);
+
 
 	
 	void set_count_hb_list(int list_num);

@@ -1,6 +1,7 @@
 #ifndef SERVERCONTROLLFACADE_H_
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
+#include "MT000Receiver.h"
 #include "MT001Receiver.h"
 #include "MT002Receiver.h"
 #include "Sender.h"
@@ -22,6 +23,7 @@ class ServerControlleFacade
 private:
 	FirebaseAuthHandler* m_firebase_auth_handler = new FirebaseAuthHandler();
 	SocketHandler* m_socket_handler = new SocketHandler();
+	MT000Receiver* m_mt000receiver = new MT000Receiver();
 	MT001Receiver* m_mt001receiver = new MT001Receiver();
 	MT002Receiver* m_mt002receiver = new MT002Receiver();
 	Sender* m_sender = new Sender();
@@ -34,6 +36,7 @@ private:
 	std::mutex m_connect_client_list_mutex;
 	std::mutex m_hb_connect_list_mutex;
 	std::mutex m_cout_mutex;
+	std::mutex m_mutex;
 
 public:
 	//コンストラクタ
@@ -63,6 +66,8 @@ public:
 
 	void message_receive_process(int detection_num);
 
+	void mt000_process(std::string& receive_data, int monitor_result);
+
 	void mt001_process(std::string& receive_data, int& monitor_result);
 
 	void mt002_process(std::string& receive_data, int& receive_result);
@@ -74,6 +79,8 @@ public:
 	void heart_beat_receive_process(int detection_num);
 
 	void heart_beat_check_process();
+
+	void setting_select_process();
 
 	
 private:

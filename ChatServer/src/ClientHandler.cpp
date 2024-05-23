@@ -1,6 +1,12 @@
 #include "ClientHandler.h"
 
-ClientHandler::Client::Client():m_client_id{""}, m_client_name{""}, m_client_mail_addr{""}, m_client_socket{INVALID_SOCKET}, m_client_ipv4_addr{""}, m_client_password{""}
+ClientHandler::Client::Client():m_client_id{""}
+							, m_client_name{""}
+							, m_client_mail_addr{""}
+							, m_client_socket{INVALID_SOCKET}
+							, m_client_ipv4_addr{""}
+							, m_client_password{""}
+							, m_heart_beat_count{0}
 {
 	this -> m_client_sockaddr_in.sin_family = AF_INET;
 	this->m_client_sockaddr_in.sin_port = 0;
@@ -99,6 +105,16 @@ firebase::auth::Auth* ClientHandler::Client::get_client_auth()
 	return this->client_auth;
 }
 
+int ClientHandler::Client::get_client_heart_beat_count()
+{
+	return this->m_heart_beat_count;
+}
+
+const int ClientHandler::Client::get_client_heart_beat_count() const
+{
+	return this->m_heart_beat_count;
+}
+
 void ClientHandler::Client::set_client_id(std::string id)
 {
 	this->m_client_id = id;
@@ -139,6 +155,16 @@ void ClientHandler::Client::set_client_password(std::string password)
 	this->m_client_password = password;
 }
 
+void ClientHandler::Client::incliment_heart_beat_count()
+{
+	this->m_heart_beat_count++;
+}
+
+void ClientHandler::Client::clear_heart_beat_count()
+{
+	this->m_heart_beat_count = 0;
+}
+
 bool ClientHandler::Client::operator==(const Client& other_client) const
 {
 	return this->m_client_id == other_client.m_client_id;
@@ -159,14 +185,26 @@ ClientHandler::Client& ClientHandler::Client::operator=(const Client& other_clie
 
 
 ClientHandler::Client::Client(std::string id, std::string name, std::string mail_addr, SOCKET socket, sockaddr_in sockaddr_in, std::string ipv4_addr) :
-	m_client_id{id}, m_client_name{name}, m_client_mail_addr{mail_addr}, m_client_socket{socket}, m_client_sockaddr_in{sockaddr_in}, m_client_ipv4_addr{ipv4_addr}
+	m_client_id{id},
+	m_client_name{name}, 
+	m_client_mail_addr{mail_addr}, 
+	m_client_socket{socket}, 
+	m_client_sockaddr_in{sockaddr_in}, 
+	m_client_ipv4_addr{ipv4_addr},
+	m_heart_beat_count{0}
 {
 
 }
 
 ClientHandler::Client::Client(const SOCKET socket, const sockaddr_in sockaddr_in, const socklen_t length):
-	m_client_id{""},m_client_name{""}, m_client_mail_addr{""},
-	m_client_socket{socket}, m_client_sockaddr_in{sockaddr_in}, m_socket_addr_in_length{length}, m_client_ipv4_addr{""}
+	m_client_id{""},
+	m_client_name{""},
+	m_client_mail_addr{""},
+	m_client_socket{socket}, 
+	m_client_sockaddr_in{sockaddr_in}, 
+	m_socket_addr_in_length{length}, 
+	m_client_ipv4_addr{""},
+	m_heart_beat_count{0}
 {
 
 }
@@ -386,6 +424,17 @@ void ClientHandler::set_count_hb_list(int list_num)
 	int& count_ = std::get<2>(this->heart_beat_list[list_num]);
 	count_++;
 }
+
+void ClientHandler::incliment_heart_beat_count(uint32_t list_num)
+{
+	this->connected_client_list[list_num].incliment_heart_beat_count();
+}
+
+void ClientHandler::clear_heart_beat_count(uint32_t list_num)
+{
+	this->connected_client_list[list_num].clear_heart_beat_count();
+}
+
 
 
 void ClientHandler::set_client_id_to_hb_list(const std::string& id, int list_num) 
