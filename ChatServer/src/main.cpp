@@ -10,8 +10,6 @@ int main()
 
     ServerControlleFacade* server_cont_facade = new ServerControlleFacade();
     server_cont_facade->run();
-
-
     delete server_cont_facade;
     
 }

@@ -33,7 +33,7 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	//リッスンソケット生成用のパラメータ
-	struct addrinfo *m_result_msg = NULL, m_param_msg, m_multicast_tx_param, m_bloadcast_tx_param;
+	struct addrinfo *m_result_msg = NULL, m_param_msg, m_multicast_tx_param, m_bloadcast_tx_param, *m_result_multicast;
 	struct addrinfo *m_result_hb = NULL, m_param_hb;
 
 	WSADATA m_wsa_data;
@@ -89,10 +89,10 @@ private:
 	bool setting_tcp_listen_socket_param(const std::string& file_pass);
 
 	//udpマルチキャスト送信用のソケット設定を読み込む
-	bool setting_multicast_tx_socket(const std::string& file_pass);
+	bool setting_multicast_tx_socket_param(const std::string& file_pass);
 
 	//udp ブロードキャスト送信用のソケット設定を読み込む
-	bool setting_bloadcast_tx_socket(const std::string& file_pass);
+	bool setting_bloadcast_tx_socket_param(const std::string& file_pass);
 
 
 	//Listenソケットを生成する
@@ -100,22 +100,33 @@ private:
 
 	bool generate_tcp_listen_socket_heart_beat();
 
-	bool generate_udp_multicast_tx_socket();
+	bool trans_flags(const std::string& flag_str, struct addrinfo* param);
+	bool trans_family(const std::string& family_str, struct addrinfo* param);
+	bool trans_socktype(const std::string& socktype_str, struct addrinfo* param);
+	bool trans_protocol(const std::string& protocol_str, struct addrinfo* param);
+	bool trans_protocol(const int protocol_int, struct addrinfo* param);
 
-	bool generate_udp_bloadcast_tx_socket();
+	bool setting_tcp_msg_flags(ini::IniFile socket_param_setting_ini);
 
-	bool setting_flags(ini::IniFile tcp_listen_socket_param_setting_ini);
+	bool setting_tcp_msg_family(ini::IniFile socket_param_setting_ini);
 
-	bool setting_family(ini::IniFile tcp_listen_socket_param_setting_ini);
+	bool setting_tcp_msg_socktype(ini::IniFile socket_param_setting_ini);
 
-	bool setting_socktype(ini::IniFile tcp_listen_socket_param_setting_ini);
+	bool setting_tcp_msg_protocol(ini::IniFile socket_param_setting_ini);
 
-	bool setting_protocol(ini::IniFile tcp_listen_socket_param_setting_ini);
+	bool setting_tcp_msg_port(ini::IniFile socket_param_setting_ini);
 
-	bool setting_port_for_message(ini::IniFile tcp_listen_socket_param_setting_ini);
+	bool setting_multicast_tx_sock_af(ini::IniFile socket_param_setting_ini);
 
-	bool setting_port_for_heart_beat(ini::IniFile tcp_listen_socket_param_setting_ini);
+	bool setting_multicast_tx_sock_type(ini::IniFile socket_param_setting_ini);
 
+	bool setting_multicast_tx_sock_protocol(ini::IniFile socket_param_setting_ini);
+
+	bool setting_multicast_tx_sin_family(ini::IniFile socket_param_setting_ini);
+
+	bool setting_multicast_tx_sin_port(ini::IniFile socket_param_setting_ini);
+
+	bool setting_multicast_tx_sin_address(ini::IniFile socket_param_setting_ini);
 
 public:
 /*
@@ -206,6 +217,10 @@ public:
 	void copy_fd_read_to_fds(fd_set* fds, fd_set* fd);
 
 	bool obtain_local_ip_addr();
+
+	bool generate_udp_multicast_tx_socket();
+
+	bool generate_udp_bloadcast_tx_socket();
 	
 
 };

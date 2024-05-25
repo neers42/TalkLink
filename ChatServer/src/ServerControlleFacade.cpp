@@ -34,14 +34,13 @@ void ServerControlleFacade::run()
 		exit(1);
 	}
 
-	//if (!m_socket_handler->open_tcp_listen_socket_for_heart_beat()) {
-	//	LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The TCP listening socket for heart beat could not be opened properly, so the program is forcibly terminated. Please set it again."));
-	//	exit(1);
-	//}
-	
+	if (!m_socket_handler->generate_udp_multicast_tx_socket()) {
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings."));
+		exit(1);
+	}
+
 	this->show_server_running_info();
 	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, "Start monitoring requests from clients.");
-	//this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_monitor_process(); });
 	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_send_process(); });
 	this->m_thread_pool_handler->enqueue_task([this]() {m_thread_pool_handler->monitor_worker(); });
 	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_check_process(); });
@@ -187,6 +186,7 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 	//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
 	else {
 		mt = Receiver::extraction_mt(receive_data);
+		//mt000 = ハートビートを受信した際の処理
 		if (std::equal(mt.begin(), mt.end(), "000")) {
 			this->mt000_process(receive_data, detection_num);
 		}
@@ -378,7 +378,7 @@ void ServerControlleFacade::heart_beat_monitor_process()
 
 		//接続中のクライアントリストから通知があった場合
 		default:
-			this->m_thread_pool_handler->enqueue_task([this, detection_num]() {heart_beat_receive_process(detection_num); });
+			//this->m_thread_pool_handler->enqueue_task([this, detection_num]() {heart_beat_receive_process(detection_num); });
 			break;
 		}
 		std::this_thread::sleep_until(abs_time);
@@ -431,66 +431,15 @@ void ServerControlleFacade::heart_beat_send_process()
 	}
 }
 
-void ServerControlleFacade::heart_beat_receive_process(int detection_num)
-{
-
-	std::thread::id this_thread_id = std::this_thread::get_id();
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
-	int receive_result = 0, search_id_num = 0;
-	std::string receive_data;
-	{
-		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
-		std::tie(receive_result, receive_data) = Receiver::receive_data(std::get<0>(m_client_handler.heart_beat_list[detection_num]), detection_num);
-	}
-
-	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
-	if (receive_result == SOCKET_ERROR) {
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("HB socket %d is SOCKET_ERROR now, so disconect this socket.",std::get<0>(this->m_client_handler.heart_beat_list[detection_num])));
-
-		{
-			std::unique_lock <std::mutex> lock(this->m_connect_client_list_mutex);
-			m_socket_handler->disconnect_socket(std::get<0>(m_client_handler.heart_beat_list[detection_num]));
-			m_client_handler.delete_client_hbsock_from_hb_list(detection_num);
-		}
-	}
-	//receive_result == 0の場合(クライアントのソケットが切断された場合)
-	else if (receive_result == DISCONNECT_SOCKET) {
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("HB socket %d is disconnected.", std::get<0>(this->m_client_handler.heart_beat_list[detection_num])));
-		{
-			std::unique_lock <std::mutex> lock(this->m_connect_client_list_mutex);
-			m_socket_handler->disconnect_socket(std::get<0>(m_client_handler.heart_beat_list[detection_num]));
-			m_client_handler.delete_client_hbsock_from_hb_list(detection_num);
-		}
-	}
-	//それ以外の場合はクライアントからのハートビートメッセージが不正ではないかチェックをし、正常な場合はカウントを1増やす
-	else {
-		search_id_num = this->m_client_handler.search_client_id_from_con_list(receive_data);
-		//ハートビートのメッセージからclient idを紐づける
-		if (search_id_num != -1) {
-			{
-				std::unique_lock<std::mutex> lock(this->m_hb_connect_list_mutex);
-				this->m_client_handler.set_count_hb_list(detection_num);
-				this->m_client_handler.set_client_id_to_hb_list(receive_data, detection_num);
-
-			}
-		}
-		//ハートビートメッセージが不正の場合、ハートビートをdisconectする
-		else {
-			m_socket_handler->disconnect_socket(std::get<0>(m_client_handler.heart_beat_list[detection_num]));
-			m_client_handler.delete_client_hbsock_from_hb_list(detection_num);
-		}
-	}
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
-}
 
 void ServerControlleFacade::heart_beat_check_process()
 {
 	while (true) {
 		
 		auto time_now = std::chrono::system_clock::now();
-		auto abs_time_30 = time_now + std::chrono::seconds(30);
 		int search_client_num = -1;
 		std::vector<ClientHandler::Client> check_con_list = this->m_client_handler.connected_client_list;
+		auto abs_time_30 = time_now + std::chrono::seconds(30);
 		std::this_thread::sleep_until(abs_time_30);
 		for (int i = 0; i < MAX_CONNECT_NUM; i++) {
 			for (int j = 0; j < MAX_CONNECT_NUM; j++) {
@@ -517,34 +466,7 @@ void ServerControlleFacade::heart_beat_check_process()
 				}
 			}
 		}
-		//for (int i = 0; i < this->m_client_handler.heart_beat_list.size(); i++) {
-		//	//応答回数が0の要素がある場合
-		//	if (std::get<2>(this->m_client_handler.heart_beat_list[i]) == 0) {
-		//		search_client_num = this->m_client_handler.search_client_id_from_con_list(std::get<3>(this->m_client_handler.heart_beat_list[i]));
-
-		//		//クライアントIDがcon_listから見つかる場合
-		//		if (search_client_num != -1) {
-		//			LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("The client (ID: %s) does not respond to the heartbeat message for 30 seconds, so it disconnects", std::get<3>(this->m_client_handler.heart_beat_list[i])));
-		//			m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[search_client_num].get_client_socket());
-		//			m_client_handler.delete_client_from_con_list(search_client_num);
-		//			SOCKET discon_socket = std::get<0>(m_client_handler.heart_beat_list[i]);
-		//			m_socket_handler->disconnect_socket(discon_socket);
-		//			m_client_handler.delete_client_hbsock_from_hb_list(i);
-		//		}
-		//		//クライアントIDがcon_listから見つからない場合
-		//		else {
-		//			SOCKET discon_socket = std::get<0>(m_client_handler.heart_beat_list[i]);
-		//			m_socket_handler->disconnect_socket(discon_socket);
-		//			m_client_handler.delete_client_hbsock_from_hb_list(i);
-		//		}
-		//	}
-		//	//要素回数が0の要素がない場合countを0にリセットする
-		//	else {
-		//		int& count_zero = std::get<2>(this->m_client_handler.heart_beat_list[i]);
-		//		count_zero = 0;
-		//	}
-		//}
-		//std::this_thread::sleep_until(abs_time_30);
+		
 	}
 }
 
@@ -555,9 +477,7 @@ void ServerControlleFacade::setting_select_process()
 			std::unique_lock<std::mutex> lock(m_mutex);
 			this->m_socket_handler->setting_select_info_to_listen_socket_for_msg();
 			this->setting_select_info_to_client_msg();
-			this->m_socket_handler->setting_select_info_to_listen_socket_for_hb();
-			this->setting_select_info_to_client_hb();
-
+			
 		}
 	}
 }

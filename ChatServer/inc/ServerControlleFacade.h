@@ -76,7 +76,6 @@ public:
 
 	void heart_beat_send_process();
 
-	void heart_beat_receive_process(int detection_num);
 
 	void heart_beat_check_process();
 
