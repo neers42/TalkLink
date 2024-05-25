@@ -733,7 +733,6 @@ bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_sett
 bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_setting_ini)
 {
 	std::string temp_multicast_addr = socket_param_setting_ini["MulticastTX_SocketSetting"]["sin_address"].as<std::string>();
-	//multicast_tx_addr.sin_addr.S_un.S_addr = inet_addr(temp_multicast_addr.c_str());
 
 	//inet_addrの設定
 	try
@@ -759,8 +758,9 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 		}
 		//IPアドレスのバイナリ化が正常に終了した場合
 		else {
-
-			;
+#ifdef DEBUG
+			LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Transmission address for multicast set successfully (address: %s)", temp_multicast_addr));
+#endif // DEBUG
 		}
 	}
 	catch (const exception::ExceptionBase& ex)
