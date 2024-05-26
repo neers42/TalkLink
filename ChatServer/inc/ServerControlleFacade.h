@@ -72,7 +72,6 @@ public:
 
 	void mt002_process(std::string& receive_data, int& receive_result);
 
-	void heart_beat_monitor_process();
 
 	void heart_beat_send_process();
 

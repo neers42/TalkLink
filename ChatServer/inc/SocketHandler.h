@@ -180,9 +180,8 @@ public:
 
 
 	//ファイルディスクリプタに変化がないか監視する
-	int monitor_descriptor_for_message(const ClientHandler& client_handler);
+	int monitor_descriptor_for_message(const std::vector<ClientHandler::Client>& client_list);
 
-	int monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>>& client_hb_socket_list);
 
 	//メッセージ用のリッスンソケットをアクティブにする
 	bool open_tcp_listen_socket_for_message();
@@ -194,7 +193,7 @@ public:
 	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);
 
 	//accept処理(メッセージ用のソケット)
-	std::tuple<SOCKET, sockaddr_in> accept_client_socket_msg(int check_next_invalid_result, socklen_t client_sockaddr_in_length);
+	std::tuple<SOCKET, sockaddr_in> accept_client_socket_msg(socklen_t client_sockaddr_in_length);
 
 	//accept処理(ハートビート用のソケット)
 	std::tuple<SOCKET, sockaddr_in> accept_client_socket_hb(socklen_t client_sockaddr_in_hb_length);

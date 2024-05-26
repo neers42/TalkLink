@@ -271,23 +271,23 @@ std::string ClientHandler::generate_client_id()
 	return converted_uuid_str;
 }
 
-ClientHandler::ClientHandler()
+ClientHandler::ClientHandler() :connect_client_num{0}
 {
-	try
-	{
-		this->connected_client_list.reserve(MAX_CONNECT_NUM);
-		for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-			connected_client_list.push_back(init_client);
-		}
+	//try
+	//{
+	//	this->connected_client_list.reserve(MAX_CONNECT_NUM);
+	//	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
+	//		connected_client_list.push_back(init_client);
+	//	}
 
-	}
-	catch (const std::length_error& le) {
-		THROW_APP_EXCEPTION(StringFormat("Length ErrorF%s", le.what()));
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		std::cerr << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-	}
+	//}
+	//catch (const std::length_error& le) {
+	//	THROW_APP_EXCEPTION(StringFormat("Length ErrorF%s", le.what()));
+	//}
+	//catch (const exception::ExceptionBase& ex)
+	//{
+	//	std::cerr << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+	//}
 	
 	
 
@@ -298,21 +298,36 @@ ClientHandler::~ClientHandler()
 
 }
 
-bool ClientHandler::add_client(const Client& client, std::uint32_t add_num)
+bool ClientHandler::add_client(const Client& client)
 {
-	this->connected_client_list[add_num] = client;
+	try
+	{
+		if (this->connected_client_list.size() >= MAX_CONNECT_NUM) {
+			THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");
+		}
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return false;
+	}
+
+	this->connected_client_list.push_back(client);
+	this->connect_client_num++;
 	return true;
 }
 
 
-bool ClientHandler::delete_client_from_con_list(const uint32_t delete_num)
+void ClientHandler::delete_client_from_con_list(const uint32_t delete_num)
 {
-	this->connected_client_list[delete_num] = init_client;
-	if (this->connected_client_list[delete_num].get_client_id() == "" &&
-		this->connected_client_list[delete_num].get_client_socket() == INVALID_SOCKET) {
-		return true;
-	}
-	return false;
+	this->connected_client_list.erase(this->connected_client_list.begin() + delete_num);
+	this->connect_client_num--;
+	//this->connected_client_list[delete_num] = init_client;
+	//if (this->connected_client_list[delete_num].get_client_id() == "" &&
+	//	this->connected_client_list[delete_num].get_client_socket() == INVALID_SOCKET) {
+	//	return true;
+	//}
+	//return false;
 }
 
 int ClientHandler::check_next_invalid_socket()

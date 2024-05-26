@@ -51,7 +51,7 @@ void ServerControlleFacade::run()
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->m_socket_handler->setting_select_info_to_listen_socket_for_msg();
 		this->setting_select_info_to_client_msg();
-		int detection_num = m_socket_handler->monitor_descriptor_for_message(m_client_handler);
+		int detection_num = m_socket_handler->monitor_descriptor_for_message(this->m_client_handler.connected_client_list);
 
 		switch (detection_num)
 		{
@@ -82,15 +82,24 @@ void ServerControlleFacade::run()
 
 void ServerControlleFacade::setting_select_info_to_client_msg()
 {
-	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-		//有効なソケットにFDSETを実行する
-		if (this->m_client_handler.connected_client_list[i].get_client_socket() != INVALID_SOCKET) {
-			m_socket_handler->bind_select_info_to_socket(this->m_client_handler.connected_client_list[i].get_client_socket(), &m_socket_handler->get_fd_read_msg());
+	{
+		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
+		for (int i = 0; i < this->m_client_handler.connected_client_list.size(); i++) {
+			//有効なソケットにFDSETを実行する
+			if (this->m_client_handler.connected_client_list[i].get_client_socket() != INVALID_SOCKET) {
+				m_socket_handler->bind_select_info_to_socket(this->m_client_handler.connected_client_list[i].get_client_socket(), &m_socket_handler->get_fd_read_msg());
 			}
+		}
 	}
 
+	//if (m_client_handler.connect_client_num > 0) {
+	//	this->m_socket_handler->copy_fd_read_to_fds(&(m_socket_handler->get_fds_msg()), &(m_socket_handler->get_fd_read_msg()));
+	//	//this->m_socket_handler->copy_fd_read_to_fds();
+	//}
 	this->m_socket_handler->copy_fd_read_to_fds(&(m_socket_handler->get_fds_msg()), &(m_socket_handler->get_fd_read_msg()));
 	//this->m_socket_handler->copy_fd_read_to_fds();
+
+
 }
 
 void ServerControlleFacade::setting_select_info_to_client_hb()
@@ -116,9 +125,9 @@ bool ServerControlleFacade::accept_client_socket_for_msg_process()
 	SOCKET new_client_socket = INVALID_SOCKET;
 	struct sockaddr_in new_client_sockaddr_in = { 0 };
 	socklen_t new_client_socklen_t = 0;
-	uint32_t check_invalid_result = this->m_client_handler.check_next_invalid_socket();
+	//uint32_t check_invalid_result = this->m_client_handler.check_next_invalid_socket();
 
-	std::tie(new_client_socket, new_client_sockaddr_in) = m_socket_handler->accept_client_socket_msg(check_invalid_result, this->m_client_handler.connected_client_list[check_invalid_result].get_sockaddr_in_length());
+	std::tie(new_client_socket, new_client_sockaddr_in) = m_socket_handler->accept_client_socket_msg(this->m_client_handler.init_client.get_sockaddr_in_length());
 	
 	if (new_client_socket == INVALID_SOCKET) {
 		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The accepted socket for message could not be added to the list because it was an INVALID SOCKET"));
@@ -126,9 +135,14 @@ bool ServerControlleFacade::accept_client_socket_for_msg_process()
 	}
 	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
 	new_client.set_client_ipv4_addr(m_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
-	m_client_handler.add_client(new_client, check_invalid_result);
-	
-	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Registered on the client list[%d] => IP : %s.",check_invalid_result, m_client_handler.connected_client_list[check_invalid_result].get_client_ipv4_addr()));
+
+	{
+		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
+		if (m_client_handler.add_client(new_client) == false) {
+			return ACCEPT_FAILED;
+		}
+	}
+	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Registered on the client list[%d] => IP : %s.",this->m_client_handler.connect_client_num - 1, m_client_handler.connected_client_list[this->m_client_handler.connect_client_num -1 ].get_client_ipv4_addr()));
 	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 	return ACCEPT_SUCCEEDED;
 }
@@ -155,13 +169,19 @@ bool ServerControlleFacade::accept_client_socket_for_heart_beat_process()
 
 void ServerControlleFacade::message_receive_process(int detection_num)
 {
+	
 	std::thread::id this_thread_id = std::this_thread::get_id();
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 	int receive_result = 0;
 	std::string receive_data, mt;
 	{
 		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
-		std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler.connected_client_list[detection_num].get_client_socket(), detection_num);
+		if (detection_num >= this->m_client_handler.connect_client_num - 1 && m_client_handler.connected_client_list.size() != 0) {
+			LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
+			std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler.connected_client_list[detection_num].get_client_socket(), detection_num);
+		}
+		else {
+			return;
+		}
 	}
 	
 	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
@@ -353,38 +373,6 @@ void ServerControlleFacade::mt002_process(std::string& receive_data, int& receiv
 	}
 }
 
-void ServerControlleFacade::heart_beat_monitor_process()
-{
-	int detection_num_hb = -1;
-	while (true) {
-		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
-		this->m_socket_handler->setting_select_info_to_listen_socket_for_hb();
-		this->setting_select_info_to_client_hb();
-		int detection_num = m_socket_handler->monitor_descriptor_for_heart_beat(m_client_handler.heart_beat_list);
-		switch (detection_num)
-		{
-		case SELECT_TIME_OUT:
-			break;
-
-		case SOCKET_ERROR:
-			break;
-
-			//アクセプト要求があった場合
-		case REQUEST_ACCEPT_CLIENT_DETECTION:
-		{
-			this->m_thread_pool_handler->enqueue_task([this]() {accept_client_socket_for_heart_beat_process(); });
-		};
-		break;
-
-		//接続中のクライアントリストから通知があった場合
-		default:
-			//this->m_thread_pool_handler->enqueue_task([this, detection_num]() {heart_beat_receive_process(detection_num); });
-			break;
-		}
-		std::this_thread::sleep_until(abs_time);
-		
-	}
-}
 
 
 void ServerControlleFacade::heart_beat_send_process()
@@ -401,7 +389,7 @@ void ServerControlleFacade::heart_beat_send_process()
 
 		{
 			std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
-			for (int i = 0; i < MAX_CONNECT_NUM; i++) {
+			for (int i = 0; i < this->m_client_handler.connected_client_list.size(); i++) {
 				send_socket = this->m_client_handler.connected_client_list[i].get_client_socket();
 				if (send_socket != INVALID_SOCKET) {
 					send_sockets.push_back(send_socket);
@@ -438,28 +426,27 @@ void ServerControlleFacade::heart_beat_check_process()
 		
 		auto time_now = std::chrono::system_clock::now();
 		int search_client_num = -1;
-		std::vector<ClientHandler::Client> check_con_list = this->m_client_handler.connected_client_list;
+		std::vector<ClientHandler::Client> check_con_list;
+		{
+			std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
+			check_con_list = this->m_client_handler.connected_client_list;
+		}
 		auto abs_time_30 = time_now + std::chrono::seconds(30);
 		std::this_thread::sleep_until(abs_time_30);
-		for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-			for (int j = 0; j < MAX_CONNECT_NUM; j++) {
+		for (int i = 0; i < check_con_list.size(); i++) {
+			std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
+			for (int j = 0; j < this->m_client_handler.connected_client_list.size(); j++) {
 				if (check_con_list[i].get_client_socket() != INVALID_SOCKET && check_con_list[i] == this->m_client_handler.connected_client_list[j]) {
 					if (this->m_client_handler.connected_client_list[j].get_client_heart_beat_count() == 0) {
 						LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("The client (ID: %s) does not respond to the heartbeat message for 30 seconds, so it disconnects.",
 							this->m_client_handler.connected_client_list[j].get_client_id()));
-						{
-							std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
 							m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[j].get_client_socket());
 							m_client_handler.delete_client_from_con_list(j);
-						}
 						break;
 
 					}
 					else {
-						{
-							std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
 							this->m_client_handler.clear_heart_beat_count(j);
-						}
 
 					}
 

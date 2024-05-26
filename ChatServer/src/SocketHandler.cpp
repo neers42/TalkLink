@@ -899,84 +899,81 @@ bool SocketHandler::bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinf
  * @detail 
  **********************************************************************************/
 
-std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket_msg(int check_next_invalid_result, socklen_t client_sockaddr_in_length)
+std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket_msg(socklen_t client_sockaddr_in_length)
 {
-	if (check_next_invalid_result != -1) {
-		try
-		{
-			SOCKET accept_client_socket_result;
-			struct sockaddr_in accept_sockaddr_in_result;
-			accept_client_socket_result = accept(m_tcp_listen_for_msg_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
+	try
+	{
+		SOCKET accept_client_socket_result;
+		struct sockaddr_in accept_sockaddr_in_result;
+		accept_client_socket_result = accept(m_tcp_listen_for_msg_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
 
-			//acceptしたソケットがINVALID_SOCKETである場合
-			if (accept_client_socket_result == INVALID_SOCKET) {
-				switch (WSAGetLastError())
-				{
-				case WSANOTINITIALISED:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが正常に行われる必要があります。)");
-					break;
+		//acceptしたソケットがINVALID_SOCKETである場合
+		if (accept_client_socket_result == INVALID_SOCKET) {
+			switch (WSAGetLastError())
+			{
+			case WSANOTINITIALISED:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが正常に行われる必要があります。)");
+				break;
 
-				case WSAECONNRESET:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAECONNRESET(着信接続が示されましたが、その後、呼び出しを受け入れる前にリモート ピアによって終了されました。)");
-					break;
+			case WSAECONNRESET:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAECONNRESET(着信接続が示されましたが、その後、呼び出しを受け入れる前にリモート ピアによって終了されました。)");
+				break;
 
-				case WSAEFAULT:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(addrlen パラメーターが小さすぎるか、addr がユーザー アドレス空間の有効な部分ではありません。)");
-					break;
+			case WSAEFAULT:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(addrlen パラメーターが小さすぎるか、addr がユーザー アドレス空間の有効な部分ではありません。)");
+				break;
 
-				case WSAEINTR:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、ブロックしている Windows ソケット 1.1 呼び出しが取り消されました。)");
-					break;
+			case WSAEINTR:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、ブロックしている Windows ソケット 1.1 呼び出しが取り消されました。)");
+				break;
 
-				case WSAEINVAL:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(リッスン関数は、受け入れる前に呼び出されませんでした。)");
-					break;
+			case WSAEINVAL:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(リッスン関数は、受け入れる前に呼び出されませんでした。)");
+				break;
 
-				case WSAEINPROGRESS:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
-					break;
+			case WSAEINPROGRESS:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+				break;
 
-				case EMFILE:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:EMFILE(キューは、 受け入れる エントリに空きがなく、使用可能な記述子がありません。)");
-					break;
+			case EMFILE:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:EMFILE(キューは、 受け入れる エントリに空きがなく、使用可能な記述子がありません。)");
+				break;
 
-				case WSAENETDOWN:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
-					break;
+			case WSAENETDOWN:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
+				break;
 
-				case WSAENOBUFS:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOBUFS(バッファーに空き領域がありません。)");
-					break;
+			case WSAENOBUFS:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOBUFS(バッファーに空き領域がありません。)");
+				break;
 
-				case WSAENOTSOCK:
-					THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子はソケットではありません。)");
-					break;
+			case WSAENOTSOCK:
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子はソケットではありません。)");
+				break;
 
-				case WSAEOPNOTSUPP:
-					THROW_APP_EXCEPTION("CASE:WSAEOPNOTSUPP(参照されるソケットは、接続指向サービスをサポートする型ではありません。)");
-					break;
+			case WSAEOPNOTSUPP:
+				THROW_APP_EXCEPTION("CASE:WSAEOPNOTSUPP(参照されるソケットは、接続指向サービスをサポートする型ではありません。)");
+				break;
 
-				case WSAEWOULDBLOCK:
-					THROW_APP_EXCEPTION("CASE:WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、受け入れられる接続はありません。)");
-					break;
+			case WSAEWOULDBLOCK:
+				THROW_APP_EXCEPTION("CASE:WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、受け入れられる接続はありません。)");
+				break;
 
-				default:
+			default:
 
-					break;
-				}
-			}
-			else {
-				//acceptが成功した場合
-				return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result);
+				break;
 			}
 		}
-		catch (const exception::ExceptionBase& ex)
-		{
-			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-			struct sockaddr_in error_addr_in = { 0 };
-			return std::make_tuple(INVALID_SOCKET, error_addr_in);
+		else {
+			//acceptが成功した場合
+			return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result);
 		}
-
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		struct sockaddr_in error_addr_in = { 0 };
+		return std::make_tuple(INVALID_SOCKET, error_addr_in);
 	}
 }
 
@@ -1464,7 +1461,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 
 
 
-int SocketHandler::monitor_descriptor_for_message(const ClientHandler& client_handler)
+int SocketHandler::monitor_descriptor_for_message(const std::vector<ClientHandler::Client>& client_list)
 {
 	try
 	{
@@ -1519,9 +1516,8 @@ int SocketHandler::monitor_descriptor_for_message(const ClientHandler& client_ha
 			}
 			else {
 				//接続中のクライアントリストのどのクライアントからの通知かを判定する
-				for (int detection_client_num = 0; detection_client_num < MAX_CONNECT_NUM; detection_client_num++) {
-					if (client_handler.connected_client_list[detection_client_num].get_client_socket() != INVALID_SOCKET && FD_ISSET(client_handler.connected_client_list[detection_client_num].get_client_socket(), &m_fds_msg)) {
-						//std::cout << ServerTime::get_current_time() << "[REQUEST]接続中のクライアント(client_net_info_list[" << detection_client_num << "])から要求がありました" << std::endl;
+				for (int detection_client_num = 0; detection_client_num < client_list.size(); detection_client_num++) {
+					if (client_list[detection_client_num].get_client_socket() != INVALID_SOCKET && FD_ISSET(client_list[detection_client_num].get_client_socket(), &m_fds_msg)) {
 						return detection_client_num;
 					}
 				}
@@ -1537,80 +1533,6 @@ int SocketHandler::monitor_descriptor_for_message(const ClientHandler& client_ha
 
 }
 
-int SocketHandler::monitor_descriptor_for_heart_beat(std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>>& client_hb_socket_list)
-{
-	try
-	{
-		int select_result = 0;
-		timeval timeout;
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 500*1000;
-		select_result = select(0, &m_fds_hb, NULL, NULL, &timeout);
-
-		switch (select_result)
-		{
-			//fd_set構造体に含まれているソケット ハンドルの合計数、期限切れの場合
-		case 0:
-			//THROW_APP_EXCEPTION("CASE:SELECT FUNCTION ERROR(fd_set構造体に含まれているソケット ハンドルの合計数、期限切れです。)");
-			return SELECT_TIME_OUT;
-			break;
-
-			//エラーが発生した場合
-		case SOCKET_ERROR:
-			switch (WSAGetLastError())
-			{
-			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが成功する必要があります。)");
-				break;
-			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(Windows ソケットの実装では、内部操作に必要なリソースを割り当てることができませんでした。または、 readfds、 writefds、 exceptfds、または timeval パラメーターがユーザー アドレス空間の一部ではありません。)");
-				break;
-			case ENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:ENETDOWN(ネットワーク サブシステムが失敗しました。)");
-				break;
-			case WSAEINVAL:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(タイムアウト値が無効であるか、3 つの記述子パラメーターがすべて null でした。)");
-				break;
-			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、Windows ソケット 1.1 呼び出しのブロックが取り消されました。)");
-				break;
-			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロック中の Windows ソケット 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
-				break;
-			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子セットの 1 つに、ソケットではないエントリが含まれています。)");
-				break;
-			default:
-				break;
-			}
-			break;
-
-
-
-			//ディスクリプションに変化が起こった場合
-		default:
-			if (FD_ISSET(m_tcp_listen_for_hb_socket, &m_fds_hb)) {
-				LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("There was a request to connect to the server from a heart beat socket."));
-				return REQUEST_ACCEPT_CLIENT_DETECTION;
-			}
-			else {
-				//接続中のクライアントリストのどのクライアントからの通知かを判定する
-				for (int detection_hb_list_num = 0; detection_hb_list_num < client_hb_socket_list.size(); detection_hb_list_num++) {
-					if (std::get<0>(client_hb_socket_list[detection_hb_list_num]) != INVALID_SOCKET && FD_ISSET(std::get<0>(client_hb_socket_list[detection_hb_list_num]), &m_fds_hb)) {
-						//std::cout << ServerTime::get_current_time() << "[REQUEST]接続中のクライアント(client_net_info_list[" << detection_client_num << "])から要求がありました" << std::endl;
-						return detection_hb_list_num;
-					}
-				}
-			}
-			break;
-		}
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		return SOCKET_ERROR;
-	}
-}
 
 bool SocketHandler::open_tcp_listen_socket_for_message()
 {

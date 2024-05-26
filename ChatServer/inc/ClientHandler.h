@@ -95,6 +95,8 @@ private:
 	//接続中のクライアントリスト
 	std::vector<Client> connected_client_list;
 
+	unsigned short connect_client_num;
+
 	//std::mutex heart_beat_list_mutex;
 
 	//ハートビート用のソケットリスト
@@ -140,8 +142,8 @@ public:
 	
 
 	//other
-	bool add_client(const Client& client, std::uint32_t add_num);
-	bool delete_client_from_con_list(const std::uint32_t delete_num);
+	bool add_client(const Client& client);
+	void delete_client_from_con_list(const std::uint32_t delete_num);
 	void delete_client_hbsock_from_hb_list(const std::uint32_t delete_num);
 	int check_next_invalid_socket();
 	int search_client_id_from_con_list(const std::string& search_client_id);
