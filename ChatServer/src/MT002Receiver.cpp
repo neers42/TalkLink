@@ -414,7 +414,7 @@ const std::string& MT002Receiver::get_dst_chatroom_id()
 
 void MT002Receiver::show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result)
 {
-	LogHandler::logging_info(LogHandler::LogType::RECEIVE, std::cout, StringFormat("MT002 received from client list [%d] (CLIENT(IP:%s) ÅÀ SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
+	LogHandler::logging_info(LogHandler::LogType::RECEIVE, std::cout, StringFormat("\033[33mMT002\033[m received from client list [%d] (CLIENT(IP:%s) ÅÀ SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
 }
 
 void MT002Receiver::show_mt002_data()

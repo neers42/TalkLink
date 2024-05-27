@@ -44,7 +44,6 @@ void ServerControlleFacade::run()
 	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_send_process(); });
 	this->m_thread_pool_handler->enqueue_task([this]() {m_thread_pool_handler->monitor_worker(); });
 	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_check_process(); });
-	//this->m_thread_pool_handler->enqueue_task([this]() {setting_select_process(); });
 
 	//ディスクリプション監視スタート
 	while (1) {
@@ -92,12 +91,7 @@ void ServerControlleFacade::setting_select_info_to_client_msg()
 		}
 	}
 
-	//if (m_client_handler.connect_client_num > 0) {
-	//	this->m_socket_handler->copy_fd_read_to_fds(&(m_socket_handler->get_fds_msg()), &(m_socket_handler->get_fd_read_msg()));
-	//	//this->m_socket_handler->copy_fd_read_to_fds();
-	//}
 	this->m_socket_handler->copy_fd_read_to_fds(&(m_socket_handler->get_fds_msg()), &(m_socket_handler->get_fd_read_msg()));
-	//this->m_socket_handler->copy_fd_read_to_fds();
 
 
 }
@@ -191,16 +185,23 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 		if (std::equal(mt.begin(), mt.end(), "000")) {
 			this->mt000_process(receive_data, detection_num);
 		}
-		//MT001の場合
+		//MT001 = Auth認証メッセージの場合
 		else if (std::equal(mt.begin(), mt.end(), "001")) {
 			m_mt001receiver->show_receive_info(m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr(), detection_num, receive_result);
 			this->mt001_process(receive_data, detection_num);
 		}
-		//MT002の場合
+		//MT002 = 通常メッセージの場合
 		else if (std::equal(mt.begin(), mt.end(), "002")) {
 			m_mt002receiver->show_receive_info(m_client_handler.connected_client_list[detection_num].get_client_ipv4_addr(), detection_num, receive_result);
 			this->mt002_process(receive_data, receive_result);
 		}
+		else if (std::equal(mt.begin(), mt.end(), "003")) {
+			
+		}
+		else if (std::equal(mt.begin(), mt.end(), "004")) {
+
+		}
+
 		else {
 			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The receive process was interrupted due to a bad message"));
 		}

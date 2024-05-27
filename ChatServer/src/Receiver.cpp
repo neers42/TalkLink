@@ -18,11 +18,6 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_so
 		memset(recv_data, '\0', sizeof(recv_data));
 		int receive_result = recv(receive_socket, recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
 
-#ifdef DEBUG
-		LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("receive_result = %d", receive_result));
-#endif // DEBUG
-
-
 		//recvåãâ Ç™SOCKET_ERRORÇÃèÍçá
 		if (receive_result == SOCKET_ERROR) {
 			switch (WSAGetLastError())
