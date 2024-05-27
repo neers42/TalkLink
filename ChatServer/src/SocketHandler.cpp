@@ -977,85 +977,6 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket_msg(socklen_
 	}
 }
 
-std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket_hb(socklen_t client_sockaddr_in_hb_length)
-{
-	try
-	{
-		SOCKET accept_client_socket_hb_result;
-		struct sockaddr_in accept_sockaddr_in_hb_result;
-		accept_client_socket_hb_result = accept(m_tcp_listen_for_hb_socket, (struct sockaddr*)&accept_sockaddr_in_hb_result, &client_sockaddr_in_hb_length);
-
-		//acceptしたソケットがINVALID_SOCKETである場合
-		if (accept_client_socket_hb_result == INVALID_SOCKET) {
-			switch (WSAGetLastError())
-			{
-			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが正常に行われる必要があります。)");
-				break;
-
-			case WSAECONNRESET:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAECONNRESET(着信接続が示されましたが、その後、呼び出しを受け入れる前にリモート ピアによって終了されました。)");
-				break;
-
-			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(addrlen パラメーターが小さすぎるか、addr がユーザー アドレス空間の有効な部分ではありません。)");
-				break;
-
-			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、ブロックしている Windows ソケット 1.1 呼び出しが取り消されました。)");
-				break;
-
-			case WSAEINVAL:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(リッスン関数は、受け入れる前に呼び出されませんでした。)");
-				break;
-
-			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
-				break;
-
-			case EMFILE:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:EMFILE(キューは、 受け入れる エントリに空きがなく、使用可能な記述子がありません。)");
-				break;
-
-			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
-				break;
-
-			case WSAENOBUFS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOBUFS(バッファーに空き領域がありません。)");
-				break;
-
-			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子はソケットではありません。)");
-				break;
-
-			case WSAEOPNOTSUPP:
-				THROW_APP_EXCEPTION("CASE:WSAEOPNOTSUPP(参照されるソケットは、接続指向サービスをサポートする型ではありません。)");
-				break;
-
-			case WSAEWOULDBLOCK:
-				THROW_APP_EXCEPTION("CASE:WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、受け入れられる接続はありません。)");
-				break;
-
-			default:
-
-				break;
-			}
-		}
-		else {
-			//acceptが成功した場合
-			return std::make_tuple(accept_client_socket_hb_result, accept_sockaddr_in_hb_result);
-		}
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		struct sockaddr_in error_addr_in = { 0 };
-		return std::make_tuple(INVALID_SOCKET, error_addr_in);
-	}
-
-}
-
 
 void SocketHandler::disconnect_socket(SOCKET client_socket)
 {
@@ -1572,42 +1493,6 @@ bool SocketHandler::open_tcp_listen_socket_for_message()
 	return true;
 }
 
-bool SocketHandler::open_tcp_listen_socket_for_heart_beat()
-{
-	try
-	{
-		//tcp_listen_socketのオープンに失敗した場合
-		if (!generate_tcp_listen_socket_heart_beat()) {
-			THROW_APP_EXCEPTION("Failed to generate TCP listen socket for heart beat.");
-			return false;
-		}
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-	}
-	
-	std::cout << StringFormat("%s[INFO]Open a TCP listening socket for heart beat...", ServerTime::get_current_time());
-	try
-	{
-		if (listen(m_tcp_listen_for_hb_socket, SOMAXCONN) == SOCKET_ERROR) {
-
-			freeaddrinfo(m_result_hb);
-			closesocket(m_tcp_listen_for_hb_socket);
-			WSACleanup();
-			THROW_APP_EXCEPTION("Tcp Listen socket has been SOCKET_ERROR for some reason.");
-		}
-		else
-		{
-			std::cout << "\033[32m [OK] \033[m" << std::endl;
-		}
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-	}
-	return true;
-}
 
 /**********************************************************************************
  * @fn	  check_client_socket(SOCKET socket)

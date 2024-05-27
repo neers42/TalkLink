@@ -52,17 +52,15 @@ public:
 
 	//サーバプログラム実行
 	void run();
-
+	
 	void setting_select_info_to_client_msg();
 
 	void setting_select_info_to_client_hb();
 
 	void show_server_running_info();
 
-
 	bool accept_client_socket_for_msg_process();
 
-	bool accept_client_socket_for_heart_beat_process();
 
 	void message_receive_process(int detection_num);
 
@@ -72,9 +70,7 @@ public:
 
 	void mt002_process(std::string& receive_data, int& receive_result);
 
-
 	void heart_beat_send_process();
-
 
 	void heart_beat_check_process();
 

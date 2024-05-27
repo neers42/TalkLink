@@ -97,8 +97,6 @@ private:
 
 	unsigned short connect_client_num;
 
-	//std::mutex heart_beat_list_mutex;
-
 	//ハートビート用のソケットリスト
 	std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>> heart_beat_list;
 

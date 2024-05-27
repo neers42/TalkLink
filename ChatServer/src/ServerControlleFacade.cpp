@@ -147,25 +147,6 @@ bool ServerControlleFacade::accept_client_socket_for_msg_process()
 	return ACCEPT_SUCCEEDED;
 }
 
-bool ServerControlleFacade::accept_client_socket_for_heart_beat_process()
-{
-	std::thread::id this_thread_id = std::this_thread::get_id();
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
-	SOCKET new_client_socket_hb = INVALID_SOCKET;
-	struct sockaddr_in new_client_hb_sockaddr_in = { 0 };
-	socklen_t new_client_socklen_t = 0;
-	std::string new_client_id = "";
-	std::tie(new_client_socket_hb, new_client_hb_sockaddr_in) = m_socket_handler->accept_client_socket_hb(sizeof(new_client_hb_sockaddr_in));
-	if (new_client_socket_hb == INVALID_SOCKET) {
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The accepted socket for heart beat could not be added to the list because it was an INVALID SOCKET"));
-		return ACCEPT_FAILED;
-	}
-	this->m_client_handler.heart_beat_list.push_back(std::tuple<SOCKET, struct sockaddr_in, int, std::string>(new_client_socket_hb, new_client_hb_sockaddr_in, 0, new_client_id));
-	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Successfully accept client socket for heartbeat (SOCKET : %d)", new_client_socket_hb));
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() process complete!.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
-	return ACCEPT_SUCCEEDED;
-
-}
 
 void ServerControlleFacade::message_receive_process(int detection_num)
 {
@@ -175,7 +156,7 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 	std::string receive_data, mt;
 	{
 		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
-		if (detection_num >= this->m_client_handler.connect_client_num - 1 && m_client_handler.connected_client_list.size() != 0) {
+		if (detection_num <= this->m_client_handler.connect_client_num - 1 && m_client_handler.connected_client_list.size() != 0) {
 			LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Function %s() started processing.(tid : \033[32m%d\033[m)", __FUNCTION__, this_thread_id));
 			std::tie(receive_result, receive_data) = Receiver::receive_data(m_client_handler.connected_client_list[detection_num].get_client_socket(), detection_num);
 		}
