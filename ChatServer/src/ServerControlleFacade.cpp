@@ -230,7 +230,7 @@ void ServerControlleFacade::mt000_process(std::string& receive_data, int detecti
 	}
 }
 
-void ServerControlleFacade::mt001_process(std::string& receive_data, int& monitor_result)
+void ServerControlleFacade::mt001_process(std::string& receive_data, int& detection_num)
 {
 	
 	std::string user_id = "";
@@ -244,17 +244,20 @@ void ServerControlleFacade::mt001_process(std::string& receive_data, int& monito
 			{
 				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
 				user_id = this->sign_up_process(m_mt001receiver->get_mt001_data().get_client_mail_addr(), m_mt001receiver->get_mt001_data().get_client_password());
-				if (user_id != "") {
+				if (user_id != "" && detection_num <= this->m_client_handler.connect_client_num - 1 && m_client_handler.connected_client_list.size() != 0) {
 					//SIGN UPが成功した場合に、クライアント情報を登録する
-					m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
-					m_client_handler.connected_client_list[monitor_result].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
-					m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(m_mt001receiver->get_mt001_data().get_client_mail_addr());
-					m_client_handler.connected_client_list[monitor_result].set_client_password(m_mt001receiver->get_mt001_data().get_client_password());
+					m_client_handler.connected_client_list[detection_num].set_client_id(user_id);
+					m_client_handler.connected_client_list[detection_num].set_client_name(m_mt001receiver->get_mt001_data().get_client_name());
+					m_client_handler.connected_client_list[detection_num].set_client_mail_addr(m_mt001receiver->get_mt001_data().get_client_mail_addr());
+					m_client_handler.connected_client_list[detection_num].set_client_password(m_mt001receiver->get_mt001_data().get_client_password());
 
 					//データベースにユーザ情報を登録する。
 					//TODO　データべース処理を追記する。
+					
+					//Auth statusを変更する
+					this->m_client_handler.change_client_auth_status(detection_num);
 				}
-				this->m_client_handler.show_client_info(monitor_result);
+				this->m_client_handler.show_client_info(detection_num);
 			}
 			break;
 
@@ -263,13 +266,16 @@ void ServerControlleFacade::mt001_process(std::string& receive_data, int& monito
 				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
 				user_id = this->sign_in_process(m_mt001receiver->get_mt001_data().get_client_mail_addr(), m_mt001receiver->get_mt001_data().get_client_password());
 
-				if (user_id != "") {
+				if (user_id != "" && detection_num <= this->m_client_handler.connect_client_num - 1 && m_client_handler.connected_client_list.size() != 0) {
 					//データベースからユーザ情報を読み取る。
 					std::string client_name, client_mail_addr, client_password;
-					m_client_handler.connected_client_list[monitor_result].set_client_id(user_id);
-					m_client_handler.connected_client_list[monitor_result].set_client_name(client_name);
-					m_client_handler.connected_client_list[monitor_result].set_client_mail_addr(client_mail_addr);
-					m_client_handler.connected_client_list[monitor_result].set_client_password(client_password);
+					m_client_handler.connected_client_list[detection_num].set_client_id(user_id);
+					m_client_handler.connected_client_list[detection_num].set_client_name(client_name);
+					m_client_handler.connected_client_list[detection_num].set_client_mail_addr(client_mail_addr);
+					m_client_handler.connected_client_list[detection_num].set_client_password(client_password);
+
+					//Auth statusを変更する
+					this->m_client_handler.change_client_auth_status(detection_num);
 				}
 			}
 			break;
@@ -277,7 +283,7 @@ void ServerControlleFacade::mt001_process(std::string& receive_data, int& monito
 			case 2:			//sign out
 			{
 				std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
-				m_firebase_auth_handler->sign_out(m_client_handler.connected_client_list[monitor_result].get_client_id(), m_client_handler.connected_client_list[monitor_result].get_client_mail_addr());
+				m_firebase_auth_handler->sign_out(m_client_handler.connected_client_list[detection_num].get_client_id(), m_client_handler.connected_client_list[detection_num].get_client_mail_addr());
 				break;
 			}
 			default:

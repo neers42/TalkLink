@@ -115,6 +115,16 @@ const int ClientHandler::Client::get_client_heart_beat_count() const
 	return this->m_heart_beat_count;
 }
 
+bool ClientHandler::Client::get_auth_status()
+{
+	return this->m_auth_status;
+}
+
+const bool ClientHandler::Client::get_auth_status() const
+{
+	return this->m_auth_status;
+}
+
 void ClientHandler::Client::set_client_id(std::string id)
 {
 	this->m_client_id = id;
@@ -163,6 +173,16 @@ void ClientHandler::Client::incliment_heart_beat_count()
 void ClientHandler::Client::clear_heart_beat_count()
 {
 	this->m_heart_beat_count = 0;
+}
+
+void ClientHandler::Client::change_auth_status()
+{
+	if (m_auth_status == true) {
+		m_auth_status = false;
+	}
+	else {
+		m_auth_status = true;
+	}
 }
 
 bool ClientHandler::Client::operator==(const Client& other_client) const
@@ -343,6 +363,17 @@ int ClientHandler::check_next_invalid_socket()
 void ClientHandler::delete_client_hbsock_from_hb_list(const std::uint32_t delete_num)
 {
 	this->heart_beat_list.erase(this->heart_beat_list.begin() + delete_num);
+}
+
+bool ClientHandler::get_client_auth_status(const int client_num)
+{
+	return this->connected_client_list[client_num].get_auth_status();
+}
+
+
+void ClientHandler::change_client_auth_status(const int client_num)
+{
+	this->connected_client_list[client_num].change_auth_status();
 }
 
 int ClientHandler::search_client_id_from_con_list(const std::string& search_client_id)

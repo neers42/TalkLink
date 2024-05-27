@@ -110,7 +110,7 @@ std::string FirebaseAuthHandler::sign_in_user_with_email_and_password(const std:
 void FirebaseAuthHandler::sign_out(const std::string& client_id, const std::string& client_email_addr)
 {
 	this->auth->SignOut();
-	LogHandler::logging_info(LogHandler::LogType::SIGN_OUT, std::cout, StringFormat("Sign out succeeded for email : %s(UID : %s)", client_email_addr, client_id));
+	LogHandler::logging_info(LogHandler::LogType::SIGN_OUT, std::cout, StringFormat("Sign out succeeded for email : %s(UID : %s).", client_email_addr, client_id));
 }
 
 void FirebaseAuthHandler::on_auth_callback(const firebase::Future<firebase::auth::AuthResult>& result, std::string* user_id)
@@ -118,11 +118,11 @@ void FirebaseAuthHandler::on_auth_callback(const firebase::Future<firebase::auth
 	assert(result.status() == firebase::kFutureStatusComplete);
 	if (result.error() == firebase::auth::kAuthErrorNone) {
 		const firebase::auth::AuthResult auth_result = *result.result();
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Sign in succeeded for email : %s(UID : %s)", auth_result.user.email(), auth_result.user.uid()));
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Sign in succeeded for email : %s(UID : %s).", auth_result.user.email(), auth_result.user.uid()));
 		*user_id = auth_result.user.uid();
 	}
 	else {
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Sign in failed with error : %s", result.error_message()));
+		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Sign in failed with error : %s.", result.error_message()));
 	}
 }
 

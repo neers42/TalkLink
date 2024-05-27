@@ -38,6 +38,7 @@ private:
 		std::string m_client_password = "";
 		firebase::auth::Auth* client_auth;
 		int m_heart_beat_count;
+		bool m_auth_status = false;
 
 
 	public:
@@ -67,6 +68,8 @@ private:
 		firebase::auth::Auth* get_client_auth();
 		int get_client_heart_beat_count();
 		const int get_client_heart_beat_count() const;
+		bool get_auth_status();
+		const bool get_auth_status() const;
 
 		//setter
 		void set_client_id(std::string id);
@@ -79,6 +82,7 @@ private:
 		void set_client_password(std::string password);
 		void incliment_heart_beat_count();
 		void clear_heart_beat_count();
+		void change_auth_status();
 		bool operator==(const Client& other_client)const;
 		Client &operator=(const Client& other_client);
 
@@ -119,6 +123,8 @@ public:
 	const std::vector<Client> get_connected_client_list() const;
 	Client get_init_client();
 	const Client get_init_client() const;
+	bool get_client_auth_status(const int client_num);
+	void change_client_auth_status(const int client_num);
 
 	
 	//setter
