@@ -426,10 +426,19 @@ void ServerControlleFacade::heart_beat_check_process()
 			for (int j = 0; j < this->m_client_handler.connected_client_list.size(); j++) {
 				if (check_con_list[i].get_client_socket() != INVALID_SOCKET && check_con_list[i] == this->m_client_handler.connected_client_list[j]) {
 					if (this->m_client_handler.connected_client_list[j].get_client_heart_beat_count() == 0) {
-						LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("The client (ID: %s) does not respond to the heartbeat message for 30 seconds, so it disconnects.",
+						if (this->m_client_handler.connected_client_list[j].get_auth_status() == true) {
+							LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("The client (ID: %s) does not respond to the heartbeat message for 30 seconds, so it disconnects.",
 							this->m_client_handler.connected_client_list[j].get_client_id()));
 							m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[j].get_client_socket());
 							m_client_handler.delete_client_from_con_list(j);
+						}
+						else {
+							LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("The client (SOCKET : %d) does not respond to the heartbeat message for 30 seconds, so it disconnects.",
+							this->m_client_handler.connected_client_list[j].get_client_socket()));
+							m_socket_handler->disconnect_socket(m_client_handler.connected_client_list[j].get_client_socket());
+							m_client_handler.delete_client_from_con_list(j);
+						}
+						
 						break;
 
 					}
