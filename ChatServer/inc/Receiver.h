@@ -2,6 +2,10 @@
 #define RECEIVER_H_
 #define MAX_GROUP_MEMBER_NUM 500
 #define MAX_RECEIVE_MESSAGE_LEN 2048
+#define MT_START_POS 0
+#define MT_BYTE_SIZE 3
+#define TRANS_TYPE_START_POS 3
+#define TRANS_TYPE_BYTE_SIZE 1
 #include <iostream>
 #include <string>
 #include <vector>
@@ -15,87 +19,66 @@
 #define DEBUG
 class Receiver
 {
-protected:
-	struct trans_data_info {
-
-		//データタイプ
-		enum data_type
-		{
-			//メッセージ
-			message,
-			//イメージファイル
-			image,
-			//動画ファイル
-			video,
-			//ログイン情報
-			login_data
-		};
-
-		//送信先のIPアドレス数
-		__int16 dst_ip_addr_num;
-
-		//送信元のIPアドレス
-		std::string src_ip_addr;
-
-		//送信先のIPアドレス
-		std::string dst_ip_addr;
+public:
+	class Message
+	{
+	public:
+		Message();
+		Message(std::string& s_id, std::string& d_id, std::string& data, std::string& time_stamp, std::string& id);
+		~Message();
 
 		
-		//送信先のリスト
-		std::vector<std::string> dst_ip_addr_list;
+	public:
+		//送信元のクライアントID
+		std::string s_client_id;
 
-		
-		//送信先のグループID
-		std::string dst_group_id;
+		//送信先のクライアントID
+		std::string d_client_id;
 
-		std::string src_recv_data;
+		//送信データの本体データ
+		std::string main_content;
 
-		std::string decrypted_recv_data;
+		//送信されたメッセージデータのタイムスタンプ
+		std::string time_stamp;
 
-		//ペイロード(暗号化)
-		std::string scr_payload;
+		//送信されたメッセージデータのメッセージID
+		std::string message_id;
 
-		//ペイロード(復号化)
-		std::string decrypted_payload;
+	public:
+		const std::string& get_s_client_id() { return this->s_client_id; };
+		const std::string& get_d_client_id() { return this->d_client_id; };
+		const std::string& get_main_content() { return this->main_content; };
+		const std::string& get_time_stamp() { return this->time_stamp; };
+		const std::string& get_message_id() { return this->message_id; };
 
-		
-		FILE* file_data;
-		std::string file_name;
+		void set_s_client_id(std::string& s_id) { this->s_client_id = s_id; };
+		void set_d_client_id(std::string& d_id) { this->d_client_id = d_id; };
+		void set_main_content(std::string& data) { this->main_content = data; };
+		void set_message_id(std::string& id) { this->message_id = id; };
+	private:
 
-
-		//デフォルトコンストラクタ
-		trans_data_info() : src_ip_addr{ "" }, dst_ip_addr{ "" }, dst_ip_addr_num{ 0 }, dst_group_id{""},
-			src_recv_data{""}, decrypted_recv_data{""}, scr_payload{""}, decrypted_payload{""}, file_data{NULL}, file_name{""} {
-
-			//ここに以下の変数の初期化処理を記載する
-			dst_ip_addr_list = { "" };
-		}
-
-		//コピーコンストラクタ
-		trans_data_info(std::string scr_ip_addr, std::string dst_ip_addr, 
-			std::vector<std::string> dst_ip_addr_list, __int16 dst_ip_addr_num, std::string dst_group_id,
-			std::string scr_recv_data, std::string decrypted_recv_data,
-			std::string scr_payload, FILE* file_data, std::string file_name):src_ip_addr{scr_ip_addr}, dst_ip_addr{dst_ip_addr},dst_ip_addr_list{dst_ip_addr_list},
-			dst_ip_addr_num{ dst_ip_addr_num }, dst_group_id{ dst_group_id },
-			src_recv_data{scr_recv_data}, decrypted_recv_data{decrypted_recv_data},
-			scr_payload{ scr_payload }, decrypted_payload{""}, file_data{file_data}, file_name(file_name) {}
-
-		//メッセージキュー
-		std::queue<std::string> message_queue;
-		
 	};
-protected:
-	virtual bool data_extraction(const std::string& data) = 0;
 
+protected:
+	virtual bool data_extraction(const std::string& data);
 private:
     virtual void show_receive_info(const std::string& ipv4_addr, int& detection_num, int& receive_result);
+	virtual std::string extraction_src_client_id(const std::string& data);
+	virtual std::string extraction_dst_client_id(const std::string& data);
+	virtual std::string extraction_main_content(const std::string& data);
+
+	virtual bool check_validation_src_client_id(const std::string& s_id);
+	virtual bool check_validation_dst_client_id(const std::string& d_id);
+	virtual bool check_validation_main_content(const std::string& main_content);
 
 public:
 	Receiver();
 	virtual ~Receiver();
-	static std::tuple<int32_t, std::string> receive_data(const SOCKET& receive_socket, int client_num);
+	static std::tuple<int32_t, std::string, std::string> receive_data(const SOCKET& receive_socket, int client_num);
 	static std::string extraction_mt(const std::string& data);
 	static std::string extraction_trans_type(const std::string& data);
+	virtual bool check_validation(const std::string& data);
+
 
 
 };             

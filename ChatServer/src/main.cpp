@@ -6,11 +6,10 @@
 
 int main()
 {
-	std::cout << ServerTime::get_current_time() <<"[INFO]Starting MyChat server version 1.0.0!!" << std::endl;
-
-    ServerControlleFacade* server_cont_facade = new ServerControlleFacade();
+    LogHandler::logging(LogHandler::LogType::INFO, std::cout, StringFormat("Starting MyChat server version 1.0.0!!"));
+    std::unique_ptr<ServerControlleFacade> server_cont_facade;
+    server_cont_facade = std::make_unique<ServerControlleFacade>();
     server_cont_facade->run();
-    delete server_cont_facade;
     
 }
 

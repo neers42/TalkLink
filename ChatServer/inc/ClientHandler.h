@@ -95,7 +95,6 @@ private:
 	friend class LoginHandler;
 	friend class ServerControlleFacade;
 
-	
 	//接続中のクライアントリスト
 	std::vector<Client> connected_client_list;
 
@@ -114,9 +113,6 @@ private:
 public:
 	ClientHandler();
 	~ClientHandler();
-
-	
-
 
 	//getter
 	std::vector<Client> get_connected_client_list();
@@ -137,11 +133,7 @@ public:
 	void set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num);
 	void incliment_heart_beat_count(uint32_t list_num);
 	void clear_heart_beat_count(uint32_t list_num);
-
-
-	
 	void set_count_hb_list(int list_num);
-	
 	void set_client_id_to_hb_list(const std::string& id, int list_num);
 	
 

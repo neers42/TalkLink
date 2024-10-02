@@ -10,58 +10,95 @@ MT001Receiver::~MT001Receiver()
 
 }
 
-bool MT001Receiver::data_extraction(const std::string& data)
-{
-	bool sign_type_ex_res = this->extraction_sign_type(data);
-	bool auth_type_ex_res = this->extraction_auth_type(data);
-	bool client_name_byte_size_ex_res = this->extraction_client_name_byte_size(data);
-	bool client_name_ex_res = this->extraction_client_name(data);
-	bool client_mail_addr_byte_size_ex_res = this->extraction_client_mail_addr_byte_size(data);
-	bool client_mail_addr_ex_res = this->extraction_client_mail_addr(data);
-	bool client_password_byte_size_ex_res = this->extraction_client_password_byte_size(data);
-	bool client_password_ex_res = this->extraction_client_password(data);
-
-	if (sign_type_ex_res == false || auth_type_ex_res == false
-		||client_name_byte_size_ex_res == false
-		|| client_name_ex_res == false || client_mail_addr_byte_size_ex_res == false
-		|| client_mail_addr_ex_res == false || client_password_byte_size_ex_res == false
-		|| client_password_ex_res == false) {
-		return false;
-	}
-
-#ifdef DEBUG_MT001_CONTAIN
-	show_mt001_data();
-#endif // DEBUG_MT001_CONTAIN
-
-	return true;
-}
 
 void MT001Receiver::show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result)
 {
-	LogHandler::logging_info(LogHandler::LogType::RECEIVE, std::cout, StringFormat("\033[33mMT001\033[m received from client list [%d] (CLIENT(IP:%s) ⇒ SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
+	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("\033[33mMT001\033[m received from client list [%d] (CLIENT(IP:%s) ⇒ SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
 }
 
-void MT001Receiver::show_mt001_data()
+void MT001Receiver::show_mt001_data(const MT001Data& mt001)
 {
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("SIGN Type(0: sign up 1: sign in, 2: sign out) : %d", this->m_mt001_data.get_sign_type()));
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("AUTH type : %d", this->m_mt001_data.get_auth_type()));
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Name Byte Size : %d", this->m_mt001_data.get_client_name_byte_size()));
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Name : %s", this->m_mt001_data.get_client_name()));
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Mail Addr Byte Size : %d", this->m_mt001_data.get_client_mail_addr_byte_size()));
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Mail Address : %s", this->m_mt001_data.get_client_mail_addr()));
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Password Byte Size : %d", this->m_mt001_data.get_client_password_byte_size()));
-	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Password : %s", this->m_mt001_data.get_client_password()));
+//	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("SIGN Type(0: sign up 1: sign in, 2: sign out) : %d", ));
+//	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("AUTH type : %d", this->m_mt001_data.get_auth_type()));
+//	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Name Byte Size : %d", this->m_mt001_data.get_client_name_byte_size()));
+//	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Name : %s", this->m_mt001_data.get_client_name()));
+//	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Mail Addr Byte Size : %d", this->m_mt001_data.get_client_mail_addr_byte_size()));
+//	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Mail Address : %s", this->m_mt001_data.get_client_mail_addr()));
+//	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Password Byte Size : %d", this->m_mt001_data.get_client_password_byte_size()));
+//	LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("Client Password : %s", this->m_mt001_data.get_client_password()));
 }
 
 
 MT001Receiver::MT001Data::MT001Data(): m_sign_type{SIGN_TYPE::sign_up}, m_auth_type{AUTH_TYPE::normal_auth},m_client_id("")
 , m_client_name_byte_size{0}, m_client_name{""}, m_client_mail_byte_size{0}, m_client_mail_addr{""}, m_client_password_byte_size{0}, m_client_password{""}
 {
-
+	time_stamp = ServerTime::get_current_time();
 }
 
 MT001Receiver::MT001Data::~MT001Data()
 {
+	
+}
+
+MT001Receiver::MT001Data::MT001Data(const uint8_t& sign_type
+	, const uint8_t& auth_type, const uint8_t name_byte_size
+	, const std::string& name, const uint8_t mail_addr_byte_size
+	, const std::string& mail_addr, const uint8_t password_byte_size
+	, const std::string& password) 
+	: m_client_id{ "" }, m_client_name_byte_size{ name_byte_size }, m_client_name{ name }
+	, m_client_mail_byte_size{mail_addr_byte_size}, m_client_mail_addr{mail_addr}
+	, m_client_password_byte_size{password_byte_size}, m_client_password{password}
+
+	
+{
+	switch (sign_type)
+	{
+	case 0:
+		m_sign_type = SIGN_TYPE::sign_up;
+		break;
+
+	case 1:
+		m_sign_type = SIGN_TYPE::sign_in;
+		break;
+
+	case 2:
+		m_sign_type = SIGN_TYPE::sign_out;
+		break;
+
+	default:
+		break;
+	}
+
+	switch (auth_type)
+	{
+	case 0:
+		m_auth_type = AUTH_TYPE::normal_auth;
+		break;
+
+	case 1:
+		m_auth_type = AUTH_TYPE::google_auth;
+		break;
+
+	case 2:
+		m_auth_type = AUTH_TYPE::facebook_auth;
+		break;
+
+	case 3:
+		m_auth_type = AUTH_TYPE::twitter_auth;
+		break;
+
+	case 4:
+		m_auth_type = AUTH_TYPE::microsoft_auth;
+		break;
+
+	case 5:
+		m_auth_type = AUTH_TYPE::yahoo_auth;
+		break;
+
+	default:
+		break;
+	}
+	time_stamp = ServerTime::get_current_time();
 }
 
 
@@ -119,10 +156,6 @@ const int MT001Receiver::MT001Data::get_auth_type()
 	}
 }
 
-const std::string MT001Receiver::MT001Data::get_client_id()
-{
-	return this->m_client_id;
-}
 
 const uint8_t MT001Receiver::MT001Data::get_client_name_byte_size()
 {
@@ -242,89 +275,57 @@ void MT001Receiver::MT001Data::set_client_password(const std::string& password)
 	this->m_client_password = password;
 }
 
-bool MT001Receiver::extraction_sign_type(const std::string& data)
+
+uint8_t MT001Receiver::extraction_sign_type_(const std::string& data)
 {
 	try
 	{
-		//int start_pos_split = 3, end_pos_split = 1;
 		if (SIGN_TYPE_START_POS > data.size() || (SIGN_TYPE_START_POS + SIGN_TYPE_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
 		std::string sign_type_str = data.substr(SIGN_TYPE_START_POS, SIGN_TYPE_BYTE_SIZE);
 		int sign_type_int = std::stoi(sign_type_str);
-		if (sign_type_int < 0 || sign_type_int > 2) {
-			THROW_APP_EXCEPTION(StringFormat("The value of Trans type is invalid.(\033[31msign_type_int contains : %d\033[m)", sign_type_int));
-		}
-		m_mt001_data.set_sign_type(sign_type_int);
+		return sign_type_int;
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return -1;
 	}
-	return true;
 }
 
-bool MT001Receiver::extraction_auth_type(const std::string& data)
+
+uint8_t MT001Receiver::extraction_auth_type_(const std::string& data)
 {
 	try
 	{
-		//int start_pos_split = 4, end_pos_split = 1;
 		if (AUTH_TYPE_START_POS > data.size() || (AUTH_TYPE_START_POS + AUTH_TYPE_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
 		std::string auth_type_str = data.substr(AUTH_TYPE_START_POS, AUTH_TYPE_BYTE_SIZE);
-		int auth_type_int = std::stoi(auth_type_str);
-		if (auth_type_int < 0 || auth_type_int > 5) {
-			THROW_APP_EXCEPTION(StringFormat("The value of Trans type is invalid.(\033[31msign_type_int contains : %d\033[m)", auth_type_int));
-		}
-		m_mt001_data.set_auth_type(auth_type_int);
+		uint8_t auth_type_int = std::stoi(auth_type_str);
+		return auth_type_int;
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return -1;
 	}
-	return true;
 }
 
-bool MT001Receiver::extraction_client_id(const std::string& data)
+
+
+
+uint8_t MT001Receiver::extraction_client_name_byte_size_(const std::string& data)
 {
 	try
 	{
-		uint8_t end_pos_split = 36;
-		if (CLIENT_ID_START_POS > data.size() || (CLIENT_ID_START_POS + end_pos_split) > data.size()) {
-			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
-		}
-		std::string new_client_id = data.substr(CLIENT_ID_START_POS, end_pos_split);
-		this->m_mt001_data.set_client_id(new_client_id);
-
-	}
-	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
-	}
-	return true;
-}
-
-bool MT001Receiver::extraction_client_name_byte_size(const std::string& data)
-{
-	try
-	{
-		//int start_pos_split = 5, end_pos_split = 2;
-		if (CLIENT_NAME_BYTE_SIZE_START_POS> data.size() || (CLIENT_NAME_BYTE_SIZE_START_POS + CLIENT_NAME_BYTE_SIZE) > data.size()) {
+		if (CLIENT_NAME_BYTE_SIZE_START_POS > data.size() || (CLIENT_NAME_BYTE_SIZE_START_POS + CLIENT_NAME_BYTE_SIZE) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
 		std::string client_namebs_str = data.substr(CLIENT_NAME_BYTE_SIZE_START_POS, CLIENT_NAME_BYTE_SIZE);
 		uint8_t client_name_byte_size = std::stoi(data.substr(CLIENT_NAME_BYTE_SIZE_START_POS, CLIENT_NAME_BYTE_SIZE));
-		this->m_mt001_data.set_client_name_byte_size(client_name_byte_size);
+		return client_name_byte_size;
 	}
 	catch (const std::invalid_argument& ia_ex) {
 		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
@@ -334,47 +335,40 @@ bool MT001Receiver::extraction_client_name_byte_size(const std::string& data)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-	//	std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return -1;
 	}
-	return true;
 }
 
-bool MT001Receiver::extraction_client_name(const std::string& data)
+
+std::string MT001Receiver::extraction_client_name_(const std::string& data, uint8_t client_name_byte_size)
 {
 	try
 	{
-		uint8_t  end_pos_split = this->m_mt001_data.get_client_name_byte_size();
-		if (CLIENT_NAME_START_POS > data.size() || (CLIENT_NAME_START_POS + end_pos_split) > data.size()) {
+		if (CLIENT_NAME_START_POS > data.size() || (CLIENT_NAME_START_POS + client_name_byte_size) > data.size()) {
 			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
 		}
-		std::string new_client_name = data.substr(CLIENT_NAME_START_POS, end_pos_split);
-		this->m_mt001_data.set_client_name(new_client_name);
-
+		std::string client_name = data.substr(CLIENT_NAME_START_POS, client_name_byte_size);
+		return client_name;
 	}
 	catch (const std::out_of_range& oor_ex) {
 		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return std::string("");
 	}
-	return true;
 }
 
-bool MT001Receiver::extraction_client_mail_addr_byte_size(const std::string& data)
+
+uint8_t MT001Receiver::extraction_client_mail_addr_byte_size_(const std::string& data, uint8_t name_byte_size)
 {
 	try
 	{
-		if (this->m_mt001_data.get_client_name_byte_size() == 0) {
-			return false;
-		}
-		uint8_t start_pos_split = CLIENT_NAME_START_POS + this->m_mt001_data.get_client_name_byte_size();
+		uint8_t start_pos_split = CLIENT_NAME_START_POS + name_byte_size;
 		uint8_t client_mail_byte_size = std::stoi(data.substr(start_pos_split, CLIENT_MAIL_ADDRESS_BYTE_SIZE));
-		this->m_mt001_data.set_client_mail_addr_byte_size(client_mail_byte_size);
+		return client_mail_byte_size;
 	}
 	catch (const std::invalid_argument& ia_ex) {
 		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
@@ -384,79 +378,71 @@ bool MT001Receiver::extraction_client_mail_addr_byte_size(const std::string& dat
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return -1;
 	}
-
-	return true;
 }
 
-bool MT001Receiver::extraction_client_mail_addr(const std::string& data)
+
+std::string MT001Receiver::extraction_client_mail_addr_(const std::string& data, uint8_t name_byte_size, uint8_t mail_addr_byte_size)
 {
 	try
 	{
 		uint8_t start_pos_split = CLIENT_NAME_START_POS
-								+ this->m_mt001_data.get_client_name_byte_size() 
-								+ CLIENT_MAIL_ADDRESS_BYTE_SIZE;
-		uint8_t end_pos_split = this->m_mt001_data.get_client_mail_addr_byte_size();
-		std::string new_client_gmail = data.substr(start_pos_split, end_pos_split);
-		this->m_mt001_data.set_client_mail_addr(new_client_gmail);
+			+ name_byte_size
+			+ CLIENT_MAIL_ADDRESS_BYTE_SIZE;
+		uint8_t end_pos_split = mail_addr_byte_size;
+		std::string client_mail_addr = data.substr(start_pos_split, end_pos_split);
+		return client_mail_addr;
 	}
 	catch (const std::out_of_range& oor_ex) {
 		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return std::string("");
 	}
-	return true;
 }
 
-bool MT001Receiver::extraction_client_password_byte_size(const std::string& data)
+
+uint8_t MT001Receiver::extraction_client_password_byte_size_(const std::string& data, uint8_t name_byte_size, uint8_t mail_addr_byte_size)
 {
 	try
 	{
-		if (this->m_mt001_data.get_client_name_byte_size() == 0 || this->m_mt001_data.get_client_mail_addr_byte_size() == 0) {
-			return false;
-		}
-		uint8_t start_pos_split = CLIENT_NAME_START_POS 
-								+ this->m_mt001_data.get_client_name_byte_size()
-								+ CLIENT_MAIL_ADDRESS_BYTE_SIZE 
-								+ this->m_mt001_data.get_client_mail_addr_byte_size();
-		uint8_t client_password_byte_size = std::stoi(data.substr(start_pos_split, CLIENT_PASSWORD_BYTE_SIZE));
-		this->m_mt001_data.set_client_password_byte_size(client_password_byte_size);
-	}
-	catch (const std::invalid_argument& ia_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
-	}
-	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
-	}
-
-	return true;
-}
-
-bool MT001Receiver::extraction_client_password(const std::string& data)
-{
-	try
-	{
-		uint8_t start_pos_split = CLIENT_NAME_START_POS
-			+ this->m_mt001_data.get_client_name_byte_size()
+			uint8_t start_pos_split = CLIENT_NAME_START_POS
+			+ name_byte_size
 			+ CLIENT_MAIL_ADDRESS_BYTE_SIZE
-			+ this->m_mt001_data.get_client_mail_addr_byte_size()
+			+ mail_addr_byte_size;
+		uint8_t client_password_byte_size = std::stoi(data.substr(start_pos_split, CLIENT_PASSWORD_BYTE_SIZE));
+		return client_password_byte_size;
+	}
+	catch (const std::invalid_argument& ia_ex) {
+		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
+	}
+	catch (const std::out_of_range& oor_ex) {
+		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return -1;
+	}
+}
+
+
+std::string MT001Receiver::extraction_client_password_(const std::string& data, uint8_t name_byte_size, uint8_t mail_addr_byte_size, uint8_t password_byte_size)
+{
+	try
+	{
+		uint8_t start_pos_split = CLIENT_NAME_START_POS
+			+ name_byte_size
+			+ CLIENT_MAIL_ADDRESS_BYTE_SIZE
+			+ mail_addr_byte_size
 			+ CLIENT_PASSWORD_BYTE_SIZE;
-		uint8_t end_pos_split = this->m_mt001_data.get_client_password_byte_size();
-		std::string new_client_password = data.substr(start_pos_split, end_pos_split);
-		this->m_mt001_data.set_client_password(new_client_password);
+		uint8_t end_pos_split = password_byte_size;
+		std::string client_password = data.substr(start_pos_split, end_pos_split);
+		return client_password;
 	}
 	catch (const std::out_of_range& oor_ex) {
 		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
@@ -464,16 +450,166 @@ bool MT001Receiver::extraction_client_password(const std::string& data)
 
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		//std::cerr << StringFormat("%s\033[31m[ERORR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
-		return false;
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return std::string("");
 
+	}
+}
+
+bool MT001Receiver::check_validation_sign_type(const uint8_t& sign_type)
+{
+	if (sign_type > MAX_SIGN_TYPE || sign_type < MIN_SIGN_TYPE) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("MT001 contents sign_type is invalid. sign_type : %d (sign_type : 0 - 2)", sign_type));
+		return false;
 	}
 	return true;
 }
 
-MT001Receiver::MT001Data& MT001Receiver::get_mt001_data()
+bool MT001Receiver::check_validation_auth_type(const uint8_t& auth_type)
 {
-	return this->m_mt001_data;
+	if (auth_type > MAX_AUTH_TYPE || auth_type < MIN_AUTH_TYPE) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr
+			, StringFormat("MT001 contents auth_type is invalid. auth_type : %d (auth_type : 0 - 5)", auth_type));
+		return false;
+	}
+	return true;
 }
+
+bool MT001Receiver::check_validation_client_name_byte_size(const uint8_t& name_byte_size)
+{
+	if (name_byte_size < MIN_NAME_BYTE_SIZE || MAX_NAME_BYTE_SIZE > 12) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr
+			, StringFormat("MT001 contents name_byte_size ERROR. name_byte_size : %d (name_byte_size : 6-12)", name_byte_size));
+		return false;
+	}
+	return true;
+}
+
+bool MT001Receiver::check_validation_client_name(const std::string& name)
+{
+	if (name.size() < MIN_NAME_BYTE_SIZE || name.size() > MAX_NAME_BYTE_SIZE) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr
+			, StringFormat("MT001 contents name size ERROR. name size : %d (name size : 6 -12)", name.size()));
+		return false;
+	}
+	return true;
+}
+
+bool MT001Receiver::check_validation_client_mail_addr_byte_size(const uint8_t& mail_addr_byte_size)
+{
+	if (mail_addr_byte_size > MAX_MAIL_ADDR_SIZE || mail_addr_byte_size < MIN_MAIL_ADDR_SIZE) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr
+			, StringFormat("MT001 contents mail addr byte size ERROR. mail addr byte size : %d (mail addr byte size : 3 - 254)", mail_addr_byte_size));
+		return false;
+	}
+	return true;
+}
+
+bool MT001Receiver::check_validation_client_mail_addr(const std::string& mail_addr)
+{
+	if (mail_addr.size() < MIN_MAIL_ADDR_SIZE || mail_addr.size() > MAX_MAIL_ADDR_SIZE) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr
+			, StringFormat("MT001 contents mail addr size ERROR. mail addr size : %d (mail addr size : 3 - 254)", mail_addr.size()));
+		return false;
+	}
+	return true;
+}
+
+bool MT001Receiver::check_validation_client_password_byte_size(const uint8_t& password_byte_size)
+{
+	if (password_byte_size < MIN_PASSWORD_SIZE || password_byte_size > MAX_PASSWORD_SIZE) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr
+			, StringFormat("MT001 contents password byte size ERROR. password byte size : %d (password byte size 10 - 127)"));
+		return false;
+	}
+	return true;
+}
+
+bool MT001Receiver::check_validation_client_password(const std::string& password)
+{
+	if (password.size() < MIN_PASSWORD_SIZE || password.size() > MAX_PASSWORD_SIZE) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr
+			, StringFormat("MT001 contents password size ERROR. password size : %d (password size 10 - 127)"));
+		return false;
+	}
+	return true;
+}
+
+bool MT001Receiver::check_validation_contents(const uint8_t& sign_type, const uint8_t& auth_type, const uint8_t name_byte_size, const std::string& name, const uint8_t mail_addr_byte_size, const std::string& mail_addr, const uint8_t password_byte_size, const std::string& password)
+{
+	if (check_validation_sign_type(sign_type) == false
+		|| check_validation_auth_type(auth_type) == false
+		|| check_validation_client_name_byte_size(name_byte_size) == false
+		|| check_validation_client_name(name) == false
+		|| check_validation_client_mail_addr_byte_size(mail_addr_byte_size) == false
+		|| check_validation_client_mail_addr(mail_addr) == false
+		|| check_validation_client_password_byte_size(password_byte_size) == false
+		|| check_validation_client_password(password) == false) {
+		return false;
+	}
+	return true;
+}
+
+
+
+std::unique_ptr<MT001Receiver::MT001Data> MT001Receiver::create_mt001data_instance()
+{
+	return std::unique_ptr<MT001Data>();
+}
+
+std::unique_ptr<MT001Receiver::MT001Data> MT001Receiver::create_mt001data_instance(const uint8_t& sign_type, const uint8_t& auth_type, const uint8_t& name_byte_size, std::string& name, const uint8_t& mail_addr_byte_size, const std::string& mail_addr, const uint8_t& password_byte_size, const std::string& password)
+{
+	std::unique_ptr<MT001Data> new_mt001;
+	new_mt001 = std::make_unique<MT001Data>(sign_type, auth_type, name_byte_size, name, mail_addr_byte_size, mail_addr, password_byte_size, password);
+	return new_mt001;
+}
+
+bool MT001Receiver::data_extraction(const std::string& data, MT001Data& mt001)
+{
+	uint8_t sign_type = this->extraction_auth_type_(data);
+	uint8_t auth_type = this->extraction_auth_type_(data);
+	uint8_t client_name_byte_size = this->extraction_client_name_byte_size_(data);
+	std::string client_name = this->extraction_client_name_(data, client_name_byte_size);
+	uint8_t client_mail_addr_byte_size = this->extraction_client_mail_addr_byte_size_(data, client_name_byte_size);
+	std::string client_mail_addr = this->extraction_client_mail_addr_(data, client_name_byte_size, client_mail_addr_byte_size);
+	uint8_t client_password_byte_size = this->extraction_client_password_byte_size_(data, client_name_byte_size, client_mail_addr_byte_size);
+	std::string client_password = this->extraction_client_password_(data, client_name_byte_size, client_mail_addr_byte_size, client_password_byte_size);
+
+	if (check_validation_contents(sign_type, auth_type, client_name_byte_size, client_name,
+		client_mail_addr_byte_size, client_mail_addr, client_password_byte_size, client_password) == false) {
+		return false;
+	}
+	
+	mt001.set_sign_type(sign_type);
+	mt001.set_auth_type(auth_type);
+	mt001.set_client_name_byte_size(client_name_byte_size);
+	mt001.set_client_name(client_name);
+	mt001.set_client_mail_addr_byte_size(client_mail_addr_byte_size);
+	mt001.set_client_mail_addr(client_mail_addr);
+	mt001.set_client_password_byte_size(client_password_byte_size);
+	mt001.set_client_password(client_password);
+
+	return true;
+
+}
+
+std::tuple<uint8_t, uint8_t, uint8_t, std::string, uint8_t, std::string, uint8_t, std::string> MT001Receiver::data_extraction_(const std::string& data)
+{
+	uint8_t sign_type = this->extraction_sign_type_(data);
+	uint8_t auth_type = this->extraction_auth_type_(data);
+	uint8_t client_name_byte_size = this->extraction_client_name_byte_size_(data);
+	std::string client_name = this->extraction_client_name_(data, client_name_byte_size);
+	uint8_t client_mail_addr_byte_size = this->extraction_client_mail_addr_byte_size_(data, client_name_byte_size);
+	std::string client_mail_addr = this->extraction_client_mail_addr_(data, client_name_byte_size, client_mail_addr_byte_size);
+	uint8_t client_password_byte_size = this->extraction_client_password_byte_size_(data, client_name_byte_size, client_mail_addr_byte_size);
+	std::string client_password = this->extraction_client_password_(data, client_name_byte_size, client_mail_addr_byte_size, client_password_byte_size);
+
+	if (check_validation_contents(sign_type, auth_type, client_name_byte_size, client_name,
+		client_mail_addr_byte_size, client_mail_addr, client_password_byte_size, client_password) == false) {
+		return std::make_tuple(3, 6, 0, "", 0, "", 0, "");
+	}
+	return std::make_tuple(sign_type, auth_type, client_name_byte_size, client_name, client_mail_addr_byte_size, client_mail_addr, client_password_byte_size, client_password);
+}
+
+
 

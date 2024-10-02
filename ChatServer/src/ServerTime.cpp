@@ -37,7 +37,7 @@ std::string ServerTime::get_current_time()
     milliseconds_str = std::string(3 - milliseconds_str.length(), '0') + milliseconds_str;
     
     std::string ss;
-    ss = "[" + std::string(time_str) + "." + milliseconds_str + "]";
+    ss = std::string(time_str) + "." + milliseconds_str;
 
     return ss;
 

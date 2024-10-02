@@ -21,18 +21,16 @@
 class ServerControlleFacade
 {
 private:
-	FirebaseAuthHandler* m_firebase_auth_handler = new FirebaseAuthHandler();
-	SocketHandler* m_socket_handler = new SocketHandler();
-	MT000Receiver* m_mt000receiver = new MT000Receiver();
-	MT001Receiver* m_mt001receiver = new MT001Receiver();
-	MT002Receiver* m_mt002receiver = new MT002Receiver();
-	Sender* m_sender = new Sender();
-	ServerTime* m_server_time = new ServerTime();
-	ClientHandler m_client_handler = ClientHandler();
-	ThreadPoolHandler* m_thread_pool_handler = new ThreadPoolHandler(10);
-	ChatroomHandler* m_chat_room_handler = new ChatroomHandler();
-
-
+	std::unique_ptr<FirebaseAuthHandler> m_firebase_auth_handler;
+	std::unique_ptr<SocketHandler> m_socket_handler;
+	std::unique_ptr<MT000Receiver> m_mt000receiver;
+	std::unique_ptr<MT001Receiver> m_mt001receiver;
+	std::unique_ptr<MT002Receiver> m_mt002receiver;
+	std::unique_ptr<Sender> m_sender;
+	std::unique_ptr<ServerTime> m_server_time;
+	std::unique_ptr<ClientHandler> m_client_handler;
+	std::unique_ptr<ThreadPoolHandler> m_thread_pool_handler;
+	std::unique_ptr<ChatroomHandler> m_chat_room_handler;
 	std::mutex m_connect_client_list_mutex;
 	std::mutex m_hb_connect_list_mutex;
 	std::mutex m_cout_mutex;
@@ -45,10 +43,6 @@ public:
 	//デストラクタ
 	~ServerControlleFacade();
 
-
-	SocketHandler* get_m_socket_handler() {
-		return m_socket_handler;
-	}
 
 	//サーバプログラム実行
 	void run();

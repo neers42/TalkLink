@@ -9,7 +9,22 @@ Receiver::~Receiver()
 {
 }
 
-std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_socket, int client_list_num)
+Receiver::Message::Message() {
+
+}
+
+Receiver::Message::Message(std::string& s_id, std::string& d_id, std::string& data, std::string& time_stamp, std::string& id)
+	: s_client_id{s_id}, d_client_id{d_id}, main_content{data}, time_stamp{time_stamp}, message_id{id}
+{
+}
+
+
+Receiver::Message::~Message() {
+
+}
+
+
+std::tuple<int32_t, std::string, std::string> Receiver::receive_data(const SOCKET& receive_socket, int client_list_num)
 {
 	try
 	{
@@ -17,7 +32,7 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_so
 		char recv_data[MAX_RECEIVE_MESSAGE_LEN];
 		memset(recv_data, '\0', sizeof(recv_data));
 		int receive_result = recv(receive_socket, recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
-
+		std::string message_time_stamp = ServerTime::get_current_time();
 		//recv結果がSOCKET_ERRORの場合
 		if (receive_result == SOCKET_ERROR) {
 			switch (WSAGetLastError())
@@ -78,38 +93,81 @@ std::tuple<int32_t, std::string> Receiver::receive_data(const SOCKET& receive_so
 		}
 		//接続が閉じられた際の処理
 		else if (receive_result == 0) {
-			return std::make_tuple(receive_result, "");
+			return std::make_tuple(receive_result, "", message_time_stamp);
 		}
 		//データ受信が正常に実施された際の処理
 		else{
-			return std::make_tuple(receive_result, recv_data);
+			return std::make_tuple(receive_result, std::string(recv_data), message_time_stamp);
 		}
 	
 	}
-	//catch (const std::exception& ex)
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		return std::make_tuple(SOCKET_ERROR, "");
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return std::make_tuple(SOCKET_ERROR, "", "");
 
 	}
 
 }
+bool Receiver::data_extraction(const std::string& data)
+{
+	return false;
+}
 void Receiver::show_receive_info(const std::string& ipv4_addr, int& detection_num, int& receive_result)
 {
-	LogHandler::logging_info(LogHandler::LogType::RECEIVE, std::cout, StringFormat("%d byte message was received from client list[%d](IP Address : %s)", receive_result, detection_num, ipv4_addr));
+	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("%d byte message was received from client list[%d](IP Address : %s)", receive_result, detection_num, ipv4_addr));
 }
+
+std::string Receiver::extraction_src_client_id(const std::string& data)
+{
+	return std::string();
+}
+
+std::string Receiver::extraction_dst_client_id(const std::string& data)
+{
+	return std::string();
+}
+
+std::string Receiver::extraction_main_content(const std::string& data)
+{
+	return std::string();
+}
+
+bool Receiver::check_validation_src_client_id(const std::string& s_id)
+{
+	return true;
+}
+
+bool Receiver::check_validation_dst_client_id(const std::string& d_id)
+{
+	return true;
+}
+
+bool Receiver::check_validation_main_content(const std::string& main_content)
+{
+	return true;
+}
+
+
 
 
 std::string Receiver::extraction_mt(const std::string& data)
 {
-	std::string mt = data.substr(0, 3);
+	std::string mt = data.substr(MT_START_POS, MT_BYTE_SIZE);
 	return mt;
 }
 
 std::string Receiver::extraction_trans_type(const std::string& data)
 {
-	std::string trans_type = data.substr(53, 1);
+	std::string trans_type = data.substr(TRANS_TYPE_START_POS, TRANS_TYPE_BYTE_SIZE);
 	return trans_type;
+}
+
+bool Receiver::check_validation(const std::string& data)
+{
+	if (data.size() < 4) {
+		return false;
+	}
+	return true;
 }
 

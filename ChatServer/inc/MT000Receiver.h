@@ -6,7 +6,7 @@
 #define CLIENT_ID_BYTE_SIZE 28
 class MT000Receiver : public Receiver
 {
-	class MT000Data
+	class MT000Data : public Receiver::Message
 	{
 	public:
 		//コンストラクタ・デストラクタ
@@ -14,24 +14,13 @@ class MT000Receiver : public Receiver
 		explicit MT000Data(const std::string& id);
 		~MT000Data();
 
-		//gettr
-		std::string get_mt000_client_id();
-
-		//setter
-		void set_mt000_client_id(const std::string& id);
-
-
-	private:
-		std::string client_id;
 	};
-	//変数
-private:
-	MT000Data mt000_data;
 
 
 	//関数
 private:
-	bool extract_client_id(const std::string& data);
+	std::string extraction_src_client_id(const std::string& data) override;
+	bool check_validation_src_client_id(const std::string& id) override;
 
 
 public:
@@ -39,18 +28,12 @@ public:
 	MT000Receiver();
 	~MT000Receiver();
 
-	//getter
-	MT000Data get_mt000_data();
-	std::string get_mt000_client_id();
-
-	//setter
-	void set_mt000_data_client_id(const std::string& id);
-
 
 	//other
-	bool data_extraction(const std::string& data) override;
 	void show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result) override;
-
+	std::unique_ptr<MT000Data> create_mt000_instance();
+	std::unique_ptr<MT000Data> create_mt000_instance(const std::string& id);
+	std::string data_extraction_(const std::string& data);
 
 
 };

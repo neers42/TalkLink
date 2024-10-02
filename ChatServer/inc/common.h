@@ -8,6 +8,7 @@
 #include "LogHandler.h"
 #include <thread>
 #include <chrono>
+#include <memory>
 
 //std::mutex cout_mtx;
 

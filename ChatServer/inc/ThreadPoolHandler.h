@@ -61,7 +61,7 @@ public:
 		}
 		
 		catch (const exception::ExceptionBase& ex) {
-			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+			LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		}
 
 		//新しいタスクが追加されたことをスレッドに通知する

@@ -97,14 +97,14 @@ bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data,
 			}
 		}
 		else {
-			LogHandler::logging_info(LogHandler::LogType::SEND, std::cout, StringFormat("The server sent a message to the client. (src id : %s  =>  dst id : %s)", src_client_id, dst_client_id));
+			LogHandler::logging(LogHandler::LogType::SEND, std::cout, StringFormat("The server sent a message to the client. (src id : %s  =>  dst id : %s)", src_client_id, dst_client_id));
 			return true;
 		}
 
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
 	return false;
@@ -185,7 +185,7 @@ std::vector<SOCKET> Sender::tcp_multicast_data(const std::vector<SOCKET>& send_s
 		}
 		catch (const exception::ExceptionBase& ex)
 		{
-			LogHandler::logging_info(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+			LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		}
 	}
 	return fail_send_sockets;

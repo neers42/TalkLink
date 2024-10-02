@@ -15,6 +15,8 @@
 
 #define DEBUG_MT002_CONTAIN
 #define MAX_RECEIVE_MESSAGE_LEN 2048
+#define SPLIT_START_POS 3
+#define TRANS_TYPE_BYTE_SIZE 1
 #define CLIENT_DST_ID_START_POS 4
 #define CLIENT_DST_ID_BYTE_SIZE 28
 #define CLIENT_SRC_ID_START_POS 32
@@ -30,7 +32,7 @@
 
 class MT002Receiver : public Receiver
 {
-    class MT002Data
+    class MT002Data : public Receiver::Message
     {
     
     public:
@@ -55,13 +57,12 @@ class MT002Receiver : public Receiver
         data_type m_data_type;
         std::string m_dst_ip_address;
         std::string m_src_ip_address;
-        std::string m_dst_client_id;
-        std::string m_src_client_id;
         std::string m_dst_chatroom_id;
         std::string m_main_data;
 
 public:
         MT002Data();
+        MT002Data(const int& trans_type, const std::string& d_id, const std::string& s_id, const std::string& dst_chatroom_id, const int& data_type, const std::string& content);
         ~MT002Data();
 
         //setter
@@ -82,16 +83,23 @@ public:
     };
 
 private:
-    MT002Data m_mt002_data;
-
-private:
     
-    bool extraction_trans_type(const std::string& data);
-    bool extraction_dst_client_id(const std::string& data);
-    bool extraction_src_clinet_id(const std::string& data);
-    bool extraction_dst_chatroom_id(const std::string& data);
-    bool extraction_data_type(const std::string& data);
-    bool extraction_main_data(const std::string& data);
+    int extraction_trans_type(const std::string& data);
+    std::string extraction_dst_client_id(const std::string& data) override;
+    std::string extraction_src_client_id(const std::string& data) override;
+    std::string extraction_dst_chatroom_id(const std::string& data);
+    int extraction_data_type(const std::string& data);
+    std::string extraction_main_content(const std::string& data) override;
+
+
+    bool check_validation_trans_type(const int& trans_type);
+    bool check_validation_dst_client_id(const std::string& d_id) override;
+    bool check_validation_src_client_id(const std::string& s_id) override;
+    bool check_validation_dst_chatroom_id(const std::string& d_chatroom_id);
+    bool check_validation_data_type(const int& data_type);
+    bool check_validation_main_content(const std::string& main_content) override;
+    bool check_validation_contents(const int& trans_type, const std::string& d_id, const std::string& s_id, const std::string& d_chatroom_id, const int& data_type, const std::string& main_content);
+
     bool store_receive_data();
     void print_src_recv_data(const std::string& data, const std::string& dst_ipv4_addr, int& detection_num, int& receive_result);
     std::string remove_zero_padding(std::string& ip_address);
@@ -101,13 +109,12 @@ public:
     ~MT002Receiver();
 
     bool data_extraction(const std::string& data) override;
-    const MT002Data& get_mt002_data();
-    const std::string& get_dst_id();
-    const std::string& get_src_id();
-    const int get_trans_type();
-    const std::string& get_dst_chatroom_id();
     void show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result) override;
     void show_mt002_data();
+
+    std::unique_ptr<MT002Data> create_mt002data_instance();
+    std::unique_ptr<MT002Data> create_mt002data_instance(const int& trans_type, const std::string& d_id, const std::string& s_id, const std::string& d_chatroom_id, const int& data_type, const std::string& main_content);
+    std::tuple<int, std::string, std::string, std::string, int, std::string> data_extraction_(const std::string& data);
 
 };
 
