@@ -5,7 +5,7 @@ std::tm ServerTime::time_info;
 
 ServerControlleFacade::ServerControlleFacade() : m_server_ip{ "" }
 {
-	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::DEBUG));
+	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::INFO));
 	m_socket_handler = std::make_unique<SocketHandler>();
 	this->set_server_ip(this->m_socket_handler->obtain_local_ip_addr());
 	m_firebase_auth_handler = std::make_unique<FirebaseAuthHandler>();
@@ -168,8 +168,15 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 	
 	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
 	if (receive_result == SOCKET_ERROR) {
-		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket error, server initialize client."
-			, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), m_client_handler->connected_client_list[detection_num].get_client_id()));
+		if (m_client_handler->connected_client_list[detection_num].get_client_id() == "") {
+			LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : NONE, socket error, server initialize client."
+				, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr()));
+		}
+		else {
+			LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket error, server initialize client."
+				, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), m_client_handler->connected_client_list[detection_num].get_client_id()));
+		}
+		
 		{
 			std::unique_lock <std::mutex> lock(this->m_connect_client_list_mutex);
 			m_socket_handler->disconnect_socket(m_client_handler->connected_client_list[detection_num].get_client_socket());
@@ -178,8 +185,15 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 	}
 	//receive_result == 0の場合(クライアントのソケットが切断された場合)
 	else if (receive_result == DISCONNECT_SOCKET) {
-		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, disconnected, server initialize client."
-			,m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), m_client_handler->connected_client_list[detection_num].get_client_id()));
+		if (m_client_handler->connected_client_list[detection_num].get_client_id() == "") {
+			LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : NONE, socket error, server initialize client."
+				, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr()));
+		}
+		else {
+			LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket error, server initialize client."
+				, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), m_client_handler->connected_client_list[detection_num].get_client_id()));
+		}
+
 		{
 			std::unique_lock <std::mutex> lock(this->m_connect_client_list_mutex);
 			m_socket_handler->disconnect_socket(m_client_handler->connected_client_list[detection_num].get_client_socket());
