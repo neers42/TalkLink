@@ -58,7 +58,6 @@ class MT002Receiver : public Receiver
         std::string m_dst_ip_address;
         std::string m_src_ip_address;
         std::string m_dst_chatroom_id;
-        std::string m_main_data;
 
 public:
         MT002Data();
@@ -68,18 +67,14 @@ public:
         //setter
         void set_trans_type(const int& trans_type);
         void set_data_type(const int& data_type);
-        void set_dst_client_id(const std::string& dst_client_id);
-        void set_src_client_id(const std::string& src_client_id);
         void set_dst_chatroom_id(const std::string& dst_chatroom_id);
-        void set_main_data(const std::string& main_data);
 
         //getter
         const int get_trans_type();
         const int get_data_type();
-        std::string& get_dst_client_id();
-        std::string& get_src_client_id();
         std::string& get_dst_chatroom_id();
-        std::string& get_main_data();
+
+        void print_message_contents() override;
     };
 
 private:
@@ -110,11 +105,12 @@ public:
 
     bool data_extraction(const std::string& data) override;
     void show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result) override;
+    void show_receive_info(const json& receive_json, const std::string& ip, int receive_byte) override;
     void show_mt002_data();
 
     std::unique_ptr<MT002Data> create_mt002data_instance();
     std::unique_ptr<MT002Data> create_mt002data_instance(const int& trans_type, const std::string& d_id, const std::string& s_id, const std::string& d_chatroom_id, const int& data_type, const std::string& main_content);
-    std::tuple<int, std::string, std::string, std::string, int, std::string> data_extraction_(const std::string& data);
+    std::tuple<int, std::string, std::string, std::string, int, std::string> data_extraction_(const json& receive_json);
 
 };
 

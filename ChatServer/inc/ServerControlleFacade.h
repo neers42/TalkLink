@@ -35,6 +35,7 @@ private:
 	std::mutex m_hb_connect_list_mutex;
 	std::mutex m_cout_mutex;
 	std::mutex m_mutex;
+	std::string m_server_ip;
 
 public:
 	//コンストラクタ
@@ -49,20 +50,21 @@ public:
 	
 	void setting_select_info_to_client_msg();
 
-	void setting_select_info_to_client_hb();
-
 	void show_server_running_info();
 
 	bool accept_client_socket_for_msg_process();
+
+	const std::string& get_server_ip();
+	void set_server_ip(const std::string& ip);
 
 
 	void message_receive_process(int detection_num);
 
 	void mt000_process(std::string& receive_data, int monitor_result);
 
-	void mt001_process(std::string& receive_data, int& monitor_result);
+	void mt001_process(const json& receive_json, int& monitor_result);
 
-	void mt002_process(std::string& receive_data, int& receive_result);
+	void mt002_process(const json& receive_json, int& receive_result);
 
 	void heart_beat_send_process();
 
@@ -72,8 +74,8 @@ public:
 
 	
 private:
-	std::string sign_up_process(const std::string& mail_addr, const std::string& password);
-	std::string sign_in_process(const std::string& mail_addr, const std::string& password);
+	std::string sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip);
+	std::string sign_in_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id);
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 
 };

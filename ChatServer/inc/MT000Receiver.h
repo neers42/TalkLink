@@ -13,6 +13,7 @@ class MT000Receiver : public Receiver
 		explicit MT000Data();
 		explicit MT000Data(const std::string& id);
 		~MT000Data();
+		void print_message_contents() override;
 
 	};
 

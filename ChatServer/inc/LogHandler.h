@@ -14,15 +14,36 @@
 
 class LogHandler
 {
-	enum class LogLevel { DEBUG = 10, INFO = 20, WARNING = 30, PROGRAM_ERROR = 40, CRITICAL = 50 };
+	
 	static std::mutex cout_mutex;
-	uint8_t log_level;
+	int log_level;
 
-public:
 	LogHandler();
 	~LogHandler();
-	uint8_t get_log_level() { return this->log_level; }
-	void set_log_level(LogHandler::LogLevel level) { this->log_level = static_cast<uint8_t>(level); }
+
+
+public:
+	enum class LogLevel
+	{	DEBUG = 10,
+		INFO = 20,
+		WARNING = 30,
+		PROGRAM_ERROR = 40,
+		CRITICAL = 50
+	};
+	
+	static LogHandler& get_instance() {
+		static LogHandler logger;
+		return logger;
+	}
+
+	//コピーコンストラクタを削除
+	LogHandler(const LogHandler&) = delete;
+
+	//代入演算子を削除
+	LogHandler& operator=(const LogHandler&) = delete;
+
+	int get_log_level() { return this->log_level; }
+	void set_log_level(int level) { this->log_level = level;}
 
 	enum class LogType {INFO, SERVER_ERROR, RECEIVE, SEND, SIGN_UP, SIGN_IN, SIGN_OUT, DEBUG_INFO};
 	

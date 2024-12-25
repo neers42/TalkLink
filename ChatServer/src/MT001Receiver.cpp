@@ -13,7 +13,13 @@ MT001Receiver::~MT001Receiver()
 
 void MT001Receiver::show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result)
 {
-	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("\033[33mMT001\033[m received from client list [%d] (CLIENT(IP:%s) Ë SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
+	LogHandler::get_instance().logging_info(StringFormat("\033[33mMT001\033[m received from client[%d](IP address : %s) Ë SERVER).", detect_num, ipv4_addr, receive_result));
+}
+
+void MT001Receiver::show_receive_info(const json& receive_json, const std::string& ip, int receive_byte)
+{
+	LogHandler::get_instance().logging_info(StringFormat("%s, \033[33mMT001\033[m message receive, success, sever received %d bytes message from client.\nReceived JSON : %s"
+		, ip, receive_byte, receive_json.dump(4)));
 }
 
 void MT001Receiver::show_mt001_data(const MT001Data& mt001)
@@ -38,6 +44,59 @@ MT001Receiver::MT001Data::MT001Data(): m_sign_type{SIGN_TYPE::sign_up}, m_auth_t
 MT001Receiver::MT001Data::~MT001Data()
 {
 	
+}
+
+MT001Receiver::MT001Data::MT001Data(const uint8_t& sign_type, const uint8_t& auth_type, const std::string& name, const std::string& mail_addr, const std::string& password)
+	: m_client_name{name}, m_client_mail_addr{mail_addr}, m_client_password{password}
+{
+	switch (sign_type)
+	{
+	case 0:
+		m_sign_type = SIGN_TYPE::sign_up;
+		break;
+
+	case 1:
+		m_sign_type = SIGN_TYPE::sign_in;
+		break;
+
+	case 2:
+		m_sign_type = SIGN_TYPE::sign_out;
+		break;
+
+	default:
+		break;
+	}
+
+	switch (auth_type)
+	{
+	case 0:
+		m_auth_type = AUTH_TYPE::normal_auth;
+		break;
+
+	case 1:
+		m_auth_type = AUTH_TYPE::google_auth;
+		break;
+
+	case 2:
+		m_auth_type = AUTH_TYPE::facebook_auth;
+		break;
+
+	case 3:
+		m_auth_type = AUTH_TYPE::twitter_auth;
+		break;
+
+	case 4:
+		m_auth_type = AUTH_TYPE::microsoft_auth;
+		break;
+
+	case 5:
+		m_auth_type = AUTH_TYPE::yahoo_auth;
+		break;
+
+	default:
+		break;
+	}
+	time_stamp = ServerTime::get_current_time();
 }
 
 MT001Receiver::MT001Data::MT001Data(const uint8_t& sign_type
@@ -240,11 +299,6 @@ void MT001Receiver::MT001Data::set_auth_type(const uint8_t& auth_type)
 	}
 }
 
-void MT001Receiver::MT001Data::set_client_id(const std::string& id)
-{
-	this->m_client_id = id;
-}
-
 void MT001Receiver::MT001Data::set_client_name_byte_size(const uint8_t& name_byte_size)
 {
 	this->m_client_name_byte_size = name_byte_size;
@@ -273,6 +327,11 @@ void MT001Receiver::MT001Data::set_client_password_byte_size(const uint8_t& pass
 void MT001Receiver::MT001Data::set_client_password(const std::string& password)
 {
 	this->m_client_password = password;
+}
+
+void MT001Receiver::MT001Data::print_message_contents()
+{
+
 }
 
 
@@ -557,6 +616,13 @@ std::unique_ptr<MT001Receiver::MT001Data> MT001Receiver::create_mt001data_instan
 	return std::unique_ptr<MT001Data>();
 }
 
+std::unique_ptr<MT001Receiver::MT001Data> MT001Receiver::create_mt001data_instance(const uint8_t& sign_type, const uint8_t& auth_type, std::string& name, const std::string& mail_addr, const std::string& password)
+{
+	std::unique_ptr<MT001Data> new_mt001;
+	new_mt001 = std::make_unique<MT001Data>(sign_type, auth_type, name, mail_addr, password);
+	return new_mt001;
+}
+
 std::unique_ptr<MT001Receiver::MT001Data> MT001Receiver::create_mt001data_instance(const uint8_t& sign_type, const uint8_t& auth_type, const uint8_t& name_byte_size, std::string& name, const uint8_t& mail_addr_byte_size, const std::string& mail_addr, const uint8_t& password_byte_size, const std::string& password)
 {
 	std::unique_ptr<MT001Data> new_mt001;
@@ -593,22 +659,30 @@ bool MT001Receiver::data_extraction(const std::string& data, MT001Data& mt001)
 
 }
 
-std::tuple<uint8_t, uint8_t, uint8_t, std::string, uint8_t, std::string, uint8_t, std::string> MT001Receiver::data_extraction_(const std::string& data)
+std::tuple<uint8_t, uint8_t, std::string, std::string, std::string> MT001Receiver::data_extraction_(const json& receive_json)
 {
-	uint8_t sign_type = this->extraction_sign_type_(data);
-	uint8_t auth_type = this->extraction_auth_type_(data);
-	uint8_t client_name_byte_size = this->extraction_client_name_byte_size_(data);
-	std::string client_name = this->extraction_client_name_(data, client_name_byte_size);
-	uint8_t client_mail_addr_byte_size = this->extraction_client_mail_addr_byte_size_(data, client_name_byte_size);
-	std::string client_mail_addr = this->extraction_client_mail_addr_(data, client_name_byte_size, client_mail_addr_byte_size);
-	uint8_t client_password_byte_size = this->extraction_client_password_byte_size_(data, client_name_byte_size, client_mail_addr_byte_size);
-	std::string client_password = this->extraction_client_password_(data, client_name_byte_size, client_mail_addr_byte_size, client_password_byte_size);
+	//auto receive_json = json::parse(receive_json);
+	uint8_t sign_type = receive_json["sign_type"];
+	uint8_t auth_type = receive_json["auth_type"];
+	std::string client_name = receive_json["name"];
+	std::string client_mail_addr = receive_json["mail_address"];
+	std::string client_password = receive_json["password"];
 
-	if (check_validation_contents(sign_type, auth_type, client_name_byte_size, client_name,
-		client_mail_addr_byte_size, client_mail_addr, client_password_byte_size, client_password) == false) {
-		return std::make_tuple(3, 6, 0, "", 0, "", 0, "");
-	}
-	return std::make_tuple(sign_type, auth_type, client_name_byte_size, client_name, client_mail_addr_byte_size, client_mail_addr, client_password_byte_size, client_password);
+
+	//uint8_t sign_type = this->extraction_sign_type_(data);
+	//uint8_t auth_type = this->extraction_auth_type_(data);
+	//uint8_t client_name_byte_size = this->extraction_client_name_byte_size_(data);
+	//std::string client_name = this->extraction_client_name_(data, client_name_byte_size);
+	//uint8_t client_mail_addr_byte_size = this->extraction_client_mail_addr_byte_size_(data, client_name_byte_size);
+	//std::string client_mail_addr = this->extraction_client_mail_addr_(data, client_name_byte_size, client_mail_addr_byte_size);
+	//uint8_t client_password_byte_size = this->extraction_client_password_byte_size_(data, client_name_byte_size, client_mail_addr_byte_size);
+	//std::string client_password = this->extraction_client_password_(data, client_name_byte_size, client_mail_addr_byte_size, client_password_byte_size);
+
+	//if (check_validation_contents(sign_type, auth_type, client_name_byte_size, client_name,
+	//	client_mail_addr_byte_size, client_mail_addr, client_password_byte_size, client_password) == false) {
+	//	return std::make_tuple(3, 6, 0, "", 0, "", 0, "");
+	//}
+	return std::make_tuple(sign_type, auth_type, client_name, client_mail_addr, client_password);
 }
 
 

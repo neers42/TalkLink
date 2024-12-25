@@ -20,7 +20,8 @@ bool ChatroomHandler::ChatRoom::add_client_chatroom(const ClientHandler::Client&
 		THROW_APP_EXCEPTION("Failed to allocate memory while adding a client to a chat room.");
 	}
 	catch (const exception::ExceptionBase& ex) {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		LogHandler::get_instance().logging_error(ex.what_for_str());
+		//LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 	

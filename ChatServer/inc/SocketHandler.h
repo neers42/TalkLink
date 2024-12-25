@@ -33,21 +33,17 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	//リッスンソケット生成用のパラメータ
-	struct addrinfo *m_result_msg = NULL, m_param_msg, m_multicast_tx_param, m_bloadcast_tx_param, *m_result_multicast;
-	struct addrinfo *m_result_hb = NULL, m_param_hb;
+	struct addrinfo *m_result_tcp = NULL, m_param_tcp, m_multicast_tx_param, m_bloadcast_tx_param, *m_result_multicast = NULL, *m_result_bloadcast = NULL;
 
 	WSADATA m_wsa_data;
 
-	fd_set m_fds_msg, m_fd_read_msg;
-	fd_set m_fds_hb, m_fd_read_hb;
+	fd_set m_fds, m_fd_read;
 
 	timeval m_timeout;
 
 	//リッスンソケット
-	SOCKET m_tcp_listen_for_msg_socket;
-
-	SOCKET m_tcp_listen_for_hb_socket;
-
+	SOCKET m_tcp_listen_socket;
+	
 	//UDPブロードキャスト送信用ソケット
 	SOCKET m_udp_bloadcast_tx_socket;
 
@@ -98,23 +94,21 @@ private:
 	//Listenソケットを生成する
 	bool generate_tcp_listen_socket_msg();
 
-	bool generate_tcp_listen_socket_heart_beat();
-
 	bool trans_flags(const std::string& flag_str, struct addrinfo* param);
 	bool trans_family(const std::string& family_str, struct addrinfo* param);
 	bool trans_socktype(const std::string& socktype_str, struct addrinfo* param);
 	bool trans_protocol(const std::string& protocol_str, struct addrinfo* param);
 	bool trans_protocol(const int protocol_int, struct addrinfo* param);
 
-	bool setting_tcp_msg_flags(ini::IniFile socket_param_setting_ini);
+	bool setting_tcp_flags(ini::IniFile socket_param_setting_ini);
 
-	bool setting_tcp_msg_family(ini::IniFile socket_param_setting_ini);
+	bool setting_tcp_family(ini::IniFile socket_param_setting_ini);
 
-	bool setting_tcp_msg_socktype(ini::IniFile socket_param_setting_ini);
+	bool setting_tcp_socktype(ini::IniFile socket_param_setting_ini);
 
-	bool setting_tcp_msg_protocol(ini::IniFile socket_param_setting_ini);
+	bool setting_tcp_protocol(ini::IniFile socket_param_setting_ini);
 
-	bool setting_tcp_msg_port(ini::IniFile socket_param_setting_ini);
+	bool setting_tcp_port(ini::IniFile socket_param_setting_ini);
 
 	bool setting_multicast_tx_sock_af(ini::IniFile socket_param_setting_ini);
 
@@ -144,33 +138,23 @@ public:
 	~SocketHandler();
 
 	
-	SOCKET get_listen_socket_for_msg() {
-		return m_tcp_listen_for_msg_socket;
-	}
-
-	SOCKET get_listen_socket_for_hb() {
-		return m_tcp_listen_for_hb_socket;
+	SOCKET get_listen_socket() {
+		return m_tcp_listen_socket;
 	}
 
 	SOCKET get_udp_multicast_tx_socket() {
 		return m_udp_multicast_tx_socket;
 	}
 
-	fd_set& get_fd_read_msg() {
-		return m_fd_read_msg;
+	fd_set& get_fd_read() {
+		return m_fd_read;
 	}
 
-	fd_set& get_fd_read_hb() {
-		return m_fd_read_hb;
+
+	fd_set& get_fds(){
+		return m_fds;
 	}
 
-	fd_set& get_fds_msg(){
-		return m_fds_msg;
-	}
-
-	fd_set& get_fds_hb() {
-		return m_fds_hb;
-	}
 	
 	
 
@@ -180,18 +164,18 @@ public:
 
 
 	//ファイルディスクリプタに変化がないか監視する
-	int monitor_descriptor_for_message(const std::vector<ClientHandler::Client>& client_list);
+	int monitor_socket_descriptor(const std::vector<ClientHandler::Client>& client_list);
 
 
 	//メッセージ用のリッスンソケットをアクティブにする
-	bool open_tcp_listen_socket_for_message();
+	bool open_tcp_listen_socket();
 
 
 	//クライアントのIPアドレスを抽出する
 	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);
 
 	//accept処理(メッセージ用のソケット)
-	std::tuple<SOCKET, sockaddr_in> accept_client_socket_msg(socklen_t client_sockaddr_in_length);
+	std::tuple<SOCKET, sockaddr_in> accept_client_socket(socklen_t client_sockaddr_in_length);
 
 	
 	//接続中のクライアントソケットをクローズする
@@ -201,9 +185,8 @@ public:
 	bool check_valid_socket(SOCKET request_socket);
 
 	//select関数の初期化
-	void setting_select_info_to_listen_socket_for_msg();
+	void setting_select_info_to_listen_socket();
 
-	void setting_select_info_to_listen_socket_for_hb();
 
 	void bind_select_info_to_socket(const SOCKET& socket, fd_set* fd);
 	
@@ -211,7 +194,7 @@ public:
 
 	void copy_fd_read_to_fds(fd_set* fds, fd_set* fd);
 
-	bool obtain_local_ip_addr();
+	std::string  obtain_local_ip_addr();
 
 	bool generate_udp_multicast_tx_socket();
 

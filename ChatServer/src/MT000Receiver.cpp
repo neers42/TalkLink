@@ -2,17 +2,22 @@
 
 MT000Receiver::MT000Data::MT000Data()
 {
-	s_client_id = "";
+	src_client_id = "";
 }
 
 MT000Receiver::MT000Data::MT000Data(const std::string& id)
 {
-	s_client_id = id;
+	src_client_id = id;
 }
 
 MT000Receiver::MT000Data::~MT000Data()
 {
 
+}
+
+void MT000Receiver::MT000Data::print_message_contents()
+{
+	LogHandler::get_instance().logging_debug(StringFormat("%s", this->main_content));
 }
 
 

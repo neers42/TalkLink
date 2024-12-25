@@ -8,7 +8,7 @@
 #include "StringFormat.h"
 #include "ServerTime.h"
 
-#define DEBUG
+//#define DEBUG
 
 class ChatroomHandler
 {

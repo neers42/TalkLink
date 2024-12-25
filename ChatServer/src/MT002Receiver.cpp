@@ -295,10 +295,11 @@ std::string MT002Receiver::remove_zero_padding(std::string& ip_address)
 }
 
 MT002Receiver::MT002Data::MT002Data():m_trans_type{trans_type::unicast}, m_data_type{data_type::message}
-, m_dst_ip_address{""}, m_src_ip_address{""}, m_dst_chatroom_id{""}, m_main_data{""}
+, m_dst_ip_address{""}, m_src_ip_address{""}, m_dst_chatroom_id{""}
 {
-	this->d_client_id = "";
-	this->s_client_id = "";
+	this->dst_client_id = "";
+	this->src_client_id = "";
+	this->main_content = "";
 }
 
 MT002Receiver::MT002Data::MT002Data(const int& trans_type, const std::string& d_id, const std::string& s_id, const std::string& dst_chatroom_id, const int& data_type, const std::string& content)
@@ -322,8 +323,8 @@ MT002Receiver::MT002Data::MT002Data(const int& trans_type, const std::string& d_
 		break;
 	}
 
-	this->d_client_id = d_id;
-	this->s_client_id = s_id;
+	this->dst_client_id = d_id;
+	this->src_client_id = s_id;
 
 	switch (data_type)
 	{
@@ -393,26 +394,11 @@ void MT002Receiver::MT002Data::set_data_type(const int& data_type)
 	}
 }
 
-
-void MT002Receiver::MT002Data::set_dst_client_id(const std::string& dst_client_id)
-{
-	this->d_client_id = dst_client_id;
-}
-
-void MT002Receiver::MT002Data::set_src_client_id(const std::string& src_client_id)
-{
-	this->s_client_id = src_client_id;
-}
-
 void MT002Receiver::MT002Data::set_dst_chatroom_id(const std::string& dst_chatroom_id)
 {
 	this->m_dst_chatroom_id = dst_chatroom_id;
 }
 
-void MT002Receiver::MT002Data::set_main_data(const std::string& main_data)
-{
-	this->main_content = main_data;
-}
 
 const int MT002Receiver::MT002Data::get_trans_type()
 {
@@ -457,24 +443,21 @@ const int MT002Receiver::MT002Data::get_data_type()
 }
 
 
-std::string& MT002Receiver::MT002Data::get_dst_client_id()
-{
-	return this->d_client_id;
-}
-
-std::string& MT002Receiver::MT002Data::get_src_client_id()
-{
-	return this->s_client_id;
-}
-
 std::string& MT002Receiver::MT002Data::get_dst_chatroom_id()
 {
 	return this->m_dst_chatroom_id;
 }
 
-std::string& MT002Receiver::MT002Data::get_main_data()
+
+void MT002Receiver::MT002Data::print_message_contents()
 {
-	return this->main_content;
+	LogHandler::get_instance().logging_debug(StringFormat("MT002 Contents"));
+	LogHandler::get_instance().logging_debug(StringFormat("Transport Type(0: unicast 1: multicast, 2:bloadcast) : %d", this->get_trans_type()));
+	LogHandler::get_instance().logging_debug(StringFormat("Dst client id : %s", this->get_src_client_id()));
+	LogHandler::get_instance().logging_debug(StringFormat("Source Client ID : %s", this->get_src_client_id()));
+	LogHandler::get_instance().logging_debug(StringFormat("Dist Chatroom ID : %s", this->get_dst_chatroom_id()));
+	LogHandler::get_instance().logging_debug(StringFormat("Data Type(0: message 1: image 2: video 3: contact_details) : %d", this->get_data_type()));
+	LogHandler::get_instance().logging_debug(StringFormat("Main Content : %s", this->get_main_content()));
 }
 
 
@@ -483,6 +466,12 @@ std::string& MT002Receiver::MT002Data::get_main_data()
 void MT002Receiver::show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result)
 {
 	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("\033[33mMT002\033[m received from client list [%d] (CLIENT(IP:%s) ÅÀ SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
+}
+
+void MT002Receiver::show_receive_info(const json& receive_json, const std::string& ip, int receive_byte)
+{
+	LogHandler::get_instance().logging_info(StringFormat("%s, \033[33mMT002\033[m message receive, success, sever received %d bytes message from client.\nReceived JSON : %s"
+		, ip, receive_byte, receive_json.dump(4)));
 }
 
 void MT002Receiver::show_mt002_data()
@@ -507,14 +496,22 @@ std::unique_ptr<MT002Receiver::MT002Data> MT002Receiver::create_mt002data_instan
 	return new_mt002;
 }
 
-std::tuple<int, std::string, std::string, std::string, int, std::string> MT002Receiver::data_extraction_(const std::string& data)
+std::tuple<int, std::string, std::string, std::string, int, std::string> MT002Receiver::data_extraction_(const json& receive_json)
 {
-	int trans_type = this->extraction_trans_type(data);
-	std::string dst_client_id = extraction_dst_client_id(data);
-	std::string src_client_id = extraction_src_client_id(data);
-	std::string dst_chatroom_id = extraction_dst_chatroom_id(data);
-	int data_type = extraction_data_type(data);
-	std::string main_content = extraction_main_content(data);
+	int trans_type = receive_json["trans_type"];
+	std::string dst_client_id = receive_json["dst_client_id"];
+	std::string src_client_id = receive_json["src_client_id"];
+	std::string dst_chatroom_id = receive_json["dst_chatroom_id"];
+	int data_type = receive_json["content_type"];
+	std::string main_content = receive_json["main_content"];
+
+
+	//int trans_type = this->extraction_trans_type(data);
+	//std::string dst_client_id = extraction_dst_client_id(data);
+	//std::string src_client_id = extraction_src_client_id(data);
+	//std::string dst_chatroom_id = extraction_dst_chatroom_id(data);
+	//int data_type = extraction_data_type(data);
+	//std::string main_content = extraction_main_content(data);
 
 	if (check_validation_contents(trans_type, dst_client_id, src_client_id, dst_chatroom_id, data_type, main_content) == false){
 		return std::make_tuple(3, "", "", "", 4, "");

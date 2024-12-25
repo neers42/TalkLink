@@ -6,12 +6,12 @@
 #include <mutex>
 #include "stdlib.h"
 #include "LogHandler.h"
+#include "nlohmann/json.hpp"
 #include <thread>
 #include <chrono>
 #include <memory>
 
-//std::mutex cout_mtx;
-
+using json = nlohmann::json;
 
 
 #endif // !COMMON_H_

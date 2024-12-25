@@ -69,7 +69,6 @@ class MT001Receiver : public Receiver
 		//getter
 		const int get_sign_type();
 		const int get_auth_type();
-		const std::string get_client_id();
 		const uint8_t get_client_name_byte_size();
 		const std::string& get_client_name();
 		const uint8_t get_client_mail_addr_byte_size();
@@ -80,7 +79,6 @@ class MT001Receiver : public Receiver
 		//setter
 		void set_sign_type(const uint8_t& sign_type);
 		void set_auth_type(const uint8_t& auth_type);
-		void set_client_id(const std::string& id);
 		void set_client_name_byte_size(const uint8_t& name_byte_size);
 		void set_client_name(const std::string& name);
 		void set_client_mail_addr_byte_size(const uint8_t& mail_addr_byte_size);
@@ -88,8 +86,14 @@ class MT001Receiver : public Receiver
 		void set_client_password_byte_size(const uint8_t& password_byte_size);
 		void set_client_password(const std::string& password);
 		
+		void print_message_contents() override;
+
 		explicit MT001Data();
 		~MT001Data();
+		explicit MT001Data(const uint8_t& sign_type, const uint8_t& auth_type
+			, const std::string& name
+			, const std::string& mail_addr
+			, const std::string& password);
 		explicit MT001Data(const uint8_t& sign_type, const uint8_t& auth_type
 			, const uint8_t name_byte_size, const std::string& name
 			, const uint8_t mail_addr_byte_size, const std::string& mail_addr
@@ -126,14 +130,19 @@ public:
     ~MT001Receiver();
 
 	void show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result) override;
+	void show_receive_info(const json& receive_json, const std::string& ip, int receive_byte) override;
 	void show_mt001_data(const MT001Data& mt001);
 	std::unique_ptr<MT001Data> create_mt001data_instance();
+	std::unique_ptr<MT001Data> create_mt001data_instance(const uint8_t& sign_type, const uint8_t& auth_type
+		, std::string& name
+		, const std::string& mail_addr
+		, const std::string& password);
 	std::unique_ptr<MT001Data> create_mt001data_instance(const uint8_t& sign_type
 		, const uint8_t& auth_type, const uint8_t& name_byte_size, std::string& name
 		, const uint8_t& mail_addr_byte_size, const std::string& mail_addr
 		, const uint8_t& password_byte_size, const std::string& password);
 	bool data_extraction(const std::string& data, MT001Data& mt001);
-	std::tuple<uint8_t, uint8_t, uint8_t, std::string, uint8_t, std::string, uint8_t, std::string> data_extraction_(const std::string& data);
+	std::tuple<uint8_t, uint8_t, std::string, std::string, std::string> data_extraction_(const json& receive_json);
 
 };
 

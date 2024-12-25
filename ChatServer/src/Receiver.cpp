@@ -14,7 +14,7 @@ Receiver::Message::Message() {
 }
 
 Receiver::Message::Message(std::string& s_id, std::string& d_id, std::string& data, std::string& time_stamp, std::string& id)
-	: s_client_id{s_id}, d_client_id{d_id}, main_content{data}, time_stamp{time_stamp}, message_id{id}
+	: src_client_id{s_id}, dst_client_id{d_id}, main_content{data}, time_stamp{time_stamp}, message_id{id}
 {
 }
 
@@ -24,17 +24,17 @@ Receiver::Message::~Message() {
 }
 
 
-std::tuple<int32_t, std::string, std::string> Receiver::receive_data(const SOCKET& receive_socket, int client_list_num)
+std::tuple<int32_t, json> Receiver::receive_data(const SOCKET& receive_socket, int client_num)
 {
+	char buffer[MAX_RECEIVE_MESSAGE_LEN] = { 0 };
+	int bytes_received;
+	json received_json;
 	try
 	{
-		//暗号化されたデータを受信
-		char recv_data[MAX_RECEIVE_MESSAGE_LEN];
-		memset(recv_data, '\0', sizeof(recv_data));
-		int receive_result = recv(receive_socket, recv_data, MAX_RECEIVE_MESSAGE_LEN, 0);
+		bytes_received = recv(receive_socket, buffer, sizeof(buffer), 0);
 		std::string message_time_stamp = ServerTime::get_current_time();
 		//recv結果がSOCKET_ERRORの場合
-		if (receive_result == SOCKET_ERROR) {
+		if (bytes_received == SOCKET_ERROR) {
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -92,22 +92,23 @@ std::tuple<int32_t, std::string, std::string> Receiver::receive_data(const SOCKE
 
 		}
 		//接続が閉じられた際の処理
-		else if (receive_result == 0) {
-			return std::make_tuple(receive_result, "", message_time_stamp);
+		else if (bytes_received == 0) {
+			return std::make_tuple(bytes_received, json());
 		}
 		//データ受信が正常に実施された際の処理
-		else{
-			return std::make_tuple(receive_result, std::string(recv_data), message_time_stamp);
+		else {
+			std::vector<uint8_t> received_data(buffer, buffer + bytes_received);
+			json received_json = json::from_msgpack(received_data);
+			return std::make_tuple(bytes_received, received_json);
 		}
-	
+
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		return std::make_tuple(SOCKET_ERROR, "", "");
+		LogHandler::get_instance().logging_error(StringFormat("%s", ex.what_for_str()));
+		return std::make_tuple(bytes_received, json());
 
 	}
-
 }
 bool Receiver::data_extraction(const std::string& data)
 {
@@ -116,6 +117,12 @@ bool Receiver::data_extraction(const std::string& data)
 void Receiver::show_receive_info(const std::string& ipv4_addr, int& detection_num, int& receive_result)
 {
 	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("%d byte message was received from client list[%d](IP Address : %s)", receive_result, detection_num, ipv4_addr));
+}
+
+void Receiver::show_receive_info(const json& receive_json, const std::string& ip, int receive_byte)
+{
+	LogHandler::get_instance().logging_info(StringFormat("%s, message receive, success, sever received %d bytes message from client.\nReceived JSON : %s"
+	,ip, receive_byte, receive_json.dump(4)));
 }
 
 std::string Receiver::extraction_src_client_id(const std::string& data)

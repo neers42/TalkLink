@@ -27,13 +27,14 @@ std::vector<SOCKET> Sender::send_heart_beat_message(const std::vector<SOCKET> so
 }
 
 
-bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data, const int send_data_length, const std::string& dst_client_id, const std::string& src_client_id)
+bool Sender::tcp_unicast_data(const SOCKET socket, const json& send_json_data, const int send_data_length, const std::string& dst_client_id, const std::string& src_client_id)
 {
 	//TODO
 	//送信失敗したときに、失敗したsocketの番号を返すように改修する
 	try
 	{
-		int send_result = send(socket, send_data.c_str(), send_data_length, 0);
+		std::vector<uint8_t> send_binary_data = json::to_msgpack(send_json_data);
+		int send_result = send(socket, reinterpret_cast<const char*>(send_binary_data.data()), send_data_length, 0);
 		if (send_result ==SOCKET_ERROR) {
 			switch (WSAGetLastError())
 			{
@@ -97,26 +98,27 @@ bool Sender::tcp_unicast_data(const SOCKET socket, const std::string& send_data,
 			}
 		}
 		else {
-			LogHandler::logging(LogHandler::LogType::SEND, std::cout, StringFormat("The server sent a message to the client. (src id : %s  =>  dst id : %s)", src_client_id, dst_client_id));
+			LogHandler::get_instance().logging_info(StringFormat("send message, success, server send message to client(src id : %s, dst id : %s).", src_client_id, dst_client_id));
 			return true;
 		}
 
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		LogHandler::get_instance().logging_error(StringFormat("%s", ex.what_for_str()));
 	}
 
 	return false;
 }
 
-std::vector<SOCKET> Sender::tcp_multicast_data(const std::vector<SOCKET>& send_sockets, const std::string& send_data, const int send_data_length)
+std::vector<SOCKET> Sender::tcp_multicast_data(const std::vector<SOCKET>& send_sockets, const json& send_json_data, const int send_data_length)
 {
 	std::vector<SOCKET> fail_send_sockets;
 	for (auto&& socket : send_sockets) {
 		try
 		{
-			int send_result = send(socket, send_data.c_str(), send_data_length, 0);
+			std::vector<uint8_t> send_binary_data = json::to_msgpack(send_json_data);
+			int send_result = send(socket, reinterpret_cast<const char*>(send_binary_data.data()), send_data_length, 0);
 			if (send_result == SOCKET_ERROR) {
 				switch (WSAGetLastError())
 				{

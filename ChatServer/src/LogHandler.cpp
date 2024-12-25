@@ -1,8 +1,9 @@
 #include "LogHandler.h"
 std::mutex LogHandler::cout_mutex;
 
-LogHandler::LogHandler()
+LogHandler::LogHandler() : log_level{10}
 {
+
 }
 
 LogHandler::~LogHandler()
@@ -55,19 +56,19 @@ void LogHandler::logging(LogLevel level, std::ostream& os, const std::string& lo
 		switch (level)
 		{
 		case LogHandler::LogLevel::DEBUG:
-			os << StringFormat("[%s][DEBUG]", ServerTime::get_current_time()) << log << std::endl;
+			os << StringFormat("[DEBUG] %s, thread id : %d, %s", ServerTime::get_current_time(), std::this_thread::get_id(), log) << std::endl;
 			break;
 		case LogHandler::LogLevel::INFO:
-			os << StringFormat("[%s][INFO]", ServerTime::get_current_time()) << log << std::endl;
+			os << StringFormat("[INFO] %s, thread id : %d ,%s", ServerTime::get_current_time(), std::this_thread::get_id(), log) << std::endl;
 			break;
 		case LogHandler::LogLevel::WARNING:
-			os << StringFormat("[%s][WARNING]", ServerTime::get_current_time()) << log << std::endl;
+			os << StringFormat("\033[33m[WARNING] %s, thread id : %d, %s\033[m", ServerTime::get_current_time(), std::this_thread::get_id(), log) << std::endl;
 			break;
 		case LogHandler::LogLevel::PROGRAM_ERROR:
-			os << StringFormat("[%s][ERROR]", ServerTime::get_current_time()) << log << std::endl;
+			os << StringFormat("\033[31m[ERROR] %s, thread id : %d, %s\033[m", ServerTime::get_current_time(), std::this_thread::get_id(), log) << std::endl;
 			break;
 		case LogHandler::LogLevel::CRITICAL:
-			os << StringFormat("[%s][CRITICAL]", ServerTime::get_current_time()) << log << std::endl;
+			os << StringFormat("\033[31m[CRITICAL] %s, thread id : %d, %s\033[m", ServerTime::get_current_time(), std::this_thread::get_id(), log) << std::endl;
 			break;
 		default:
 			break;
@@ -78,7 +79,7 @@ void LogHandler::logging(LogLevel level, std::ostream& os, const std::string& lo
 void LogHandler::logging_debug(const std::string& debug_message)
 {
 	//ログレベルがDEBUG以上に設定されていた場合はログを出力する。
-	if (this->log_level >= static_cast<uint8_t>(LogLevel::DEBUG)) {
+	if (this->log_level <= static_cast<uint8_t>(LogLevel::DEBUG)) {
 		LogHandler::logging(LogLevel::DEBUG, std::cout, debug_message);
 	}
 	else {
@@ -89,7 +90,7 @@ void LogHandler::logging_debug(const std::string& debug_message)
 void LogHandler::logging_info(const std::string& info_message)
 {
 	//ログレベルがDEBUG以上に設定されていた場合はログを出力する。
-	if (this->log_level >= static_cast<uint8_t>(LogLevel::INFO)) {
+	if (this->log_level <= static_cast<uint8_t>(LogLevel::INFO)) {
 		LogHandler::logging(LogLevel::INFO, std::cout, info_message);
 	}
 	else {
@@ -100,7 +101,7 @@ void LogHandler::logging_info(const std::string& info_message)
 void LogHandler::logging_warning(const std::string& warning_message)
 {
 	//ログレベルがINFO以上に設定されていた場合はログを出力する。
-	if (this->log_level >= static_cast<uint8_t>(LogLevel::WARNING)) {
+	if (this->log_level <= static_cast<uint8_t>(LogLevel::WARNING)) {
 		LogHandler::logging(LogLevel::WARNING, std::cout, warning_message);
 	}
 	else {
@@ -111,8 +112,8 @@ void LogHandler::logging_warning(const std::string& warning_message)
 void LogHandler::logging_error(const std::string& error_message)
 {
 	//ログレベルがPROGRAM_ERROR以上に設定されていた場合はログを出力する。
-	if (this->log_level >= static_cast<uint8_t>(LogLevel::PROGRAM_ERROR)) {
-		LogHandler::logging(LogLevel::PROGRAM_ERROR, std::cout, error_message);
+	if (this->log_level <= static_cast<uint8_t>(LogLevel::PROGRAM_ERROR)) {
+		LogHandler::logging(LogLevel::PROGRAM_ERROR, std::cerr, error_message);
 	}
 	else {
 		//ログレベルがPROGRAM_ERROR以上に設定されていないと何も出力しない。
@@ -122,8 +123,8 @@ void LogHandler::logging_error(const std::string& error_message)
 void LogHandler::logging_critical(const std::string& critical_message)
 {
 	//ログレベルがCRITICAL以上に設定されていた場合はログを出力する。
-	if (this->log_level >= static_cast<uint8_t>(LogLevel::CRITICAL)) {
-		LogHandler::logging(LogLevel::DEBUG, std::cout, critical_message);
+	if (this->log_level <= static_cast<uint8_t>(LogLevel::CRITICAL)) {
+		LogHandler::logging(LogLevel::DEBUG, std::cerr, critical_message);
 	}
 	else {
 		//ログレベルがCRITICAL以上に設定されていないと何も出力しない。

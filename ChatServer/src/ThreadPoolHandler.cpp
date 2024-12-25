@@ -4,9 +4,8 @@ ThreadPoolHandler::ThreadPoolHandler(size_t threads) : stop(false)
 {
     for (size_t i = 0; i < threads; ++i) {
         workers.emplace_back([this] {process_task(); });
-        LogHandler::logging(LogHandler::LogType::INFO, std::cout, StringFormat("Thread ID : %d", workers[i].get_id()));
     }
-    LogHandler::logging(LogHandler::LogType::INFO, std::cout, StringFormat("Replicating %d threads...\033[32m[OK]\033[m", threads));
+    LogHandler::get_instance().logging_info(StringFormat("thread, success, server replicating threads[%d].", threads));
 }
 
 ThreadPoolHandler::~ThreadPoolHandler()
@@ -44,6 +43,7 @@ void ThreadPoolHandler::process_task()
 
 void ThreadPoolHandler::monitor_worker()
 {
+    LogHandler::get_instance().logging_debug("Monitoring tasks.");
     while (true) {
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
