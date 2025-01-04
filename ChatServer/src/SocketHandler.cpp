@@ -159,7 +159,7 @@ SocketHandler::~SocketHandler()
 //設定値の読み込み
 bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass)
 {
-
+	BOOL yes = 1;
 	//iniファイルの読み込み
 	ini::IniFile socket_param_setting_ini;
 	try
@@ -186,6 +186,9 @@ bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass
 	if (this->setting_tcp_port(socket_param_setting_ini) == false) {
 		return false;
 	}
+	//tcpサーバがTIME WAIT状態にならないようにsetsockoptで設定する
+	//TIME_WAIT状態のポートが存在していてもbind可能となる
+	setsockopt(m_tcp_listen_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes));
 	return true;
 }
 
