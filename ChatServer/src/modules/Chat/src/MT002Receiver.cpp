@@ -12,6 +12,173 @@ MT002Receiver::~MT002Receiver()
 
 
 
+/**********************************************************************************
+ * @fn	  extraction_data_type
+ * @brief 受信データからデータタイプを抽出する
+ *
+ * @param [in] std::string& data
+ *             受信データ
+ *
+ * @return [out]
+ *
+ **********************************************************************************/
+int MT002Receiver::extraction_trans_type(const std::string& data)
+{
+	try
+	{
+		if (SPLIT_START_POS > data.size() || (SPLIT_START_POS + TRANS_TYPE_BYTE_SIZE) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+		std::string trans_type_string = data.substr(SPLIT_START_POS, TRANS_TYPE_BYTE_SIZE);
+		int trans_type_int = std::stoi(trans_type_string);
+		return trans_type_int;
+	}
+
+	catch (const std::out_of_range& oor_ex) {
+		THROW_APP_EXCEPTION(StringFormat("Out of range : %s", oor_ex.what()));
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return -1;
+	}
+}
+
+
+std::string MT002Receiver::extraction_dst_client_id(const std::string& data)
+{
+	try
+	{
+		if (CLIENT_DST_ID_START_POS > data.size() || (CLIENT_DST_ID_START_POS + CLIENT_DST_ID_BYTE_SIZE) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+
+		std::string dst_client_id = data.substr(CLIENT_DST_ID_START_POS, CLIENT_DST_ID_BYTE_SIZE);
+		return dst_client_id;
+	}
+	catch (const std::out_of_range& oor_ex) {
+		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return std::string("");
+	}
+}
+
+
+std::string MT002Receiver::extraction_src_client_id(const std::string& data)
+{
+	try
+	{
+		if (CLIENT_SRC_ID_START_POS > data.size() || (CLIENT_SRC_ID_START_POS + CLIENT_SRC_ID_BYTE_SIZE) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+
+		std::string src_client_id = data.substr(CLIENT_SRC_ID_START_POS, CLIENT_SRC_ID_BYTE_SIZE);
+		return src_client_id;
+	}
+	catch (const std::out_of_range& oor_ex) {
+		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return std::string("");
+	}
+}
+
+
+/**********************************************************************************
+ * @fn	  extraction_scr_ip
+ * @brief
+ *
+ * @param [in]
+ *
+ * @return [out]
+ *
+ **********************************************************************************/
+
+std::string MT002Receiver::extraction_dst_chatroom_id(const std::string& data)
+{
+	try
+	{
+		if (CHATROOM_ID_START_POS > data.size() || (CHATROOM_ID_START_POS + CHATROOM_ID_BYTE_SIZE) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+
+		std::string chatroom_id = data.substr(CHATROOM_ID_START_POS, CHATROOM_ID_BYTE_SIZE);
+		return chatroom_id;
+	}
+	catch (const std::out_of_range& oor_ex) {
+		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return std::string("");
+	}
+}
+
+/**********************************************************************************
+ * @fn	  extraction_data_type
+ * @brief 受信データからデータタイプを抽出する
+ *
+ * @param [in] std::string& data
+ *             受信データ
+ * 
+ * @return [out]
+ *
+ **********************************************************************************/
+
+int MT002Receiver::extraction_data_type(const std::string& data)
+{
+	try
+	{
+		if (DATA_TYPE_START_POS > data.size() || (DATA_TYPE_START_POS + DATA_TYPE_BYTE_SIZE) > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+		std::string data_type_string = data.substr(DATA_TYPE_START_POS, DATA_TYPE_BYTE_SIZE);
+		int data_type_int = std::stoi(data_type_string);
+		return data_type_int;
+	}
+	catch (const std::out_of_range& oor_ex) {
+		THROW_APP_EXCEPTION(StringFormat("Out of range：%s", oor_ex.what()));
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return -1;
+	}
+}
+
+
+/**********************************************************************************
+ * @fn	  extraction_main_data
+ * @brief 受信データからメインのデータを抽出する。 
+ *
+ * @param [in]
+ *
+ * @return [out]
+ *
+ **********************************************************************************/
+
+std::string MT002Receiver::extraction_main_content(const std::string& data)
+{
+	try
+	{
+		if (MAIN_DATA_START_POS > data.size()) {
+			THROW_APP_EXCEPTION(StringFormat("The location to be split exceeds the data size."));
+		}
+		std::string main_content = data.substr(MAIN_DATA_START_POS);
+		return main_content;
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		return std::string("");
+	}
+}
 
 bool MT002Receiver::check_validation_trans_type(const int& trans_type)
 {
@@ -101,6 +268,10 @@ void MT002Receiver::print_src_recv_data(const std::string& data, const std::stri
 }
 
 
+bool MT002Receiver::data_extraction(const std::string& data)
+{
+	return true;
+}
 
 
 std::string MT002Receiver::remove_zero_padding(std::string& ip_address)
@@ -166,6 +337,9 @@ MT002Receiver::MT002Data::MT002Data(const int& trans_type, const std::string& d_
 	case 2:
 		this->m_data_type = data_type::video;
 		break;
+	case 3:
+		this->m_data_type = data_type::contact_details;
+		break;
 
 	default:
 		break;
@@ -212,6 +386,9 @@ void MT002Receiver::MT002Data::set_data_type(const int& data_type)
 	case 2:
 		this->m_data_type = data_type::video;
 		break;
+	case 3:
+		this->m_data_type = data_type::contact_details;
+		break;
 	default:
 		break;
 	}
@@ -254,6 +431,9 @@ const int MT002Receiver::MT002Data::get_data_type()
 		break;
 	case MT002Receiver::MT002Data::data_type::video:
 		return 2;
+		break;
+	case MT002Receiver::MT002Data::data_type::contact_details:
+		return 3;
 		break;
 	default:
 		return -1;
@@ -316,7 +496,7 @@ std::unique_ptr<MT002Receiver::MT002Data> MT002Receiver::create_mt002data_instan
 	return new_mt002;
 }
 
-std::tuple<int, std::string, std::string, std::string, int, std::string> MT002Receiver::data_extraction(const json& receive_json)
+std::tuple<int, std::string, std::string, std::string, int, std::string> MT002Receiver::data_extraction_(const json& receive_json)
 {
 	int trans_type = receive_json["trans_type"];
 	std::string dst_client_id = receive_json["dst_client_id"];
@@ -326,6 +506,12 @@ std::tuple<int, std::string, std::string, std::string, int, std::string> MT002Re
 	std::string main_content = receive_json["main_content"];
 
 
+	//int trans_type = this->extraction_trans_type(data);
+	//std::string dst_client_id = extraction_dst_client_id(data);
+	//std::string src_client_id = extraction_src_client_id(data);
+	//std::string dst_chatroom_id = extraction_dst_chatroom_id(data);
+	//int data_type = extraction_data_type(data);
+	//std::string main_content = extraction_main_content(data);
 
 	if (check_validation_contents(trans_type, dst_client_id, src_client_id, dst_chatroom_id, data_type, main_content) == false){
 		return std::make_tuple(3, "", "", "", 4, "");

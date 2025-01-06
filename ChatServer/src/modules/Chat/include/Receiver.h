@@ -60,6 +60,8 @@ public:
 
 	};
 
+protected:
+	virtual bool data_extraction(const std::string& data);
 private:
     virtual void show_receive_info(const std::string& ipv4_addr, int& detection_num, int& receive_result);
 	virtual void show_receive_info(const json& receive_json, const std::string& ip, int receive_byte);

@@ -159,7 +159,7 @@ SocketHandler::~SocketHandler()
 //設定値の読み込み
 bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass)
 {
-	BOOL yes = 1;
+
 	//iniファイルの読み込み
 	ini::IniFile socket_param_setting_ini;
 	try
@@ -186,9 +186,6 @@ bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass
 	if (this->setting_tcp_port(socket_param_setting_ini) == false) {
 		return false;
 	}
-	//tcpサーバがTIME WAIT状態にならないようにsetsockoptで設定する
-	//TIME_WAIT状態のポートが存在していてもbind可能となる
-	setsockopt(m_tcp_listen_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes));
 	return true;
 }
 
@@ -319,6 +316,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 
 	try
 	{
+		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(m_multicast_tx_addr.sin_port).c_str(), &m_multicast_tx_param, &m_result_multicast);
 		this->m_udp_multicast_tx_socket = socket(m_multicast_tx_param.ai_family, m_multicast_tx_param.ai_socktype, 0);
 		if (this->m_udp_multicast_tx_socket == INVALID_SOCKET) {
 			switch (WSAGetLastError())
@@ -444,8 +442,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 		
 		//TODOネットワークインタフェースの数で戻り値を変えたい
 	}
-
-	//TTLの設定
+	
 	try
 	{
 		int multicast_ttl_set_sockopt_result = setsockopt(m_udp_multicast_tx_socket,

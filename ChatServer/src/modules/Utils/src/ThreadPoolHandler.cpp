@@ -43,7 +43,7 @@ void ThreadPoolHandler::process_task()
 
 void ThreadPoolHandler::monitor_worker()
 {
-    LogHandler::get_instance().logging_debug("Monitoring tasks.");
+    LogHandler::get_instance().logging_debug("monitoring tasks.");
     while (true) {
         {
             std::unique_lock<std::mutex> lock(queue_mutex);

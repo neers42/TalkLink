@@ -5,7 +5,7 @@ std::tm ServerTime::time_info;
 
 ServerControlleFacade::ServerControlleFacade() : m_server_ip{ "" }
 {
-	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::INFO));
+	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::DEBUG));
 	m_socket_handler = std::make_unique<SocketHandler>();
 	this->set_server_ip(this->m_socket_handler->obtain_local_ip_addr());
 	m_firebase_auth_handler = std::make_unique<FirebaseAuthHandler>();
@@ -49,7 +49,7 @@ void ServerControlleFacade::run()
 	while (1) {
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->m_socket_handler->setting_select_info_to_listen_socket();
-		this->setting_select_info();
+		this->setting_select_info_to_client_msg();
 		int detection_num = m_socket_handler->monitor_socket_descriptor(this->m_client_handler->connected_client_list);
 
 		switch (detection_num)
@@ -63,7 +63,7 @@ void ServerControlleFacade::run()
 			//アクセプト要求があった場合
 		case REQUEST_ACCEPT_CLIENT_DETECTION:
 		{
-			this->m_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
+			this->m_thread_pool_handler->enqueue_task([this]() {accept_client_socket_for_msg_process(); });
 		};
 			break;
 		
@@ -79,7 +79,7 @@ void ServerControlleFacade::run()
 	
 }
 
-void ServerControlleFacade::setting_select_info()
+void ServerControlleFacade::setting_select_info_to_client_msg()
 {
 	{
 		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
@@ -103,7 +103,7 @@ void ServerControlleFacade::show_server_running_info()
 }
 
 
-bool ServerControlleFacade::accept_client_socket_process()
+bool ServerControlleFacade::accept_client_socket_for_msg_process()
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	LogHandler::get_instance().logging_debug(StringFormat("Function %s() ,start, server start function.", __FUNCTION__));
@@ -168,15 +168,8 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 	
 	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
 	if (receive_result == SOCKET_ERROR) {
-		if (m_client_handler->connected_client_list[detection_num].get_client_id() == "") {
-			LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : NONE, socket error, server initialize client."
-				, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr()));
-		}
-		else {
-			LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket error, server initialize client."
-				, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), m_client_handler->connected_client_list[detection_num].get_client_id()));
-		}
-		
+		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket error, server initialize client."
+			, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), m_client_handler->connected_client_list[detection_num].get_client_id()));
 		{
 			std::unique_lock <std::mutex> lock(this->m_connect_client_list_mutex);
 			m_socket_handler->disconnect_socket(m_client_handler->connected_client_list[detection_num].get_client_socket());
@@ -185,15 +178,8 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 	}
 	//receive_result == 0の場合(クライアントのソケットが切断された場合)
 	else if (receive_result == DISCONNECT_SOCKET) {
-		if (m_client_handler->connected_client_list[detection_num].get_client_id() == "") {
-			LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : NONE, socket disconnected, server initialize client."
-				, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr()));
-		}
-		else {
-			LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket disconnected, server initialize client."
-				, m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), m_client_handler->connected_client_list[detection_num].get_client_id()));
-		}
-
+		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, disconnected, server initialize client."
+			,m_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), m_client_handler->connected_client_list[detection_num].get_client_id()));
 		{
 			std::unique_lock <std::mutex> lock(this->m_connect_client_list_mutex);
 			m_socket_handler->disconnect_socket(m_client_handler->connected_client_list[detection_num].get_client_socket());
@@ -357,7 +343,7 @@ void ServerControlleFacade::mt002_process(const json& receive_json, int& receive
 	try
 	{
 		std::tie(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content)
-			= this->m_mt002receiver->data_extraction(receive_json);
+			= this->m_mt002receiver->data_extraction_(receive_json);
 
 		if (trans_type == 3 || d_client_id.size() != 28 || s_client_id.size() != 28 || d_chatroom_id.size() != 36 || data_type == 4 || main_content.size() == 0) {
 			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
@@ -501,7 +487,7 @@ void ServerControlleFacade::setting_select_process()
 		{
 			std::unique_lock<std::mutex> lock(m_mutex);
 			this->m_socket_handler->setting_select_info_to_listen_socket();
-			this->setting_select_info();
+			this->setting_select_info_to_client_msg();
 			
 		}
 	}

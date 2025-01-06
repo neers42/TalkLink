@@ -110,6 +110,10 @@ std::tuple<int32_t, json> Receiver::receive_data(const SOCKET& receive_socket, i
 
 	}
 }
+bool Receiver::data_extraction(const std::string& data)
+{
+	return false;
+}
 void Receiver::show_receive_info(const std::string& ipv4_addr, int& detection_num, int& receive_result)
 {
 	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("%d byte message was received from client list[%d](IP Address : %s)", receive_result, detection_num, ipv4_addr));

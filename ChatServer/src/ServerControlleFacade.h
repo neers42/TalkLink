@@ -48,11 +48,11 @@ public:
 	//サーバプログラム実行
 	void run();
 	
-	void setting_select_info();
+	void setting_select_info_to_client_msg();
 
 	void show_server_running_info();
 
-	bool accept_client_socket_process();
+	bool accept_client_socket_for_msg_process();
 
 	const std::string& get_server_ip();
 	void set_server_ip(const std::string& ip);
