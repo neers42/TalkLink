@@ -21,681 +21,1383 @@
     <ClCompile Include="src\ServerControlleFacade.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\SocketHandler.cpp">
+    <ClCompile Include="src\modules\Chat\src\MT000Receiver.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\ExceptionBase.cpp">
+    <ClCompile Include="src\modules\Chat\src\MT102Sender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\AppException.cpp">
+    <ClCompile Include="src\modules\Chat\src\MT101Sender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\Receiver.cpp">
+    <ClCompile Include="src\modules\Authentication\src\FirebaseAuthHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\MT002Receiver.cpp">
+    <ClCompile Include="src\modules\Chat\src\MT001Receiver.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\Sender.cpp">
+    <ClCompile Include="src\modules\Chat\src\ChatRoomHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\DataBaseAccesor.cpp">
+    <ClCompile Include="src\modules\Chat\src\ClientHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\LogHandler.cpp">
+    <ClCompile Include="src\modules\Utils\src\ServerTime.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\ServerTime.cpp">
+    <ClCompile Include="src\modules\Utils\src\LogHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\ClientHandler.cpp">
+    <ClCompile Include="src\modules\Database\src\DataBaseAccesor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\ChatRoomHandler.cpp">
+    <ClCompile Include="src\modules\Chat\src\Sender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\MT001Receiver.cpp">
+    <ClCompile Include="src\modules\Chat\src\MT002Receiver.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\FirebaseAuthHandler.cpp">
+    <ClCompile Include="src\modules\Utils\src\AppException.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\ThreadPoolHandler.cpp">
+    <ClCompile Include="src\modules\Utils\src\ExceptionBase.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\MT101Sender.cpp">
+    <ClCompile Include="src\modules\Network\src\SocketHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\MT102Sender.cpp">
+    <ClCompile Include="src\modules\Chat\src\Receiver.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\MT000Receiver.cpp">
+    <ClCompile Include="src\modules\Utils\src\ThreadPoolHandler.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\Network\src\ProtocolHandler.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\Network\src\BaseMessage.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\Network\src\MessageType001.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\Network\src\MessageType002.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\Network\src\MessageType003.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="inc\ServerControlleFacade.h">
+    <ClInclude Include="src\modules\Utils\include\common.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\SocketHandler.h">
+    <ClInclude Include="src\modules\Authentication\include\FirebaseAuthHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\inicpp.h">
+    <ClInclude Include="src\modules\Chat\include\ChatRoomHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\ExceptionBase.h">
+    <ClInclude Include="src\modules\Chat\include\ClientHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\AppException.h">
+    <ClInclude Include="src\modules\Database\include\DataBaseAccesor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\StringFormat.h">
+    <ClInclude Include="src\modules\Utils\include\AppException.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\Receiver.h">
+    <ClInclude Include="src\modules\Utils\include\ExceptionBase.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\MT002Receiver.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\analytics.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\Sender.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\analytics\event_names.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\DataBaseAccesor.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\analytics\parameter_names.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\LogHandler.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\analytics\user_property_names.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\ServerTime.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\app.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\ClientHandler.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\app_check.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\ChatRoomHandler.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\app_check\app_attest_provider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\MT001Receiver.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\app_check\debug_provider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\FirebaseAuthHandler.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\app_check\device_check_provider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\analytics\event_names.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\app_check\play_integrity_provider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\analytics\parameter_names.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\auth.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\analytics\user_property_names.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\auth\credential.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\app_check\app_attest_provider.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\auth\types.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\app_check\debug_provider.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\auth\user.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\app_check\device_check_provider.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\app_check\play_integrity_provider.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database\common.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\auth\credential.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database\database_reference.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\auth\types.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database\data_snapshot.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\auth\user.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database\disconnection.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database\common.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database\listener.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database\data_snapshot.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database\mutable_data.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database\database_reference.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database\query.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database\disconnection.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\database\transaction.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database\listener.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\dynamic_links.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database\mutable_data.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\dynamic_links\components.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database\query.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database\transaction.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\aggregate_query.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\dynamic_links\components.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\aggregate_query_snapshot.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\aggregate_query.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\aggregate_source.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\aggregate_query_snapshot.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\collection_reference.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\aggregate_source.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\document_change.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\collection_reference.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\document_reference.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\document_change.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\document_snapshot.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\document_reference.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\field_path.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\document_snapshot.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\field_value.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\field_path.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\filter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\field_value.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\firestore_errors.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\filter.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\firestore_version.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\firestore_errors.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\geo_point.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\firestore_version.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\listener_registration.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\geo_point.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\load_bundle_task_progress.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\listener_registration.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\map_field_value.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\load_bundle_task_progress.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\metadata_changes.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\map_field_value.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\query.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\metadata_changes.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\query_snapshot.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\query.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\settings.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\query_snapshot.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\set_options.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\set_options.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\snapshot_metadata.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\settings.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\source.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\snapshot_metadata.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\timestamp.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\source.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\transaction.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\timestamp.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\transaction_options.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\transaction.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\firestore\write_batch.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\transaction_options.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\functions.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore\write_batch.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\functions\callable_reference.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\functions\callable_reference.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\functions\callable_result.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\functions\callable_result.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\functions\common.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\functions\common.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\future.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma\internal\native_ad.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma\ump\consent_info.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma\ad_view.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma\ump\types.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma\internal\native_ad.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma\ad_view.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma\interstitial_ad.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma\interstitial_ad.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma\rewarded_ad.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma\rewarded_ad.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma\types.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma\types.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma\ump.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma\ump.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma\ump\consent_info.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\internal\common.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\gma\ump\types.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\internal\future_impl.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\installations.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\internal\mutex.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\internal\common.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\internal\platform.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\internal\future_impl.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\internal\type_traits.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\internal\mutex.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\remote_config\config_update_listener_registration.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\internal\platform.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\storage\common.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\internal\type_traits.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\storage\controller.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\log.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\storage\listener.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\messaging.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\storage\metadata.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\remote_config.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\storage\storage_reference.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\remote_config\config_update_listener_registration.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\analytics.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\storage.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\app.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\storage\common.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\app_check.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\storage\controller.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\auth.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\storage\listener.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\database.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\storage\metadata.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\dynamic_links.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\storage\storage_reference.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\firestore.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\util.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\functions.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\variant.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\future.h">
+    <ClInclude Include="src\modules\Authentication\include\firebase\version.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\gma.h">
+    <ClInclude Include="src\modules\Utils\include\inicpp.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\installations.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\adl_serializer.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\log.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\byte_container_with_subtype.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\messaging.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\abi_macros.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\remote_config.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\conversions\from_json.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\storage.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\conversions\to_chars.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\util.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\conversions\to_json.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\variant.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\exceptions.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\firebase\version.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\hash.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\ThreadPoolHandler.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\input\binary_reader.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\common.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\input\input_adapters.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\MT101Sender.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\input\json_sax.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\MT102Sender.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\input\lexer.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\build_config.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\input\parser.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\callback.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\input\position_t.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\config.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\iterators\internal_iterator.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\connection.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\iterators\iteration_proxy.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\datatype.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\iterators\iterator_traits.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\driver.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\iterators\iter_impl.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\exception.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\iterators\json_reverse_iterator.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\metadata.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\iterators\primitive_iterator.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\parameter_metadata.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\json_custom_base_class.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\prepared_statement.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\json_pointer.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\resultset.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\json_ref.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\resultset_metadata.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\macro_scope.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\sqlstring.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\macro_unscope.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\statement.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\call_std\begin.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\variant.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\call_std\end.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\version_info.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\cpp_future.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\cppconn\warning.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\detected.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\mysql_connection.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\identity_tag.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\mysql_driver.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\is_sax.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\jdbc\mysql_error.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\std_fs.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysql\jdbc.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\type_traits.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\common\api.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\meta\void_t.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\common\error.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\output\binary_writer.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\common\op_if.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\output\output_adapters.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\common\settings.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\output\serializer.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\common\util.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\string_concat.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\common\value.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\string_escape.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\detail\crud.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\detail\value_t.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\detail\error.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\json.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\detail\result.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\json_fwd.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\detail\row.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\ordered_map.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\detail\session.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\thirdparty\hedley\hedley.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\detail\settings.h">
+    <ClInclude Include="src\modules\Utils\include\nlohmann\thirdparty\hedley\hedley_undef.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\collations.h">
+    <ClInclude Include="src\ServerControlleFacade.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\collection_crud.h">
+    <ClInclude Include="src\modules\Network\include\SocketHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\common.h">
+    <ClInclude Include="src\modules\Utils\include\StringFormat.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\crud.h">
+    <ClInclude Include="src\modules\Chat\include\Receiver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\document.h">
+    <ClInclude Include="src\modules\Chat\include\MT002Receiver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\error.h">
+    <ClInclude Include="src\modules\Chat\include\Sender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\executable.h">
+    <ClInclude Include="src\modules\Utils\include\LogHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\mysql_charsets.h">
+    <ClInclude Include="src\modules\Utils\include\ServerTime.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\mysql_collations.h">
+    <ClInclude Include="src\modules\Chat\include\MT001Receiver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\result.h">
+    <ClInclude Include="src\modules\Utils\include\ThreadPoolHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\row.h">
+    <ClInclude Include="src\modules\Chat\include\MT101Sender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\settings.h">
+    <ClInclude Include="src\modules\Chat\include\MT102Sender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\devapi\table_crud.h">
+    <ClInclude Include="src\modules\Chat\include\MT000Receiver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\common.h">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\build_config.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\common_constants.h">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\callback.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\version_info.h">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\config.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\xapi.h">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\connection.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\mysqlx\xdevapi.h">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\datatype.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\MT000Receiver.h">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\driver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\conversions\from_json.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\exception.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\conversions\to_chars.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\metadata.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\conversions\to_json.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\parameter_metadata.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\input\binary_reader.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\prepared_statement.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\input\input_adapters.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\resultset.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\input\json_sax.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\resultset_metadata.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\input\lexer.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\sqlstring.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\input\parser.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\statement.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\input\position_t.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\variant.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\iterators\internal_iterator.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\version_info.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\iterators\iter_impl.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\cppconn\warning.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\iterators\iteration_proxy.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\mysql_connection.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\iterators\iterator_traits.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\mysql_driver.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\iterators\json_reverse_iterator.hpp">
+    <ClInclude Include="src\modules\Database\include\jdbc\mysql_error.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\iterators\primitive_iterator.hpp">
+    <ClInclude Include="src\modules\Database\include\mysql\jdbc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\call_std\begin.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\common\api.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\call_std\end.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\common\error.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\cpp_future.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\common\op_if.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\detected.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\common\settings.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\identity_tag.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\common\util.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\is_sax.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\common\value.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\std_fs.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\detail\crud.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\type_traits.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\detail\error.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\meta\void_t.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\detail\result.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\output\binary_writer.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\detail\row.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\output\output_adapters.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\detail\session.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\output\serializer.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\detail\settings.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\abi_macros.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\collations.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\exceptions.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\collection_crud.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\hash.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\common.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\json_custom_base_class.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\crud.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\json_pointer.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\document.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\json_ref.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\error.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\macro_scope.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\executable.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\macro_unscope.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\mysql_charsets.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\string_concat.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\mysql_collations.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\string_escape.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\result.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\detail\value_t.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\row.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\thirdparty\hedley\hedley.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\settings.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\thirdparty\hedley\hedley_undef.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\devapi\table_crud.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\adl_serializer.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\common.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\byte_container_with_subtype.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\common_constants.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\json.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\version_info.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\json_fwd.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\xapi.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="inc\nlohmann\ordered_map.hpp">
+    <ClInclude Include="src\modules\Database\include\mysqlx\xdevapi.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\ProtocolHandler.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\BaseMessage.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\MessageType001.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\MessageType002.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\MessageType003.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\aes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\asn1.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\asn1t.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\bio.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\bn.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\buffer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\camellia.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\cmac.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\cms.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\compat_types.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\conf.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\crypto.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\des.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\dh.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\dsa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ec.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ec448.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ec25519.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ecdh.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ecdsa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ed448.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ed25519.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\engine.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\err.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\evp.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\fips_rand.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\hmac.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\kdf.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\lhash.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\md4.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\md5.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\modes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\obj_mac.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\objects.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ocsp.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\opensslconf.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\opensslv.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ossl_typ.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\pem.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\pkcs7.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\pkcs12.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\rand.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\rc4.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ripemd.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\rsa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\safestack.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\sha.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\sha3.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\srp.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ssl.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ssl23.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\stack.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\tls1.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\txt_db.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\ui.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\x509.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\x509_vfy.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\openssl\x509v3.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\af_alg\afalg_hash.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\af_alg\wc_afalg.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\aria\aria-crypt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\aria\aria-cryptocb.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\arm\cryptoCell.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\atmel\atmel.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\autosar\CryIf.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\autosar\Crypto.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\autosar\Csm.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\autosar\StandardTypes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\caam_driver.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\caam_error.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\caam_qnx.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_aes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_cmac.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_ecdsa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_fsl_nxp.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_hash.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_qnx.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_rsa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_seco.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_sha.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\caam\wolfcaam_x25519.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\cavium\cavium_octeon_sync.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\cypress\psoc6_crypto.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\devcrypto\wc_devcrypto.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Espressif\esp_crt_bundle.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Espressif\esp32-crypt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Espressif\esp-sdk-lib.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\intel\quickassist_sync.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\iotsafe\iotsafe.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\kcapi\kcapi_dh.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\kcapi\kcapi_ecc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\kcapi\kcapi_hash.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\kcapi\kcapi_hmac.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\kcapi\kcapi_rsa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\kcapi\wc_kcapi.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\liboqs\liboqs.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\maxim\max3266x.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\maxim\max3266x-cryptocb.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\maxim\maxq10xx.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\nxp\dcp_port.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\nxp\ksdk_port.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\nxp\se050_port.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\pic32\pic32mz-crypt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\psa\psa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Renesas\renesas_cmn.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Renesas\renesas_sync.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Renesas\renesas_tsip_types.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Renesas\renesas-fspsm-crypt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Renesas\renesas-fspsm-types.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Renesas\renesas-rx64-hw-crypt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\Renesas\renesas-tsip-crypt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\riscv\riscv-64-asm.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\rpi_pico\pico.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\silabs\silabs_aes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\silabs\silabs_ecc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\silabs\silabs_hash.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\silabs\silabs_random.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\st\stm32.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\st\stsafe.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\ti\ti-ccm.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\ti\ti-hash.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\xilinx\xil-sha3.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\xilinx\xil-versal-glue.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\xilinx\xil-versal-trng.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\port\nrf51.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\aes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\arc4.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\asn.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\asn_public.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\blake2.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\blake2-impl.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\blake2-int.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\camellia.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\chacha.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\chacha20_poly1305.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\cmac.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\coding.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\compress.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\cpuid.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\cryptocb.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\curve448.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\curve25519.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\des3.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\dh.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\dilithium.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\dsa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ecc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\eccsi.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ed448.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ed25519.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\error-crypt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ext_kyber.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ext_lms.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ext_xmss.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\falcon.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\fe_448.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\fe_operations.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\fips_test.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ge_448.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ge_operations.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\hash.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\hmac.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\hpke.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\integer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\kdf.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\kyber.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\lms.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\logging.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\md2.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\md4.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\md5.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\mem_track.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\memory.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\misc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\mpi_class.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\mpi_superclass.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\pkcs7.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\pkcs11.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\pkcs12.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\poly1305.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\pwdbased.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\random.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\rc2.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\ripemd.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\rsa.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sakke.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\selftest.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\settings.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sha.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sha3.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sha256.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sha512.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\signature.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\siphash.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sm2.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sm3.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sm4.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sp.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sp_int.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\sphincs.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\srp.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\tfm.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\types.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\visibility.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\wc_encrypt.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\wc_kyber.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\wc_lms.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\wc_pkcs11.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\wc_port.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\wc_xmss.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\wolfevent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\wolfmath.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfcrypt\xmss.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\callbacks.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\certs_test.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\crl.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\error-ssl.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\internal.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\ocsp.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\quic.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\sniffer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\sniffer_error.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\ssl.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\test.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\version.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\Network\include\wolfssl\wolfio.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ini\socket_setting.ini" />
     <None Include="assets\google-services.json" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\libcrypto-3-x64.dll" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\libssl-3-x64.dll" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn8-2-vs14.dll" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn8-2-vs14.pdb" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\mysqlcppconn-9-vs14.pdb" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_kerberos_client.dll" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_ldap_sasl_client.dll" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_oci_client.dll" />
-    <None Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\plugin\authentication_webauthn_client.dll" />
+    <None Include="conf\socket_setting.ini" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\firebase\MD\x64\Debug\firebase_analytics.lib" />
@@ -724,11 +1426,10 @@
     <Library Include="lib\firebase\MD\x64\Release\firebase_messaging.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_remote_config.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
-    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\libcrypto.lib" />
-    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\libssl.lib" />
-    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn.lib" />
-    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn8.lib" />
-    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn8-static.lib" />
-    <Library Include="lib\mysql-connector-c++-8.4.0-winx64\lib64\vs14\mysqlcppconn-static.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="src\modules\Network\include\wolfssl\sniffer_error.rc">
+      <Filter>リソース ファイル</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

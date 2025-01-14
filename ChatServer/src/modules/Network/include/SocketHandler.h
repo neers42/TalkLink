@@ -15,7 +15,7 @@
 #include "ClientHandler.h"
 #include "common.h"
 
-#define INIT_FILE_PASS  ".//ini/socket_setting.ini"
+#define INIT_FILE_PASS  ".//////conf/socket_setting.ini"
 //#define MAX_CONNECT_NUM 10000
 #define SELECT_TIME_OUT -2
 #define REQUEST_ACCEPT_CLIENT_DETECTION -3

@@ -3,32 +3,31 @@
 #include "common.h"
 #include <sstream>
 #include <memory>
-#include <jdbc/mysql_driver.h>
-#include <jdbc/mysql_connection.h>
-#include <mysqlx/devapi/error.h>
-#include <jdbc/cppconn/statement.h>
-#include <jdbc/cppconn/resultset.h>
 #include <mysql/jdbc.h>
+#include <jdbc/cppconn/exception.h>
 
 
 
 class DataBaseAccesor
 {
 private:
-	sql::mysql::MySQL_Driver* m_mysql_drv = sql::mysql::get_mysql_driver_instance();
-	sql::mysql::MySQL_Connection* m_mysql_con;
-	sql::mysql::MySQL_Statement* m_mysql_stmt;
-	sql::ResultSet* m_mysql_res;
-	sql::mysql::MySQL_Prepared_Statement* m_prep_stmt;
+	sql::Driver* m_driver = sql::mysql::get_mysql_driver_instance();
+	sql::Connection* m_connection = nullptr;
+	sql::Statement* m_statement = nullptr;
+	sql::ResultSet* m_mysql_res = nullptr;
+	sql::mysql::MySQL_Prepared_Statement* m_prep_stmt = nullptr;
 	
-	std::string m_host;
-	std::string m_db_name;
-	std::string m_port;
-	std::string m_user;
-	std::string m_password;
+	std::string m_host = "tcp://127.0.0.1:3306";
+	std::string m_user_name = "root";
+	std::string m_password = "***REMOVED***";
+	std::string m_db_name = "";
+	std::string m_port = "";
+
 
 public:
 	DataBaseAccesor();
+	DataBaseAccesor(const std::string& host, const std::string& user_name, const std::string& password);
+
 	~DataBaseAccesor();
 
 	void connect_db();

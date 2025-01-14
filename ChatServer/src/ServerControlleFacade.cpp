@@ -9,6 +9,7 @@ ServerControlleFacade::ServerControlleFacade() : m_server_ip{ "" }
 	m_socket_handler = std::make_unique<SocketHandler>();
 	this->set_server_ip(this->m_socket_handler->obtain_local_ip_addr());
 	m_firebase_auth_handler = std::make_unique<FirebaseAuthHandler>();
+	m_db_accesor = std::make_unique<DataBaseAccesor>();
 	m_mt000receiver = std::make_unique<MT000Receiver>();
 	m_mt001receiver = std::make_unique<MT001Receiver>();
 	m_mt002receiver = std::make_unique<MT002Receiver>();
@@ -38,8 +39,9 @@ void ServerControlleFacade::run()
 		LogHandler::get_instance().logging_critical("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
-
+	
 	this->show_server_running_info();
+	this->m_db_accesor->connect_db();
 	LogHandler::get_instance().logging_info("Start monitoring requests from clients.");
 	this->m_thread_pool_handler->enqueue_task([this]() {heart_beat_send_process(); });
 	this->m_thread_pool_handler->enqueue_task([this]() {m_thread_pool_handler->monitor_worker(); });
@@ -49,7 +51,7 @@ void ServerControlleFacade::run()
 	while (1) {
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->m_socket_handler->setting_select_info_to_listen_socket();
-		this->setting_select_info_to_client_msg();
+		this->setting_select_info();
 		int detection_num = m_socket_handler->monitor_socket_descriptor(this->m_client_handler->connected_client_list);
 
 		switch (detection_num)
@@ -63,7 +65,7 @@ void ServerControlleFacade::run()
 			//アクセプト要求があった場合
 		case REQUEST_ACCEPT_CLIENT_DETECTION:
 		{
-			this->m_thread_pool_handler->enqueue_task([this]() {accept_client_socket_for_msg_process(); });
+			this->m_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
 		};
 			break;
 		
@@ -79,7 +81,7 @@ void ServerControlleFacade::run()
 	
 }
 
-void ServerControlleFacade::setting_select_info_to_client_msg()
+void ServerControlleFacade::setting_select_info()
 {
 	{
 		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
@@ -103,7 +105,7 @@ void ServerControlleFacade::show_server_running_info()
 }
 
 
-bool ServerControlleFacade::accept_client_socket_for_msg_process()
+bool ServerControlleFacade::accept_client_socket_process()
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	LogHandler::get_instance().logging_debug(StringFormat("Function %s() ,start, server start function.", __FUNCTION__));
@@ -146,7 +148,6 @@ void ServerControlleFacade::set_server_ip(const std::string& ip)
 
 void ServerControlleFacade::message_receive_process(int detection_num)
 {
-	LogHandler::get_instance().logging_debug(StringFormat("Function %s(), start, server start processing.", __FUNCTION__));
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	int receive_result = 0;
 	std::string receive_data, mt, data_time_stamp;
@@ -154,8 +155,7 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 	{
 		std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
 		if (detection_num <= this->m_client_handler->connect_client_num - 1 && m_client_handler->connected_client_list.size() != 0) {
-		
-			//std::tie(receive_result, receive_data, data_time_stamp) = Receiver::receive_data(m_client_handler->connected_client_list[detection_num].get_client_socket(), detection_num);
+			LogHandler::get_instance().logging_debug(StringFormat("Function %s(), start, server start processing.", __FUNCTION__));
 			std::tie(receive_result, receive_json) = Receiver::receive_data(m_client_handler->connected_client_list[detection_num].get_client_socket(), detection_num);
 
 		}
@@ -219,7 +219,7 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 			LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
 		}
 	}
-	LogHandler::get_instance().logging_debug(StringFormat("Function %s(), complete, server start processing.", __FUNCTION__));
+	LogHandler::get_instance().logging_debug(StringFormat("Function %s(), server complete processing.", __FUNCTION__));
 }
 
 void ServerControlleFacade::mt000_process(std::string& receive_data, int detection_num)
@@ -339,6 +339,7 @@ void ServerControlleFacade::mt002_process(const json& receive_json, int& receive
 	int chatroom_list_num = -1;
 	std::string d_client_id = "", s_client_id = "", d_chatroom_id = "", main_content = "";
 	int trans_type = -1, data_type = -1;
+	int send_socket_num = 0;
 
 	try
 	{
@@ -349,37 +350,41 @@ void ServerControlleFacade::mt002_process(const json& receive_json, int& receive
 			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
 		}
 		auto mt002_intance = this->m_mt002receiver->create_mt002data_instance(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content);
-		std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
-		int send_socket_num = m_client_handler->search_client_id_from_con_list(mt002_intance->get_dst_client_id());
-		switch (mt002_intance->get_trans_type())
 		{
-			//TCPユニキャスト
-		case 0:
-			m_sender->tcp_unicast_data(m_client_handler->connected_client_list[send_socket_num].get_client_socket(),
-				receive_json, receive_result,mt002_intance->get_dst_client_id(), mt002_intance->get_src_client_id());
-			break;
+			std::unique_lock<std::mutex> lock(this->m_connect_client_list_mutex);
+			send_socket_num = m_client_handler->search_client_id_from_con_list(mt002_intance->get_dst_client_id());
 
-			//TCPでマルチキャスト
-		case 1:
-			//TODO　以下を実装する
-			//mt002のパケットの中身がTCPマルチキャストの場合(グループ内でのチャットの時)、グループチャットから
-			chatroom_list_num = this->m_chat_room_handler->search_chatroom_id_from_list(mt002_intance->get_dst_chatroom_id());
-			for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
-				send_sockets.push_back(client.get_client_socket());
+
+			switch (mt002_intance->get_trans_type())
+			{
+				//TCPユニキャスト
+			case 0:
+				m_sender->tcp_unicast_data(m_client_handler->connected_client_list[send_socket_num].get_client_socket(),
+					receive_json, receive_result, mt002_intance->get_dst_client_id(), mt002_intance->get_src_client_id());
+				break;
+
+				//TCPでマルチキャスト
+			case 1:
+				//TODO　以下を実装する
+				//mt002のパケットの中身がTCPマルチキャストの場合(グループ内でのチャットの時)、グループチャットから
+				chatroom_list_num = this->m_chat_room_handler->search_chatroom_id_from_list(mt002_intance->get_dst_chatroom_id());
+				for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
+					send_sockets.push_back(client.get_client_socket());
+				}
+				for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
+					dst_clients.push_back(client.get_client_id());
+				}
+				m_sender->tcp_multicast_data(send_sockets, receive_json, receive_result);
+				break;
+
+				//UDPブロードキャスト
+			case 2:
+				//TODO　UDPのブロードキャストを実装する
+				break;
+
+			default:
+				break;
 			}
-			for (auto&& client : m_chat_room_handler->get_client_list(chatroom_list_num)) {
-				dst_clients.push_back(client.get_client_id());
-			}
-			m_sender->tcp_multicast_data(send_sockets, receive_json, receive_result);
-			break;
-
-			//UDPブロードキャスト
-		case 2:
-			//TODO　UDPのブロードキャストを実装する
-			break;
-
-		default:
-			break;
 		}
 	}
 	catch (const exception::ExceptionBase& ex)
@@ -442,44 +447,58 @@ void ServerControlleFacade::heart_beat_check_process()
 		
 		auto time_now = std::chrono::system_clock::now();
 		int search_client_num = -1;
-		std::vector<ClientHandler::Client> check_con_list;
+
+		//現在接続しているクライアントリストを抽出
+		std::vector<ClientHandler::Client> check_con_list_then;
 		{
 			std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
-			check_con_list = this->m_client_handler->connected_client_list;
+			check_con_list_then = this->m_client_handler->connected_client_list;
 		}
+
+		//30秒wait
 		auto abs_time_30 = time_now + std::chrono::seconds(30);
 		std::this_thread::sleep_until(abs_time_30);
-		for (int i = 0; i < check_con_list.size(); i++) {
+		
+		//ハートビートの回数集計
+		for (int then_count = 0; then_count < check_con_list_then.size(); then_count++) {
 			std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
-			for (int j = 0; j < this->m_client_handler->connected_client_list.size(); j++) {
-				if (check_con_list[i].get_client_socket() != INVALID_SOCKET && check_con_list[i] == this->m_client_handler->connected_client_list[j]) {
-					if (this->m_client_handler->connected_client_list[j].get_client_heart_beat_count() == 0) {
-						if (this->m_client_handler->connected_client_list[j].get_auth_status() == true) {
-							LogHandler::get_instance().logging_info(StringFormat("The client (ID: %s) does not respond to the heartbeat message for 30 seconds, so it disconnects.",
-								this->m_client_handler->connected_client_list[j].get_client_id()));
-							m_socket_handler->disconnect_socket(m_client_handler->connected_client_list[j].get_client_socket());
-							m_client_handler->delete_client_from_con_list(j);
-						}
-						else {
-							LogHandler::get_instance().logging_info(StringFormat("The client (SOCKET : %d) does not respond to the heartbeat message for 30 seconds, so it disconnects.",
-								this->m_client_handler->connected_client_list[j].get_client_socket()));
-							m_socket_handler->disconnect_socket(m_client_handler->connected_client_list[j].get_client_socket());
-							m_client_handler->delete_client_from_con_list(j);
-						}
-						
-						break;
-
-					}
-					else {
-							this->m_client_handler->clear_heart_beat_count(j);
-					}
-
+			for (int now_count = 0; now_count < this->m_client_handler->connected_client_list.size(); now_count++) {
+				//接続しているクライアントのハートビート回数が0のときの処理
+				if (check_con_list_then[then_count].get_client_socket() != INVALID_SOCKET && check_con_list_then[then_count] == this->m_client_handler->connected_client_list[now_count]) {
+					this->heart_beat_count_zero_process(now_count);
 				}
+				
 			}
 		}
-		
+
+		//ハートビート回数をクリアする
+		{
+			std::unique_lock<std::mutex> lock(m_connect_client_list_mutex);
+			this->m_client_handler->all_clear_heart_beat_count();
+		}
+				
 	}
 }
+
+void ServerControlleFacade::heart_beat_count_zero_process(int hb_zero_client_num)
+{
+	//ハートビートの回数がゼロの場合クライアントを切断する
+	if (this->m_client_handler->connected_client_list[hb_zero_client_num].get_client_heart_beat_count() == 0) {
+		//クライアントが既に認証済みの場合
+		if(this->m_client_handler->connected_client_list[hb_zero_client_num].get_auth_status() == true) {
+			LogHandler::get_instance().logging_info(StringFormat("Client (Socket : %d ID: %s), disconnect.(Not response)",
+				this->m_client_handler->connected_client_list[hb_zero_client_num].get_client_socket(), this->m_client_handler->connected_client_list[hb_zero_client_num].get_client_id()));
+		}
+		else {
+			LogHandler::get_instance().logging_info(StringFormat("Client (Socket : %d ID: None), disconnect.(Not response)",
+				this->m_client_handler->connected_client_list[hb_zero_client_num].get_client_socket()));
+		}
+		//クライアント切断処理
+		m_socket_handler->disconnect_socket(m_client_handler->connected_client_list[hb_zero_client_num].get_client_socket());
+		m_client_handler->delete_client_from_con_list(hb_zero_client_num);
+	}	
+}
+
 
 void ServerControlleFacade::setting_select_process()
 {
@@ -487,7 +506,7 @@ void ServerControlleFacade::setting_select_process()
 		{
 			std::unique_lock<std::mutex> lock(m_mutex);
 			this->m_socket_handler->setting_select_info_to_listen_socket();
-			this->setting_select_info_to_client_msg();
+			this->setting_select_info();
 			
 		}
 	}

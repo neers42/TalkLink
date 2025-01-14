@@ -12,6 +12,7 @@
 #include "ThreadPoolHandler.h"
 #include "common.h"
 #include "LogHandler.h"
+#include "DataBaseAccesor.h"
 #include <mutex>
 
 #define DISCONNECT_SOCKET 0
@@ -22,6 +23,7 @@ class ServerControlleFacade
 {
 private:
 	std::unique_ptr<FirebaseAuthHandler> m_firebase_auth_handler;
+	std::unique_ptr<DataBaseAccesor> m_db_accesor;
 	std::unique_ptr<SocketHandler> m_socket_handler;
 	std::unique_ptr<MT000Receiver> m_mt000receiver;
 	std::unique_ptr<MT001Receiver> m_mt001receiver;
@@ -48,11 +50,11 @@ public:
 	//サーバプログラム実行
 	void run();
 	
-	void setting_select_info_to_client_msg();
+	void setting_select_info();
 
 	void show_server_running_info();
 
-	bool accept_client_socket_for_msg_process();
+	bool accept_client_socket_process();
 
 	const std::string& get_server_ip();
 	void set_server_ip(const std::string& ip);
@@ -69,6 +71,8 @@ public:
 	void heart_beat_send_process();
 
 	void heart_beat_check_process();
+
+	void heart_beat_count_zero_process(int hb_zero_client_num);
 
 	void setting_select_process();
 

@@ -257,7 +257,6 @@ std::string ClientHandler::generate_client_id()
 	catch (const exception::ExceptionBase& ex)
 	{
 		LogHandler::get_instance().logging_error(ex.what_for_str());
-		//std::cerr << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return "";
 	}
 	
@@ -279,14 +278,12 @@ std::string ClientHandler::generate_client_id()
 	catch (const exception::ExceptionBase& ex)
 	{
 		LogHandler::get_instance().logging_error(ex.what_for_str());
-	//	std::cerr << StringFormat("%s\033[31m[ERORR]%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
 		return "";
 	}
 
 	std::string converted_uuid_str(reinterpret_cast<char*>(uuid_str));
 #ifdef DEBUG_UUID
 	LogHandler::get_instance().logging_debug(StringFormat("The UUID has been successfully generated. UUIDÅF%s", converted_uuid_str));
-	//std::cout << StringFormat("%s[DEBUG]The UUID has been successfully generated. UUIDÅF%s", ServerTime::get_current_time(), converted_uuid_str) << std::endl;
 #endif // DEBUG
 
 	RpcStringFreeA(&uuid_str);
@@ -392,15 +389,10 @@ void ClientHandler::show_client_info(const int& client_num)
 	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Name : %s", client_num, this->connected_client_list[client_num].get_client_name()));
 	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Mail : %s", client_num, this->connected_client_list[client_num].get_client_mail_addr()));
 	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Password : %s", client_num, this->connected_client_list[client_num].get_client_password()));
-	//LogHandler::logging(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] ID : %s", client_num, this->connected_client_list[client_num].get_client_id()));
-	//LogHandler::logging(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Name : %s", client_num, this->connected_client_list[client_num].get_client_name()));
-	//LogHandler::logging(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Mail : %s", client_num, this->connected_client_list[client_num].get_client_mail_addr()));
-	//LogHandler::logging(LogHandler::LogType::INFO, std::cout, StringFormat("Client list[%d] Password : %s", client_num, this->connected_client_list[client_num].get_client_password()));
 }
 
 std::vector<SOCKET> ClientHandler::extract_conneted_sockets()
 {
-
 	std::vector<SOCKET> connected_socket_list;
 	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
 		if (this->connected_client_list[i].get_client_socket() != NULL) {
@@ -482,6 +474,13 @@ void ClientHandler::incliment_heart_beat_count(uint32_t list_num)
 void ClientHandler::clear_heart_beat_count(uint32_t list_num)
 {
 	this->connected_client_list[list_num].clear_heart_beat_count();
+}
+
+void ClientHandler::all_clear_heart_beat_count()
+{
+	for (auto& client : this->connected_client_list) {
+		client.clear_heart_beat_count();
+	}
 }
 
 

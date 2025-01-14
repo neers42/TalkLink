@@ -11,6 +11,9 @@
 #define GRN "\e[0;32m"
 #define CYN "\e[0;36m"
 #define REDB "\e[41m"
+#define ASCII_CODE 0
+#define UTF_8_CODE 1
+#define SHIFT_JIS_CODE 2
 
 class LogHandler
 {
@@ -55,6 +58,10 @@ public:
 	void logging_warning(const std::string& warning_message);
 	void logging_error(const std::string& error_message);
 	void logging_critical(const std::string& critical_message);
+	static bool is_ASCII(const std::string& str);
+	static bool is_valid_UTF8(const std::string& str);
+	static bool is_ShiftJIS(const std::string& str);
+	static int check_char_code(const std::string& str);
 	
 };
 

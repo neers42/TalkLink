@@ -100,6 +100,8 @@ private:
 
 	unsigned short connect_client_num;
 
+	std::mutex mtx;
+
 	//ハートビート用のソケットリスト
 	std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>> heart_beat_list;
 
@@ -108,6 +110,8 @@ private:
 
 	//private関数
 	std::string generate_client_id();
+
+
 
 
 public:
@@ -133,6 +137,7 @@ public:
 	void set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num);
 	void incliment_heart_beat_count(uint32_t list_num);
 	void clear_heart_beat_count(uint32_t list_num);
+	void all_clear_heart_beat_count();
 	void set_count_hb_list(int list_num);
 	void set_client_id_to_hb_list(const std::string& id, int list_num);
 	
