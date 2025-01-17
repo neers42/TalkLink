@@ -12,9 +12,16 @@ MessageType001::MessageType001(int s_type, int a_type, const std::string& name, 
     :_sign_type{exchange_sign_type_from_int(s_type)}, _auth_type{exchange_auth_type_from_int(a_type)}, _client_name{name}, _client_mail_addr{mail_addr}, _client_password{password}
 {
 }
+MessageType001::MessageType001(ContentType c_type, const std::string& mt, SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
+    :BaseMessage(c_type, mt), _sign_type{ s_type }, _auth_type{ a_type }, _client_name{ name }, _client_mail_addr{ mail_addr }, _client_password{ password }
+{
+}
+MessageType001::MessageType001(int c_type, const std::string& mt, int s_type, int a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
+    :BaseMessage(c_type, mt), _sign_type{ this->exchange_sign_type_from_int(s_type)}, _auth_type{exchange_auth_type_from_int(a_type)}, _client_name{name}, _client_mail_addr{mail_addr}, _client_password{password}
+{
+}
 MessageType001::~MessageType001()
 {
-
 }
 
 

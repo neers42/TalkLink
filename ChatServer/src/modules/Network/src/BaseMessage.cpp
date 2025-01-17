@@ -6,7 +6,18 @@ BaseMessage::BaseMessage()
 
 }
 
-BaseMessage::BaseMessage(ContentType c_type, const std::string& m_type, const std::string& dst_id, std::string& src_id, const std::string& content, const std::string& id)
+BaseMessage::BaseMessage(ContentType c_type, const std::string& mt)
+	:_content_type{c_type}, _message_type{mt}, _dst_client_id{""}, _src_client_id{""}, _content{""}, _time_stamp{ServerTime::get_current_time()}, _message_id{""}
+{
+}
+
+BaseMessage::BaseMessage(int c_type, const std::string& mt)
+	:_content_type{ this->exchange_content_type_from_int(c_type)}, _message_type{mt}, _dst_client_id{""}, _src_client_id{""}, _content{""}, _time_stamp{ServerTime::get_current_time()}, _message_id{""}
+{
+}
+
+
+BaseMessage::BaseMessage(ContentType c_type, const std::string& m_type, const std::string& dst_id, const std::string& src_id, const std::string& content, const std::string& id)
 	:_content_type{ c_type }, _message_type{m_type},_dst_client_id {dst_id}, _src_client_id{ src_id }, _content{ content }, _time_stamp{ ServerTime::get_current_time()}, _message_id{id}
 {
 
@@ -101,6 +112,28 @@ bool BaseMessage::is_valid()
 	else {
 		LogHandler::get_instance().logging_error(StringFormat("message(receive time stamp : %s) is not valid.", this->_time_stamp));
 		return false;
+	}
+}
+
+BaseMessage::ContentType BaseMessage::exchange_content_type_from_int(int value)
+{
+	switch (value)
+	{
+	case 0:
+		return ContentType::TEXT;
+		break;
+	case 1:
+		return ContentType::IMAGE;
+		break;
+	case 2:
+		return ContentType::VIDEO;
+		break;
+	case 3:
+		return ContentType::NOTIFICATION;
+		break;
+	default:
+		return ContentType::TEXT;
+		break;
 	}
 }
 

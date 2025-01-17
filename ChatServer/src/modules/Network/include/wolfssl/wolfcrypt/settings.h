@@ -346,7 +346,14 @@
      * an application build -- then your application can avoid this warning by
      * defining WOLFSSL_NO_OPTIONS_H or WOLFSSL_CUSTOM_CONFIG as appropriate.
      */
+#ifdef _MSC_VER
+    #pragma message "No configuration for wolfSSL detected, check header order"
+
+#else
     #warning "No configuration for wolfSSL detected, check header order"
+#endif // _MSC_VER
+
+   // #warning "No configuration for wolfSSL detected, check header order"
 #endif
 
 #include <wolfssl/wolfcrypt/visibility.h>

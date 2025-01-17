@@ -6,28 +6,30 @@ class BaseMessage
 {
 public:
 	enum class ContentType {
-		TEXT,
-		IMAGE,
-		VIDEO,
-		NOTIFICATION
+		TEXT,			//テキスト
+		IMAGE,			//画像
+		VIDEO,			//動画
+		NOTIFICATION	//通知
 	};
 
-private:
-	ContentType _content_type;
-	std::string _message_type;
-	std::string _dst_client_id;
-	std::string _src_client_id;
-	std::string _content;
-	std::string _time_stamp;
-	std::string _message_id;
+protected:
+	ContentType _content_type;	//メッセージコンテンツの内容
+	std::string _message_type;	//メッセージ番号
+	std::string _dst_client_id;	//送信先のクライアントID
+	std::string _src_client_id;	//送信元のクライアントID
+	std::string _content;		//メッセージ本体
+	std::string _time_stamp;	//タイムスタンプ
+	std::string _message_id;	//メッセージID
 
 
 public:
 
 	//コンストラクタ
 	BaseMessage();
+	BaseMessage(ContentType c_type, const std::string& mt);
+	BaseMessage(int c_type, const std::string& mt);
 	BaseMessage(ContentType c_type, const std::string& m_type,
-		const std::string& dst_id, std::string& src_id,
+		const std::string& dst_id, const std::string& src_id,
 		const std::string& content, const std::string& id);
 
 	//デストラクタ
@@ -58,6 +60,8 @@ public:
 	void print_message(MT message) {
 		
 	}
+
+	ContentType exchange_content_type_from_int(int value);
 
 protected:
 	bool is_valid_mesasge_type(const std::string& mt);

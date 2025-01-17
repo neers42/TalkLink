@@ -1,7 +1,7 @@
 #ifndef MESSAGETYPE003
 #define MESSAGETYPE003
 #include "BaseMessage.h"
-class MessageType002 :
+class MessageType003 :
     public BaseMessage
 {
 
