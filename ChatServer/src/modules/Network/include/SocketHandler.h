@@ -14,14 +14,11 @@
 #include "LogHandler.h"
 #include "ClientHandler.h"
 #include "common.h"
-
 #define INIT_FILE_PASS  ".//////conf/socket_setting.ini"
 //#define MAX_CONNECT_NUM 10000
 #define SELECT_TIME_OUT -2
 #define REQUEST_ACCEPT_CLIENT_DETECTION -3
 #define NOT_EXIST_IP_ADDRESS -1
-
-
 
 class SocketHandler
 {
@@ -77,7 +74,7 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	
-
+private:
 	//Listenソケットをbindする
 	bool bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinfo* result);
 
@@ -92,7 +89,7 @@ private:
 
 
 	//Listenソケットを生成する
-	bool generate_tcp_listen_socket_msg();
+	bool generate_tcp_listen_socket();
 
 	bool trans_flags(const std::string& flag_str, struct addrinfo* param);
 	bool trans_family(const std::string& family_str, struct addrinfo* param);

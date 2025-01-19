@@ -13,6 +13,7 @@
 #include "common.h"
 #include "LogHandler.h"
 #include "DataBaseAccesor.h"
+#include "ProtocolHandler.h"
 #include <mutex>
 
 #define DISCONNECT_SOCKET 0
@@ -22,22 +23,23 @@
 class ServerControlleFacade
 {
 private:
-	std::unique_ptr<FirebaseAuthHandler> m_firebase_auth_handler;
-	std::unique_ptr<DataBaseAccesor> m_db_accesor;
-	std::unique_ptr<SocketHandler> m_socket_handler;
-	std::unique_ptr<MT000Receiver> m_mt000receiver;
-	std::unique_ptr<MT001Receiver> m_mt001receiver;
-	std::unique_ptr<MT002Receiver> m_mt002receiver;
-	std::unique_ptr<Sender> m_sender;
-	std::unique_ptr<ServerTime> m_server_time;
-	std::unique_ptr<ClientHandler> m_client_handler;
-	std::unique_ptr<ThreadPoolHandler> m_thread_pool_handler;
-	std::unique_ptr<ChatroomHandler> m_chat_room_handler;
-	std::mutex m_connect_client_list_mutex;
-	std::mutex m_hb_connect_list_mutex;
-	std::mutex m_cout_mutex;
-	std::mutex m_mutex;
-	std::string m_server_ip;
+	std::unique_ptr<FirebaseAuthHandler> _firebase_auth_handler;
+	std::unique_ptr<DataBaseAccesor> _db_accesor;
+	std::unique_ptr<ProtocolHandler> _protocol_handler;
+	std::unique_ptr<SocketHandler> _socket_handler;
+	std::unique_ptr<MT000Receiver> _mt000receiver;
+	std::unique_ptr<MT001Receiver> _mt001receiver;
+	std::unique_ptr<MT002Receiver> _mt002receiver;
+	std::unique_ptr<Sender> _sender;
+	std::unique_ptr<ServerTime> _server_time;
+	std::unique_ptr<ClientHandler> _client_handler;
+	std::unique_ptr<ThreadPoolHandler> _thread_pool_handler;
+	std::unique_ptr<ChatroomHandler> _chat_room_handler;
+	std::mutex _connect_client_list_mutex;
+	std::mutex _hb_connect_list_mutex;
+	std::mutex _cout_mutex;
+	std::mutex _mutex;
+	std::string _server_ip;
 
 public:
 	//コンストラクタ

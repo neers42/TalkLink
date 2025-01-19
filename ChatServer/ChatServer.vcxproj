@@ -610,6 +610,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />
+    <None Include="certs\ca-cert.pem" />
+    <None Include="certs\server-cert.pem" />
+    <None Include="certs\server-key.pem" />
     <None Include="conf\socket_setting.ini" />
   </ItemGroup>
   <ItemGroup>

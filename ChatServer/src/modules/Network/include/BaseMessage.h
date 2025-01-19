@@ -56,14 +56,13 @@ public:
 	virtual bool is_valid();
 
 	//メッセージ表示
-	template<typename MT>
-	void print_message(MT message) {
-		
-	}
+	void print_message(const json& recv_json, const std::string& ip_addr);
 
+	//Content Typeをint型から変換
 	ContentType exchange_content_type_from_int(int value);
 
 protected:
+	//メッセージ内容検証
 	bool is_valid_mesasge_type(const std::string& mt);
 	bool is_valid_dst_id(const std::string& dst_id);
 	bool is_valid_src_id(const std::string& src_id);

@@ -1008,7 +1008,7 @@ void SocketHandler::disconnect_socket(SOCKET client_socket)
 
 
 
-bool SocketHandler::generate_tcp_listen_socket_msg()
+bool SocketHandler::generate_tcp_listen_socket()
 {
 	//パラメータ設定
 	if (!setting_tcp_listen_socket_param(INIT_FILE_PASS)) {
@@ -1379,7 +1379,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	try
 	{
 		//tcp_listen_socketのオープンに失敗した場合
-		if (!generate_tcp_listen_socket_msg()) {
+		if (!generate_tcp_listen_socket()) {
 			THROW_APP_EXCEPTION("Failed to generate TCP listen socket for message.");
 			return false;
 		}

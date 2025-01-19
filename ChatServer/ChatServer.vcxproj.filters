@@ -1398,6 +1398,9 @@
   <ItemGroup>
     <None Include="assets\google-services.json" />
     <None Include="conf\socket_setting.ini" />
+    <None Include="certs\ca-cert.pem" />
+    <None Include="certs\server-cert.pem" />
+    <None Include="certs\server-key.pem" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\firebase\MD\x64\Debug\firebase_analytics.lib" />

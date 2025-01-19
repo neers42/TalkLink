@@ -13,7 +13,7 @@ bool ChatroomHandler::ChatRoom::add_client_chatroom(const ClientHandler::Client&
 {
 	try
 	{
-		this->client_list.push_back(client);
+		this->_client_list.push_back(client);
 	}
 	catch (const std::bad_alloc&)
 	{
@@ -31,46 +31,46 @@ bool ChatroomHandler::ChatRoom::add_client_chatroom(const ClientHandler::Client&
 bool ChatroomHandler::ChatRoom::delete_client_chatroom(const ClientHandler::Client& client)
 {
 	auto element_to_remove = search_client_form_chatroom(client);
-	this->client_list.erase(element_to_remove);
+	this->_client_list.erase(element_to_remove);
 	return true;
 }
 
 std::string& ChatroomHandler::ChatRoom::get_chatroom_id()
 {
-	return this->m_chatroom_id;
+	return this->_chatroom_id;
 }
 
 const std::string& ChatroomHandler::ChatRoom::get_chatroom_id() const
 {
-	return this->m_chatroom_id;
+	return this->_chatroom_id;
 }
 
 std::string& ChatroomHandler::ChatRoom::get_chatroom_name()
 {
-	return this->m_chatroom_name;
+	return this->_chatroom_name;
 }
 
 const std::string& ChatroomHandler::ChatRoom::get_chatroom_name() const
 {
-	return this->m_chatroom_name;
+	return this->_chatroom_name;
 }
 
 std::vector<ClientHandler::Client>& ChatroomHandler::ChatRoom::get_client_list()
 {
-	return this->client_list;
+	return this->_client_list;
 }
 
 const std::vector<ClientHandler::Client>& ChatroomHandler::ChatRoom::get_client_list() const
 {
-	return this->client_list;
+	return this->_client_list;
 }
 
  std::vector<ClientHandler::Client>::iterator ChatroomHandler::ChatRoom::search_client_form_chatroom(const ClientHandler::Client& client)
 {
 	 try
 	 {
-		auto iterator = std::find(this->client_list.begin(), this->client_list.end(), client);
-		if (iterator == this->client_list.end()) {
+		auto iterator = std::find(this->_client_list.begin(), this->_client_list.end(), client);
+		if (iterator == this->_client_list.end()) {
 			THROW_APP_EXCEPTION("We couldn't find the client we were looking for!");
 		}
 		else {
@@ -85,7 +85,7 @@ const std::vector<ClientHandler::Client>& ChatroomHandler::ChatRoom::get_client_
 	 catch (const exception::ExceptionBase& ex)
 	 {
 		 LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		return this->client_list.end();
+		return this->_client_list.end();
 	 }
 }
 
@@ -113,18 +113,18 @@ bool ChatroomHandler::delete_chatroom(const ChatRoom& chatroom)
 
 std::vector<ClientHandler::Client>& ChatroomHandler::get_client_list(int list_num)
 {
-	return this->m_chatroom_list[list_num].get_client_list();
+	return this->chatroom_list[list_num].get_client_list();
 }
 
 std::vector<ChatroomHandler::ChatRoom> ChatroomHandler::get_chatroom_list()
 {
-	return this->m_chatroom_list;
+	return this->chatroom_list;
 }
 
 int ChatroomHandler::search_chatroom_id_from_list(const std::string& chatroom_id)
 {
-	for (int i = 0; i < this->m_chatroom_list.size(); i++) {
-		if (this->m_chatroom_list[i].get_chatroom_id() == chatroom_id) {
+	for (int i = 0; i < this->chatroom_list.size(); i++) {
+		if (this->chatroom_list[i].get_chatroom_id() == chatroom_id) {
 			return i;
 		}
 	}
