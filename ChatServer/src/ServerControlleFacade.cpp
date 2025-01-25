@@ -113,15 +113,32 @@ bool ServerControlleFacade::accept_client_socket_process()
 	SOCKET new_client_socket = INVALID_SOCKET;
 	struct sockaddr_in new_client_sockaddr_in = { 0 };
 	socklen_t new_client_socklen_t = 0;
+	std::string new_client_ipv4_addr;
 
+	//TCPソケットのアクセプト処理
 	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(this->_client_handler->init_client.get_sockaddr_in_length());
-	
 	if (new_client_socket == INVALID_SOCKET) {
 		LogHandler::get_instance().logging_error(StringFormat("The accepted socket for message could not be added to the list because it was an INVALID SOCKET"));
 		return ACCEPT_FAILED;
 	}
-	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t);
-	new_client.set_client_ipv4_addr(_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
+	else {
+		new_client_ipv4_addr = this->_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client_ipv4_addr));
+	}
+
+	//SSLアクセプト処理
+	WOLFSSL* new_client_ssl = this->_protocol_handler->wolfssl_accept(new_client_socket);
+	if (new_client_ssl == nullptr) {
+		LogHandler::get_instance().logging_error(StringFormat("failed, client ssl not accepted(client socket : %d),", new_client_socket));
+		wolfSSL_free(new_client_ssl);
+		return ACCEPT_FAILED;
+	}
+	else {
+		LogHandler::get_instance().logging_info(StringFormat("success, client ssl accepted(client socket : %d),", new_client_socket));
+	}
+
+	//新規クライアントのインスタンスを生成
+	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, new_client_ipv4_addr, new_client_ssl);
+	//new_client.set_client_ipv4_addr(_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
 
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);

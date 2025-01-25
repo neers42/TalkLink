@@ -12,6 +12,7 @@
 //#define SERVER_METHOD_TLS_1_3	//TLS1.3で接続
 //#define SERVER_METHOD_TLS_1_2	//TLS1.2で接続
 //#define SERVER_METHOD_TLS_1_1	//TLS1.1で接続
+#define MESSAGE_SIZE 1024	//SSL readで受信するメッセージのサイズ
 
 class ProtocolHandler
 {
@@ -39,11 +40,17 @@ public:
 	//メッセージIDの生成
 	const std::string generate_message_id();
 
-	void generate_ssl_object();
+	//SSLオブジェクトの生成
+	WOLFSSL* generate_and_attach_ssl_object(SOCKET client_socket);
 
-	void ssl_object_atattch_socket(SOCKET client_socket);
+	//SSLのアクセプト
+	WOLFSSL* wolfssl_accept(SOCKET client_socket);
 
-	void wolfssl_accept();
+	//メッセージの受信
+	std::tuple<int, json> receive_message_tls();
+
+	//メッセージの送信
+	std::tuple<int, json> send_message_tls();
 
 private:
 

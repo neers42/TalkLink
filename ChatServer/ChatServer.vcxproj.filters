@@ -1401,6 +1401,7 @@
     <None Include="certs\ca-cert.pem" />
     <None Include="certs\server-cert.pem" />
     <None Include="certs\server-key.pem" />
+    <None Include="diagram\class-diagram.md" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\firebase\MD\x64\Debug\firebase_analytics.lib" />

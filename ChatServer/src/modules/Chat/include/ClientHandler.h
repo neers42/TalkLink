@@ -14,6 +14,7 @@
 #include "FirebaseAuthHandler.h"
 #include "firebase/auth.h"
 #include "common.h"
+#include "wolfssl/ssl.h"
 #define MAX_CONNECT_NUM 50000
 #define NOT_EXIST_CLIENT_ID -1
 
@@ -28,23 +29,24 @@ private:
 
 		//Client private変数
 	private:
-		std::string m_client_id;
-		std::string m_client_name;
-		std::string m_client_mail_addr;
-		SOCKET m_client_socket;
-		struct sockaddr_in m_client_sockaddr_in;
-		socklen_t m_socket_addr_in_length = sizeof(m_client_sockaddr_in);
-		std::string m_client_ipv4_addr = "";
-		std::string m_client_password = "";
-		firebase::auth::Auth* client_auth;
-		int m_heart_beat_count;
-		bool m_auth_status = false;
+		std::string _id;	//クライアントID
+		std::string _name;	//クライアントネーム
+		std::string _mail_address;	//クライアントのメールアドレス
+		SOCKET _socket;		//クライアントのソケット
+		struct sockaddr_in _sockaddr_in;	//クライアントのsockaddr_in情報
+		socklen_t _socket_address_in_length = sizeof(this->_sockaddr_in);
+		std::string _ipv4_address = "";		//クライアントの端末ipv4アドレス
+		std::string _password = "";			//クライアントのパスワード
+		firebase::auth::Auth* _firebase_auth;	//クライアントの認証情報
+		int _heart_beat_count;		//クライアントのハートビート回数
+		bool _auth_status = false;	//クライアントの認証状態
+		WOLFSSL* _ssl;				//クライアントのソケットにアタッチされたsslオブジェクト
 
 
 	public:
 		explicit Client();
-		explicit Client(const std::string id, const std::string name, const std::string mail_addr, const SOCKET socket, const struct sockaddr_in sockaddr_in, const std::string client_ipv4_addr);
-		explicit Client(const SOCKET socket, const struct sockaddr_in sockaddr_in, const socklen_t length);
+		explicit Client(const std::string id, const std::string name, const std::string mail_addr, const SOCKET socket, const struct sockaddr_in sockaddr_in, const std::string client_ipv4_addr, WOLFSSL* ssl);
+		explicit Client(const SOCKET socket, const struct sockaddr_in sockaddr_in, const socklen_t length, std::string& ipv4_addr, WOLFSSL* ssl);
 		~Client();
 
 
@@ -70,6 +72,8 @@ private:
 		const int get_client_heart_beat_count() const;
 		bool get_auth_status();
 		const bool get_auth_status() const;
+		WOLFSSL* get_ssl();
+		WOLFSSL* get_ssl() const;
 
 		//setter
 		void set_client_id(std::string id);

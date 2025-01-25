@@ -83,7 +83,8 @@ private:
 	std::string sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip);
 	std::string sign_in_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id);
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
-
+	
+	
 };
 
 

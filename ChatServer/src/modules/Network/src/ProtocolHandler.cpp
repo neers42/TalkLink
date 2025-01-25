@@ -72,30 +72,58 @@ T ProtocolHandler::serialize_message(const std::vector<uint8_t> recv_data)
 	return true;
 }
 
-void ProtocolHandler::generate_ssl_object()
+WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 {
-	this->_w_ssl = wolfSSL_new(this->_w_ctx);
-	if (_w_ssl == NULL) {
-		LogHandler::get_instance().logging_critical(StringFormat("SSL object, failed, SSL obejct creation failed."));
-		exit(1);
+	WOLFSSL* new_client_ssl = wolfSSL_new(this->_w_ctx);
+	//クライアントのSSL生成が正常に処理されなかった場合
+	if (new_client_ssl == NULL) {
+		LogHandler::get_instance().logging_error(StringFormat("failed, new client ssl object creation failed."));
+		wolfSSL_free(new_client_ssl);
+	}
+	//クライアントのSSL生成が正常に処理された場合
+	else {
+		LogHandler::get_instance().logging_debug("success, new client ssl object creation success!!.");
+		//SSLオブジェクトとクライアントソケットを関連付けする。
+		wolfSSL_set_fd(new_client_ssl, client_socket);
+		return new_client_ssl;
 	}
 }
 
-void ProtocolHandler::ssl_object_atattch_socket(SOCKET client_socket)
-{
-	//クライアントソケットとの
-	wolfSSL_set_fd(_w_ssl, (int)client_socket);
-}
 
-void ProtocolHandler::wolfssl_accept()
+WOLFSSL* ProtocolHandler::wolfssl_accept(SOCKET client_socket)
 {
-	if (wolfSSL_accept(_w_ssl) == SSL_SUCCESS) {
-		LogHandler::get_instance().logging_info(StringFormat("client ssl, success, accept client ssl."));
+	//SSLオブジェクトの生成及び
+	WOLFSSL* new_client_ssl = generate_and_attach_ssl_object(client_socket);
+	if (wolfSSL_accept(new_client_ssl) == SSL_SUCCESS) {
+		LogHandler::get_instance().logging_info(StringFormat("success, accept client ssl accept(client socket : %d),", client_socket));
+		return new_client_ssl;
+
 	}
 	else {
 		this->print_wolfssl_error();
+		wolfSSL_free(new_client_ssl);
+		return nullptr;
 	}
 }
+
+std::tuple<int, json> ProtocolHandler::receive_message_tls()
+{
+	json recv_msg_json;
+	char buffer[MESSAGE_SIZE];
+	int ret = wolfSSL_read(this->_w_ssl, buffer, sizeof(buffer));
+	if (ret > 0) {
+		LogHandler::get_instance().logging_debug(StringFormat("messsage receive success, received message size : %d.", ret));
+		std::vector<int> received_data(buffer, buffer + ret);
+		recv_msg_json = json::from_msgpack(received_data);
+
+		return std::make_tuple(ret, recv_msg_json);
+	}
+	else {
+		LogHandler::get_instance().logging_error(StringFormat("message receive failed."));
+		return std::make_tuple(ret, json());
+	}
+}
+
 
 //SSL通信以外で発生するエラーの表示
 void ProtocolHandler::print_wolfssl_global_error()
