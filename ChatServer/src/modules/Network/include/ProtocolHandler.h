@@ -47,7 +47,7 @@ public:
 	WOLFSSL* wolfssl_accept(SOCKET client_socket);
 
 	//メッセージの受信
-	std::tuple<int, json> receive_message_tls();
+	std::tuple<int, json, bool> receive_message_tls(WOLFSSL* client_ssl);
 
 	//メッセージの送信
 	std::tuple<int, json> send_message_tls();
@@ -58,7 +58,7 @@ private:
 	void print_wolfssl_global_error();
 	
 	//wolfSSLにおけるSSL通信での発生エラーを表示
-	void print_wolfssl_error();
+	void print_wolfssl_error(WOLFSSL* client_ssl);
 
 	//wolfSSLの初期化
 	void initialize_wolfssl();

@@ -100,28 +100,80 @@ WOLFSSL* ProtocolHandler::wolfssl_accept(SOCKET client_socket)
 
 	}
 	else {
-		this->print_wolfssl_error();
+		this->print_wolfssl_error(new_client_ssl);
 		wolfSSL_free(new_client_ssl);
 		return nullptr;
 	}
 }
 
-std::tuple<int, json> ProtocolHandler::receive_message_tls()
+std::tuple<int, json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 {
 	json recv_msg_json;
 	char buffer[MESSAGE_SIZE];
-	int ret = wolfSSL_read(this->_w_ssl, buffer, sizeof(buffer));
-	if (ret > 0) {
-		LogHandler::get_instance().logging_debug(StringFormat("messsage receive success, received message size : %d.", ret));
-		std::vector<int> received_data(buffer, buffer + ret);
-		recv_msg_json = json::from_msgpack(received_data);
+	int message_size = 0;
+	std::vector<uint8_t> message_buffer;
+	bool disconnect_flag = false;
+	while (true)
+	{
+		int bytes_read = wolfSSL_read(client_ssl, buffer, sizeof(buffer));
+		message_size += bytes_read;
+		//受信したバイト数が0より大きい場合msgの解析を実施する。
+		if (bytes_read > 0) {
+			//メッセージバッファーのvector行列に受信したbufferのmsg分を追加
+			message_buffer.insert(message_buffer.end(), buffer, buffer+bytes_read);
+			try
+			{
+				//jsonメッセージの解析
+				recv_msg_json = json::from_msgpack(message_buffer);
+				//完全なメッセージが解析された場合は中身を表示
+				LogHandler::get_instance().logging_debug(StringFormat("messsage receive success, received message size : %d.\nReceived json : %s", bytes_read, recv_msg_json.dump(4)));
+			}
+			catch (const json::parse_error& e)
+			{
+				//jsonが完全ではない場合、再度受信を繰り返す
+				continue;
+			}
 
-		return std::make_tuple(ret, recv_msg_json);
+			return std::make_tuple(bytes_read, recv_msg_json, disconnect_flag);
+			break;
+		}
+		//受信したバイト数が0の場合はクライアントを切断する処理に移行する
+		else if(bytes_read == 0){
+			disconnect_flag = true;
+			return std::make_tuple(bytes_read, json(), disconnect_flag);
+			break;
+		}
+		//上記の判定以外の場合の処理
+		else
+		{
+			int recv_error = wolfSSL_get_error(client_ssl, bytes_read);
+			if (recv_error == WOLFSSL_ERROR_WANT_READ || recv_error == WOLFSSL_ERROR_WANT_WRITE) {
+				continue;
+			}
+			//0がリターンされてきた場合の処理について
+			else if (recv_error == WOLFSSL_ERROR_ZERO_RETURN) {
+				disconnect_flag = true;
+				return std::make_tuple(bytes_read, json(), disconnect_flag);
+				break;
+			}
+			//システムコール関連のエラーが発生した場合
+			else if (recv_error == WOLFSSL_ERROR_SYSCALL) {
+				if (errno == EAGAIN || errno == EWOULDBLOCK) {
+					LogHandler::get_instance().logging_error(StringFormat("receive failed, wolfSSL read timeout occured."));
+				}
+				else {
+					LogHandler::get_instance().logging_error(StringFormat("receive failed, wolfSSL read syscall error occured."));
+				}
+			}
+			//それ以外の理由
+			else {
+				LogHandler::get_instance().logging_error(StringFormat("message receive failed."));
+			}
+			return std::make_tuple(bytes_read, json(), disconnect_flag);
+
+		}
 	}
-	else {
-		LogHandler::get_instance().logging_error(StringFormat("message receive failed."));
-		return std::make_tuple(ret, json());
-	}
+
 }
 
 
@@ -132,17 +184,17 @@ void ProtocolHandler::print_wolfssl_global_error()
 	char buffer[80];
 	err = wolfSSL_ERR_get_error();
 	wolfSSL_ERR_error_string(err, buffer);
-	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, fauled, error code : %s (error code : %d)"));
+	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, fauled, error content : %s (error code : %d)", std::string(buffer), err));
 }
 
 //SSL通信で発生するエラーの表示
-void ProtocolHandler::print_wolfssl_error()
+void ProtocolHandler::print_wolfssl_error(WOLFSSL* client_ssl)
 {
 	int err = 0;
 	char buffer[80];
-	err = wolfSSL_get_error(_w_ssl, 0);
+	err = wolfSSL_get_error(client_ssl, 0);
 	wolfSSL_ERR_error_string(err, buffer);
-	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, fauled, error code : %s (error code : %d)"));
+	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, fauled, error code : %s (error code : %d)", std::string(buffer), err));
 }
 
 void ProtocolHandler::initialize_wolfssl()
