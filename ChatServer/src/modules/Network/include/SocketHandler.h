@@ -36,16 +36,16 @@ private:
 
 	fd_set m_fds, m_fd_read;
 
-	timeval m_timeout;
+	timeval _timeout;
 
 	//リッスンソケット
-	SOCKET m_tcp_listen_socket;
+	SOCKET _tcp_listen_socket;
 	
 	//UDPブロードキャスト送信用ソケット
-	SOCKET m_udp_bloadcast_tx_socket;
+	SOCKET _udp_bloadcast_tx_socket;
 
 	//UDPマルチキャスト送信用ソケット
-	SOCKET m_udp_multicast_tx_socket;
+	SOCKET _udp_multicast_tx_socket;
 
 	//サーバのアプリケーションポート番号
 	int m_message_port = 0;
@@ -53,7 +53,7 @@ private:
 	int m_heart_beat_port = 0;
 
 	//初期化用のsockaddr_in構造体
-	struct sockaddr_in m_init_sockaddr_in;
+	struct sockaddr_in _init_sockaddr_in;
 	
 	//マルチキャスト用のsockaddr_in構造体
 	struct sockaddr_in m_multicast_tx_addr, m_bloadcast_tx_addr;
@@ -136,11 +136,11 @@ public:
 
 	
 	SOCKET get_listen_socket() {
-		return m_tcp_listen_socket;
+		return _tcp_listen_socket;
 	}
 
 	SOCKET get_udp_multicast_tx_socket() {
-		return m_udp_multicast_tx_socket;
+		return _udp_multicast_tx_socket;
 	}
 
 	fd_set& get_fd_read() {

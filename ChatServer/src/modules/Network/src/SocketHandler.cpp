@@ -16,9 +16,9 @@
  *
  **********************************************************************************/
 SocketHandler::SocketHandler() : 
-	m_tcp_listen_socket{INVALID_SOCKET},
-	m_udp_bloadcast_tx_socket{ INVALID_SOCKET },
-	m_udp_multicast_tx_socket{INVALID_SOCKET}
+	_tcp_listen_socket{INVALID_SOCKET},
+	_udp_bloadcast_tx_socket{ INVALID_SOCKET },
+	_udp_multicast_tx_socket{INVALID_SOCKET}
 {
 	ZeroMemory(&m_param_tcp, sizeof(m_param_tcp));
 
@@ -61,22 +61,22 @@ SocketHandler::SocketHandler() :
 
 	//select関数のタイムアウト初期設定(tv_sec=秒の指定　tv_usec=マイクロ秒の指定)
 	//デフォルトコンストラクタでは500マイクロ秒 * 1000　⇒ 500ミリ秒に設定
-	m_timeout.tv_sec = 0;
-	m_timeout.tv_usec = 500 * 1000;
+	_timeout.tv_sec = 0;
+	_timeout.tv_usec = 500 * 1000;
 
 	//リッスンソケットの初期化
-	m_tcp_listen_socket = INVALID_SOCKET;
+	_tcp_listen_socket = INVALID_SOCKET;
 
 	//UDPブロードキャスト送信用ソケットの初期化
-	m_udp_bloadcast_tx_socket = INVALID_SOCKET;
+	_udp_bloadcast_tx_socket = INVALID_SOCKET;
 
 	//UDPマルチキャスト送信用ソケット
-	m_udp_multicast_tx_socket = INVALID_SOCKET;
+	_udp_multicast_tx_socket = INVALID_SOCKET;
 
 	//ソケット初期化用の変数の初期化
-	m_init_sockaddr_in.sin_family = AF_INET;
-	m_init_sockaddr_in.sin_port = 0;
-	m_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+	_init_sockaddr_in.sin_family = AF_INET;
+	_init_sockaddr_in.sin_port = 0;
+	_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
 
 	
@@ -132,16 +132,16 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 
 
 	//select関数のタイムアウト初期設定(tv_sec=秒の指定　tv_usec=マイクロ秒の指定)
-	m_timeout.tv_sec = tv_sec;
-	m_timeout.tv_usec = tv_usec;
+	_timeout.tv_sec = tv_sec;
+	_timeout.tv_usec = tv_usec;
 
 	//リッスンソケットの初期化
-	m_tcp_listen_socket = INVALID_SOCKET;
+	_tcp_listen_socket = INVALID_SOCKET;
 
 
-	m_init_sockaddr_in.sin_family = AF_INET;
-	m_init_sockaddr_in.sin_port = 50000;
-	m_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+	_init_sockaddr_in.sin_family = AF_INET;
+	_init_sockaddr_in.sin_port = 50000;
+	_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
 }
 
@@ -283,7 +283,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 void SocketHandler::setting_select_info_to_listen_socket()
 {
 	FD_ZERO(&this->m_fd_read);
-	FD_SET(this->m_tcp_listen_socket, &this->m_fd_read);
+	FD_SET(this->_tcp_listen_socket, &this->m_fd_read);
 	
 
 }
@@ -317,8 +317,8 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	try
 	{
 		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(m_multicast_tx_addr.sin_port).c_str(), &m_multicast_tx_param, &m_result_multicast);
-		this->m_udp_multicast_tx_socket = socket(m_multicast_tx_param.ai_family, m_multicast_tx_param.ai_socktype, 0);
-		if (this->m_udp_multicast_tx_socket == INVALID_SOCKET) {
+		this->_udp_multicast_tx_socket = socket(m_multicast_tx_param.ai_family, m_multicast_tx_param.ai_socktype, 0);
+		if (this->_udp_multicast_tx_socket == INVALID_SOCKET) {
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -386,7 +386,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	//setsocloptの設定
 	try
 	{
-		int multicast_if_set_sockopt_result = setsockopt(this->m_udp_multicast_tx_socket, 
+		int multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket, 
 											IPPROTO_IP, IP_MULTICAST_IF,
 											this->m_local_ip_addr.c_str(), 
 											sizeof(this->m_local_ip_addr.c_str()));
@@ -445,7 +445,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	
 	try
 	{
-		int multicast_ttl_set_sockopt_result = setsockopt(m_udp_multicast_tx_socket,
+		int multicast_ttl_set_sockopt_result = setsockopt(_udp_multicast_tx_socket,
 			IPPROTO_IP,
 			IP_MULTICAST_TTL,
 			(char*)&m_ttl,
@@ -502,7 +502,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 		return false;
 	}
 	
-	LogHandler::get_instance().logging_info(StringFormat("UDP multicast TX socket(%d), success, server generate udp muluticast tx socket.", m_udp_multicast_tx_socket));
+	LogHandler::get_instance().logging_info(StringFormat("UDP multicast TX socket(%d), success, server generate udp muluticast tx socket.", _udp_multicast_tx_socket));
 	return true;
 }
 
@@ -887,7 +887,7 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 	{
 		SOCKET accept_client_socket_result;
 		struct sockaddr_in accept_sockaddr_in_result;
-		accept_client_socket_result = accept(m_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
+		accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
 
 		//acceptしたソケットがINVALID_SOCKETである場合
 		if (accept_client_socket_result == INVALID_SOCKET) {
@@ -1062,8 +1062,8 @@ bool SocketHandler::generate_tcp_listen_socket()
 
 		//std::cout << StringFormat("[%s][INFO]Creating TCP listening socket...", ServerTime::get_current_time());
 		//リッスンソケットの生成
-		m_tcp_listen_socket = socket(m_result_tcp -> ai_family, m_result_tcp -> ai_socktype, m_result_tcp->ai_protocol);
-		if (m_tcp_listen_socket == INVALID_SOCKET) {
+		_tcp_listen_socket = socket(m_result_tcp -> ai_family, m_result_tcp -> ai_socktype, m_result_tcp->ai_protocol);
+		if (_tcp_listen_socket == INVALID_SOCKET) {
 			THROW_APP_EXCEPTION("The generated listening socket for message is not valid.");
 		}
 	}
@@ -1075,14 +1075,14 @@ bool SocketHandler::generate_tcp_listen_socket()
 		return false;
 	}
 	//std::cout << "\033[32m [OK] \033[m" << std::endl;
-	LogHandler::get_instance().logging_info(StringFormat("listen socket(%d) ,success, server generated listen socket.", m_tcp_listen_socket));
+	LogHandler::get_instance().logging_info(StringFormat("listen socket(%d) ,success, server generated listen socket.", _tcp_listen_socket));
 
-	bool bind_result = bind_tcp_listen_socket(&m_tcp_listen_socket, m_result_tcp);
+	bool bind_result = bind_tcp_listen_socket(&_tcp_listen_socket, m_result_tcp);
 	if (bind_result == true) {
-		LogHandler::get_instance().logging_debug(StringFormat("listen socket(%d), success, server bind setting.", m_tcp_listen_socket));
+		LogHandler::get_instance().logging_debug(StringFormat("listen socket(%d), success, server bind setting.", _tcp_listen_socket));
 	}
 	else {
-		LogHandler::get_instance().logging_error(StringFormat("listen socket(%d), failed, server can't bind setting.", m_tcp_listen_socket));
+		LogHandler::get_instance().logging_error(StringFormat("listen socket(%d), failed, server can't bind setting.", _tcp_listen_socket));
 		return false;
 	}
 
@@ -1307,7 +1307,7 @@ int SocketHandler::monitor_socket_descriptor(const std::vector<ClientHandler::Cl
 	try
 	{
 		int select_result = 0;
-		select_result = select(0, &m_fds, NULL, NULL, &m_timeout);
+		select_result = select(0, &m_fds, NULL, NULL, &_timeout);
 
 		switch (select_result)
 		{
@@ -1351,7 +1351,7 @@ int SocketHandler::monitor_socket_descriptor(const std::vector<ClientHandler::Cl
 
 			//ディスクリプションに変化が起こった場合
 		default:
-			if (FD_ISSET(m_tcp_listen_socket, &m_fds)) {
+			if (FD_ISSET(_tcp_listen_socket, &m_fds)) {
 				return REQUEST_ACCEPT_CLIENT_DETECTION;
 			}
 			else {
@@ -1391,17 +1391,17 @@ bool SocketHandler::open_tcp_listen_socket()
 
 	try
 	{
-		if (listen(m_tcp_listen_socket, SOMAXCONN) == SOCKET_ERROR) {
+		if (listen(_tcp_listen_socket, SOMAXCONN) == SOCKET_ERROR) {
 
 			freeaddrinfo(m_result_tcp);
-			closesocket(m_tcp_listen_socket);
+			closesocket(_tcp_listen_socket);
 			WSACleanup();
 			THROW_APP_EXCEPTION("Tcp Listen socket has been SOCKET_ERROR for some reason.");
 
 		}
 		else
 		{
-			LogHandler::get_instance().logging_info(StringFormat("listen socket(%d), success, server open listen socket.", m_tcp_listen_socket));
+			LogHandler::get_instance().logging_info(StringFormat("listen socket(%d), success, server open listen socket.", _tcp_listen_socket));
 		}
 	}
 	catch (const exception::ExceptionBase& ex)
