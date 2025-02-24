@@ -138,7 +138,6 @@ bool ServerControlleFacade::accept_client_socket_process()
 
 	//新規クライアントのインスタンスを生成
 	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, new_client_ipv4_addr, new_client_ssl);
-	//new_client.set_client_ipv4_addr(_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client.get_client_ipv4_addr())));
 
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
@@ -178,7 +177,6 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 
 		}
 		else {
-			//LogHandler::get_instance().logging_error(StringFormat("message receive process, failed, server interrupted message receive process."));
 			return;
 		}
 
@@ -191,7 +189,7 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 		{
 			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
 			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
-			_client_handler->delete_client_from_con_list(detection_num);
+			_client_handler->delete_client(detection_num);
 		}
 	}
 	//receive_result == 0の場合(クライアントのソケットが切断された場合)
@@ -201,7 +199,7 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 		{
 			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
 			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
-			_client_handler->delete_client_from_con_list(detection_num);
+			_client_handler->delete_client(detection_num);
 		}
 	}
 	//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
@@ -513,7 +511,7 @@ void ServerControlleFacade::heart_beat_count_zero_process(const int hb_zero_clie
 		}
 		//クライアント切断処理
 		_socket_handler->disconnect_socket(_client_handler->connected_client_list[hb_zero_client_num].get_client_socket());
-		_client_handler->delete_client_from_con_list(hb_zero_client_num);
+		_client_handler->delete_client(hb_zero_client_num);
 	}	
 }
 

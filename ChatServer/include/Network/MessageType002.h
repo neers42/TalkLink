@@ -13,6 +13,9 @@ public:
 	};
 private:
 	TransType _trans_type;
+	std::string _dst_client_id;
+	std::string _src_client_id;
+	std::string _content;
 	std::string _dst_chatroom_id;
 
 public:
@@ -33,6 +36,15 @@ public:
 	TransType get_trans_type();
 	void set_trans_type(TransType tt);
 	void set_trans_type(const int value);
+
+	std::string get_dst_client_id() const;
+	void set_dst_client_id(const std::string& dst_id);
+
+	std::string get_src_client_id() const;
+	void set_src_client_id(const std::string& src_id);
+
+	std::string get_content() const;
+	void set_content(const std::string& content);
 
 	//_dst_chatroom_id
 	std::string get_dst_chatroom_id();

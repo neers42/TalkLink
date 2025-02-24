@@ -18,33 +18,6 @@ void FirebaseAuthHandler::load_initialize_info()
 {
 }
 
-//std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::string& email, const std::string& password)
-//{
-//	//TODO
-//	//create_resultの結果を利用してエラー処理を記載する
-//	firebase::Future<firebase::auth::AuthResult> create_result = this->auth->CreateUserWithEmailAndPassword(email.c_str(), password.c_str());
-//	firebase::Future<firebase::auth::AuthResult> result;
-//	std::string user_id = "";
-//
-//	while (result.status() != firebase::kFutureStatusComplete) {
-//		result = auth->CreateUserWithEmailAndPasswordLastResult();
-//		if (result.status() == firebase::kFutureStatusComplete) {
-//			if (result.error() == firebase::auth::kAuthErrorNone) {
-//
-//				const firebase::auth::AuthResult auth_result = *result.result();
-//				//LogHandler::logging(LogHandler::LogType::INFO, std::cout, StringFormat("Create user succeeded for email : %s(UID : %s)", auth_result.user.email(), auth_result.user.uid()));
-//				user_id = auth_result.user.uid();
-//				LogHandler::get_instance().logging_info(StringFormat("issue client id : %s, success, client create with email and password.", user_id));
-//			}
-//			else {
-//				LogHandler::get_instance().logging_error(StringFormat("issue client id : None, failed, %s", result.error_message()));
-//				//LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Created user failed with error : %s", result.error_message()));
-//			}
-//		}
-//	}
-//
-//	return user_id;
-//}
 
 
 std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::string& mail_addr, const std::string& password, const std::string& ip, void (FirebaseAuthHandler::*callback_func)(const firebase::Future<firebase::auth::AuthResult>&, std::string*, const std::string&, const std::string&))

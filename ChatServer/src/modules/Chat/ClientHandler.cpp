@@ -351,7 +351,6 @@ bool ClientHandler::add_client(const Client& client)
 	catch (const exception::ExceptionBase& ex)
 	{
 		LogHandler::get_instance().logging_error(ex.what_for_str());
-		//LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		return false;
 	}
 
@@ -361,7 +360,7 @@ bool ClientHandler::add_client(const Client& client)
 }
 
 
-void ClientHandler::delete_client_from_con_list(const uint32_t delete_num)
+void ClientHandler::delete_client(const uint32_t delete_num)
 {
 	this->connected_client_list.erase(this->connected_client_list.begin() + delete_num);
 	this->connect_client_num--;

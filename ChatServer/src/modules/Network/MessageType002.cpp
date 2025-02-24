@@ -6,12 +6,18 @@ MessageType002::MessageType002()
 }
 
 MessageType002::MessageType002(BaseMessage::ContentType c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const std::string& m_id, TransType tt, const std::string& dst_chatroom_id)
-	:BaseMessage::BaseMessage(c_type, mt, dst_id, src_id, content, m_id),_trans_type{tt}, _dst_chatroom_id{dst_chatroom_id}
+	:BaseMessage::BaseMessage(c_type, mt, m_id),_trans_type{tt}, 
+	_dst_chatroom_id{dst_chatroom_id}
 {
 }
 
 MessageType002::MessageType002(int c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const std::string& m_id, int trans_type, const std::string& dst_chatroom_id)
-	:BaseMessage::BaseMessage(exchange_content_type_from_int(c_type), mt, dst_id, src_id, content, m_id), _trans_type{exchange_trans_type_from_int(trans_type)}, _dst_chatroom_id{dst_chatroom_id}
+	:BaseMessage::BaseMessage(exchange_content_type_from_int(c_type), mt, m_id),
+	_trans_type{exchange_trans_type_from_int(trans_type)},
+	_dst_client_id{dst_id},
+	_src_client_id{src_id},
+	_content{content},
+	_dst_chatroom_id{dst_chatroom_id}
 {
 }
 
@@ -45,6 +51,36 @@ void MessageType002::set_trans_type(const int value)
 	default:
 		break;
 	}
+}
+
+std::string MessageType002::get_dst_client_id() const
+{
+	return this->_dst_client_id;
+}
+
+void MessageType002::set_dst_client_id(const std::string& dst_id)
+{
+	this->_dst_client_id = dst_id;
+}
+
+std::string MessageType002::get_src_client_id() const
+{
+	return this->_src_client_id;
+}
+
+void MessageType002::set_src_client_id(const std::string& src_id)
+{
+	this->_src_client_id = src_id;
+}
+
+std::string MessageType002::get_content() const
+{
+	return this->_content;
+}
+
+void MessageType002::set_content(const std::string& content)
+{
+	this->_content = content;
 }
 
 std::string MessageType002::get_dst_chatroom_id()

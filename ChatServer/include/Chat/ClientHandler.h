@@ -148,7 +148,7 @@ public:
 
 	//other
 	bool add_client(const Client& client);
-	void delete_client_from_con_list(const std::uint32_t delete_num);
+	void delete_client(const std::uint32_t delete_num);
 	void delete_client_hbsock_from_hb_list(const std::uint32_t delete_num);
 	int check_next_invalid_socket();
 	int search_client_id_from_con_list(const std::string& search_client_id);
