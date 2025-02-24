@@ -184,7 +184,7 @@ void ProtocolHandler::print_wolfssl_global_error()
 	char buffer[80];
 	err = wolfSSL_ERR_get_error();
 	wolfSSL_ERR_error_string(err, buffer);
-	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, fauled, error content : %s (error code : %d)", std::string(buffer), err));
+	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, failed, error content : %s (code : %d)", std::string(buffer), err));
 }
 
 //SSL通信で発生するエラーの表示
@@ -194,7 +194,7 @@ void ProtocolHandler::print_wolfssl_error(WOLFSSL* client_ssl)
 	char buffer[80];
 	err = wolfSSL_get_error(client_ssl, 0);
 	wolfSSL_ERR_error_string(err, buffer);
-	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, fauled, error code : %s (error code : %d)", std::string(buffer), err));
+	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, failed, error content : %s (code : %d)", std::string(buffer), err));
 }
 
 void ProtocolHandler::initialize_wolfssl()

@@ -498,7 +498,7 @@ void ServerControlleFacade::heart_beat_check_process()
 	}
 }
 
-void ServerControlleFacade::heart_beat_count_zero_process(int hb_zero_client_num)
+void ServerControlleFacade::heart_beat_count_zero_process(const int hb_zero_client_num)
 {
 	//ハートビートの回数がゼロの場合クライアントを切断する
 	if (this->_client_handler->connected_client_list[hb_zero_client_num].get_client_heart_beat_count() == 0) {
