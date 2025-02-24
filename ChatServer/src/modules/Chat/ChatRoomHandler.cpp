@@ -1,9 +1,6 @@
 #include "ChatRoomHandler.h"
 
 
-
-
-
 ChatroomHandler::ChatRoom::~ChatRoom()
 {
 
