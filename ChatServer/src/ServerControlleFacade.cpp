@@ -5,7 +5,10 @@ std::tm ServerTime::time_info;
 
 ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 {
+#ifdef DEBUG_MODE
 	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::DEBUG));
+#endif // DEBUG_MODE
+
 	_socket_handler = std::make_unique<SocketHandler>();
 	this->set_server_ip(this->_socket_handler->obtain_local_ip_addr());
 	_firebase_auth_handler = std::make_unique<FirebaseAuthHandler>();
@@ -41,10 +44,9 @@ void ServerControlleFacade::run()
 		exit(1);
 	}
 	
-	this->show_server_running_info();
 	this->_db_accesor->connect_db();
 	LogHandler::get_instance().logging_info("Start monitoring requests from clients.");
-	this->_thread_pool_handler->enqueue_task([this]() {heart_beat_send_process(); });
+	//this->_thread_pool_handler->enqueue_task([this]() {heart_beat_send_process(); });
 	this->_thread_pool_handler->enqueue_task([this]() {_thread_pool_handler->monitor_worker(); });
 	this->_thread_pool_handler->enqueue_task([this]() {heart_beat_check_process(); });
 
@@ -102,14 +104,16 @@ void ServerControlleFacade::setting_select_info()
 
 void ServerControlleFacade::show_server_running_info()
 {
-	//LogHandler::get_instance().logging_info(StringFormat("Server IPv4 address : %s", this->m_socket_handler->get_server_ip_address()));
+	std::cout << " * TLS Version : " << this->_protocol_handler->get_tls_version(this->_protocol_handler->get_wolfssl_object()) << std::endl;
+	std::cout << " * Cipher suite : " << this->_protocol_handler->get_cipher_suite(this->_protocol_handler->get_wolfssl_object()) << std::endl;
+	std::cout << StringFormat(" * Server Listening %s : %d", this->_socket_handler->get_server_ip_address(), this->_socket_handler->get_port());
+
 }
 
 
 bool ServerControlleFacade::accept_client_socket_process()
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
-	LogHandler::get_instance().logging_debug(StringFormat("Function %s() ,start, server start function.", __FUNCTION__));
 	SOCKET new_client_socket = INVALID_SOCKET;
 	struct sockaddr_in new_client_sockaddr_in = { 0 };
 	socklen_t new_client_socklen_t = 0;
@@ -128,12 +132,13 @@ bool ServerControlleFacade::accept_client_socket_process()
 	//SSLアクセプト処理
 	WOLFSSL* new_client_ssl = this->_protocol_handler->wolfssl_accept(new_client_socket);
 	if (new_client_ssl == nullptr) {
-		LogHandler::get_instance().logging_error(StringFormat("failed, client ssl not accepted(client socket : %d),", new_client_socket));
+		LogHandler::get_instance().logging_error(StringFormat("failed, client ssl is not accepted(client socket : %d),", new_client_socket));
 		wolfSSL_free(new_client_ssl);
 		return ACCEPT_FAILED;
 	}
 	else {
-		LogHandler::get_instance().logging_info(StringFormat("success, client ssl accepted(client socket : %d),", new_client_socket));
+		LogHandler::get_instance().logging_info(StringFormat("success, client ssl is accepted(client socket : %d),", new_client_socket));
+		this->_protocol_handler->get_peer_cetificate(new_client_ssl);
 	}
 
 	//新規クライアントのインスタンスを生成
@@ -148,7 +153,6 @@ bool ServerControlleFacade::accept_client_socket_process()
 	LogHandler::get_instance().logging_info(StringFormat("client ip : %s , success, server accept client(socket : %d)."
 		, _client_handler->connected_client_list[this->_client_handler->connect_client_num - 1].get_client_ipv4_addr()
 		, _client_handler->connected_client_list[this->_client_handler->connect_client_num - 1].get_client_socket()));
-	LogHandler::get_instance().logging_debug(StringFormat("Function %s() ,complete, server complete function.", __FUNCTION__));
 	return ACCEPT_SUCCEEDED;
 }
 
@@ -166,14 +170,18 @@ void ServerControlleFacade::set_server_ip(const std::string& ip)
 void ServerControlleFacade::message_receive_process(int detection_num)
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
-	int receive_result = 0;
+	int receive_bytes = 0;
 	std::string receive_data, mt, data_time_stamp;
 	json receive_json;
+	bool disconnect_flag = false;
+
+
+#ifdef TLS_PROTOCOL
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
-			LogHandler::get_instance().logging_debug(StringFormat("Function %s(), start, server start processing.", __FUNCTION__));
-			std::tie(receive_result, receive_json) = Receiver::receive_data(_client_handler->connected_client_list[detection_num].get_client_socket(), detection_num);
+			std::tie(receive_bytes, receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(_client_handler->connected_client_list[detection_num].get_ssl());
+			
 
 		}
 		else {
@@ -181,21 +189,10 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 		}
 
 	}
-	
-	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
-	if (receive_result == SOCKET_ERROR) {
-		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket error, server initialize client."
-			, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
-		{
-			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
-			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
-			_client_handler->delete_client(detection_num);
-		}
-	}
-	//receive_result == 0の場合(クライアントのソケットが切断された場合)
-	else if (receive_result == DISCONNECT_SOCKET) {
+
+	if (disconnect_flag == true) {
 		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, disconnected, server initialize client."
-			,_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
+			, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
 		{
 			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
 			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
@@ -213,14 +210,14 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 		//MT001 = Auth認証メッセージの場合
 		else if (std::equal(mt.begin(), mt.end(), "001")) {
 			_mt001receiver->show_receive_info(receive_json, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr()
-				, receive_result);
+				, receive_bytes);
 			this->mt001_process(receive_json, detection_num);
 		}
 		//MT002 = 通常メッセージの場合
 		else if (std::equal(mt.begin(), mt.end(), "002")) {
 			_mt002receiver->show_receive_info(receive_json, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr()
-				, receive_result);
-			this->mt002_process(receive_json, receive_result);
+				, receive_bytes);
+			this->mt002_process(receive_json, receive_bytes);
 		}
 		//MT003 = の場合
 		else if (std::equal(mt.begin(), mt.end(), "003")) {
@@ -235,7 +232,79 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 			LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
 		}
 	}
-	LogHandler::get_instance().logging_debug(StringFormat("Function %s(), server complete processing.", __FUNCTION__));
+#endif // TLS_PROTOCOL
+
+
+
+#ifdef TCP_PROTOCOL
+	{
+		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
+			std::tie(receive_bytes, receive_json) = Receiver::receive_data(_client_handler->connected_client_list[detection_num].get_client_socket(), detection_num);
+
+		}
+		else {
+			return;
+		}
+
+	}
+
+	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
+	if (receive_bytes == SOCKET_ERROR) {
+		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket error, server initialize client."
+			, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
+		{
+			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
+			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
+			_client_handler->delete_client(detection_num);
+		}
+	}
+	//receive_result == 0の場合(クライアントのソケットが切断された場合)
+	else if (receive_bytes == DISCONNECT_SOCKET) {
+		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, disconnected, server initialize client."
+			, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
+		{
+			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
+			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
+			_client_handler->delete_client(detection_num);
+		}
+	}
+	//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
+	else {
+		mt = receive_json["mt"];
+
+		//mt000 = ハートビートを受信した際の処理
+		if (std::equal(mt.begin(), mt.end(), "000")) {
+			this->mt000_process(receive_data, detection_num);
+		}
+		//MT001 = Auth認証メッセージの場合
+		else if (std::equal(mt.begin(), mt.end(), "001")) {
+			_mt001receiver->show_receive_info(receive_json, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr()
+				, receive_bytes);
+			this->mt001_process(receive_json, detection_num);
+		}
+		//MT002 = 通常メッセージの場合
+		else if (std::equal(mt.begin(), mt.end(), "002")) {
+			_mt002receiver->show_receive_info(receive_json, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr()
+				, receive_bytes);
+			this->mt002_process(receive_json, receive_bytes);
+		}
+		//MT003 = の場合
+		else if (std::equal(mt.begin(), mt.end(), "003")) {
+			LogHandler::get_instance().logging_info(StringFormat("Received JSON : %s", receive_json.dump(4)));
+		}
+		//MT004 = の場合
+		else if (std::equal(mt.begin(), mt.end(), "004")) {
+
+		}
+
+		else {
+			LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
+		}
+	}
+#endif // TCP_PROTOCOL
+
+
 }
 
 void ServerControlleFacade::mt000_process(std::string& receive_data, int detection_num)
@@ -481,7 +550,7 @@ void ServerControlleFacade::heart_beat_check_process()
 			for (int now_count = 0; now_count < this->_client_handler->connected_client_list.size(); now_count++) {
 				//接続しているクライアントのハートビート回数が0のときの処理
 				if (check_con_list_then[then_count].get_client_socket() != INVALID_SOCKET && check_con_list_then[then_count] == this->_client_handler->connected_client_list[now_count]) {
-					this->heart_beat_count_zero_process(now_count);
+					this->heart_beat_no_response_process(now_count);
 				}
 				
 			}
@@ -496,7 +565,7 @@ void ServerControlleFacade::heart_beat_check_process()
 	}
 }
 
-void ServerControlleFacade::heart_beat_count_zero_process(const int hb_zero_client_num)
+void ServerControlleFacade::heart_beat_no_response_process(const int hb_zero_client_num)
 {
 	//ハートビートの回数がゼロの場合クライアントを切断する
 	if (this->_client_handler->connected_client_list[hb_zero_client_num].get_client_heart_beat_count() == 0) {

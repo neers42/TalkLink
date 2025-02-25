@@ -50,9 +50,6 @@ public:
 protected:
 	//メッセージ内容検証
 	bool is_valid_mesasge_type(const std::string& mt);
-	bool is_valid_dst_id(const std::string& dst_id);
-	bool is_valid_src_id(const std::string& src_id);
-	bool is_valid_conent(const std::string& content);
 	bool is_valid_message_id(const std::string& m_id);
 	
 };

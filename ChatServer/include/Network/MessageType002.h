@@ -58,6 +58,10 @@ public:
 
 private:
 	bool is_valid_dst_chatroom(const std::string& id);
+	bool is_valid_dst_id(const std::string& dst_id);
+	bool is_valid_src_id(const std::string& src_id);
+	bool is_valid_conent(const std::string& content);
+	
 
 	
 };

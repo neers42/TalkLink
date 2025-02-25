@@ -1398,10 +1398,9 @@
   <ItemGroup>
     <None Include="assets\google-services.json" />
     <None Include="conf\socket_setting.ini" />
-    <None Include="certs\ca-cert.pem" />
+    <None Include="diagram\class-diagram.md" />
     <None Include="certs\server-cert.pem" />
     <None Include="certs\server-key.pem" />
-    <None Include="diagram\class-diagram.md" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\firebase\MD\x64\Debug\firebase_analytics.lib" />
@@ -1430,6 +1429,7 @@
     <Library Include="lib\firebase\MD\x64\Release\firebase_messaging.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_remote_config.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
+    <Library Include="lib\wolfssl\x64\wolfssl.lib" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="include\Network\wolfssl\sniffer_error.rc">

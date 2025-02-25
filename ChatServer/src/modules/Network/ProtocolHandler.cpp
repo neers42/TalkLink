@@ -22,25 +22,25 @@ ProtocolHandler::ProtocolHandler()
 ProtocolHandler::~ProtocolHandler()
 {
 	//sslオブジェクトの解放
-	if (this->_w_ssl != NULL) {
-		wolfSSL_shutdown(this->_w_ssl);
-		wolfSSL_free(this->_w_ssl);
+	if (this->_server_w_ssl != NULL) {
+		wolfSSL_shutdown(this->_server_w_ssl);
+		wolfSSL_free(this->_server_w_ssl);
 	}
 
 	//SSLコンテキストの解放
-	if (this->_w_ctx != NULL) {
-		wolfSSL_CTX_free(this->_w_ctx);
+	if (this->_server_w_ctx != NULL) {
+		wolfSSL_CTX_free(this->_server_w_ctx);
 	}
 }
 
-WOLFSSL* ProtocolHandler::get_wolfssl_ssl()
+WOLFSSL* ProtocolHandler::get_wolfssl_object()
 {
-	return this->_w_ssl;
+	return this->_server_w_ssl;
 }
 
 WOLFSSL_CTX* ProtocolHandler::get_wolfssl_ctx()
 {
-	return this->_w_ctx;
+	return this->_server_w_ctx;
 }
 
 template <typename T>
@@ -74,7 +74,7 @@ T ProtocolHandler::serialize_message(const std::vector<uint8_t> recv_data)
 
 WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 {
-	WOLFSSL* new_client_ssl = wolfSSL_new(this->_w_ctx);
+	WOLFSSL* new_client_ssl = wolfSSL_new(this->_server_w_ctx);
 	//クライアントのSSL生成が正常に処理されなかった場合
 	if (new_client_ssl == NULL) {
 		LogHandler::get_instance().logging_error(StringFormat("failed, new client ssl object creation failed."));
@@ -90,12 +90,11 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 }
 
 
-WOLFSSL* ProtocolHandler::wolfssl_accept(SOCKET client_socket)
+WOLFSSL* ProtocolHandler::wolfssl_accept(const SOCKET client_socket)
 {
 	//SSLオブジェクトの生成及び
 	WOLFSSL* new_client_ssl = generate_and_attach_ssl_object(client_socket);
 	if (wolfSSL_accept(new_client_ssl) == SSL_SUCCESS) {
-		LogHandler::get_instance().logging_info(StringFormat("success, accept client ssl accept(client socket : %d),", client_socket));
 		return new_client_ssl;
 
 	}
@@ -126,7 +125,7 @@ std::tuple<int, json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client
 				//jsonメッセージの解析
 				recv_msg_json = json::from_msgpack(message_buffer);
 				//完全なメッセージが解析された場合は中身を表示
-				LogHandler::get_instance().logging_debug(StringFormat("messsage receive success, received message size : %d.\nReceived json : %s", bytes_read, recv_msg_json.dump(4)));
+				LogHandler::get_instance().logging_debug(StringFormat("messsage receive success, received message size : %d.", bytes_read));
 			}
 			catch (const json::parse_error& e)
 			{
@@ -173,6 +172,99 @@ std::tuple<int, json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client
 
 		}
 	}
+
+}
+
+const std::string ProtocolHandler::get_tls_version(const WOLFSSL* ssl)
+{
+	return std::string(wolfSSL_get_version(this->_server_w_ssl));
+}
+
+const std::string ProtocolHandler::get_cipher_suite(WOLFSSL* ssl)
+{
+	return std::string(wolfSSL_get_cipher(this->_server_w_ssl));
+}
+
+const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHandler::get_peer_cetificate(WOLFSSL* ssl)
+{
+	std::string cert_subject_name = "";
+	std::string cert_issuer_name = "";
+	std::string cert_not_before = "";
+	std::string cert_not_after = "";
+	char subject_name_buffer[256] = { 0 },
+		issuer_name_buffer[256] = { 0 },
+		cert_not_before_buffer[32] = { 0 },
+		cert_not_after_buffer[32] = { 0 };
+	if (!ssl) {
+		LogHandler::get_instance().logging_error("SSL object is null.");
+		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
+	}
+
+	///////////////////////
+
+
+	WOLFSSL_X509* server_cert = wolfSSL_get_peer_certificate(ssl);
+	if (!server_cert) {
+		LogHandler::get_instance().logging_error("No server certificate received.");
+		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
+	}
+	// 証明書のサブジェクト名（発行対象）
+	wolfSSL_X509_NAME_oneline(wolfSSL_X509_get_subject_name(server_cert), subject_name_buffer, sizeof(subject_name_buffer));
+	cert_subject_name = std::string(subject_name_buffer);
+
+	// 証明書の発行者（CA）
+	wolfSSL_X509_NAME_oneline(wolfSSL_X509_get_issuer_name(server_cert), issuer_name_buffer, sizeof(issuer_name_buffer));
+	cert_issuer_name = std::string(issuer_name_buffer);
+
+
+	// 証明書の有効期限（開始日）
+	auto cert_not_before_time = wolfSSL_X509_get_notBefore(server_cert);
+	auto before_time = wolfSSL_ASN1_TIME_get_data(cert_not_before_time);
+	std::string before_time_str(reinterpret_cast<const char*>(before_time));
+	if (before_time_str.size() < 14) {
+		cert_not_before = "";
+	}
+	else {
+		// YYYYMMDDHHMMSS を "YYYY-MM-DD HH:MM:SS" の形式に変換
+		std::ostringstream oss_before;
+		oss_before
+			<< before_time_str.substr(0, 4) << "-"  // YYYY-
+			<< before_time_str.substr(4, 2) << "-"  // MM-
+			<< before_time_str.substr(6, 2) << " "  // DD
+			<< before_time_str.substr(8, 2) << ":"  // HH:
+			<< before_time_str.substr(10, 2) << ":" // MM:
+			<< before_time_str.substr(12, 2);       // SS
+		cert_not_before = oss_before.str();
+	}
+
+
+	// 証明書の有効期限（終了日）
+	auto cert_not_after_time = wolfSSL_X509_get_notAfter(server_cert);
+	auto after_time = wolfSSL_ASN1_TIME_get_data(cert_not_after_time);
+	std::string after_time_str(reinterpret_cast<const char*>(after_time));
+	if (after_time_str.size() < 14)
+	{
+		cert_not_after = "";
+	}
+	else {
+		std::stringstream oss_after;
+		oss_after
+			<< after_time_str.substr(0, 4) << "-"  // YYYY-
+			<< after_time_str.substr(4, 2) << "-"  // MM-
+			<< after_time_str.substr(6, 2) << " "  // DD
+			<< after_time_str.substr(8, 2) << ":"  // HH:
+			<< after_time_str.substr(10, 2) << ":" // MM:
+			<< after_time_str.substr(12, 2);       // SS
+		cert_not_after = oss_after.str();
+	}
+
+	// 証明書オブジェクトを解放
+	wolfSSL_X509_free(server_cert);
+	std::cout << " * Server Certificate Subject Name : " << cert_subject_name << std::endl;
+	std::cout << " * Server Certificate Issuer Name : " << cert_issuer_name << std::endl;
+	std::cout << " * Server Certificate Not Before : " << cert_not_before << std::endl;
+	std::cout << " * Server Certificate Not After : " << cert_not_after << std::endl;
+	return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 
 }
 
@@ -265,8 +357,8 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 void ProtocolHandler::generate_ssl_context(WOLFSSL_METHOD* method)
 {
 	//wolf contextの確保
-	_w_ctx = wolfSSL_CTX_new(method);
-	if (_w_ctx == NULL) {
+	_server_w_ctx = wolfSSL_CTX_new(method);
+	if (_server_w_ctx == NULL) {
 		LogHandler::get_instance().logging_critical(StringFormat("SSL context, failed, context creation failed."));
 		exit(1);
 	}
@@ -275,7 +367,7 @@ void ProtocolHandler::generate_ssl_context(WOLFSSL_METHOD* method)
 void ProtocolHandler::load_cert_file()
 {
 	//サーバ証明書のロード
-	if (wolfSSL_CTX_use_certificate_file(_w_ctx, SERVER_CERT_FILE_PASS, SSL_FILETYPE_PEM) == SSL_FAILURE) {
+	if (wolfSSL_CTX_use_certificate_file(_server_w_ctx, SERVER_CERT_FILE_PASS, SSL_FILETYPE_PEM) == SSL_FAILURE) {
 		this->print_wolfssl_global_error();
 	}
 }
@@ -283,7 +375,7 @@ void ProtocolHandler::load_cert_file()
 void ProtocolHandler::load_private_key()
 {
 	//プライベート鍵のロード
-	if (wolfSSL_CTX_use_PrivateKey_file(_w_ctx, SERVER_PRIVATEKEY_FILE_PASS, SSL_FILETYPE_PEM) == SSL_FAILURE) {
+	if (wolfSSL_CTX_use_PrivateKey_file(_server_w_ctx, SERVER_PRIVATEKEY_FILE_PASS, SSL_FILETYPE_PEM) == SSL_FAILURE) {
 		this->print_wolfssl_global_error();
 	}
 }

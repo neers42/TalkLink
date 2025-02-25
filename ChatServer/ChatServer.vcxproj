@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <None Include="certs\server-cert.pem" />
+    <None Include="certs\server-key.pem" />
     <None Include="diagram\class-diagram.md" />
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -132,7 +134,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;OPENSSL_EXTRA_X509_SMALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)/src;$(ProjectDir)/src/modules/Utils/include;$(ProjectDir)/src/modules/Database/include;$(ProjectDir)/src/modules/Authentication/include;$(ProjectDir)/src/modules/Chat/include;$(ProjectDir)/src/modules/Network/include;$(ProjectDir)/src/modules/Network/include/wolfssl</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -611,9 +613,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />
-    <None Include="certs\ca-cert.pem" />
-    <None Include="certs\server-cert.pem" />
-    <None Include="certs\server-key.pem" />
     <None Include="conf\socket_setting.ini" />
   </ItemGroup>
   <ItemGroup>
@@ -649,6 +648,7 @@
     <Library Include="lib\firebase\MD\x64\Release\firebase_messaging.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_remote_config.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
+    <Library Include="lib\wolfssl\x64\wolfssl.lib" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="include\Network\wolfssl\sniffer_error.rc" />

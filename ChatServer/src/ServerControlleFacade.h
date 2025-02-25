@@ -20,6 +20,9 @@
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
 
+#define DEBUG_MODE
+#define TLS_PROTOCOL
+
 class ServerControlleFacade
 {
 private:
@@ -74,7 +77,7 @@ public:
 
 	void heart_beat_check_process();
 
-	void heart_beat_count_zero_process(const int hb_zero_client_num);
+	void heart_beat_no_response_process(const int hb_zero_client_num);
 
 	void setting_select_process();
 

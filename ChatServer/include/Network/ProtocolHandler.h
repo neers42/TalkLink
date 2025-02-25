@@ -2,8 +2,10 @@
 #define PROTOCOLHANDLER
 #define SERVER_CERT_FILE_PASS ".//////certs/server-cert.pem"
 #define SERVER_PRIVATEKEY_FILE_PASS ".//////certs/server-key.pem"
+#include <sstream>
 #include "common.h"
 #include "wolfssl/ssl.h"
+#include "wolfssl/wolfcrypt/asn_public.h"
 #include "MessageType001.h"
 #include "MessageType002.h"
 #include "MessageType003.h"
@@ -17,8 +19,8 @@
 class ProtocolHandler
 {
 private:
-	WOLFSSL* _w_ssl = NULL;
-	WOLFSSL_CTX* _w_ctx = NULL;
+	WOLFSSL* _server_w_ssl = NULL;
+	WOLFSSL_CTX* _server_w_ctx = NULL;
 	
 	
 
@@ -30,7 +32,7 @@ public:
 	~ProtocolHandler();
 
 	//各種アクセッサ(getter/setter)
-	WOLFSSL* get_wolfssl_ssl();
+	WOLFSSL* get_wolfssl_object();
 	WOLFSSL_CTX* get_wolfssl_ctx();
 
 	//JSONメッセージのシリアライズ
@@ -44,13 +46,23 @@ public:
 	WOLFSSL* generate_and_attach_ssl_object(SOCKET client_socket);
 
 	//SSLのアクセプト
-	WOLFSSL* wolfssl_accept(SOCKET client_socket);
+	WOLFSSL* wolfssl_accept(const SOCKET client_socket);
 
 	//メッセージの受信
 	std::tuple<int, json, bool> receive_message_tls(WOLFSSL* client_ssl);
 
 	//メッセージの送信
 	std::tuple<int, json> send_message_tls();
+
+	//TLSのバージョンを取得
+	const std::string get_tls_version(const WOLFSSL* ssl);
+
+	//使用されている暗号スイートを取得
+	const std::string get_cipher_suite(WOLFSSL* ssl);
+
+	//サーバの証明書情報を取得
+	const std::tuple<std::string, std::string, std::string, std::string> get_peer_cetificate(WOLFSSL* ssl);
+
 
 private:
 

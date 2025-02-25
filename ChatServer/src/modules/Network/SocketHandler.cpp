@@ -575,7 +575,7 @@ bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_settin
 
 			THROW_APP_EXCEPTION("The port number is set out of range. Reset to the range of 0~65535.");
 		}
-		m_message_port = temp_port;
+		_port = temp_port;
 #ifdef DEBUG
 		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：アプリケーションポートは" << m_port << "が割り当てられました。" << std::endl;
 
@@ -699,7 +699,7 @@ bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_sett
 			THROW_APP_EXCEPTION("The port number is set out of range. Reset to the range of 0 - 65535.");
 		}
 
-		if (temp_port == m_message_port) {
+		if (temp_port == _port) {
 			THROW_APP_EXCEPTION("There is a conflict between the application port used for TCP and the application port used for UDP multicast. Please reset the settings.");
 		}
 		m_multicast_tx_addr.sin_port = temp_port;
@@ -1018,7 +1018,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 	//名前解決
 	try
 	{
-		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(m_message_port).c_str(), &m_param_tcp, &m_result_tcp);
+		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_port).c_str(), &m_param_tcp, &m_result_tcp);
 		if (get_addr_result_msg != 0) {
 			switch (get_addr_result_msg)
 			{

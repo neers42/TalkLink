@@ -48,9 +48,7 @@ private:
 	SOCKET _udp_multicast_tx_socket;
 
 	//サーバのアプリケーションポート番号
-	int m_message_port = 0;
-
-	int m_heart_beat_port = 0;
+	int _port = 0;
 
 	//初期化用のsockaddr_in構造体
 	struct sockaddr_in _init_sockaddr_in;
@@ -157,6 +155,10 @@ public:
 
 	std::string& get_server_ip_address() {
 		return m_local_ip_addr;
+	}
+
+	int get_port() {
+		return _port;
 	}
 
 
