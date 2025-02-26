@@ -4,6 +4,8 @@ ProtocolHandler::ProtocolHandler()
 {
 	//wolfSSLの初期化
 	initialize_wolfssl();
+	wolfSSL_Debugging_ON();
+	wolfSSL_SetLoggingCb(ProtocolHandler::wolfssl_log_callback);
 
 	//TLS接続時のバージョン指定
 	auto server_method = this->set_server_method();
@@ -16,6 +18,8 @@ ProtocolHandler::ProtocolHandler()
 
 	//サーバの秘密鍵のロード
 	load_private_key();
+
+	
 	
 }
 
@@ -205,7 +209,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 
 	WOLFSSL_X509* server_cert = wolfSSL_get_peer_certificate(ssl);
 	if (!server_cert) {
-		LogHandler::get_instance().logging_error("No server certificate received.");
+		LogHandler::get_instance().logging_warning("No client certificate received.");
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
 	// 証明書のサブジェクト名（発行対象）
@@ -268,6 +272,25 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 
 }
 
+void ProtocolHandler::wolfssl_log_callback(const int log_level, const char* log_message)
+{
+	std::string log_str(log_message);
+	switch (log_level) {
+	case ERROR_LOG:
+		LogHandler::get_instance().logging_error(log_str);
+			break;
+	case INFO_LOG:
+		LogHandler::get_instance().logging_info(log_str);
+		break;
+	case ENTER_LOG:
+		LogHandler::get_instance().logging_debug(log_str);
+		break;
+	default:
+		LogHandler::get_instance().logging_debug(log_str); // 未定義レベルは DEBUG 扱い
+		break;
+	}
+}
+
 
 //SSL通信以外で発生するエラーの表示
 void ProtocolHandler::print_wolfssl_global_error()
@@ -295,6 +318,7 @@ void ProtocolHandler::initialize_wolfssl()
 		this->print_wolfssl_global_error();
 		exit(1);
 	}
+
 }
 
 WOLFSSL_METHOD* ProtocolHandler::set_server_method()

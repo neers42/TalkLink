@@ -6,7 +6,7 @@ std::tm ServerTime::time_info;
 ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 {
 #ifdef DEBUG_MODE
-	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::DEBUG));
+	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::INFO));
 #endif // DEBUG_MODE
 
 	_socket_handler = std::make_unique<SocketHandler>();

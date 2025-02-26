@@ -80,7 +80,7 @@ void LogHandler::logging_debug(const std::string& debug_message)
 {
 	//ログレベルがDEBUG以上に設定されていた場合はログを出力する。
 	if (this->log_level <= static_cast<uint8_t>(LogLevel::DEBUG)) {
-		LogHandler::logging(LogLevel::DEBUG, std::cout, debug_message);
+		LogHandler::logging(LogLevel::DEBUG, std::cerr, debug_message);
 	}
 	else {
 		//ログレベルがDEBUG以上に設定されていないと何も出力しない。
@@ -91,7 +91,7 @@ void LogHandler::logging_info(const std::string& info_message)
 {
 	//ログレベルがDEBUG以上に設定されていた場合はログを出力する。
 	if (this->log_level <= static_cast<uint8_t>(LogLevel::INFO)) {
-		LogHandler::logging(LogLevel::INFO, std::cout, info_message);
+		LogHandler::logging(LogLevel::INFO, std::cerr, info_message);
 	}
 	else {
 		//ログレベルがDEBUG以上に設定されていないと何も出力しない。
@@ -102,7 +102,7 @@ void LogHandler::logging_warning(const std::string& warning_message)
 {
 	//ログレベルがINFO以上に設定されていた場合はログを出力する。
 	if (this->log_level <= static_cast<uint8_t>(LogLevel::WARNING)) {
-		LogHandler::logging(LogLevel::WARNING, std::cout, warning_message);
+		LogHandler::logging(LogLevel::WARNING, std::cerr, warning_message);
 	}
 	else {
 		//ログレベルがINFO以上に設定されていないと何も出力しない。
@@ -204,5 +204,6 @@ int LogHandler::check_char_code(const std::string& str)
 		return -1;
 	}
 }
+
 
 

@@ -63,6 +63,8 @@ public:
 	//ƒT[ƒo‚ÌØ–¾‘î•ñ‚ğæ“¾
 	const std::tuple<std::string, std::string, std::string, std::string> get_peer_cetificate(WOLFSSL* ssl);
 
+	static void wolfssl_log_callback(const int log_level, const char* log_message);
+
 
 private:
 

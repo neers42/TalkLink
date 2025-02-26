@@ -62,6 +62,7 @@ public:
 	static bool is_valid_UTF8(const std::string& str);
 	static bool is_ShiftJIS(const std::string& str);
 	static int check_char_code(const std::string& str);
+
 	
 };
 
