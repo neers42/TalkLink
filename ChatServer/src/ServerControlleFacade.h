@@ -4,6 +4,9 @@
 #include "MT000Receiver.h"
 #include "MT001Receiver.h"
 #include "MT002Receiver.h"
+#include "MessageType001.h"
+#include "MessageType002.h"
+#include "MessageType003.h"
 #include "Sender.h"
 #include "ServerTime.h"
 #include "ClientHandler.h"
@@ -64,14 +67,15 @@ public:
 	const std::string& get_server_ip();
 	void set_server_ip(const std::string& ip);
 
-
-	void message_receive_process(int detection_num);
+	void message_handle_process(int detection_num);
 
 	void mt000_process(std::string& receive_data, int monitor_result);
 
 	void mt001_process(const json& receive_json, int& monitor_result);
 
 	void mt002_process(const json& receive_json, int& receive_result);
+
+	void mt002_process(const std::unique_ptr<MessageType002>& mt002, int& receive_result);
 
 	void heart_beat_send_process();
 

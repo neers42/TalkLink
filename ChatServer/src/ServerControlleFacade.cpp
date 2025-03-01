@@ -6,7 +6,10 @@ std::tm ServerTime::time_info;
 ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 {
 #ifdef DEBUG_MODE
+	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::DEBUG));
+#else
 	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::INFO));
+
 #endif // DEBUG_MODE
 
 	_socket_handler = std::make_unique<SocketHandler>();
@@ -74,7 +77,7 @@ void ServerControlleFacade::run()
 		
 		//接続中のクライアントリストから通知があった場合
 		default:
-			this->_thread_pool_handler->enqueue_task([this, detection_num]() {message_receive_process(detection_num); });
+			this->_thread_pool_handler->enqueue_task([this, detection_num]() {message_handle_process(detection_num); });
 			break;
 		}
 		
@@ -167,10 +170,10 @@ void ServerControlleFacade::set_server_ip(const std::string& ip)
 }
 
 
-void ServerControlleFacade::message_receive_process(int detection_num)
+void ServerControlleFacade::message_handle_process(int detection_num)
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
-	int receive_bytes = 0;
+	//int receive_bytes = 0;
 	std::string receive_data, mt, data_time_stamp;
 	json receive_json;
 	bool disconnect_flag = false;
@@ -180,14 +183,13 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
-			std::tie(receive_bytes, receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(_client_handler->connected_client_list[detection_num].get_ssl());
+			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(_client_handler->connected_client_list[detection_num].get_ssl());
 			
 
 		}
 		else {
 			return;
 		}
-
 	}
 
 	if (disconnect_flag == true) {
@@ -198,40 +200,33 @@ void ServerControlleFacade::message_receive_process(int detection_num)
 			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
 			_client_handler->delete_client(detection_num);
 		}
+		return;
 	}
-	//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
+
+
+	mt = receive_json["message_type"];
+
+	//mt000 = ハートビートを受信した際の処理
+	if (mt == "000") {
+		this->mt000_process(receive_data, detection_num);
+	}
+	//MT001 = Auth認証メッセージの場合
+	else if (mt == "001") {
+		//std::unique_ptr<MessageType001> mt001 = this->_protocol_handler->serialize_message<MessageType001>(receive_json);
+		this->mt001_process(receive_json, detection_num);
+	}
+	//MT002 = 通常メッセージの場合
+	else if (mt == "002") {
+		std::unique_ptr<MessageType002> mt002 = this->_protocol_handler->serialize_message<MessageType002>(receive_json);
+		this->mt002_process(mt002, detection_num);
+		//this->mt002_process(receive_json, receive_bytes);
+	}
+
 	else {
-		mt = receive_json["mt"];
-
-		//mt000 = ハートビートを受信した際の処理
-		if (std::equal(mt.begin(), mt.end(), "000")) {
-			this->mt000_process(receive_data, detection_num);
-		}
-		//MT001 = Auth認証メッセージの場合
-		else if (std::equal(mt.begin(), mt.end(), "001")) {
-			_mt001receiver->show_receive_info(receive_json, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr()
-				, receive_bytes);
-			this->mt001_process(receive_json, detection_num);
-		}
-		//MT002 = 通常メッセージの場合
-		else if (std::equal(mt.begin(), mt.end(), "002")) {
-			_mt002receiver->show_receive_info(receive_json, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr()
-				, receive_bytes);
-			this->mt002_process(receive_json, receive_bytes);
-		}
-		//MT003 = の場合
-		else if (std::equal(mt.begin(), mt.end(), "003")) {
-			LogHandler::get_instance().logging_info(StringFormat("Received JSON : %s", receive_json.dump(4)));
-		}
-		//MT004 = の場合
-		else if (std::equal(mt.begin(), mt.end(), "004")) {
-
-		}
-
-		else {
-			LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
-		}
+		LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
 	}
+
+
 #endif // TLS_PROTOCOL
 
 
@@ -428,31 +423,47 @@ void ServerControlleFacade::mt002_process(const json& receive_json, int& receive
 
 	try
 	{
-		std::tie(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content)
+		std::unique_ptr<MessageType002> mt002 = this->_protocol_handler->serialize_message<MessageType002>(receive_json);
+		if (mt002 == nullptr || mt002->is_valid() == false) {
+			// メッセージ処理
+			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
+		}
+	/*	std::tie(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content)
 			= this->_mt002receiver->data_extraction_(receive_json);
 
 		if (trans_type == 3 || d_client_id.size() != 28 || s_client_id.size() != 28 || d_chatroom_id.size() != 36 || data_type == 4 || main_content.size() == 0) {
 			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
-		}
-		auto mt002_intance = this->_mt002receiver->create_mt002data_instance(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content);
+		}*/
+	//	auto mt002_intance = this->_mt002receiver->create_mt002data_instance(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content);
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			send_socket_num = _client_handler->search_client_id_from_con_list(mt002_intance->get_dst_client_id());
+			send_socket_num = _client_handler->search_client_id_from_con_list(mt002->get_dst_client_id());
+			LogHandler::get_instance().logging_info(StringFormat("send_socket_num : %d", send_socket_num));
 
 
-			switch (mt002_intance->get_trans_type())
+			////===================ここ実装していない============================================
+			//connect_listの中にいない場合は、データベースの中に入れる。
+			//①データベースに登録されているidから検索
+			//②データベースに登録されているidがある場合は、メッセージを保存し、ない場合はメッセージを破棄する
+			if (send_socket_num == -1) {
+				THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
+			}
+
+			//=========================================================================================
+
+			switch (mt002->get_trans_type_int())
 			{
 				//TCPユニキャスト
 			case 0:
 				_sender->tcp_unicast_data(_client_handler->connected_client_list[send_socket_num].get_client_socket(),
-					receive_json, receive_result, mt002_intance->get_dst_client_id(), mt002_intance->get_src_client_id());
+					receive_json, receive_result, mt002->get_dst_client_id(), mt002->get_src_client_id());
 				break;
 
 				//TCPでマルチキャスト
 			case 1:
 				//TODO　以下を実装する
 				//mt002のパケットの中身がTCPマルチキャストの場合(グループ内でのチャットの時)、グループチャットから
-				chatroom_list_num = this->_chat_room_handler->search_chatroom_id_from_list(mt002_intance->get_dst_chatroom_id());
+				chatroom_list_num = this->_chat_room_handler->search_chatroom_id_from_list(mt002->get_dst_chatroom_id());
 				for (auto&& client : _chat_room_handler->get_client_list(chatroom_list_num)) {
 					send_sockets.push_back(client.get_client_socket());
 				}
@@ -476,6 +487,87 @@ void ServerControlleFacade::mt002_process(const json& receive_json, int& receive
 	{
 		LogHandler::get_instance().logging_error(ex.what_for_str());
 	}
+
+}
+
+void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>& mt002, int& receive_result)
+{
+	std::vector<SOCKET> send_sockets;
+	std::vector<std::string> dst_clients;
+	int chatroom_list_num = -1;
+	int send_socket_num = 0;
+
+	try
+	{
+		if (mt002 == nullptr || mt002->is_valid() == false) {
+			// メッセージ処理
+			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
+		}
+		/*	std::tie(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content)
+				= this->_mt002receiver->data_extraction_(receive_json);
+
+			if (trans_type == 3 || d_client_id.size() != 28 || s_client_id.size() != 28 || d_chatroom_id.size() != 36 || data_type == 4 || main_content.size() == 0) {
+				THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
+			}*/
+			//	auto mt002_intance = this->_mt002receiver->create_mt002data_instance(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content);
+		{
+			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
+			send_socket_num = _client_handler->search_client_id_from_con_list(mt002->get_dst_client_id());
+			LogHandler::get_instance().logging_info(StringFormat("send_socket_num : %d", send_socket_num));
+
+
+			////===================ここ実装していない============================================
+			//connect_listの中にいない場合は、データベースの中に入れる。
+			//①データベースに登録されているidから検索
+			//②データベースに登録されているidがある場合は、メッセージを保存し、ない場合はメッセージを破棄する
+			if (send_socket_num == -1) {
+				THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
+			}
+
+			//=========================================================================================
+
+
+			//=========================================================================================
+			//ここにメッセージの送信処理を記載する
+			//=========================================================================================
+
+			//switch (mt002->get_trans_type_int())
+			//{
+			//	//TCPユニキャスト
+			//case 0:
+			//	_sender->tcp_unicast_data(_client_handler->connected_client_list[send_socket_num].get_client_socket(),
+			//		receive_json, receive_result, mt002->get_dst_client_id(), mt002->get_src_client_id());
+			//	break;
+
+			//	//TCPでマルチキャスト
+			//case 1:
+			//	//TODO　以下を実装する
+			//	//mt002のパケットの中身がTCPマルチキャストの場合(グループ内でのチャットの時)、グループチャットから
+			//	chatroom_list_num = this->_chat_room_handler->search_chatroom_id_from_list(mt002->get_dst_chatroom_id());
+			//	for (auto&& client : _chat_room_handler->get_client_list(chatroom_list_num)) {
+			//		send_sockets.push_back(client.get_client_socket());
+			//	}
+			//	for (auto&& client : _chat_room_handler->get_client_list(chatroom_list_num)) {
+			//		dst_clients.push_back(client.get_client_id());
+			//	}
+			//	_sender->tcp_multicast_data(send_sockets, receive_json, receive_result);
+			//	break;
+
+			//	//UDPブロードキャスト
+			//case 2:
+			//	//TODO　UDPのブロードキャストを実装する
+			//	break;
+
+			//default:
+			//	break;
+			//}
+		}
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::get_instance().logging_error(ex.what_for_str());
+	}
+
 
 }
 

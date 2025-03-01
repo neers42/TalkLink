@@ -34,6 +34,7 @@ public:
 	//各種アクセッサ(getter/setter)
 	//_trans_type
 	TransType get_trans_type();
+	int get_trans_type_int();
 	void set_trans_type(TransType tt);
 	void set_trans_type(const int value);
 
@@ -57,7 +58,7 @@ public:
 	bool is_valid() override;
 
 private:
-	bool is_valid_dst_chatroom(const std::string& id);
+	bool is_valid_dst_chatroom(const std::string& cr_id);
 	bool is_valid_dst_id(const std::string& dst_id);
 	bool is_valid_src_id(const std::string& src_id);
 	bool is_valid_conent(const std::string& content);

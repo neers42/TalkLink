@@ -36,8 +36,24 @@ public:
 	WOLFSSL_CTX* get_wolfssl_ctx();
 
 	//JSONメッセージのシリアライズ
+	//template <typename T>
+	//std::unique_ptr<T> serialize_message(const json& json_message);
+
 	template <typename T>
-	T serialize_message(const std::vector<uint8_t> recv_data);
+	std::unique_ptr<T> serialize_message(const json& json_message)
+	{
+		// json_messageからMessageTypeを取得
+		if constexpr (std::is_same<T, MessageType001>::value) {
+			return this->serialize_mt001<T>(json_message);	//MT001を返す
+		}
+		else if constexpr (std::is_same<T, MessageType002>::value) {
+			return this->serialize_mt002<T>(json_message);	//MT002を返す
+		}
+		else {
+			LogHandler::get_instance().logging_error("Unsupported message type");
+			return nullptr;
+		}
+	}
 
 	//メッセージIDの生成
 	const std::string generate_message_id();
@@ -49,7 +65,7 @@ public:
 	WOLFSSL* wolfssl_accept(const SOCKET client_socket);
 
 	//メッセージの受信
-	std::tuple<int, json, bool> receive_message_tls(WOLFSSL* client_ssl);
+	std::tuple<json, bool> receive_message_tls(WOLFSSL* client_ssl);
 
 	//メッセージの送信
 	std::tuple<int, json> send_message_tls();
@@ -90,10 +106,51 @@ private:
 	void load_private_key();
 
 	//各メッセージデータをjson形式にシリアライズする(オブジェクト⇒文字系列式)
-	MessageType001 serialize_mt001(const json& recv_json);
-	MessageType002 serialize_mt002(const json& recv_json);
+	template <typename T>
+	std::unique_ptr<T> serialize_mt001(const json& recv_json) {
+		int content_type = recv_json["content_type"];
+		std::string message_type = recv_json["message_type"];
+		int sign_type = recv_json["sign_type"];
+		int auth_type = recv_json["auth_type"];
+		std::string client_name = recv_json["client_name"];
+		std::string client_mail_addr = recv_json["client_mail_address"];
+		std::string client_password = recv_json["client_password"];
+
+		if constexpr (std::is_same<T, MessageType001>::value) {
+			return std::make_unique<T>(content_type, message_type, sign_type, auth_type, client_name, client_mail_addr, client_password);
+		}
+		else {
+			// 他の型に対応する場合
+			LogHandler::get_instance().logging_error("Unsupported message type");
+			return nullptr;
+		}
+	}
+	template <typename T>
+	std::unique_ptr<T> serialize_mt002(const json& recv_json) {
+		// jsonから必要な値を抽出
+		int content_type = recv_json["content_type"].get<int>();  // int型
+		std::string message_type = recv_json["message_type"];      // std::string型
+		std::string dst_client_id = recv_json["dst_client_id"];    // std::string型
+		std::string src_client_id = recv_json["src_client_id"];    // std::string型
+		std::string content = recv_json["content"];                // std::string型
+		std::string message_id = "";  // 空の文字列
+		int trans_type = recv_json["trans_type"].get<int>();  // int型
+		std::string dst_chatroom_id = recv_json["dst_chatroom_id"];  // std::string型
+
+		if constexpr (std::is_same<T, MessageType002>::value) {
+			// T（MessageType002）のコンストラクタに合わせて、8個の引数を渡す
+			return std::make_unique<T>(content_type, message_type, dst_client_id, src_client_id,
+				content, message_id, trans_type, dst_chatroom_id);
+		}
+		else {
+			// 他の型に対応する場合
+			LogHandler::get_instance().logging_error("Unsupported message type");
+			return nullptr;
+		}
+	}
 
 };
+
 
 
 #endif // !PROTOCOLHANDLER

@@ -31,6 +31,26 @@ MessageType002::TransType MessageType002::get_trans_type()
 	return this->_trans_type;
 }
 
+int MessageType002::get_trans_type_int()
+{
+	switch (this->get_trans_type())
+	{
+	case TransType::UNICAST:
+		return 0;
+		break;
+	case TransType::MULTICAST:
+		return 1;
+		break;
+	case TransType::BLOADCAST:
+		return 2;
+		break;
+	default:
+		return -1;
+		break;
+	}
+
+}
+
 void MessageType002::set_trans_type(TransType tt)
 {
 	this->_trans_type = tt;
@@ -114,35 +134,35 @@ MessageType002::TransType MessageType002::exchange_trans_type_from_int(int value
 bool MessageType002::is_valid()
 {
 	//クライアント間の通信
-	if (is_valid_dst_id(this->_dst_client_id) == true && 
-		is_valid_dst_chatroom(this->_dst_chatroom_id) == false &&
-		is_valid_mesasge_type(this->_message_type) == true &&
-		is_valid_src_id(this->_src_client_id) == true &&
-		is_valid_conent(this->_content) == true &&
-		is_valid_message_id(this->_message_id) == true)
-	{
-		return true;
+	if (this->get_trans_type() == MessageType002::TransType::UNICAST) {
+		if (is_valid_dst_id(this->_dst_client_id) == true &&
+			is_valid_mesasge_type(this->_message_type) == true &&
+			is_valid_src_id(this->_src_client_id) == true &&
+			is_valid_conent(this->_content) == true &&
+			is_valid_message_id(this->_message_id) == true)
+		{
+			return true;
+		}
 	}
 	//チャットルームの通信
-	else if (is_valid_dst_id(this->_dst_client_id) == false &&
-		is_valid_dst_chatroom(this->_dst_chatroom_id) == true &&
-		is_valid_mesasge_type(this->_message_type) == true &&
-		is_valid_src_id(this->_src_client_id) == true &&
-		is_valid_conent(this->_content) == true &&
-		is_valid_message_id(this->_message_id) == true) 
-	{
-		return true;
-	}
 	else {
-		return false;
+		if (is_valid_dst_chatroom(this->_dst_chatroom_id) == true &&
+			is_valid_mesasge_type(this->_message_type) == true &&
+			is_valid_src_id(this->_src_client_id) == true &&
+			is_valid_conent(this->_content) == true &&
+			is_valid_message_id(this->_message_id) == true)
+		{
+			return true;
+		}
 	}
-}
+	
+	}
 
-bool MessageType002::is_valid_dst_chatroom(const std::string& id)
+bool MessageType002::is_valid_dst_chatroom(const std::string& cr_id)
 {
 	//dst_idが28byteではない場合
-	if (id.size() != 36) {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Dst chatroom id is invalid. Dst chatroom id byte size : %d", id.size()));
+	if (cr_id.size() != 36) {
+		LogHandler::get_instance().logging_error(StringFormat("dst chatroom id is invalid. dst chatroom id byte size : %d", cr_id.size()));
 		return false;
 	}
 	return true;
@@ -150,16 +170,31 @@ bool MessageType002::is_valid_dst_chatroom(const std::string& id)
 
 bool MessageType002::is_valid_dst_id(const std::string& dst_id)
 {
-	return false;
+	//dst_idが28byteではない場合
+	if (dst_id.size() != 28) {
+		LogHandler::get_instance().logging_error(StringFormat("dst client id is invalid. dst client id byte size : %d", dst_id.size()));
+		return false;
+	}
+	return true;
 }
 
 bool MessageType002::is_valid_src_id(const std::string& src_id)
 {
-	return false;
+	//dst_idが28byteではない場合
+	if (src_id.size() != 28) {
+		LogHandler::get_instance().logging_error(StringFormat("src client id is invalid. src client id byte size : %d", src_id.size()));
+		return false;
+	}
+	return true;
 }
 
 bool MessageType002::is_valid_conent(const std::string& content)
 {
-	return false;
+	//dst_idが28byteではない場合
+	if (content.size() <= 0) {
+		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("content is invalid. content byte size : %d", content.size()));
+		return false;
+	}
+	return true;
 }
 
