@@ -42,7 +42,7 @@ public:
 	virtual bool is_valid();
 
 	//メッセージ表示
-	void print_message(const json& recv_json, const std::string& ip_addr);
+	static void print_message(const json& recv_json, const std::string& ip_addr);
 
 	//Content Typeをint型から変換
 	ContentType exchange_content_type_from_int(int value);

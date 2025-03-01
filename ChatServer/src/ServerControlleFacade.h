@@ -23,7 +23,7 @@
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 #define TLS_PROTOCOL
 
 class ServerControlleFacade

@@ -204,8 +204,9 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 	}
 
 
+	
 	mt = receive_json["message_type"];
-
+	BaseMessage::print_message(receive_json, this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr());
 	//mt000 = ハートビートを受信した際の処理
 	if (mt == "000") {
 		this->mt000_process(receive_data, detection_num);
