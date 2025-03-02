@@ -41,6 +41,7 @@ public:
 
     //各種アクセッサ(getter/setter)
     SignType get_sign_type() const;
+	int get_sign_type_int() const;
     void set_sign_type(SignType s_type);
     void set_sign_type(int s_type);
 

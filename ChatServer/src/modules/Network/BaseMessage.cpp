@@ -85,7 +85,7 @@ bool BaseMessage::is_valid()
 
 
 
-void BaseMessage::print_message(const json& recv_json, const std::string& ip_addr)
+void BaseMessage::print_received_message_info(const json& recv_json, const std::string& ip_addr)
 {
 	std::string mt = recv_json["message_type"];
 	LogHandler::get_instance().logging_info(StringFormat("\033[33mMT%s\033[m receive, server received message from client(IP : %s)", mt, ip_addr));

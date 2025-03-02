@@ -193,10 +193,11 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 	}
 
 	if (disconnect_flag == true) {
-		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, disconnected, server initialize client."
+		LogHandler::get_instance().logging_info(StringFormat("client(ip:%s, client id:%s) is disconnected, server initialize client info."
 			, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
 		{
 			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
+			this->_protocol_handler->shutdown_wolfssl(_client_handler->connected_client_list[detection_num].get_ssl());
 			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
 			_client_handler->delete_client(detection_num);
 		}
@@ -204,23 +205,30 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 	}
 
 
+	if (receive_json.empty() == true) {
+		return;
+	}
 	
+
 	mt = receive_json["message_type"];
-	BaseMessage::print_message(receive_json, this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr());
+	//BaseMessage::print_received_message_info(receive_json, this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr());
 	//mt000 = ハートビートを受信した際の処理
 	if (mt == "000") {
 		this->mt000_process(receive_data, detection_num);
+
 	}
 	//MT001 = Auth認証メッセージの場合
 	else if (mt == "001") {
-		//std::unique_ptr<MessageType001> mt001 = this->_protocol_handler->serialize_message<MessageType001>(receive_json);
-		this->mt001_process(receive_json, detection_num);
+		auto mt001 = this->_protocol_handler->serialize_message<MessageType001>(receive_json);
+		this->_protocol_handler->print_received_message_info(mt001, "", "", _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_socket());
+		this->mt001_process(mt001, detection_num);
+
 	}
 	//MT002 = 通常メッセージの場合
 	else if (mt == "002") {
-		std::unique_ptr<MessageType002> mt002 = this->_protocol_handler->serialize_message<MessageType002>(receive_json);
+		auto mt002 = this->_protocol_handler->serialize_message<MessageType002>(receive_json);
+		this->_protocol_handler->print_received_message_info(mt002, mt002->get_src_client_id(), mt002->get_dst_client_id(), _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_socket());
 		this->mt002_process(mt002, detection_num);
-		//this->mt002_process(receive_json, receive_bytes);
 	}
 
 	else {
@@ -374,6 +382,81 @@ void ServerControlleFacade::mt001_process(const json& receive_json, int& detecti
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
 			client_id = this->sign_in_process(mt001_instance->get_client_mail_addr(), mt001_instance->get_client_password(), this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), client_id_ptr);
+			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
+				//データベースからユーザ情報を読み取る。
+				std::string client_name, client_mail_addr, client_password;
+				_client_handler->connected_client_list[detection_num].set_client_id(client_id);
+				_client_handler->connected_client_list[detection_num].set_client_name(client_name);
+				_client_handler->connected_client_list[detection_num].set_client_mail_addr(client_mail_addr);
+				_client_handler->connected_client_list[detection_num].set_client_password(client_password);
+
+				//Auth statusを変更する
+				this->_client_handler->change_client_auth_status(detection_num);
+
+				//TODO
+				//MT101を送信する処理を記載する
+				//
+			}
+		}
+		break;
+
+		case 2:			//sign out
+		{
+			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
+			_firebase_auth_handler->sign_out(_client_handler->connected_client_list[detection_num].get_client_id(), _client_handler->connected_client_list[detection_num].get_client_mail_addr());
+			break;
+		}
+		default:
+			THROW_APP_EXCEPTION("MT001 authentication data region is in violation.");
+			break;
+		}
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		LogHandler::get_instance().logging_error(ex.what_for_str());
+	}
+	delete client_id_ptr;
+
+}
+
+void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, int detection_num)
+{
+	std::string client_id = "";
+	std::string* client_id_ptr = new std::string();
+
+	try
+	{
+		if (mt001 == nullptr || mt001->is_valid() == false) {
+			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT001 were invalid.");
+		}
+		switch (mt001->get_sign_type_int())
+		{
+		case 0:			//sign up
+			//メッセージがsign_upの場合の処理を追記
+		{
+			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
+			client_id = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr());
+			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
+				//SIGN UPが成功した場合に、クライアント情報を登録する
+				_client_handler->connected_client_list[detection_num].set_client_id(client_id);
+				_client_handler->connected_client_list[detection_num].set_client_name(mt001->get_client_name());
+				_client_handler->connected_client_list[detection_num].set_client_mail_addr(mt001->get_client_mail_addr());
+				_client_handler->connected_client_list[detection_num].set_client_password(mt001->get_client_password());
+
+				//データベースにユーザ情報を登録する。
+				//TODO　データべース処理を追記する。
+
+				//Auth statusを変更する
+				this->_client_handler->change_client_auth_status(detection_num);
+			}
+			this->_client_handler->show_client_info(detection_num);
+		}
+		break;
+
+		case 1:			//sign in
+		{
+			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
+			client_id = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), client_id_ptr);
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
 				//データベースからユーザ情報を読み取る。
 				std::string client_name, client_mail_addr, client_password;

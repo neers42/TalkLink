@@ -6,9 +6,11 @@
 #include "common.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"
+#include "MessageType000.h"
 #include "MessageType001.h"
 #include "MessageType002.h"
 #include "MessageType003.h"
+#include <typeinfo>
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
 //#define SERVER_METHOD_TLS_1_3	//TLS1.3で接続
@@ -64,6 +66,8 @@ public:
 	//SSLのアクセプト
 	WOLFSSL* wolfssl_accept(const SOCKET client_socket);
 
+	//wolfSSLのシャットダウン
+	void shutdown_wolfssl(WOLFSSL* client_ssl);
 	//メッセージの受信
 	std::tuple<json, bool> receive_message_tls(WOLFSSL* client_ssl);
 
@@ -80,6 +84,70 @@ public:
 	const std::tuple<std::string, std::string, std::string, std::string> get_peer_cetificate(WOLFSSL* ssl);
 
 	static void wolfssl_log_callback(const int log_level, const char* log_message);
+	
+	//メッセージの受信情報を表示
+	template<typename T>
+	void print_received_message_info(const std::unique_ptr<T>& message_instance,
+		const std::string& src_id,
+		const std::string dst_id,
+		const std::string& ipv4,
+		const int socket_num)
+	{
+		std::cout << "T is: " << typeid(T).name() << std::endl;
+		if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType000>) {
+			/*LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
+				"Content Type : %d\n"
+				"Message Type : %s\n"
+				"Message ID : %s\n"
+				message_instance.get_content_type(),
+				message_instance.get_message_type(),
+				message_instance.get_message_id()));*/
+		}
+		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType001>) {
+			LogHandler::get_instance().logging_info(StringFormat("server received \033[33mMessage Type 001\033[m from client(ip:%s, socket_num:%d)"
+				, ipv4, socket_num));
+			/*	LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
+					"Content Type : %d\n"
+					"Message Type : %s\n"
+					"Message ID : %s\n"
+					"Sign Type : %d\n"
+					"Auth Type : %d\n"
+					"Client Name : %s\n"
+					"Client Mail Address : %s\n"
+					"Client Password : %s\n",
+					message_instance.get_content_type(),
+					message_instance.get_message_type(),
+					message_instance.get_message_id(),
+					message_instance.get_sign_type_int(),
+					message_instance.get_auth_type_int(),
+					message_instance.get_client_name(),
+					message_instance.get_client_mail_addr(),
+					message_instance.get_client_password()));*/
+		}
+		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType002>) {
+			LogHandler::get_instance().logging_info(StringFormat("server received \033[33mMessage Type 002\033[m from src client(id:%s, ip:%s, socket_num:%d) ==> dst client(id:%s)"
+				, src_id, ipv4, socket_num, dst_id));
+			/*LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
+				"Content Type : %d\n"
+				"Message Type : %s\n"
+				"Message ID : %s\n"
+				"Source ID : %s\n"
+				"Destination ID : %s\n"
+				"Transaction Type : %d\n"
+				"Data Type : %d\n"
+				"Main Content : %s\n",
+				message_instance.get_content_type(),
+				message_instance.get_message_type(),
+				message_instance.get_message_id(),
+				message_instance.get_src_client_id(),
+				message_instance.get_dst_client_id(),
+				message_instance.get_content()));*/
+		}
+		else {
+			std::cout << "やるしかない" << std::endl;
+		}
+
+	}
 
 
 private:
@@ -112,9 +180,9 @@ private:
 		std::string message_type = recv_json["message_type"];
 		int sign_type = recv_json["sign_type"];
 		int auth_type = recv_json["auth_type"];
-		std::string client_name = recv_json["client_name"];
-		std::string client_mail_addr = recv_json["client_mail_address"];
-		std::string client_password = recv_json["client_password"];
+		std::string client_name = recv_json["name"];
+		std::string client_mail_addr = recv_json["mail_address"];
+		std::string client_password = recv_json["password"];
 
 		if constexpr (std::is_same<T, MessageType001>::value) {
 			return std::make_unique<T>(content_type, message_type, sign_type, auth_type, client_name, client_mail_addr, client_password);

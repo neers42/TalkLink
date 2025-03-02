@@ -202,7 +202,7 @@ bool SocketHandler::setting_multicast_tx_socket_param(const std::string& file_pa
 		//THROW_APP_EXCEPTION("Failed to load the file for initialization.");
 		LogHandler::get_instance().logging_error(StringFormat("Failed to load the file for initialization."));
 	}
-	LogHandler::get_instance().logging_debug(StringFormat("ini file, success, server open file for initialization."));
+	LogHandler::get_instance().logging_debug(StringFormat("server open file for initialization."));
 
 	if (this->setting_multicast_tx_sock_af(multicast_socket_setting_ini) == false) {
 		return false;
@@ -576,11 +576,6 @@ bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_settin
 			THROW_APP_EXCEPTION("The port number is set out of range. Reset to the range of 0~65535.");
 		}
 		_port = temp_port;
-#ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：アプリケーションポートは" << m_port << "が割り当てられました。" << std::endl;
-
-#endif // DEBUG
-
 }
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -960,7 +955,7 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 }
 
 
-void SocketHandler::disconnect_socket(SOCKET client_socket)
+void SocketHandler::disconnect_socket(const SOCKET client_socket)
 {
 	try
 	{
@@ -996,13 +991,16 @@ void SocketHandler::disconnect_socket(SOCKET client_socket)
 				break;
 			}
 		}
+		else {
+			LogHandler::get_instance().logging_debug(StringFormat("client socket(%d) is closed.", client_socket));
+		}
 
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
 		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
-	LogHandler::get_instance().logging_debug("client socket, success, sever initialize client.");
+
 
 }
 
@@ -1075,11 +1073,11 @@ bool SocketHandler::generate_tcp_listen_socket()
 		return false;
 	}
 	//std::cout << "\033[32m [OK] \033[m" << std::endl;
-	LogHandler::get_instance().logging_info(StringFormat("listen socket(%d) ,success, server generated listen socket.", _tcp_listen_socket));
+	LogHandler::get_instance().logging_debug(StringFormat("server generated listen socket(%d).", _tcp_listen_socket));
 
 	bool bind_result = bind_tcp_listen_socket(&_tcp_listen_socket, m_result_tcp);
 	if (bind_result == true) {
-		LogHandler::get_instance().logging_debug(StringFormat("listen socket(%d), success, server bind setting.", _tcp_listen_socket));
+		LogHandler::get_instance().logging_debug(StringFormat("server bind setting on listen socket(%d).", _tcp_listen_socket));
 	}
 	else {
 		LogHandler::get_instance().logging_error(StringFormat("listen socket(%d), failed, server can't bind setting.", _tcp_listen_socket));

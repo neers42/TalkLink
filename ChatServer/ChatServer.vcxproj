@@ -152,6 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\modules\Network\MessageType000.cpp" />
     <ClCompile Include="src\modules\Network\MessageType003.cpp" />
     <ClCompile Include="src\modules\Network\MessageType002.cpp" />
     <ClCompile Include="src\modules\Network\MessageType001.cpp" />
@@ -600,6 +601,7 @@
     <ClInclude Include="include\Utils\nlohmann\ordered_map.hpp" />
     <ClInclude Include="include\Utils\nlohmann\thirdparty\hedley\hedley.hpp" />
     <ClInclude Include="include\Utils\nlohmann\thirdparty\hedley\hedley_undef.hpp" />
+    <ClInclude Include="include\Network\MessageType000.h" />
     <ClInclude Include="src\ServerControlleFacade.h" />
     <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\StringFormat.h" />

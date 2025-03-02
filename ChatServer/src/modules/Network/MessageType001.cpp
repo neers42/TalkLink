@@ -30,6 +30,26 @@ MessageType001::SignType MessageType001::get_sign_type() const
     return this->_sign_type;
 }
 
+int MessageType001::get_sign_type_int() const
+{
+    switch (this->_sign_type)
+    {
+	case SignType::SIGNUP:
+		return 0;
+		break;
+	case SignType::SIGNIN:
+		return 1;
+		break;
+	case SignType::SIGNOUT:
+		return 2;
+		break;
+
+    default:
+        return -1;
+        break;
+    }
+}
+
 void MessageType001::set_sign_type(SignType s_type)
 {
     this->_sign_type = s_type;
@@ -121,10 +141,15 @@ void MessageType001::set_client_password(const std::string& password)
 
 bool MessageType001::is_valid()
 {
-    if(is_valid_name(this->_client_name) == true &&
-        is_valid_mail_addr(this->_client_mail_addr) == true && 
-        is_valid_password(this->_client_password) == true)
-    return false;
+    if (is_valid_name(this->_client_name) == true &&
+        is_valid_mail_addr(this->_client_mail_addr) == true &&
+        is_valid_password(this->_client_password) == true) {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool MessageType001::is_valid_name(const std::string& name)

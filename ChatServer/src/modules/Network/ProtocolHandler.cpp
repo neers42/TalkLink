@@ -82,12 +82,12 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 	WOLFSSL* new_client_ssl = wolfSSL_new(this->_server_w_ctx);
 	//クライアントのSSL生成が正常に処理されなかった場合
 	if (new_client_ssl == NULL) {
-		LogHandler::get_instance().logging_error(StringFormat("failed, new client ssl object creation failed."));
+		LogHandler::get_instance().logging_error(StringFormat("new client ssl object creation failed."));
 		wolfSSL_free(new_client_ssl);
 	}
 	//クライアントのSSL生成が正常に処理された場合
 	else {
-		LogHandler::get_instance().logging_debug("success, new client ssl object creation success!!.");
+		LogHandler::get_instance().logging_debug("new client ssl object creation success!!.");
 		//SSLオブジェクトとクライアントソケットを関連付けする。
 		wolfSSL_set_fd(new_client_ssl, client_socket);
 		return new_client_ssl;
@@ -110,6 +110,19 @@ WOLFSSL* ProtocolHandler::wolfssl_accept(const SOCKET client_socket)
 	}
 }
 
+void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
+{
+	int ret = wolfSSL_shutdown(client_ssl);
+	if (ret == WOLFSSL_SUCCESS) {
+		LogHandler::get_instance().logging_debug("wolfSSL shutdown success.");
+	}
+	else
+	{
+		this->print_wolfssl_error(client_ssl);
+	}
+	wolfSSL_free(client_ssl);
+
+}
 std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 {
 	json recv_msg_json;
@@ -326,6 +339,9 @@ void ProtocolHandler::initialize_wolfssl()
 	}
 
 }
+
+
+
 
 WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 {

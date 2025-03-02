@@ -178,7 +178,7 @@ public:
 
 	
 	//接続中のクライアントソケットをクローズする
-	void disconnect_socket(SOCKET client_socket);
+	void disconnect_socket(const SOCKET client_socket);
 
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(SOCKET request_socket);

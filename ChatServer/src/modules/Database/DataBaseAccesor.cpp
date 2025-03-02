@@ -31,7 +31,7 @@ void DataBaseAccesor::connect_db()
 	{
 		m_connection = m_driver->connect(m_host, m_user_name, m_password);
 		m_statement = m_connection->createStatement();
-		LogHandler::get_instance().logging_info(StringFormat("MYSQL, success, Database connect."));
+		LogHandler::get_instance().logging_info(StringFormat("MYSQL Database connect success."));
 
 	}
 	catch (sql::SQLException& e)

@@ -2,6 +2,7 @@
 #define BASEMESSAGE
 #include "common.h"
 
+
 class BaseMessage
 {
 public:
@@ -42,7 +43,9 @@ public:
 	virtual bool is_valid();
 
 	//メッセージ表示
-	static void print_message(const json& recv_json, const std::string& ip_addr);
+	static void print_received_message_info(const json& recv_json, const std::string& ip_addr);
+
+
 
 	//Content Typeをint型から変換
 	ContentType exchange_content_type_from_int(int value);
@@ -53,7 +56,6 @@ protected:
 	bool is_valid_message_id(const std::string& m_id);
 	
 };
-
 
 #endif // !BASEMESSAGE
 
