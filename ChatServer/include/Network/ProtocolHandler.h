@@ -10,7 +10,6 @@
 #include "MessageType001.h"
 #include "MessageType002.h"
 #include "MessageType003.h"
-#include <typeinfo>
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
 //#define SERVER_METHOD_TLS_1_3	//TLS1.3で接続
@@ -93,7 +92,6 @@ public:
 		const std::string& ipv4,
 		const int socket_num)
 	{
-		std::cout << "T is: " << typeid(T).name() << std::endl;
 		if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType000>) {
 			/*LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
 				"Content Type : %d\n"
@@ -142,9 +140,6 @@ public:
 				message_instance.get_src_client_id(),
 				message_instance.get_dst_client_id(),
 				message_instance.get_content()));*/
-		}
-		else {
-			std::cout << "やるしかない" << std::endl;
 		}
 
 	}
