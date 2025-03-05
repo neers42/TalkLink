@@ -3,6 +3,7 @@
 
 #include "firebase/app.h"
 #include "firebase/auth.h"
+#include "firebase/log.h"
 #include "firebase/future.h"
 #include "AppException.h"
 #include "StringFormat.h"
@@ -19,6 +20,9 @@ private:
 	firebase::auth::Auth* auth;
 	void initialize_firebase();
 	void load_initialize_info();
+	void custom_loggin_info(firebase::LogLevel level, const char* message) {
+		LogHandler::get_instance().logging_info(message);
+	}
 
 public:
 	FirebaseAuthHandler();

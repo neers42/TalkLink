@@ -2,7 +2,6 @@
 
 void FirebaseAuthHandler::initialize_firebase()
 {
-
 	//TODO
 	//jsonファイルから設定値を読み込んで初期化を実行するようにする
 	firebase::AppOptions options = firebase::AppOptions();
@@ -10,6 +9,7 @@ void FirebaseAuthHandler::initialize_firebase()
 	options.set_app_id("1:114823736215:web:b75c724ada8be0401872d2");
 	options.set_project_id("mychat-e2542");
 	app = firebase::App::Create(options);
+	firebase::SetLogLevel(firebase::kLogLevelDebug);
 	this->auth = firebase::auth::Auth::GetAuth(app);
 	LogHandler::get_instance().logging_info("server auth, success, server auth setting complete!!.");
 }

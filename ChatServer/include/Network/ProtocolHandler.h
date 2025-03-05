@@ -67,11 +67,12 @@ public:
 
 	//wolfSSLのシャットダウン
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
+	
 	//メッセージの受信
 	std::tuple<json, bool> receive_message_tls(WOLFSSL* client_ssl);
 
 	//メッセージの送信
-	std::tuple<int, json> send_message_tls();
+	bool send_message_tls(WOLFSSL* client_ssl, json message);
 
 	//TLSのバージョンを取得
 	const std::string get_tls_version(const WOLFSSL* ssl);

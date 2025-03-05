@@ -182,26 +182,25 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 #ifdef TLS_PROTOCOL
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+		auto& client = _client_handler->connected_client_list[detection_num];
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
-			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(_client_handler->connected_client_list[detection_num].get_ssl());
-			
+			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client.get_ssl());
+
 
 		}
 		else {
 			return;
 		}
-	}
 
-	if (disconnect_flag == true) {
-		LogHandler::get_instance().logging_info(StringFormat("client(ip:%s, client id:%s) is disconnected, server initialize client info."
-			, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
-		{
-			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
-			this->_protocol_handler->shutdown_wolfssl(_client_handler->connected_client_list[detection_num].get_ssl());
-			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
-			_client_handler->delete_client(detection_num);
+
+		if (disconnect_flag == true) {
+			LogHandler::get_instance().logging_info(StringFormat("client(ip:%s, client id:%s) is disconnected, server initialize client info."
+				, client.get_client_ipv4_addr(), client.get_client_id()));
+				this->_protocol_handler->shutdown_wolfssl(client.get_ssl());
+				_socket_handler->disconnect_socket(client.get_client_socket());
+				_client_handler->delete_client(detection_num);
+			return;
 		}
-		return;
 	}
 
 
@@ -243,69 +242,42 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 #ifdef TCP_PROTOCOL
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+		auto& client = _client_handler->connected_client_list[detection_num];
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
-			std::tie(receive_bytes, receive_json) = Receiver::receive_data(_client_handler->connected_client_list[detection_num].get_client_socket(), detection_num);
-
+			std::tie(receive_data, disconnect_flag) = _socket_handler->receive_message(client.get_client_socket());
 		}
 		else {
 			return;
 		}
-
-	}
-
-	//receive_result == SOCKET_ERRORの場合(クライアントのソケットがSOCKET_ERRORの場合)
-	if (receive_bytes == SOCKET_ERROR) {
-		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, socket error, server initialize client."
-			, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
-		{
-			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
-			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
+		if (disconnect_flag == true) {
+			LogHandler::get_instance().logging_info(StringFormat("client(ip:%s, client id:%s) is disconnected, server initialize client info."
+				, client.get_client_ipv4_addr(), client.get_client_id()));
+			_socket_handler->disconnect_socket(client.get_client_socket());
 			_client_handler->delete_client(detection_num);
+			return;
 		}
 	}
-	//receive_result == 0の場合(クライアントのソケットが切断された場合)
-	else if (receive_bytes == DISCONNECT_SOCKET) {
-		LogHandler::get_instance().logging_info(StringFormat("client ip : %s, client id : %s, disconnected, server initialize client."
-			, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_id()));
-		{
-			std::unique_lock <std::mutex> lock(this->_connect_client_list_mutex);
-			_socket_handler->disconnect_socket(_client_handler->connected_client_list[detection_num].get_client_socket());
-			_client_handler->delete_client(detection_num);
-		}
+	if (receive_data.empty() == true) {
+		return;
 	}
-	//それ以外の場合はMTの判定を実行し、MTごとの処理を実行する。
+	mt = _protocol_handler->data_extraction_mt(receive_data);
+	//mt000 = ハートビートを受信した際の処理
+	if (mt == "000") {
+		this->mt000_process(receive_data, detection_num);
+	}
+	//MT001 = Auth認証メッセージの場合
+	else if (mt == "001") {
+		auto mt001 = this->_mt001receiver->create_mt001_instance(receive_data);
+		this->mt001_process(mt001, detection_num);
+	}
+	//MT002 = 通常メッセージの場合
+	else if (mt == "002") {
+		auto mt002 = this->_mt002receiver->create_mt002_instance(receive_data);
+		this->mt002_process(mt002, detection_num);
+	}
 	else {
-		mt = receive_json["mt"];
-
-		//mt000 = ハートビートを受信した際の処理
-		if (std::equal(mt.begin(), mt.end(), "000")) {
-			this->mt000_process(receive_data, detection_num);
-		}
-		//MT001 = Auth認証メッセージの場合
-		else if (std::equal(mt.begin(), mt.end(), "001")) {
-			_mt001receiver->show_receive_info(receive_json, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr()
-				, receive_bytes);
-			this->mt001_process(receive_json, detection_num);
-		}
-		//MT002 = 通常メッセージの場合
-		else if (std::equal(mt.begin(), mt.end(), "002")) {
-			_mt002receiver->show_receive_info(receive_json, _client_handler->connected_client_list[detection_num].get_client_ipv4_addr()
-				, receive_bytes);
-			this->mt002_process(receive_json, receive_bytes);
-		}
-		//MT003 = の場合
-		else if (std::equal(mt.begin(), mt.end(), "003")) {
-			LogHandler::get_instance().logging_info(StringFormat("Received JSON : %s", receive_json.dump(4)));
-		}
-		//MT004 = の場合
-		else if (std::equal(mt.begin(), mt.end(), "004")) {
-
-		}
-
-		else {
-			LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
-		}
-	}
+		LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
+	} 
 #endif // TCP_PROTOCOL
 
 
@@ -435,13 +407,15 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 			//メッセージがsign_upの場合の処理を追記
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			client_id = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr());
+			auto& client = this->_client_handler->connected_client_list[detection_num];
+			client_id = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.get_client_ipv4_addr());
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
+				LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed in, Client id %s", client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
 				//SIGN UPが成功した場合に、クライアント情報を登録する
-				_client_handler->connected_client_list[detection_num].set_client_id(client_id);
-				_client_handler->connected_client_list[detection_num].set_client_name(mt001->get_client_name());
-				_client_handler->connected_client_list[detection_num].set_client_mail_addr(mt001->get_client_mail_addr());
-				_client_handler->connected_client_list[detection_num].set_client_password(mt001->get_client_password());
+				client.set_client_id(client_id);
+				client.set_client_name(mt001->get_client_name());
+				client.set_client_mail_addr(mt001->get_client_mail_addr());
+				client.set_client_password(mt001->get_client_password());
 
 				//データベースにユーザ情報を登録する。
 				//TODO　データべース処理を追記する。
@@ -456,14 +430,18 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		case 1:			//sign in
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			client_id = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), client_id_ptr);
+			auto& client = this->_client_handler->connected_client_list[detection_num];
+			client_id = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.get_client_ipv4_addr(), client_id_ptr);
+			
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
+
+				LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed in, Client id %s",client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
 				//データベースからユーザ情報を読み取る。
 				std::string client_name, client_mail_addr, client_password;
-				_client_handler->connected_client_list[detection_num].set_client_id(client_id);
-				_client_handler->connected_client_list[detection_num].set_client_name(client_name);
-				_client_handler->connected_client_list[detection_num].set_client_mail_addr(client_mail_addr);
-				_client_handler->connected_client_list[detection_num].set_client_password(client_password);
+				client.set_client_id(client_id);
+				client.set_client_name(client_name);
+				client.set_client_mail_addr(client_mail_addr);
+				client.set_client_password(client_password);
 
 				//Auth statusを変更する
 				this->_client_handler->change_client_auth_status(detection_num);
@@ -478,7 +456,8 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		case 2:			//sign out
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			_firebase_auth_handler->sign_out(_client_handler->connected_client_list[detection_num].get_client_id(), _client_handler->connected_client_list[detection_num].get_client_mail_addr());
+			auto& client = this->_client_handler->connected_client_list[detection_num];
+			_firebase_auth_handler->sign_out(client.get_client_id(), client.get_client_mail_addr());
 			break;
 		}
 		default:

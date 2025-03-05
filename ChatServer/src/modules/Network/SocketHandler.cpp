@@ -998,7 +998,7 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		LogHandler::get_instance().logging_error(StringFormat("%s", ex.what_for_str()));
 	}
 
 

@@ -47,35 +47,6 @@ WOLFSSL_CTX* ProtocolHandler::get_wolfssl_ctx()
 	return this->_server_w_ctx;
 }
 
-//template <typename T>
-//std::unique_ptr<T> ProtocolHandler::serialize_message(const json& json_message)
-//{
-//	std::string mt = json_message["MessageType"];
-//	
-//	//MT001 = AUTH認証メッセージ
-//	if (mt = "001") {
-//		return this->serialize_mt001(json_message);	//MT001を返す
-//	}
-//	//MT002 = 通常メッセージの場合
-//	else if (mt == "002") {
-//		return this->serialize_mt002(json_message);	//MT002を返す
-//	}
-//	//MT003 = の場合
-//	else if (mt ==  "003") {
-//		
-//	}
-//	//MT004 = の場合
-//	else if (mt == "004") {
-//
-//	}
-//	else {
-//		LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
-//		return nullptr;
-//	}
-//}
-
-//template std::unique_ptr<MessageType001> ProtocolHandler::serialize_message<MessageType001>(const json& json_message);
-//template std::unique_ptr<MessageType002> ProtocolHandler::serialize_message<MessageType002>(const json& json_message);
 
 WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 {
@@ -193,9 +164,39 @@ std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 
 }
 
-std::tuple<int, json> ProtocolHandler::send_message_tls()
+bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 {
-	return std::tuple<int, json>();
+	std::vector<uint8_t> message_buffer = json::to_msgpack(message);
+	int message_size = message_buffer.size();
+	int total_sent = 0;
+	int chunk_size = 16384;  // 最大TLSレコードサイズ
+	int ret;
+	while (total_sent < message_size) {
+		int to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
+		ret = wolfSSL_write(client_ssl, message_buffer.data() + total_sent, to_send);
+		if (ret > 0) {
+			total_sent += ret;
+			continue;
+		}
+		// エラー発生時
+		int err = wolfSSL_get_error(client_ssl, ret);
+		if (err == WOLFSSL_ERROR_WANT_WRITE || err == WOLFSSL_ERROR_WANT_READ) {
+			// 一時的なエラー、リトライ
+			this->print_wolfssl_error(client_ssl);
+			LogHandler::get_instance().logging_info("Temporary error (WANT_WRITE/WANT_READ), retrying...");
+			//printf("Temporary error (WANT_WRITE/WANT_READ), retrying...\n");
+			continue;
+		}
+		else {
+			// 致命的なエラー
+			this->print_wolfssl_error(client_ssl);
+			LogHandler::get_instance().logging_error(StringFormat("wolfSSL_write failed: %d", err));
+			//printf("wolfSSL_write failed: %d\n", err);
+			wolfSSL_shutdown(client_ssl);
+			return false;
+		}
+	}
+	return true;
 }
 
 const std::string ProtocolHandler::get_tls_version(const WOLFSSL* ssl)

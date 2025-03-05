@@ -362,7 +362,15 @@ bool ClientHandler::add_client(const Client& client)
 
 void ClientHandler::delete_client(const uint32_t delete_num)
 {
-	this->connected_client_list.erase(this->connected_client_list.begin() + delete_num);
+	if (!this->connected_client_list.empty() && delete_num >= 0 && delete_num < this->connected_client_list.size()) {
+		auto it = this->connected_client_list.begin() + delete_num;
+		this->connected_client_list.erase(it);
+	}
+	else {
+		LogHandler::get_instance().logging_error(StringFormat("Invalid delete_num:%d", delete_num));
+		std::cerr << "Invalid delete_num: " << delete_num << std::endl;
+	}
+	//this->connected_client_list.erase(this->connected_client_list.begin() + delete_num);
 	this->connect_client_num--;
 }
 
