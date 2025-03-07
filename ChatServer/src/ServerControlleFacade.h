@@ -71,11 +71,7 @@ public:
 
 	void mt000_process(std::string& receive_data, int monitor_result);
 
-	void mt001_process(const json& receive_json, int& monitor_result);
-
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, int detection_num);
-
-	void mt002_process(const json& receive_json, int& receive_result);
 
 	void mt002_process(const std::unique_ptr<MessageType002>& mt002, int& receive_result);
 
