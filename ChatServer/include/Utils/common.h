@@ -11,10 +11,20 @@
 #include <chrono>
 #include <memory>
 #include <errno.h>
+#include <random>
 
 
 
 using json = nlohmann::json;
+
+namespace random {
+	//—”¶¬
+    inline unsigned char random_byte() {
+        static std::mt19937 rng(std::random_device{}());
+        static std::uniform_int_distribution<int> dist(0, 255);
+        return static_cast<unsigned char>(dist(rng));
+    }
+}
 
 
 #endif // !COMMON_H_

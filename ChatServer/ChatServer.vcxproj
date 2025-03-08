@@ -606,6 +606,8 @@
     <ClInclude Include="include\Network\MessageType000.h" />
     <ClInclude Include="include\Network\MessageType101.h" />
     <ClInclude Include="include\Network\MessageType102.h" />
+    <ClInclude Include="include\Utils\ulid\ulid.hh" />
+    <ClInclude Include="include\Utils\ulid\ulid_struct.hh" />
     <ClInclude Include="src\ServerControlleFacade.h" />
     <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\StringFormat.h" />

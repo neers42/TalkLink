@@ -81,6 +81,8 @@ public:
 
 	void heart_beat_no_response_process(const int hb_zero_client_num);
 
+	void heart_beat_response_process(const ClientHandler::Client& client);
+
 	void setting_select_process();
 
 	

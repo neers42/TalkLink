@@ -1412,6 +1412,12 @@
     <ClInclude Include="include\Network\MessageType102.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="include\Utils\ulid\ulid.hh">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Utils\ulid\ulid_struct.hh">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />

@@ -48,6 +48,18 @@ WOLFSSL_CTX* ProtocolHandler::get_wolfssl_ctx()
 }
 
 
+const std::string ProtocolHandler::generate_message_id()
+{
+	//ミリ秒単位の経過時間
+	long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+	//第二引数：0~255範囲の乱数を生成する関数
+	ulid::ULID ulid = ulid::Create(now, random::random_byte);
+	std::string message_id = ulid::Marshal(ulid);
+	LogHandler::get_instance().logging_info(StringFormat("generated message id : %s.", message_id));
+	return message_id;
+}
+
 WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 {
 	WOLFSSL* new_client_ssl = wolfSSL_new(this->_server_w_ctx);
