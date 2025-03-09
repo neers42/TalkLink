@@ -56,7 +56,7 @@ const std::string ProtocolHandler::generate_message_id()
 	//‘æ“ñˆø”F0~255”ÍˆÍ‚Ì—”‚ğ¶¬‚·‚éŠÖ”
 	ulid::ULID ulid = ulid::Create(now, random::random_byte);
 	std::string message_id = ulid::Marshal(ulid);
-	LogHandler::get_instance().logging_info(StringFormat("generated message id : %s.", message_id));
+	LogHandler::get_instance().logging_info(StringFormat("generated message id:%s.", message_id));
 	return message_id;
 }
 

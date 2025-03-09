@@ -58,7 +58,7 @@ void ServerControlleFacade::run()
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->_socket_handler->setting_select_info_to_listen_socket();
 		this->setting_select_info();
-		int detection_num = _socket_handler->monitor_socket_descriptor(this->_client_handler->connected_client_list);
+		int detection_num = _socket_handler->monitor_socket_descriptor(this->_client_handler->connected_clients);
 
 		switch (detection_num)
 		{
@@ -91,10 +91,10 @@ void ServerControlleFacade::setting_select_info()
 {
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-		for (int i = 0; i < this->_client_handler->connected_client_list.size(); i++) {
+		for (int i = 0; i < this->_client_handler->connected_clients.size(); i++) {
 			//有効なソケットにFDSETを実行する
-			if (this->_client_handler->connected_client_list[i].get_client_socket() != INVALID_SOCKET) {
-				_socket_handler->bind_select_info_to_socket(this->_client_handler->connected_client_list[i].get_client_socket(), &_socket_handler->get_fd_read());
+			if (this->_client_handler->connected_clients[i].get_client_socket() != INVALID_SOCKET) {
+				_socket_handler->bind_select_info_to_socket(this->_client_handler->connected_clients[i].get_client_socket(), &_socket_handler->get_fd_read());
 			}
 		}
 	}
@@ -154,8 +154,8 @@ bool ServerControlleFacade::accept_client_socket_process()
 		}
 	}
 	LogHandler::get_instance().logging_info(StringFormat("client ip : %s , success, server accept client(socket : %d)."
-		, _client_handler->connected_client_list[this->_client_handler->connect_client_num - 1].get_client_ipv4_addr()
-		, _client_handler->connected_client_list[this->_client_handler->connect_client_num - 1].get_client_socket()));
+		, _client_handler->connected_clients[this->_client_handler->connect_client_num - 1].get_client_ipv4_addr()
+		, _client_handler->connected_clients[this->_client_handler->connect_client_num - 1].get_client_socket()));
 	return ACCEPT_SUCCEEDED;
 }
 
@@ -182,8 +182,8 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 #ifdef TLS_PROTOCOL
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-		auto& client = _client_handler->connected_client_list[detection_num];
-		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
+		auto& client = _client_handler->connected_clients[detection_num];
+		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client.get_ssl());
 
 
@@ -222,7 +222,7 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 		if (mt001 == nullptr) {
 			return;
 		}
-		this->_protocol_handler->print_received_message_info(mt001, "", "", "", _client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_socket());
+		this->_protocol_handler->print_received_message_info(mt001, "", "", "", _client_handler->connected_clients[detection_num].get_client_ipv4_addr(), _client_handler->connected_clients[detection_num].get_client_socket());
 		this->mt001_process(mt001, detection_num);
 
 	}
@@ -233,7 +233,7 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 			return;
 		}
 		this->_protocol_handler->print_received_message_info(mt002, mt002->get_message_id(), mt002->get_src_client_id(), mt002->get_dst_client_id(),
-			_client_handler->connected_client_list[detection_num].get_client_ipv4_addr(), _client_handler->connected_client_list[detection_num].get_client_socket());
+			_client_handler->connected_clients[detection_num].get_client_ipv4_addr(), _client_handler->connected_clients[detection_num].get_client_socket());
 		this->mt002_process(mt002, detection_num);
 	}
 
@@ -304,7 +304,7 @@ void ServerControlleFacade::mt000_process(std::string& receive_data, int detecti
 		auto mt000_instance = this->_mt000receiver->create_mt000_instance(src_client_id);
 		{
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			if (mt000_instance->get_src_client_id() == this->_client_handler->connected_client_list[detection_num].get_client_id()) {
+			if (mt000_instance->get_src_client_id() == this->_client_handler->connected_clients[detection_num].get_client_id()) {
 				this->_client_handler->incliment_heart_beat_count(detection_num);
 			}
 		}
@@ -332,10 +332,10 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 			//メッセージがsign_upの場合の処理を追記
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			auto& client = this->_client_handler->connected_client_list[detection_num];
+			auto& client = this->_client_handler->connected_clients[detection_num];
 			client_id = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.get_client_ipv4_addr());
-			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
-				LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed in, Client id %s", client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
+			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
+				LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed up, Client id:%s", client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
 				//SIGN UPが成功した場合に、クライアント情報を登録する
 				client.set_client_id(client_id);
 				client.set_client_name(mt001->get_client_name());
@@ -355,12 +355,12 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		case 1:			//sign in
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			auto& client = this->_client_handler->connected_client_list[detection_num];
+			auto& client = this->_client_handler->connected_clients[detection_num];
 			client_id = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.get_client_ipv4_addr(), client_id_ptr);
 			
-			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
+			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 
-				LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed in, Client id %s",client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
+				LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed in, Client id:%s",client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
 				//データベースからユーザ情報を読み取る。
 				std::string client_name, client_mail_addr, client_password;
 				client.set_client_id(client_id);
@@ -381,7 +381,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		case 2:			//sign out
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			auto& client = this->_client_handler->connected_client_list[detection_num];
+			auto& client = this->_client_handler->connected_clients[detection_num];
 			_firebase_auth_handler->sign_out(client.get_client_id(), client.get_client_mail_addr());
 			break;
 		}
@@ -498,8 +498,8 @@ void ServerControlleFacade::heart_beat_send_process()
 
 		{
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			for (int i = 0; i < this->_client_handler->connected_client_list.size(); i++) {
-				send_socket = this->_client_handler->connected_client_list[i].get_client_socket();
+			for (int i = 0; i < this->_client_handler->connected_clients.size(); i++) {
+				send_socket = this->_client_handler->connected_clients[i].get_client_socket();
 				if (send_socket != INVALID_SOCKET) {
 					send_sockets.push_back(send_socket);
 				}
@@ -531,59 +531,30 @@ void ServerControlleFacade::heart_beat_send_process()
 
 void ServerControlleFacade::heart_beat_check_process()
 {
-
-	//while (true) {
-	//	std::this_thread::sleep_for(std::chrono::seconds(30));  // 30秒間隔
-
-	//	// ① 現在の接続クライアントリストをコピー
-	//	std::vector<ClientHandler::Client> current_clients;
-	//	{
-	//		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-	//		current_clients = this->_client_handler->connected_client_list;
-	//	}
-
-	//	// ② ハートビート未応答のクライアントをチェック
-	//	for (const auto& client : current_clients) {
-	//		if (client.get_client_heart_beat_count() == 0) {
-	//			this->heart_beat_response_process(client);
-	//		}
-	//	}
-
-	//	// ③ ハートビートカウントをクリア
-	//	{
-	//		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-	//		this->_client_handler->all_clear_heart_beat_count();
-	//	}
-	//}
-
 	while (true) {
 		
-		auto time_now = std::chrono::system_clock::now();
-		int search_client_num = -1;
+		//auto time_now = std::chrono::system_clock::now();
+		//int search_client_num = -1;
 
 		//現在接続しているクライアントリストを抽出
 		std::vector<ClientHandler::Client> current_connect_clients;
 		{
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			current_connect_clients = this->_client_handler->connected_client_list;
+			current_connect_clients = this->_client_handler->connected_clients;
 		}
 
 		//30秒wait
-		auto abs_time_30 = time_now + std::chrono::seconds(30);
-		std::this_thread::sleep_until(abs_time_30);
-		
-		//ハートビートの回数集計
-		for (int then_count = 0; then_count < current_connect_clients.size(); then_count++) {
-			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			for (int now_count = 0; now_count < this->_client_handler->connected_client_list.size(); now_count++) {
-				//接続しているクライアントのハートビート回数が0のときの処理
-				if (current_connect_clients[then_count].get_client_socket() != INVALID_SOCKET && current_connect_clients[then_count] == this->_client_handler->connected_client_list[now_count]) {
-					this->heart_beat_no_response_process(now_count);
-				}
-				
+		/*auto abs_time_30 = time_now + std::chrono::seconds(30);
+		std::this_thread::sleep_until(abs_time_30);*/
+
+		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30秒間隔
+
+		for (const auto& client : current_connect_clients) {
+			if (client.get_client_heart_beat_count() == 0) {
+				this->heart_beat_response_process(client);
 			}
 		}
-
+		
 		//ハートビート回数をクリアする
 		{
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
@@ -596,18 +567,18 @@ void ServerControlleFacade::heart_beat_check_process()
 void ServerControlleFacade::heart_beat_no_response_process(const int hb_zero_client_num)
 {
 	//ハートビートの回数がゼロの場合クライアントを切断する
-	if (this->_client_handler->connected_client_list[hb_zero_client_num].get_client_heart_beat_count() == 0) {
+	if (this->_client_handler->connected_clients[hb_zero_client_num].get_client_heart_beat_count() == 0) {
 		//クライアントが既に認証済みの場合
-		if(this->_client_handler->connected_client_list[hb_zero_client_num].get_auth_status() == true) {
+		if(this->_client_handler->connected_clients[hb_zero_client_num].get_auth_status() == true) {
 			LogHandler::get_instance().logging_info(StringFormat("Client (Socket : %d ID: %s), disconnect.(Not response)",
-				this->_client_handler->connected_client_list[hb_zero_client_num].get_client_socket(), this->_client_handler->connected_client_list[hb_zero_client_num].get_client_id()));
+				this->_client_handler->connected_clients[hb_zero_client_num].get_client_socket(), this->_client_handler->connected_clients[hb_zero_client_num].get_client_id()));
 		}
 		else {
 			LogHandler::get_instance().logging_info(StringFormat("Client (Socket : %d ID: None), disconnect.(Not response)",
-				this->_client_handler->connected_client_list[hb_zero_client_num].get_client_socket()));
+				this->_client_handler->connected_clients[hb_zero_client_num].get_client_socket()));
 		}
 		//クライアント切断処理
-		_socket_handler->disconnect_socket(_client_handler->connected_client_list[hb_zero_client_num].get_client_socket());
+		_socket_handler->disconnect_socket(_client_handler->connected_clients[hb_zero_client_num].get_client_socket());
 		_client_handler->delete_client(hb_zero_client_num);
 	}	
 }
@@ -617,7 +588,7 @@ void ServerControlleFacade::heart_beat_response_process(const ClientHandler::Cli
 	std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 
 	// クライアントが still connected か確認
-	auto& clients = _client_handler->connected_client_list;
+	auto& clients = _client_handler->connected_clients;
 	auto it = std::find(clients.begin(), clients.end(), client);
 
 	if (it == clients.end() || it->get_client_heart_beat_count() > 0) {
@@ -640,7 +611,7 @@ void ServerControlleFacade::heart_beat_response_process(const ClientHandler::Cli
 	_socket_handler->disconnect_socket(it->get_client_socket());
 
 	// クライアント削除（イテレータを使って安全に削除）
-	clients.erase(it);
+	this->_client_handler->delete_client(it);
 }
 
 

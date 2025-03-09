@@ -111,7 +111,7 @@ public:
 					message_instance.get_client_password()));*/
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType002>) {
-			LogHandler::get_instance().logging_info(StringFormat("server received \033[33mMessage Type 002(%s)\033[m from src client(id:%s, ip:%s, socket_num:%d) ==> dst client(id:%s)"
+			LogHandler::get_instance().logging_info(StringFormat("server received \033[33mMessage Type 002(message id:%s)\033[m from src client(id:%s, ip:%s, socket_num:%d) ==> dst client(id:%s)"
 				, message_id, src_id, ipv4, socket_num, dst_id));
 			/*LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
 				"Content Type : %d\n"

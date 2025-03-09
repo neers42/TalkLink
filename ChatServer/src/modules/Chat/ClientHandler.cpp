@@ -344,7 +344,7 @@ bool ClientHandler::add_client(const Client& client)
 {
 	try
 	{
-		if (this->connected_client_list.size() >= MAX_CONNECT_NUM) {
+		if (this->connected_clients.size() >= MAX_CONNECT_NUM) {
 			THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");
 		}
 	}
@@ -354,7 +354,7 @@ bool ClientHandler::add_client(const Client& client)
 		return false;
 	}
 
-	this->connected_client_list.push_back(client);
+	this->connected_clients.push_back(client);
 	this->connect_client_num++;
 	return true;
 }
@@ -362,9 +362,9 @@ bool ClientHandler::add_client(const Client& client)
 
 void ClientHandler::delete_client(const uint32_t delete_num)
 {
-	if (!this->connected_client_list.empty() && delete_num >= 0 && delete_num < this->connected_client_list.size()) {
-		auto it = this->connected_client_list.begin() + delete_num;
-		this->connected_client_list.erase(it);
+	if (!this->connected_clients.empty() && delete_num >= 0 && delete_num < this->connected_clients.size()) {
+		auto it = this->connected_clients.begin() + delete_num;
+		this->connected_clients.erase(it);
 	}
 	else {
 		LogHandler::get_instance().logging_error(StringFormat("Invalid delete_num:%d", delete_num));
@@ -374,11 +374,23 @@ void ClientHandler::delete_client(const uint32_t delete_num)
 	this->connect_client_num--;
 }
 
+void ClientHandler::delete_client(std::vector<Client>::iterator it)
+{
+	if (this->connected_clients.empty() == true) {
+		LogHandler::get_instance().logging_error("Client list is empty.");
+		return;
+	}
+	else {
+		this->connected_clients.erase(it);
+		this->connect_client_num--;
+	}
+}
+
 int ClientHandler::check_next_invalid_socket()
 {
 	for (int n_invalid_socket = 0; n_invalid_socket < MAX_CONNECT_NUM; n_invalid_socket++) {
 
-		if (this->connected_client_list[n_invalid_socket].get_client_socket() == INVALID_SOCKET)
+		if (this->connected_clients[n_invalid_socket].get_client_socket() == INVALID_SOCKET)
 			return n_invalid_socket;
 	}
 	return -1;
@@ -391,20 +403,20 @@ void ClientHandler::delete_client_hbsock_from_hb_list(const std::uint32_t delete
 
 bool ClientHandler::get_client_auth_status(const int client_num)
 {
-	return this->connected_client_list[client_num].get_auth_status();
+	return this->connected_clients[client_num].get_auth_status();
 }
 
 
 void ClientHandler::change_client_auth_status(const int client_num)
 {
-	this->connected_client_list[client_num].change_auth_status();
+	this->connected_clients[client_num].change_auth_status();
 }
 
 int ClientHandler::search_client_id_from_con_list(const std::string& search_client_id)
 {
-	for (int search_result = 0; search_result < this->connected_client_list.size(); search_result++) {
+	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 
-		if (this->connected_client_list[search_result].get_client_id() == search_client_id) {
+		if (this->connected_clients[search_result].get_client_id() == search_client_id) {
 			return search_result;
 		}
 	}
@@ -414,18 +426,18 @@ int ClientHandler::search_client_id_from_con_list(const std::string& search_clie
 
 void ClientHandler::show_client_info(const int& client_num)
 {
-	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] ID : %s", client_num, this->connected_client_list[client_num].get_client_id()));
-	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Name : %s", client_num, this->connected_client_list[client_num].get_client_name()));
-	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Mail : %s", client_num, this->connected_client_list[client_num].get_client_mail_addr()));
-	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Password : %s", client_num, this->connected_client_list[client_num].get_client_password()));
+	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] ID : %s", client_num, this->connected_clients[client_num].get_client_id()));
+	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Name : %s", client_num, this->connected_clients[client_num].get_client_name()));
+	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Mail : %s", client_num, this->connected_clients[client_num].get_client_mail_addr()));
+	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Password : %s", client_num, this->connected_clients[client_num].get_client_password()));
 }
 
 std::vector<SOCKET> ClientHandler::extract_conneted_sockets()
 {
 	std::vector<SOCKET> connected_socket_list;
 	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-		if (this->connected_client_list[i].get_client_socket() != NULL) {
-			connected_socket_list.push_back(this->connected_client_list[i].get_client_socket());
+		if (this->connected_clients[i].get_client_socket() != NULL) {
+			connected_socket_list.push_back(this->connected_clients[i].get_client_socket());
 		}
 	}
 	return connected_socket_list;
@@ -434,12 +446,12 @@ std::vector<SOCKET> ClientHandler::extract_conneted_sockets()
 
 std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list()
 {
-	return this->connected_client_list;
+	return this->connected_clients;
 }
 
 const std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list() const
 {
-	return this->connected_client_list;
+	return this->connected_clients;
 }
 
 ClientHandler::Client ClientHandler::get_init_client()
@@ -455,37 +467,37 @@ const ClientHandler::Client ClientHandler::get_init_client() const
 
 void ClientHandler::set_client_id(std::string id, uint32_t list_num)
 {
-	this->connected_client_list[list_num].set_client_id(id);
+	this->connected_clients[list_num].set_client_id(id);
 }
 
 void ClientHandler::set_client_name(std::string name, uint32_t list_num)
 {
-	this->connected_client_list[list_num].set_client_name(name);
+	this->connected_clients[list_num].set_client_name(name);
 }
 
 void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
 {
-	this->connected_client_list[list_num].set_client_mail_addr(mail_addr);
+	this->connected_clients[list_num].set_client_mail_addr(mail_addr);
 }
 
 void ClientHandler::set_clietn_socket(SOCKET socket, uint32_t list_num)
 {
-	this->connected_client_list[list_num].set_client_socket(socket);
+	this->connected_clients[list_num].set_client_socket(socket);
 }
 
 void ClientHandler::set_client_sockaddr_in(sockaddr_in sock_in, uint32_t list_num)
 {
-	this->connected_client_list[list_num].set_client_sockaddr_in(sock_in);
+	this->connected_clients[list_num].set_client_sockaddr_in(sock_in);
 }
 
 void ClientHandler::set_socket_addr_in_length(socklen_t length, uint32_t list_num)
 {
-	this->connected_client_list[list_num].set_socket_addr_in_length(length);
+	this->connected_clients[list_num].set_socket_addr_in_length(length);
 }
 
 void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num)
 {
-	this->connected_client_list[list_num].set_client_ipv4_addr(ipv4_addr);
+	this->connected_clients[list_num].set_client_ipv4_addr(ipv4_addr);
 }
 
 
@@ -497,17 +509,17 @@ void ClientHandler::set_count_hb_list(int list_num)
 
 void ClientHandler::incliment_heart_beat_count(uint32_t list_num)
 {
-	this->connected_client_list[list_num].incliment_heart_beat_count();
+	this->connected_clients[list_num].incliment_heart_beat_count();
 }
 
 void ClientHandler::clear_heart_beat_count(uint32_t list_num)
 {
-	this->connected_client_list[list_num].clear_heart_beat_count();
+	this->connected_clients[list_num].clear_heart_beat_count();
 }
 
 void ClientHandler::all_clear_heart_beat_count()
 {
-	for (auto& client : this->connected_client_list) {
+	for (auto& client : this->connected_clients) {
 		client.clear_heart_beat_count();
 	}
 }
