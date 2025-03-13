@@ -1,4 +1,4 @@
-#ifndef MT002RECEIVER_H_
+Ôªø#ifndef MT002RECEIVER_H_
 #define MT002RECEIVER_H_
 
 #include "Receiver.h"
@@ -43,7 +43,7 @@ class MT002Receiver : public Receiver
             bloadcast
         };
 
-		//ÉfÅ[É^É^ÉCÉv
+		//„Éá„Éº„Çø„Çø„Ç§„Éó
         enum class data_type 
         {
 			message,

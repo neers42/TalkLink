@@ -1,4 +1,4 @@
-#include "MessageType001.h"
+ï»¿#include "MessageType001.h"
 
 MessageType001::MessageType001() 
     :_sign_type{SignType::SIGNUP}, _auth_type{AuthType::NOMAL}, _client_name{""}, _client_mail_addr{""}, _client_password{""}
@@ -154,7 +154,7 @@ bool MessageType001::is_valid()
 
 bool MessageType001::is_valid_name(const std::string& name)
 {
-    //Client name‚ª0byte‚æ‚è‘å‚«‚¢ê‡
+    //Client nameãŒ0byteã‚ˆã‚Šå¤§ãã„å ´åˆ
     if (name.size() > 0) {
         return true;
     }
@@ -166,7 +166,7 @@ bool MessageType001::is_valid_name(const std::string& name)
 
 bool MessageType001::is_valid_mail_addr(const std::string& mail_addr)
 {
-    //Client mail address‚ª0byte‚æ‚è‘å‚«‚¢ê‡
+    //Client mail addressãŒ0byteã‚ˆã‚Šå¤§ãã„å ´åˆ
     if (mail_addr.size() > 0) {
         return true;
     }
@@ -179,7 +179,7 @@ bool MessageType001::is_valid_mail_addr(const std::string& mail_addr)
 
 bool MessageType001::is_valid_password(const std::string& password)
 {
-    //Client name‚ª0byte‚æ‚è‘å‚«‚¢ê‡
+    //Client nameãŒ0byteã‚ˆã‚Šå¤§ãã„å ´åˆ
     if (password.size() > 0) {
         return true;
     }

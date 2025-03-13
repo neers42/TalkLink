@@ -1,4 +1,4 @@
-#ifndef MT001RECEIVER_H_
+﻿#ifndef MT001RECEIVER_H_
 #define MT001RECEIVER_H_
 #include "Receiver.h"
 #include "common.h"
@@ -35,7 +35,7 @@ class MT001Receiver : public Receiver
 	
 
 
-		//private�ϐ�
+		//private変数
 	private:
 		enum class SIGN_TYPE
 		{

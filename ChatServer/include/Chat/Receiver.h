@@ -1,4 +1,4 @@
-#ifndef RECEIVER_H_
+ï»¿#ifndef RECEIVER_H_
 #define RECEIVER_H_
 #define MAX_GROUP_MEMBER_NUM 500
 #define MAX_RECEIVE_MESSAGE_LEN 2048
@@ -29,19 +29,19 @@ public:
 
 		
 	public:
-		//‘—MŒ³‚ÌƒNƒ‰ƒCƒAƒ“ƒgID
+		//é€ä¿¡å…ƒã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆID
 		std::string src_client_id;
 
-		//‘—Mæ‚ÌƒNƒ‰ƒCƒAƒ“ƒgID
+		//é€ä¿¡å…ˆã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆID
 		std::string dst_client_id;
 
-		//‘—Mƒf[ƒ^‚Ì–{‘Ìƒf[ƒ^
+		//é€ä¿¡ãƒ‡ãƒ¼ã‚¿ã®æœ¬ä½“ãƒ‡ãƒ¼ã‚¿
 		std::string main_content;
 
-		//‘—M‚³‚ê‚½ƒƒbƒZ[ƒWƒf[ƒ^‚Ìƒ^ƒCƒ€ƒXƒ^ƒ“ƒv
+		//é€ä¿¡ã•ã‚ŒãŸãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ‡ãƒ¼ã‚¿ã®ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—
 		std::string time_stamp;
 
-		//‘—M‚³‚ê‚½ƒƒbƒZ[ƒWƒf[ƒ^‚ÌƒƒbƒZ[ƒWID
+		//é€ä¿¡ã•ã‚ŒãŸãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ‡ãƒ¼ã‚¿ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ID
 		std::string message_id;
 
 	public:

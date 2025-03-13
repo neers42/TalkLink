@@ -1,4 +1,4 @@
-#ifndef MT000RECEIVER_H_
+ï»¿#ifndef MT000RECEIVER_H_
 #define MT000RECEIVER_H_
 #include "Receiver.h"
 
@@ -9,7 +9,7 @@ class MT000Receiver : public Receiver
 	class MT000Data : public Receiver::Message
 	{
 	public:
-		//ƒRƒ“ƒXƒgƒ‰ƒNƒ^EƒfƒXƒgƒ‰ƒNƒ^
+		//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ»ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 		explicit MT000Data();
 		explicit MT000Data(const std::string& id);
 		~MT000Data();
@@ -18,14 +18,14 @@ class MT000Receiver : public Receiver
 	};
 
 
-	//ŠÖ”
+	//é–¢æ•°
 private:
 	std::string extraction_src_client_id(const std::string& data) override;
 	bool check_validation_src_client_id(const std::string& id) override;
 
 
 public:
-	//ƒRƒ“ƒXƒgƒ‰ƒNƒ^EƒfƒXƒgƒ‰ƒNƒ^
+	//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ãƒ»ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	MT000Receiver();
 	~MT000Receiver();
 

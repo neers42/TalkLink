@@ -1,9 +1,9 @@
-#include "FirebaseAuthHandler.h"
+ï»¿#include "FirebaseAuthHandler.h"
 
 void FirebaseAuthHandler::initialize_firebase()
 {
 	//TODO
-	//jsonƒtƒ@ƒCƒ‹‚©‚çİ’è’l‚ğ“Ç‚İ‚ñ‚Å‰Šú‰»‚ğÀs‚·‚é‚æ‚¤‚É‚·‚é
+	//jsonãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰è¨­å®šå€¤ã‚’èª­ã¿è¾¼ã‚“ã§åˆæœŸåŒ–ã‚’å®Ÿè¡Œã™ã‚‹ã‚ˆã†ã«ã™ã‚‹
 	firebase::AppOptions options = firebase::AppOptions();
 	options.set_api_key("***REMOVED***");
 	options.set_app_id("1:114823736215:web:b75c724ada8be0401872d2");
@@ -49,7 +49,7 @@ void FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string
 	std::string user_id = "";
 
 
-	// ƒ^ƒCƒ€ƒAƒEƒg‚Ìİ’èi—á: 10•bj
+	// ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã®è¨­å®šï¼ˆä¾‹: 10ç§’ï¼‰
 	const auto start_time = std::chrono::steady_clock::now();
 	const std::chrono::seconds wait_duration(10);
 
@@ -64,36 +64,36 @@ void FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string
 	
 
 		if (sign_in_result.status() == firebase::kFutureStatusComplete && sign_in_result.error() == firebase::auth::kAuthErrorNone) {
-			// ”FØ¬Œ÷‚È‚çUID‚ğæ“¾
+			// èªè¨¼æˆåŠŸãªã‚‰UIDã‚’å–å¾—
 			const firebase::auth::AuthResult auth_result = *sign_in_result.result();
 			*(client_context->client_id) = auth_result.user.uid();
 			//LogHandler::get_instance().logging_info(StringFormat("%s, client id : %s, success, sign in with mail address(%s) and password.", client_context->ip.c_str(), *client_context->client_id, client_context->mail_addr));
 
 		}else {
-			// ƒGƒ‰[ˆ—iƒƒO‚È‚Çj
+			// ã‚¨ãƒ©ãƒ¼å‡¦ç†ï¼ˆãƒ­ã‚°ãªã©ï¼‰
 			LogHandler::get_instance().logging_error(StringFormat("Client id, failed, client auth failed(error message : %s)", sign_in_result.error_message()));
 			//LogHandler::get_instance().logging_error(StringFormat("%s, client id : NONE, failed, sign in with mail address(%s) and password.", client_context->ip, client_context->mail_addr));
 		
 		}
 		client_context->id = *client_context->client_id;
 
-		// “®“I‚ÉŠm•Û‚µ‚½ƒƒ‚ƒŠ‚ğ‰ğ•ú‚·‚é
+		// å‹•çš„ã«ç¢ºä¿ã—ãŸãƒ¡ãƒ¢ãƒªã‚’è§£æ”¾ã™ã‚‹
 		delete client_context->client_id;
 		client_context->client_id = nullptr;
 	}, &c_con);
 
-	// ”ñ“¯Šú‘€ì‚ÌŠ®—¹‚ğ‘Ò‚Â‚½‚ß‚Ìƒ|[ƒŠƒ“ƒO
+	// éåŒæœŸæ“ä½œã®å®Œäº†ã‚’å¾…ã¤ãŸã‚ã®ãƒãƒ¼ãƒªãƒ³ã‚°
 	while (sign_in_result.status() == firebase::kFutureStatusPending) {
-		// ó‘Ô‚ğ‘Ò‹@‚·‚é‚½‚ß‚É­‚µƒXƒŠ[ƒv
+		// çŠ¶æ…‹ã‚’å¾…æ©Ÿã™ã‚‹ãŸã‚ã«å°‘ã—ã‚¹ãƒªãƒ¼ãƒ—
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		// Œo‰ßŠÔ‚ğƒ`ƒFƒbƒN‚µ‚Äƒ^ƒCƒ€ƒAƒEƒgˆ—
+		// çµŒéæ™‚é–“ã‚’ãƒã‚§ãƒƒã‚¯ã—ã¦ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆå‡¦ç†
 		auto current_time = std::chrono::steady_clock::now();
 		if (std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time) > wait_duration) {
 			LogHandler::get_instance().logging_error(StringFormat("%s, failed(timeout), Authentication interrupted due to timeout", c_con.ip));
 			break;
 		}
 	}
-	//”FØ‚ª¬Œ÷‚µ‚Ä‚¢‚½ê‡‚ÍAUID‚ªŠi”[‚³‚ê‚éB¸”s‚Ìê‡‚Í‹ó•¶š‚ªŠi”[‚³‚ê‚éB
+	//èªè¨¼ãŒæˆåŠŸã—ã¦ã„ãŸå ´åˆã¯ã€UIDãŒæ ¼ç´ã•ã‚Œã‚‹ã€‚å¤±æ•—ã®å ´åˆã¯ç©ºæ–‡å­—ãŒæ ¼ç´ã•ã‚Œã‚‹ã€‚
 	*client_id = c_con.id;
 
 }

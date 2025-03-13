@@ -1,22 +1,22 @@
-#include "ProtocolHandler.h"
+ï»¿#include "ProtocolHandler.h"
 
 ProtocolHandler::ProtocolHandler()
 {
-	//wolfSSL‚Ì‰Šú‰»
+	//wolfSSLã®åˆæœŸåŒ–
 	initialize_wolfssl();
 	wolfSSL_Debugging_ON();
 	wolfSSL_SetLoggingCb(ProtocolHandler::wolfssl_log_callback);
 
-	//TLSÚ‘±‚Ìƒo[ƒWƒ‡ƒ“w’è
+	//TLSæ¥ç¶šæ™‚ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³æŒ‡å®š
 	auto server_method = this->set_server_method();
 
-	//ƒRƒ“ƒeƒNƒXƒg‚Ì¶¬
+	//ã‚³ãƒ³ãƒ†ã‚¯ã‚¹ãƒˆã®ç”Ÿæˆ
 	generate_ssl_context(server_method);
 
-	//ƒT[ƒoØ–¾‘‚Ìƒ[ƒh
+	//ã‚µãƒ¼ãƒè¨¼æ˜æ›¸ã®ãƒ­ãƒ¼ãƒ‰
 	load_cert_file();
 
-	//ƒT[ƒo‚Ì”é–§Œ®‚Ìƒ[ƒh
+	//ã‚µãƒ¼ãƒã®ç§˜å¯†éµã®ãƒ­ãƒ¼ãƒ‰
 	load_private_key();
 
 	
@@ -25,13 +25,13 @@ ProtocolHandler::ProtocolHandler()
 
 ProtocolHandler::~ProtocolHandler()
 {
-	//sslƒIƒuƒWƒFƒNƒg‚Ì‰ğ•ú
+	//sslã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®è§£æ”¾
 	if (this->_server_w_ssl != NULL) {
 		wolfSSL_shutdown(this->_server_w_ssl);
 		wolfSSL_free(this->_server_w_ssl);
 	}
 
-	//SSLƒRƒ“ƒeƒLƒXƒg‚Ì‰ğ•ú
+	//SSLã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã®è§£æ”¾
 	if (this->_server_w_ctx != NULL) {
 		wolfSSL_CTX_free(this->_server_w_ctx);
 	}
@@ -50,10 +50,10 @@ WOLFSSL_CTX* ProtocolHandler::get_wolfssl_ctx()
 
 const std::string ProtocolHandler::generate_message_id()
 {
-	//ƒ~ƒŠ•b’PˆÊ‚ÌŒo‰ßŠÔ
+	//ãƒŸãƒªç§’å˜ä½ã®çµŒéæ™‚é–“
 	long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
-	//‘æ“ñˆø”F0~255”ÍˆÍ‚Ì—”‚ğ¶¬‚·‚éŠÖ”
+	//ç¬¬äºŒå¼•æ•°ï¼š0~255ç¯„å›²ã®ä¹±æ•°ã‚’ç”Ÿæˆã™ã‚‹é–¢æ•°
 	ulid::ULID ulid = ulid::Create(now, random::random_byte);
 	std::string message_id = ulid::Marshal(ulid);
 	LogHandler::get_instance().logging_info(StringFormat("generated message id:%s.", message_id));
@@ -63,15 +63,15 @@ const std::string ProtocolHandler::generate_message_id()
 WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 {
 	WOLFSSL* new_client_ssl = wolfSSL_new(this->_server_w_ctx);
-	//ƒNƒ‰ƒCƒAƒ“ƒg‚ÌSSL¶¬‚ª³í‚Éˆ—‚³‚ê‚È‚©‚Á‚½ê‡
+	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®SSLç”ŸæˆãŒæ­£å¸¸ã«å‡¦ç†ã•ã‚Œãªã‹ã£ãŸå ´åˆ
 	if (new_client_ssl == NULL) {
 		LogHandler::get_instance().logging_error(StringFormat("new client ssl object creation failed."));
 		wolfSSL_free(new_client_ssl);
 	}
-	//ƒNƒ‰ƒCƒAƒ“ƒg‚ÌSSL¶¬‚ª³í‚Éˆ—‚³‚ê‚½ê‡
+	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®SSLç”ŸæˆãŒæ­£å¸¸ã«å‡¦ç†ã•ã‚ŒãŸå ´åˆ
 	else {
 		LogHandler::get_instance().logging_debug("new client ssl object creation success!!.");
-		//SSLƒIƒuƒWƒFƒNƒg‚ÆƒNƒ‰ƒCƒAƒ“ƒgƒ\ƒPƒbƒg‚ğŠÖ˜A•t‚¯‚·‚éB
+		//SSLã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¨ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚½ã‚±ãƒƒãƒˆã‚’é–¢é€£ä»˜ã‘ã™ã‚‹ã€‚
 		wolfSSL_set_fd(new_client_ssl, client_socket);
 		return new_client_ssl;
 	}
@@ -80,7 +80,7 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 
 WOLFSSL* ProtocolHandler::wolfssl_accept(const SOCKET client_socket)
 {
-	//SSLƒIƒuƒWƒFƒNƒg‚Ì¶¬‹y‚Ñ
+	//SSLã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ç”ŸæˆåŠã³
 	WOLFSSL* new_client_ssl = generate_and_attach_ssl_object(client_socket);
 	if (wolfSSL_accept(new_client_ssl) == SSL_SUCCESS) {
 		return new_client_ssl;
@@ -117,46 +117,46 @@ std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 	{
 		int bytes_read = wolfSSL_read(client_ssl, buffer, sizeof(buffer));
 		message_size += bytes_read;
-		//óM‚µ‚½ƒoƒCƒg”‚ª0‚æ‚è‘å‚«‚¢ê‡msg‚Ì‰ğÍ‚ğÀ{‚·‚éB
+		//å—ä¿¡ã—ãŸãƒã‚¤ãƒˆæ•°ãŒ0ã‚ˆã‚Šå¤§ãã„å ´åˆmsgã®è§£æã‚’å®Ÿæ–½ã™ã‚‹ã€‚
 		if (bytes_read > 0) {
-			//ƒƒbƒZ[ƒWƒoƒbƒtƒ@[‚Ìvectors—ñ‚ÉóM‚µ‚½buffer‚Ìmsg•ª‚ğ’Ç‰Á
+			//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒãƒƒãƒ•ã‚¡ãƒ¼ã®vectorè¡Œåˆ—ã«å—ä¿¡ã—ãŸbufferã®msgåˆ†ã‚’è¿½åŠ 
 			message_buffer.insert(message_buffer.end(), buffer, buffer+bytes_read);
 			try
 			{
-				//jsonƒƒbƒZ[ƒW‚Ì‰ğÍ
+				//jsonãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®è§£æ
 				recv_msg_json = json::from_msgpack(message_buffer);
-				//Š®‘S‚ÈƒƒbƒZ[ƒW‚ª‰ğÍ‚³‚ê‚½ê‡‚Í’†g‚ğ•\¦
+				//å®Œå…¨ãªãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒè§£æã•ã‚ŒãŸå ´åˆã¯ä¸­èº«ã‚’è¡¨ç¤º
 				LogHandler::get_instance().logging_debug(StringFormat("message receive success, received message size : %d.", bytes_read));
 			}
 			catch (const json::parse_error& e)
 			{
-				//json‚ªŠ®‘S‚Å‚Í‚È‚¢ê‡AÄ“xóM‚ğŒJ‚è•Ô‚·
+				//jsonãŒå®Œå…¨ã§ã¯ãªã„å ´åˆã€å†åº¦å—ä¿¡ã‚’ç¹°ã‚Šè¿”ã™
 				continue;
 			}
 
 			return std::make_tuple(recv_msg_json, disconnect_flag);
 			break;
 		}
-		//óM‚µ‚½ƒoƒCƒg”‚ª0‚Ìê‡‚ÍƒNƒ‰ƒCƒAƒ“ƒg‚ğØ’f‚·‚éˆ—‚ÉˆÚs‚·‚é
+		//å—ä¿¡ã—ãŸãƒã‚¤ãƒˆæ•°ãŒ0ã®å ´åˆã¯ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚’åˆ‡æ–­ã™ã‚‹å‡¦ç†ã«ç§»è¡Œã™ã‚‹
 		else if(bytes_read == 0){
 			disconnect_flag = true;
 			return std::make_tuple(json(), disconnect_flag);
 			break;
 		}
-		//ã‹L‚Ì”»’èˆÈŠO‚Ìê‡‚Ìˆ—
+		//ä¸Šè¨˜ã®åˆ¤å®šä»¥å¤–ã®å ´åˆã®å‡¦ç†
 		else
 		{
 			int recv_error = wolfSSL_get_error(client_ssl, bytes_read);
 			if (recv_error == WOLFSSL_ERROR_WANT_READ || recv_error == WOLFSSL_ERROR_WANT_WRITE) {
 				continue;
 			}
-			//0‚ªƒŠƒ^[ƒ“‚³‚ê‚Ä‚«‚½ê‡‚Ìˆ—‚É‚Â‚¢‚Ä
+			//0ãŒãƒªã‚¿ãƒ¼ãƒ³ã•ã‚Œã¦ããŸå ´åˆã®å‡¦ç†ã«ã¤ã„ã¦
 			else if (recv_error == WOLFSSL_ERROR_ZERO_RETURN) {
 				disconnect_flag = true;
 				return std::make_tuple(json(), disconnect_flag);
 				break;
 			}
-			//ƒVƒXƒeƒ€ƒR[ƒ‹ŠÖ˜A‚ÌƒGƒ‰[‚ª”­¶‚µ‚½ê‡
+			//ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ¼ãƒ«é–¢é€£ã®ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ãŸå ´åˆ
 			else if (recv_error == WOLFSSL_ERROR_SYSCALL) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
 					LogHandler::get_instance().logging_error(StringFormat("message receive failed, wolfSSL read timeout occured."));
@@ -165,7 +165,7 @@ std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 					LogHandler::get_instance().logging_error(StringFormat("message receive failed, wolfSSL read syscall error occured."));
 				}
 			}
-			//‚»‚êˆÈŠO‚Ì——R
+			//ãã‚Œä»¥å¤–ã®ç†ç”±
 			else {
 				LogHandler::get_instance().logging_error(StringFormat("message receive failed."));
 			}
@@ -181,7 +181,7 @@ bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 	std::vector<uint8_t> message_buffer = json::to_msgpack(message);
 	int message_size = message_buffer.size();
 	int total_sent = 0;
-	int chunk_size = 16384;  // Å‘åTLSƒŒƒR[ƒhƒTƒCƒY
+	int chunk_size = 16384;  // æœ€å¤§TLSãƒ¬ã‚³ãƒ¼ãƒ‰ã‚µã‚¤ã‚º
 	int ret;
 	while (total_sent < message_size) {
 		int to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
@@ -190,17 +190,17 @@ bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 			total_sent += ret;
 			continue;
 		}
-		// ƒGƒ‰[”­¶
+		// ã‚¨ãƒ©ãƒ¼ç™ºç”Ÿæ™‚
 		int err = wolfSSL_get_error(client_ssl, ret);
 		if (err == WOLFSSL_ERROR_WANT_WRITE || err == WOLFSSL_ERROR_WANT_READ) {
-			// ˆê“I‚ÈƒGƒ‰[AƒŠƒgƒ‰ƒC
+			// ä¸€æ™‚çš„ãªã‚¨ãƒ©ãƒ¼ã€ãƒªãƒˆãƒ©ã‚¤
 			this->print_wolfssl_error(client_ssl);
 			LogHandler::get_instance().logging_info("Temporary error (WANT_WRITE/WANT_READ), retrying...");
 			//printf("Temporary error (WANT_WRITE/WANT_READ), retrying...\n");
 			continue;
 		}
 		else {
-			// ’v–½“I‚ÈƒGƒ‰[
+			// è‡´å‘½çš„ãªã‚¨ãƒ©ãƒ¼
 			this->print_wolfssl_error(client_ssl);
 			LogHandler::get_instance().logging_error(StringFormat("wolfSSL_write failed: %d", err));
 			//printf("wolfSSL_write failed: %d\n", err);
@@ -244,16 +244,16 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 		LogHandler::get_instance().logging_warning("No client certificate received.");
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
-	// Ø–¾‘‚ÌƒTƒuƒWƒFƒNƒg–¼i”­s‘ÎÛj
+	// è¨¼æ˜æ›¸ã®ã‚µãƒ–ã‚¸ã‚§ã‚¯ãƒˆåï¼ˆç™ºè¡Œå¯¾è±¡ï¼‰
 	wolfSSL_X509_NAME_oneline(wolfSSL_X509_get_subject_name(server_cert), subject_name_buffer, sizeof(subject_name_buffer));
 	cert_subject_name = std::string(subject_name_buffer);
 
-	// Ø–¾‘‚Ì”­sÒiCAj
+	// è¨¼æ˜æ›¸ã®ç™ºè¡Œè€…ï¼ˆCAï¼‰
 	wolfSSL_X509_NAME_oneline(wolfSSL_X509_get_issuer_name(server_cert), issuer_name_buffer, sizeof(issuer_name_buffer));
 	cert_issuer_name = std::string(issuer_name_buffer);
 
 
-	// Ø–¾‘‚Ì—LŒøŠúŒÀiŠJn“új
+	// è¨¼æ˜æ›¸ã®æœ‰åŠ¹æœŸé™ï¼ˆé–‹å§‹æ—¥ï¼‰
 	auto cert_not_before_time = wolfSSL_X509_get_notBefore(server_cert);
 	auto before_time = wolfSSL_ASN1_TIME_get_data(cert_not_before_time);
 	std::string before_time_str(reinterpret_cast<const char*>(before_time));
@@ -261,7 +261,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 		cert_not_before = "";
 	}
 	else {
-		// YYYYMMDDHHMMSS ‚ğ "YYYY-MM-DD HH:MM:SS" ‚ÌŒ`®‚É•ÏŠ·
+		// YYYYMMDDHHMMSS ã‚’ "YYYY-MM-DD HH:MM:SS" ã®å½¢å¼ã«å¤‰æ›
 		std::ostringstream oss_before;
 		oss_before
 			<< before_time_str.substr(0, 4) << "-"  // YYYY-
@@ -274,7 +274,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 	}
 
 
-	// Ø–¾‘‚Ì—LŒøŠúŒÀiI—¹“új
+	// è¨¼æ˜æ›¸ã®æœ‰åŠ¹æœŸé™ï¼ˆçµ‚äº†æ—¥ï¼‰
 	auto cert_not_after_time = wolfSSL_X509_get_notAfter(server_cert);
 	auto after_time = wolfSSL_ASN1_TIME_get_data(cert_not_after_time);
 	std::string after_time_str(reinterpret_cast<const char*>(after_time));
@@ -294,7 +294,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 		cert_not_after = oss_after.str();
 	}
 
-	// Ø–¾‘ƒIƒuƒWƒFƒNƒg‚ğ‰ğ•ú
+	// è¨¼æ˜æ›¸ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’è§£æ”¾
 	wolfSSL_X509_free(server_cert);
 	std::cout << " * Server Certificate Subject Name : " << cert_subject_name << std::endl;
 	std::cout << " * Server Certificate Issuer Name : " << cert_issuer_name << std::endl;
@@ -318,13 +318,13 @@ void ProtocolHandler::wolfssl_log_callback(const int log_level, const char* log_
 		LogHandler::get_instance().logging_debug(log_str);
 		break;
 	default:
-		LogHandler::get_instance().logging_debug(log_str); // –¢’è‹`ƒŒƒxƒ‹‚Í DEBUG ˆµ‚¢
+		LogHandler::get_instance().logging_debug(log_str); // æœªå®šç¾©ãƒ¬ãƒ™ãƒ«ã¯ DEBUG æ‰±ã„
 		break;
 	}
 }
 
 
-//SSL’ÊMˆÈŠO‚Å”­¶‚·‚éƒGƒ‰[‚Ì•\¦
+//SSLé€šä¿¡ä»¥å¤–ã§ç™ºç”Ÿã™ã‚‹ã‚¨ãƒ©ãƒ¼ã®è¡¨ç¤º
 void ProtocolHandler::print_wolfssl_global_error()
 {
 	int err = 0;
@@ -334,7 +334,7 @@ void ProtocolHandler::print_wolfssl_global_error()
 	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, failed, error content : %s (code : %d)", std::string(buffer), err));
 }
 
-//SSL’ÊM‚Å”­¶‚·‚éƒGƒ‰[‚Ì•\¦
+//SSLé€šä¿¡ã§ç™ºç”Ÿã™ã‚‹ã‚¨ãƒ©ãƒ¼ã®è¡¨ç¤º
 void ProtocolHandler::print_wolfssl_error(WOLFSSL* client_ssl)
 {
 	int err = 0;
@@ -359,7 +359,7 @@ void ProtocolHandler::initialize_wolfssl()
 WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 {
 #ifdef SERVER_METHOD_SSLV23
-	//TLSÚ‘±‚Ìƒo[ƒWƒ‡ƒ“w’è(v23ƒT[ƒo[‹y‚ÑƒNƒ‰ƒCƒAƒ“ƒg‚ªƒTƒ|[ƒg‚·‚éÅ‚à‚‚¢ƒo[ƒWƒ‡ƒ“‚ğw’è)
+	//TLSæ¥ç¶šæ™‚ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³æŒ‡å®š(v23ï¼ã‚µãƒ¼ãƒãƒ¼åŠã³ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒã‚µãƒãƒ¼ãƒˆã™ã‚‹æœ€ã‚‚é«˜ã„ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚’æŒ‡å®š)
 	auto server_method = wolfSSLv23_server_method();
 	if (server_method == NULL) {
 		LogHandler::get_instance().logging_critical(StringFormat("SSL v23 server method, failed, unable to get method."));
@@ -372,7 +372,7 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 #endif // SERVER_METHOD_SSLV23
 
 #ifdef SERVER_METHOD_TLS_1_3
-	//TLSÚ‘±‚Ìƒo[ƒWƒ‡ƒ“w’è(v23ƒT[ƒo[‹y‚ÑƒNƒ‰ƒCƒAƒ“ƒg‚ªƒTƒ|[ƒg‚·‚éÅ‚à‚‚¢ƒo[ƒWƒ‡ƒ“‚ğw’è)
+	//TLSæ¥ç¶šæ™‚ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³æŒ‡å®š(v23ï¼ã‚µãƒ¼ãƒãƒ¼åŠã³ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒã‚µãƒãƒ¼ãƒˆã™ã‚‹æœ€ã‚‚é«˜ã„ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚’æŒ‡å®š)
 	auto server_method = wolfTLSv1_3_server_method();
 	if (server_method == NULL) {
 		LogHandler::get_instance().logging_critical(StringFormat("TLS v1.3 server method, failed, unable to get method."));
@@ -385,7 +385,7 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 #endif // server_method_TLS1_3
 
 #ifdef SERVER_METHOD_TLS_1_2
-	//TLSÚ‘±‚Ìƒo[ƒWƒ‡ƒ“w’è(v23ƒT[ƒo[‹y‚ÑƒNƒ‰ƒCƒAƒ“ƒg‚ªƒTƒ|[ƒg‚·‚éÅ‚à‚‚¢ƒo[ƒWƒ‡ƒ“‚ğw’è)
+	//TLSæ¥ç¶šæ™‚ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³æŒ‡å®š(v23ï¼ã‚µãƒ¼ãƒãƒ¼åŠã³ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒã‚µãƒãƒ¼ãƒˆã™ã‚‹æœ€ã‚‚é«˜ã„ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚’æŒ‡å®š)
 	auto server_method = wolfTLSv1_2_server_method();
 	if (server_method == NULL) {
 		LogHandler::get_instance().logging_critical(StringFormat("TLS v1.2 server method, failed, unable to get method."));
@@ -398,7 +398,7 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 #endif // SERVER_METHOD_TLS_1_2
 
 #ifdef SERVER_METHOD_TLS_1_1
-	//TLSÚ‘±‚Ìƒo[ƒWƒ‡ƒ“w’è(v23ƒT[ƒo[‹y‚ÑƒNƒ‰ƒCƒAƒ“ƒg‚ªƒTƒ|[ƒg‚·‚éÅ‚à‚‚¢ƒo[ƒWƒ‡ƒ“‚ğw’è)
+	//TLSæ¥ç¶šæ™‚ã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³æŒ‡å®š(v23ï¼ã‚µãƒ¼ãƒãƒ¼åŠã³ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒã‚µãƒãƒ¼ãƒˆã™ã‚‹æœ€ã‚‚é«˜ã„ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚’æŒ‡å®š)
 	auto server_method = wolfTLSv1_1_server_method();
 	if (server_method == NULL) {
 		LogHandler::get_instance().logging_critical(StringFormat("TLS v1.1 server method, failed, unable to get method."));
@@ -415,7 +415,7 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 
 void ProtocolHandler::generate_ssl_context(WOLFSSL_METHOD* method)
 {
-	//wolf context‚ÌŠm•Û
+	//wolf contextã®ç¢ºä¿
 	_server_w_ctx = wolfSSL_CTX_new(method);
 	if (_server_w_ctx == NULL) {
 		LogHandler::get_instance().logging_critical(StringFormat("SSL context, failed, context creation failed."));
@@ -425,7 +425,7 @@ void ProtocolHandler::generate_ssl_context(WOLFSSL_METHOD* method)
 
 void ProtocolHandler::load_cert_file()
 {
-	//ƒT[ƒoØ–¾‘‚Ìƒ[ƒh
+	//ã‚µãƒ¼ãƒè¨¼æ˜æ›¸ã®ãƒ­ãƒ¼ãƒ‰
 	if (wolfSSL_CTX_use_certificate_file(_server_w_ctx, SERVER_CERT_FILE_PASS, SSL_FILETYPE_PEM) == SSL_FAILURE) {
 		this->print_wolfssl_global_error();
 	}
@@ -433,7 +433,7 @@ void ProtocolHandler::load_cert_file()
 
 void ProtocolHandler::load_private_key()
 {
-	//ƒvƒ‰ƒCƒx[ƒgŒ®‚Ìƒ[ƒh
+	//ãƒ—ãƒ©ã‚¤ãƒ™ãƒ¼ãƒˆéµã®ãƒ­ãƒ¼ãƒ‰
 	if (wolfSSL_CTX_use_PrivateKey_file(_server_w_ctx, SERVER_PRIVATEKEY_FILE_PASS, SSL_FILETYPE_PEM) == SSL_FAILURE) {
 		this->print_wolfssl_global_error();
 	}

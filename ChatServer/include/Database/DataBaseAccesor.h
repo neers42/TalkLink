@@ -1,4 +1,4 @@
-#ifndef DATABASEACCESSOR_H_
+﻿#ifndef DATABASEACCESSOR_H_
 #define DATABASEACCESSOR_H_
 #include "common.h"
 #include <sstream>

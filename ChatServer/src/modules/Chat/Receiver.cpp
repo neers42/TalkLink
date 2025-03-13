@@ -1,4 +1,4 @@
-#include "Receiver.h"
+﻿#include "Receiver.h"
 
 
 Receiver::Receiver()
@@ -33,69 +33,69 @@ std::tuple<int32_t, json> Receiver::receive_data(const SOCKET& receive_socket, i
 	{
 		bytes_received = recv(receive_socket, buffer, sizeof(buffer), 0);
 		std::string message_time_stamp = ServerTime::get_current_time();
-		//recv���ʂ�SOCKET_ERROR�̏ꍇ
+		//recv結果がSOCKET_ERRORの場合
 		if (bytes_received == SOCKET_ERROR) {
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSANOTINITIALISED(���̊֐����g�p����O�ɁA WSAStartup �Ăяo��������ɍs����K�v������܂��B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
 				break;
 			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETDOWN(�l�b�g���[�N �T�u�V�X�e�������s���܂����B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
 				break;
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEFAULT(buf �p�����[�^�[�́A���[�U�[�E�A�h���X�E�X�y�[�X�̗L���ȕ����Ɋ��S�ɂ͊܂܂�Ă��܂���B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEFAULT(buf パラメーターは、ユーザー・アドレス・スペースの有効な部分に完全には含まれていません。)");
 				break;
 			case WSAENOTCONN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTCONN(�\�P�b�g�͐ڑ�����Ă��܂���B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTCONN(ソケットは接続されていません。)");
 				break;
 			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINTR((�u���b�L���O) �Ăяo���� WSACancelBlockingCall ����Ď�������܂����B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINTR((ブロッキング) 呼び出しは WSACancelBlockingCall を介して取り消されました。)");
 				break;
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINPROGRESS(�u���b�N���Ă��� Windows �\�P�b�g 1.1 �Ăяo�����i�s���ł��邩�A�T�[�r�X �v���o�C�_�[���R�[���o�b�N�֐����������Ă��܂��B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINPROGRESS(ブロックしている Windows ソケット 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
 				break;
 			case WSAENETRESET:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETRESET(�ڑ��w���\�P�b�g�̏ꍇ�A���̃G���[�́A����̐i�s���ɏ�Q�����o���� �L�[�v�A���C�u �A�N�e�B�r�e�B�������Őڑ����ؒf���ꂽ���Ƃ������܂��B �f�[�^�O���� �\�P�b�g�Ɋւ��āA���̃G���[�͗L���������؂ꂽ���Ƃ������܂��B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETRESET(接続指向ソケットの場合、このエラーは、操作の進行中に障害を検出した キープアライブ アクティビティが原因で接続が切断されたことを示します。 データグラム ソケットに関して、このエラーは有効期限が切れたことを示します。)");
 				break;
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTSOCK(�L�q�q�̓\�P�b�g�ł͂���܂���B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTSOCK(記述子はソケットではありません。)");
 				break;
 			case WSAEOPNOTSUPP:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEOPNOTSUPP(MSG_OOB�w�肳��܂������A�\�P�b�g�́A�^SOCK_STREAM�AOOB �f�[�^�����̃\�P�b�g�Ɋ֘A�t�����Ă���ʐM�h���C���ŃT�|�[�g����Ă��Ȃ��A�܂��̓\�P�b�g��������ł���A���M����݂̂��T�|�[�g����ȂǁA�X�g���[�� �X�^�C���ł͂���܂���B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEOPNOTSUPP(MSG_OOB指定されましたが、ソケットは、型SOCK_STREAM、OOB データがこのソケットに関連付けられている通信ドメインでサポートされていない、またはソケットが一方向であり、送信操作のみをサポートするなど、ストリーム スタイルではありません。)");
 				break;
 			case WSAESHUTDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAESHUTDOWN(�\�P�b�g���V���b�g�_�E������܂����BSD_RECEIVE�܂���SD_BOTH�ɐݒ肳�ꂽ���@�ŃV���b�g�_�E�����Ăяo���ꂽ��A�\�P�b�g�ł���M���邱�Ƃ͂ł��܂���B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAESHUTDOWN(ソケットがシャットダウンされました。SD_RECEIVEまたはSD_BOTHに設定された方法でシャットダウンが呼び出された後、ソケットでを受信することはできません。)");
 				break;
 			case WSAEWOULDBLOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEWOULDBLOCK(�\�P�b�g�͔�u���b�L���O�Ƃ��ă}�[�N����A��M����̓u���b�N����܂��B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、受信操作はブロックされます。)");
 				break;
 			case WSAEMSGSIZE:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEMSGSIZE(���b�Z�[�W�͑傫�����Ďw�肳�ꂽ�o�b�t�@�[�Ɏ��܂炸�A�؂�̂Ă��܂����B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEMSGSIZE(メッセージは大きすぎて指定されたバッファーに収まらず、切り捨てられました。)");
 				break;
 			case WSAEINVAL:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINVAL(�\�P�b�g�� bind �Ńo�C���h����Ă��Ȃ����A�s���ȃt���O���w�肳�ꂽ���ASO_OOBINLINE���L���ɂȂ��Ă���\�P�b�g�ɑ΂��Ďw�肳�ꂽMSG_OOB�A�܂��� (�o�C�g �X�g���[�� �\�P�b�g�̏ꍇ�̂�) len �� 0 �܂��͕��̒l�ł����B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINVAL(ソケットが bind でバインドされていないか、不明なフラグが指定されたか、SO_OOBINLINEが有効になっているソケットに対して指定されたMSG_OOB、または (バイト ストリーム ソケットの場合のみ) len が 0 または負の値でした。)");
 				break;
 			case WSAECONNABORTED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAECONNABORTED(	���z����̓^�C���A�E�g�܂��͂��̑��̏�Q�̂��߂ɐؒf����܂����B �\�P�b�g���g�p�ł��Ȃ����߁A�A�v���P�[�V�����̓\�P�b�g�����K�v������܂��B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAECONNABORTED(	仮想回線はタイムアウトまたはその他の障害のために切断されました。 ソケットが使用できないため、アプリケーションはソケットを閉じる必要があります。)");
 				break;
 			case WSAETIMEDOUT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAETIMEDOUT(�l�b�g���[�N��Q�������������A�s�A�V�X�e���������ł��Ȃ��������߁A�ڑ��͐ؒf����܂����B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAETIMEDOUT(ネットワーク障害が発生したか、ピアシステムが応答できなかったため、接続は切断されました。)");
 				break;
 			case WSAECONNRESET:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAECONNRESET(�����I���܂��͒��~�ɂȂ���鑀������s���郊���[�g���ɂ���ĉ��z��������Z�b�g����܂����B �\�P�b�g���g�p�ł��Ȃ����߁A�A�v���P�[�V�����̓\�P�b�g�����K�v������܂��B UDP �f�[�^�O���� �\�P�b�g�ł́A���̃G���[�́A�ȑO�̑��M����� ICMP '�|�[�g�ɓ��B�ł��܂���' �Ƃ������b�Z�[�W�������������Ƃ������܂��B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAECONNRESET(強制終了または中止になる閉じる操作を実行するリモート側によって仮想回線がリセットされました。 ソケットが使用できないため、アプリケーションはソケットを閉じる必要があります。 UDP データグラム ソケットでは、このエラーは、以前の送信操作で ICMP 'ポートに到達できません' というメッセージが発生したことを示します。)");
 				break;
 			default:
-				THROW_APP_EXCEPTION("�N���C�A���g����̃��b�Z�[�W��M���ɉ��炩�̃G���[���������܂����B");
+				THROW_APP_EXCEPTION("クライアントからのメッセージ受信時に何らかのエラーが発生しました。");
 				break;
 			}
 
 		}
-		//�ڑ�������ꂽ�ۂ̏���
+		//接続が閉じられた際の処理
 		else if (bytes_received == 0) {
 			return std::make_tuple(bytes_received, json());
 		}
-		//�f�[�^��M������Ɏ��{���ꂽ�ۂ̏���
+		//データ受信が正常に実施された際の処理
 		else {
 			std::vector<uint8_t> received_data(buffer, buffer + bytes_received);
 			json received_json = json::from_msgpack(received_data);

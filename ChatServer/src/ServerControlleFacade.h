@@ -1,4 +1,4 @@
-#ifndef SERVERCONTROLLFACADE_H_
+ï»¿#ifndef SERVERCONTROLLFACADE_H_
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
 #include "MT000Receiver.h"
@@ -48,14 +48,14 @@ private:
 	std::string _server_ip;
 
 public:
-	//ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	ServerControlleFacade();
 
-	//ƒfƒXƒgƒ‰ƒNƒ^
+	//ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	~ServerControlleFacade();
 
 
-	//ƒT[ƒoƒvƒƒOƒ‰ƒ€Às
+	//ã‚µãƒ¼ãƒãƒ—ãƒ­ã‚°ãƒ©ãƒ å®Ÿè¡Œ
 	void run();
 	
 	void setting_select_info();

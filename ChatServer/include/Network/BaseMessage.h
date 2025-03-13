@@ -1,4 +1,4 @@
-#ifndef BASEMESSAGE
+ï»¿#ifndef BASEMESSAGE
 #define BASEMESSAGE
 #include "common.h"
 
@@ -7,31 +7,31 @@ class BaseMessage
 {
 public:
 	enum class ContentType {
-		TEXT,			//ƒeƒLƒXƒg
-		IMAGE,			//‰æ‘œ
-		VIDEO,			//“®‰æ
-		NOTIFICATION	//’Ê’m
+		TEXT,			//ãƒ†ã‚­ã‚¹ãƒˆ
+		IMAGE,			//ç”»åƒ
+		VIDEO,			//å‹•ç”»
+		NOTIFICATION	//é€šçŸ¥
 	};
 
 protected:
-	ContentType _content_type;	//ƒƒbƒZ[ƒWƒRƒ“ƒeƒ“ƒc‚Ì“à—e
-	std::string _message_type;	//ƒƒbƒZ[ƒWƒ^ƒCƒv
-	std::string _time_stamp;	//ƒ^ƒCƒ€ƒXƒ^ƒ“ƒv
-	std::string _message_id;	//ƒƒbƒZ[ƒWID
+	ContentType _content_type;	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚³ãƒ³ãƒ†ãƒ³ãƒ„ã®å†…å®¹
+	std::string _message_type;	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚¿ã‚¤ãƒ—
+	std::string _time_stamp;	//ã‚¿ã‚¤ãƒ ã‚¹ã‚¿ãƒ³ãƒ—
+	std::string _message_id;	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ID
 
 
 public:
 
-	//ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	BaseMessage();
 	BaseMessage(ContentType c_type, const std::string& mt);
 	BaseMessage(int c_type, const std::string& mt);
 	BaseMessage(ContentType c_type, const std::string& m_type,const std::string& id);
 
-	//ƒfƒXƒgƒ‰ƒNƒ^
+	//ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	virtual ~BaseMessage();
 
-	//ŠeíƒAƒNƒZƒbƒT(getter/setter)
+	//å„ç¨®ã‚¢ã‚¯ã‚»ãƒƒã‚µ(getter/setter)
 	ContentType get_content_type() const;
 	void set_content_type(ContentType type);
 	void set_content_type(int type_num);
@@ -39,19 +39,19 @@ public:
 	std::string get_message_id() const;
 	void set_message_id(const std::string& m_id);
 
-	//ƒƒbƒZ[ƒWŒŸØ
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸æ¤œè¨¼
 	virtual bool is_valid();
 
-	//ƒƒbƒZ[ƒW•\¦
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸è¡¨ç¤º
 	static void print_received_message_info(const json& recv_json, const std::string& ip_addr);
 
 
 
-	//Content Type‚ğintŒ^‚©‚ç•ÏŠ·
+	//Content Typeã‚’intå‹ã‹ã‚‰å¤‰æ›
 	ContentType exchange_content_type_from_int(int value);
 
 protected:
-	//ƒƒbƒZ[ƒW“à—eŒŸØ
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å†…å®¹æ¤œè¨¼
 	bool is_valid_mesasge_type(const std::string& mt);
 	bool is_valid_message_id(const std::string& m_id);
 	

@@ -1,4 +1,4 @@
-#ifndef __MESSAGETYPE101_H__
+ï»¿#ifndef __MESSAGETYPE101_H__
 #define __MESSAGETYPE101_H__
 #include "BaseMessage.h"
 class MessageType101 :
@@ -8,14 +8,14 @@ private:
     std::string _client_id;
 
 public:
-	//ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	MessageType101();
 	MessageType101(const std::string& client_id);
 	MessageType101(ContentType c_type, const std::string& mt, const std::string& client_id);
 	MessageType101(int c_type, const std::string& mt, const std::string& client_id);
-	//ƒfƒXƒgƒ‰ƒNƒ^
+	//ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	~MessageType101();
-	//ŠeíƒAƒNƒZƒbƒT(getter/setter)
+	//å„ç¨®ã‚¢ã‚¯ã‚»ãƒƒã‚µ(getter/setter)
 	std::string get_client_id() const;
 	void set_client_id(const std::string& client_id);
 };

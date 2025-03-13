@@ -1,4 +1,4 @@
-#ifndef MESSAGETYPE002
+ï»¿#ifndef MESSAGETYPE002
 #define MESSAGETYPE002
 #include "BaseMessage.h"
 class MessageType002 :
@@ -13,13 +13,13 @@ public:
 	};
 private:
 	TransType _trans_type;
-	std::string _dst_client_id;
-	std::string _src_client_id;
+	std::string _receiver_id;
+	std::string _sender_id;
 	std::string _content;
 	std::string _dst_chatroom_id;
 
 public:
-	//ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
     MessageType002();
 	MessageType002(BaseMessage::ContentType c_type, const std::string& mt, 
 		const std::string& dst_id, const std::string& src_id, const std::string& content,
@@ -28,21 +28,21 @@ public:
 		const std::string& dst_id, const std::string& src_id, const std::string& content,
 		const std::string& m_id, int trans_type, const std::string& dst_chatroom_id);
 	
-	//ƒfƒXƒgƒ‰ƒNƒ^
+	//ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	~MessageType002();
 	
-	//ŠeíƒAƒNƒZƒbƒT(getter/setter)
+	//å„ç¨®ã‚¢ã‚¯ã‚»ãƒƒã‚µ(getter/setter)
 	//_trans_type
 	TransType get_trans_type();
 	int get_trans_type_int();
 	void set_trans_type(TransType tt);
 	void set_trans_type(const int value);
 
-	std::string get_dst_client_id() const;
-	void set_dst_client_id(const std::string& dst_id);
+	std::string get_receiver_id() const;
+	void set_receiver_id(const std::string& dst_id);
 
-	std::string get_src_client_id() const;
-	void set_src_client_id(const std::string& src_id);
+	std::string get_sender_id() const;
+	void set_sender_id(const std::string& src_id);
 
 	std::string get_content() const;
 	void set_content(const std::string& content);
@@ -54,13 +54,13 @@ public:
 
 	TransType exchange_trans_type_from_int(int value);
 
-	//ƒƒbƒZ[ƒWŒŸØ
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸æ¤œè¨¼
 	bool is_valid() override;
 
 private:
 	bool is_valid_dst_chatroom(const std::string& cr_id);
-	bool is_valid_dst_id(const std::string& dst_id);
-	bool is_valid_src_id(const std::string& src_id);
+	bool is_valid_receiver_id(const std::string& dst_id);
+	bool is_valid_sender_id(const std::string& src_id);
 	bool is_valid_conent(const std::string& content);
 	
 

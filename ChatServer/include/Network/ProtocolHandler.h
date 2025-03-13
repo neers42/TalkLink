@@ -1,4 +1,4 @@
-#ifndef PROTOCOLHANDLER
+ï»¿#ifndef PROTOCOLHANDLER
 #define PROTOCOLHANDLER
 #define SERVER_CERT_FILE_PASS ".//////certs/server-cert.pem"
 #define SERVER_PRIVATEKEY_FILE_PASS ".//////certs/server-key.pem"
@@ -12,12 +12,12 @@
 #include "MessageType003.h"
 #include "ulid/ulid.hh"
 #include "ulid/ulid_struct.hh"
-//TLSÚ‘±‚ÌƒvƒƒgƒRƒ‹ƒo[ƒWƒ‡ƒ“‚ğİ’è
-#define SERVER_METHOD_SSLV23	//ƒT[ƒo‹y‚ÑƒNƒ‰ƒCƒAƒ“ƒg‚Ì—¼•û‚ÌƒTƒ|[ƒg‚·‚éÅ‚à‚‚¢ƒo[ƒWƒ‡ƒ“‚ğw’è
-//#define SERVER_METHOD_TLS_1_3	//TLS1.3‚ÅÚ‘±
-//#define SERVER_METHOD_TLS_1_2	//TLS1.2‚ÅÚ‘±
-//#define SERVER_METHOD_TLS_1_1	//TLS1.1‚ÅÚ‘±
-#define MESSAGE_SIZE 1024	//SSL read‚ÅóM‚·‚éƒƒbƒZ[ƒW‚ÌƒTƒCƒY
+//TLSæ¥ç¶šæ™‚ã®ãƒ—ãƒ­ãƒˆã‚³ãƒ«ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚’è¨­å®š
+#define SERVER_METHOD_SSLV23	//ã‚µãƒ¼ãƒåŠã³ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®ä¸¡æ–¹ã®ã‚µãƒãƒ¼ãƒˆã™ã‚‹æœ€ã‚‚é«˜ã„ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚’æŒ‡å®š
+//#define SERVER_METHOD_TLS_1_3	//TLS1.3ã§æ¥ç¶š
+//#define SERVER_METHOD_TLS_1_2	//TLS1.2ã§æ¥ç¶š
+//#define SERVER_METHOD_TLS_1_1	//TLS1.1ã§æ¥ç¶š
+#define MESSAGE_SIZE 1024	//SSL readã§å—ä¿¡ã™ã‚‹ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®ã‚µã‚¤ã‚º
 
 class ProtocolHandler
 {
@@ -26,13 +26,13 @@ private:
 	WOLFSSL_CTX* _server_w_ctx = NULL;
 
 public:
-	//ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	ProtocolHandler();
 
-	//ƒfƒXƒgƒ‰ƒNƒ^
+	//ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	~ProtocolHandler();
 
-	//ŠeíƒAƒNƒZƒbƒT(getter/setter)
+	//å„ç¨®ã‚¢ã‚¯ã‚»ãƒƒã‚µ(getter/setter)
 	WOLFSSL* get_wolfssl_object();
 	WOLFSSL_CTX* get_wolfssl_ctx();
 
@@ -42,36 +42,36 @@ public:
 		return serialize_message_impl<T>(json_message);
 	}
 
-	//ƒƒbƒZ[ƒWID‚Ì¶¬
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸IDã®ç”Ÿæˆ
 	const std::string generate_message_id();
 
-	//SSLƒIƒuƒWƒFƒNƒg‚Ì¶¬
+	//SSLã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ç”Ÿæˆ
 	WOLFSSL* generate_and_attach_ssl_object(SOCKET client_socket);
 
-	//SSL‚ÌƒAƒNƒZƒvƒg
+	//SSLã®ã‚¢ã‚¯ã‚»ãƒ—ãƒˆ
 	WOLFSSL* wolfssl_accept(const SOCKET client_socket);
 
-	//wolfSSL‚ÌƒVƒƒƒbƒgƒ_ƒEƒ“
+	//wolfSSLã®ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
 	
-	//ƒƒbƒZ[ƒW‚ÌóM
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®å—ä¿¡
 	std::tuple<json, bool> receive_message_tls(WOLFSSL* client_ssl);
 
-	//ƒƒbƒZ[ƒW‚Ì‘—M
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®é€ä¿¡
 	bool send_message_tls(WOLFSSL* client_ssl, json message);
 
-	//TLS‚Ìƒo[ƒWƒ‡ƒ“‚ğæ“¾
+	//TLSã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚’å–å¾—
 	const std::string get_tls_version(const WOLFSSL* ssl);
 
-	//g—p‚³‚ê‚Ä‚¢‚éˆÃ†ƒXƒC[ƒg‚ğæ“¾
+	//ä½¿ç”¨ã•ã‚Œã¦ã„ã‚‹æš—å·ã‚¹ã‚¤ãƒ¼ãƒˆã‚’å–å¾—
 	const std::string get_cipher_suite(WOLFSSL* ssl);
 
-	//ƒT[ƒo‚ÌØ–¾‘î•ñ‚ğæ“¾
+	//ã‚µãƒ¼ãƒã®è¨¼æ˜æ›¸æƒ…å ±ã‚’å–å¾—
 	const std::tuple<std::string, std::string, std::string, std::string> get_peer_cetificate(WOLFSSL* ssl);
 
 	static void wolfssl_log_callback(const int log_level, const char* log_message);
 	
-	//ƒƒbƒZ[ƒW‚ÌóMî•ñ‚ğ•\¦
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®å—ä¿¡æƒ…å ±ã‚’è¡¨ç¤º
 	template<typename T>
 	void print_received_message_info(const std::unique_ptr<T>& message_instance,
 		const std::string& message_id,
@@ -135,25 +135,25 @@ public:
 
 private:
 
-	//wolfSSL‚É‚¨‚¯‚éSSL’ÊMˆÈŠO‚Å‚Ì”­¶ƒGƒ‰[‚ğ•\¦
+	//wolfSSLã«ãŠã‘ã‚‹SSLé€šä¿¡ä»¥å¤–ã§ã®ç™ºç”Ÿã‚¨ãƒ©ãƒ¼ã‚’è¡¨ç¤º
 	void print_wolfssl_global_error();
 	
-	//wolfSSL‚É‚¨‚¯‚éSSL’ÊM‚Å‚Ì”­¶ƒGƒ‰[‚ğ•\¦
+	//wolfSSLã«ãŠã‘ã‚‹SSLé€šä¿¡ã§ã®ç™ºç”Ÿã‚¨ãƒ©ãƒ¼ã‚’è¡¨ç¤º
 	void print_wolfssl_error(WOLFSSL* client_ssl);
 
-	//wolfSSL‚Ì‰Šú‰»
+	//wolfSSLã®åˆæœŸåŒ–
 	void initialize_wolfssl();
 
-	//ƒT[ƒo‚ÌTLSƒvƒƒgƒRƒ‹ƒo[ƒWƒ‡ƒ“‚ğİ’è
+	//ã‚µãƒ¼ãƒã®TLSãƒ—ãƒ­ãƒˆã‚³ãƒ«ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚’è¨­å®š
 	WOLFSSL_METHOD* set_server_method();
 
-	//SSL‚ÌƒRƒ“ƒeƒLƒXƒg‚ğİ’è
+	//SSLã®ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã‚’è¨­å®š
 	void generate_ssl_context(WOLFSSL_METHOD* method);
 
-	//ƒT[ƒo‚ÌØ–¾‘‚ğƒ[ƒh
+	//ã‚µãƒ¼ãƒã®è¨¼æ˜æ›¸ã‚’ãƒ­ãƒ¼ãƒ‰
 	void load_cert_file();
 
-	//ƒT[ƒo‚Ì”é–§Œ®‚ğƒ[ƒh
+	//ã‚µãƒ¼ãƒã®ç§˜å¯†éµã‚’ãƒ­ãƒ¼ãƒ‰
 	void load_private_key();
 
 	//template <typename T>
@@ -162,17 +162,17 @@ private:
 	template <typename T>
 	std::unique_ptr<T> serialize_message_impl(const json& recv_json)
 	{
-		// json_message‚©‚çMessageType‚ğæ“¾
-		//MT000‚Ìê‡
+		// json_messageã‹ã‚‰MessageTypeã‚’å–å¾—
+		//MT000ã®å ´åˆ
 		if constexpr (std::is_same<T, MessageType000>::value) {
 			int content_type = recv_json["content_type"];
 			std::string message_type = recv_json["message_type"];
 			std::string message_id = "";
 			std::string client_id = recv_json["client_id"];
-			//MT000‚ğ•Ô‚·
+			//MT000ã‚’è¿”ã™
 			return std::make_unique<T>(content_type, message_type, message_id, client_id);
 		}
-		//MT001‚Ìê‡
+		//MT001ã®å ´åˆ
 		else if constexpr (std::is_same<T, MessageType001>::value) {
 			int content_type = recv_json["content_type"];
 			std::string message_type = recv_json["message_type"];
@@ -182,22 +182,22 @@ private:
 			std::string client_mail_addr = recv_json["mail_address"];
 			std::string client_password = recv_json["password"];
 
-			//MT001‚ğ•Ô‚·
+			//MT001ã‚’è¿”ã™
 			return std::make_unique<T>(content_type, message_type, sign_type, auth_type, client_name, client_mail_addr, client_password);
 
 		}
-		//MT002‚Ìê‡
+		//MT002ã®å ´åˆ
 		else if constexpr (std::is_same<T, MessageType002>::value) {
-			int content_type = recv_json["content_type"].get<int>();  // intŒ^
-			std::string message_type = recv_json["message_type"];      // std::stringŒ^
-			std::string dst_client_id = recv_json["dst_client_id"];    // std::stringŒ^
-			std::string src_client_id = recv_json["src_client_id"];    // std::stringŒ^
-			std::string content = recv_json["content"];                // std::stringŒ^
-			std::string message_id = this->generate_message_id();  // ‹ó‚Ì•¶š—ñ
-			int trans_type = recv_json["trans_type"].get<int>();  // intŒ^
-			std::string dst_chatroom_id = recv_json["dst_chatroom_id"];  // std::stringŒ^
+			int content_type = recv_json["content_type"].get<int>();  // intå‹
+			std::string message_type = recv_json["message_type"];      // std::stringå‹
+			std::string dst_client_id = recv_json["dst_client_id"];    // std::stringå‹
+			std::string src_client_id = recv_json["src_client_id"];    // std::stringå‹
+			std::string content = recv_json["content"];                // std::stringå‹
+			std::string message_id = this->generate_message_id();  // ç©ºã®æ–‡å­—åˆ—
+			int trans_type = recv_json["trans_type"].get<int>();  // intå‹
+			std::string dst_chatroom_id = recv_json["dst_chatroom_id"];  // std::stringå‹
 
-			//MT002‚ğ•Ô‚·
+			//MT002ã‚’è¿”ã™
 			return std::make_unique<T>(content_type, message_type, dst_client_id, src_client_id,
 				content, message_id, trans_type, dst_chatroom_id);
 		}

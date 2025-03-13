@@ -1,4 +1,4 @@
-#include "MT000Receiver.h"
+﻿#include "MT000Receiver.h"
 
 MT000Receiver::MT000Data::MT000Data()
 {

@@ -1,4 +1,4 @@
-#ifndef SERVERTIME_H_
+ï»¿#ifndef SERVERTIME_H_
 #define SERVERTIME_H_
 
 #include <chrono>
@@ -22,7 +22,7 @@ public:
 	ServerTime();
 	~ServerTime();
 
-	//Œ»İ‚ÌƒT[ƒo‚Ì‚ğ•\¦
+	//ç¾åœ¨ã®ã‚µãƒ¼ãƒã®æ™‚åˆ»ã‚’è¡¨ç¤º
 	static std::string get_current_time();
 
 	

@@ -1,4 +1,4 @@
-#include "ThreadPoolHandler.h"
+ï»¿#include "ThreadPoolHandler.h"
 
 ThreadPoolHandler::ThreadPoolHandler(size_t threads) : stop(false)
 {
@@ -14,7 +14,7 @@ ThreadPoolHandler::~ThreadPoolHandler()
         std::unique_lock<std::mutex> lock(queue_mutex);
         stop = true;
     }
-    //ƒXƒŒƒbƒh‚ğ‚·‚×‚Ä‹N“®‚µA”jŠü‚·‚é
+    //ã‚¹ãƒ¬ãƒƒãƒ‰ã‚’ã™ã¹ã¦èµ·å‹•ã—ã€ç ´æ£„ã™ã‚‹
     condition.notify_all();
     for (std::thread& worker : workers) {
         worker.join();
@@ -27,17 +27,17 @@ void ThreadPoolHandler::process_task()
     while (true) {
         std::function<void()> task;
         {
-            //queue_mutex‚ğŠl“¾‚µ‚ÄA”r‘¼§Œä‚·‚éB
+            //queue_mutexã‚’ç²å¾—ã—ã¦ã€æ’ä»–åˆ¶å¾¡ã™ã‚‹ã€‚
             std::unique_lock<std::mutex> lock(queue_mutex);
 
-            //task‚ª’Ç‰Á‚³‚ê‚é‚Ü‚Å‘Ò‹@‚·‚é
+            //taskãŒè¿½åŠ ã•ã‚Œã‚‹ã¾ã§å¾…æ©Ÿã™ã‚‹
             condition.wait(lock, [this] { return !tasks.empty(); });
 
-            //tasuks‚©‚çtask‚ğæ‚èo‚·
+            //tasuksã‹ã‚‰taskã‚’å–ã‚Šå‡ºã™
             task = tasks.front();
             tasks.pop();
         }
-        task(); // ƒ^ƒXƒN‚ÌÀs
+        task(); // ã‚¿ã‚¹ã‚¯ã®å®Ÿè¡Œ
     }
 }
 

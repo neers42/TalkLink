@@ -1,4 +1,4 @@
-#ifndef CHATROOMHANDLER_H_
+ï»¿#ifndef CHATROOMHANDLER_H_
 #define CHATROOMHANDLER_H_
 #include <string>
 #include <iostream>
@@ -18,20 +18,20 @@ private:
 
 	public:
 		
-		//ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+		//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 		template<typename...Args>
 		ChatRoom(const std::string& chatroom_name, Args... args) : _chatroom_name{chatroom_name} {
 			this->_chatroom_id = issue_chatroom_id();
 			_client_list.push_back(args...);
 		}
 
-		//ƒfƒXƒgƒ‰ƒNƒ^
+		//ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 		~ChatRoom();
 
-		//ƒNƒ‰ƒCƒAƒ“ƒgƒ‹[ƒ€‚ÉƒNƒ‰ƒCƒAƒ“ƒg‚ğ‰Á“ü‚·‚é
+		//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãƒ«ãƒ¼ãƒ ã«ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚’åŠ å…¥ã™ã‚‹
 		bool add_client_chatroom(const ClientHandler::Client& client);
 
-		//ƒNƒ‰ƒCƒAƒ“ƒgƒ‹[ƒ€‚©‚çƒNƒ‰ƒCƒAƒ“ƒg‚ğíœ‚·‚é
+		//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãƒ«ãƒ¼ãƒ ã‹ã‚‰ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚’å‰Šé™¤ã™ã‚‹
 		bool delete_client_chatroom(const ClientHandler::Client& client);
 
 		std::string& get_chatroom_id();
@@ -54,7 +54,7 @@ private:
 		
 	};
 	
-	//publicŠÖ”
+	//publicé–¢æ•°
 public:
 	ChatroomHandler();
 	~ChatroomHandler();
@@ -65,13 +65,13 @@ public:
 	int search_chatroom_id_from_list(const std::string& chatroom_id);
 
 	
-	//private•Ï”
+	//privateå¤‰æ•°
 public:
 	std::vector<ChatRoom> chatroom_list;
 
-	//privateŠÖ”
+	//privateé–¢æ•°
 private:
-	//chatroomID‚ğ”­s‚·‚é
+	//chatroomIDã‚’ç™ºè¡Œã™ã‚‹
 	std::string issue_chatroom_id();
 };
 #endif // !CHATROOMHANDLER_H_

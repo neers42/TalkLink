@@ -1,4 +1,4 @@
-#ifndef COMMON_H_
+ï»¿#ifndef COMMON_H_
 #define COMMON_H_
 
 #include <iostream>
@@ -12,13 +12,13 @@
 #include <memory>
 #include <errno.h>
 #include <random>
-
+//#include "spdlog/spdlog.h"
 
 
 using json = nlohmann::json;
 
 namespace random {
-	//—”¶¬
+	//ä¹±æ•°ç”Ÿæˆ
     inline unsigned char random_byte() {
         static std::mt19937 rng(std::random_device{}());
         static std::uniform_int_distribution<int> dist(0, 255);

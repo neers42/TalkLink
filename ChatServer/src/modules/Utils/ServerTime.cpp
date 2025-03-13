@@ -1,4 +1,4 @@
-#include "ServerTime.h"
+ï»¿#include "ServerTime.h"
 
 ServerTime::ServerTime()
 {
@@ -15,13 +15,13 @@ std::string ServerTime::get_current_time()
     time(&current_time);
     localtime_s(&time_info, &current_time);
 
-    // Œ»İ‚Ì‚ğæ“¾
+    // ç¾åœ¨ã®æ™‚åˆ»ã‚’å–å¾—
     auto now = std::chrono::system_clock::now();
 
-    // Œ»İ‚Ì‚ğƒ~ƒŠ•b’PˆÊ‚Å•\Œ»
+    // ç¾åœ¨ã®æ™‚åˆ»ã‚’ãƒŸãƒªç§’å˜ä½ã§è¡¨ç¾
     auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
-    // Œ»İ‚Ì‚ğ•¶š—ñ‚É•ÏŠ·
+    // ç¾åœ¨ã®æ™‚åˆ»ã‚’æ–‡å­—åˆ—ã«å¤‰æ›
     current_time = std::chrono::system_clock::to_time_t(now);
 
     //timeInfo = std::localtime_s(&currentTime);
@@ -29,10 +29,10 @@ std::string ServerTime::get_current_time()
     char time_str[100];
     std::strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
 
-    // ƒ~ƒŠ•b‚ğæ‚èo‚µ‚Ä•\¦
+    // ãƒŸãƒªç§’ã‚’å–ã‚Šå‡ºã—ã¦è¡¨ç¤º
     int milliseconds_part = milliseconds % 1000;
 
-    // ƒ~ƒŠ•b‚ÌŒ…”‚ğ‡‚í‚¹‚é‚½‚ß‚É¶‚É0‚ğ–„‚ß‚é
+    // ãƒŸãƒªç§’ã®æ¡æ•°ã‚’åˆã‚ã›ã‚‹ãŸã‚ã«å·¦ã«0ã‚’åŸ‹ã‚ã‚‹
     std::string milliseconds_str = std::to_string(milliseconds_part);
     milliseconds_str = std::string(3 - milliseconds_str.length(), '0') + milliseconds_str;
     
@@ -42,7 +42,7 @@ std::string ServerTime::get_current_time()
     return ss;
 
 
-    // Œ»İ‚Ì“ú•t‚Æ‚ğ•\¦
+    // ç¾åœ¨ã®æ—¥ä»˜ã¨æ™‚åˆ»ã‚’è¡¨ç¤º
     //std::cout << "[" << timeStr << "." << millisecondsPart << "]" << std::endl;
 
 }

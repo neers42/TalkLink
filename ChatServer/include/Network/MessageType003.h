@@ -1,4 +1,4 @@
-#ifndef MESSAGETYPE003
+﻿#ifndef MESSAGETYPE003
 #define MESSAGETYPE003
 #include "BaseMessage.h"
 class MessageType003 :

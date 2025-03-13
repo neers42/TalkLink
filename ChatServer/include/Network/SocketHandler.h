@@ -1,4 +1,4 @@
-#ifndef SOCKETHANDLER_H_
+ï»¿#ifndef SOCKETHANDLER_H_
 #define SOCKETHANDLER_H_
 #include <iostream>
 #include <winsock2.h>
@@ -26,10 +26,10 @@ class SocketHandler
 private:
 /*
 :::::::::::::::::::::::::::::::
-             •Ï”
+             å¤‰æ•°
 :::::::::::::::::::::::::::::::
 */
-	//ƒŠƒbƒXƒ“ƒ\ƒPƒbƒg¶¬—p‚Ìƒpƒ‰ƒ[ƒ^
+	//ãƒªãƒƒã‚¹ãƒ³ã‚½ã‚±ãƒƒãƒˆç”Ÿæˆç”¨ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 	struct addrinfo *m_result_tcp = NULL, m_param_tcp, m_multicast_tx_param, m_bloadcast_tx_param, *m_result_multicast = NULL, *m_result_bloadcast = NULL;
 
 	WSADATA m_wsa_data;
@@ -38,25 +38,25 @@ private:
 
 	timeval _timeout;
 
-	//ƒŠƒbƒXƒ“ƒ\ƒPƒbƒg
+	//ãƒªãƒƒã‚¹ãƒ³ã‚½ã‚±ãƒƒãƒˆ
 	SOCKET _tcp_listen_socket;
 	
-	//UDPƒuƒ[ƒhƒLƒƒƒXƒg‘—M—pƒ\ƒPƒbƒg
+	//UDPãƒ–ãƒ­ãƒ¼ãƒ‰ã‚­ãƒ£ã‚¹ãƒˆé€ä¿¡ç”¨ã‚½ã‚±ãƒƒãƒˆ
 	SOCKET _udp_bloadcast_tx_socket;
 
-	//UDPƒ}ƒ‹ƒ`ƒLƒƒƒXƒg‘—M—pƒ\ƒPƒbƒg
+	//UDPãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆé€ä¿¡ç”¨ã‚½ã‚±ãƒƒãƒˆ
 	SOCKET _udp_multicast_tx_socket;
 
-	//ƒT[ƒo‚ÌƒAƒvƒŠƒP[ƒVƒ‡ƒ“ƒ|[ƒg”Ô†
+	//ã‚µãƒ¼ãƒã®ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ãƒãƒ¼ãƒˆç•ªå·
 	int _port = 0;
 
-	//‰Šú‰»—p‚Ìsockaddr_in\‘¢‘Ì
+	//åˆæœŸåŒ–ç”¨ã®sockaddr_inæ§‹é€ ä½“
 	struct sockaddr_in _init_sockaddr_in;
 	
-	//ƒ}ƒ‹ƒ`ƒLƒƒƒXƒg—p‚Ìsockaddr_in\‘¢‘Ì
+	//ãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆç”¨ã®sockaddr_inæ§‹é€ ä½“
 	struct sockaddr_in m_multicast_tx_addr, m_bloadcast_tx_addr;
 
-	//ƒ[ƒJƒ‹IPƒAƒhƒŒƒX
+	//ãƒ­ãƒ¼ã‚«ãƒ«IPã‚¢ãƒ‰ãƒ¬ã‚¹
 	DWORD m_i_count;
 	PMIB_IPADDRTABLE m_ip_addr_table;
 	DWORD m_dw_size = 0;
@@ -68,25 +68,25 @@ private:
 
 /*
 :::::::::::::::::::::::::::::::
-			 ŠÖ”
+			 é–¢æ•°
 :::::::::::::::::::::::::::::::
 */
 	
 private:
-	//Listenƒ\ƒPƒbƒg‚ğbind‚·‚é
+	//Listenã‚½ã‚±ãƒƒãƒˆã‚’bindã™ã‚‹
 	bool bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinfo* result);
 
-	//tcp listenƒ\ƒPƒbƒg‚Ìİ’è‚ğ“Ç‚İ‚Ş
+	//tcp listenã‚½ã‚±ãƒƒãƒˆã®è¨­å®šã‚’èª­ã¿è¾¼ã‚€
 	bool setting_tcp_listen_socket_param(const std::string& file_pass);
 
-	//udpƒ}ƒ‹ƒ`ƒLƒƒƒXƒg‘—M—p‚Ìƒ\ƒPƒbƒgİ’è‚ğ“Ç‚İ‚Ş
+	//udpãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆé€ä¿¡ç”¨ã®ã‚½ã‚±ãƒƒãƒˆè¨­å®šã‚’èª­ã¿è¾¼ã‚€
 	bool setting_multicast_tx_socket_param(const std::string& file_pass);
 
-	//udp ƒuƒ[ƒhƒLƒƒƒXƒg‘—M—p‚Ìƒ\ƒPƒbƒgİ’è‚ğ“Ç‚İ‚Ş
+	//udp ãƒ–ãƒ­ãƒ¼ãƒ‰ã‚­ãƒ£ã‚¹ãƒˆé€ä¿¡ç”¨ã®ã‚½ã‚±ãƒƒãƒˆè¨­å®šã‚’èª­ã¿è¾¼ã‚€
 	bool setting_bloadcast_tx_socket_param(const std::string& file_pass);
 
 
-	//Listenƒ\ƒPƒbƒg‚ğ¶¬‚·‚é
+	//Listenã‚½ã‚±ãƒƒãƒˆã‚’ç”Ÿæˆã™ã‚‹
 	bool generate_tcp_listen_socket();
 
 	bool trans_flags(const std::string& flag_str, struct addrinfo* param);
@@ -120,16 +120,16 @@ private:
 public:
 /*
 :::::::::::::::::::::::::::::::
-			 ŠÖ”
+			 é–¢æ•°
 :::::::::::::::::::::::::::::::
 */
-	//ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	//ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	SocketHandler();
 
-	//ƒRƒs[ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+	//ã‚³ãƒ”ãƒ¼ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	SocketHandler(int tv_sec, int tv_usec);
 
-	//ƒfƒXƒgƒ‰ƒNƒ^
+	//ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 	~SocketHandler();
 
 	
@@ -162,28 +162,28 @@ public:
 	}
 
 
-	//ƒtƒ@ƒCƒ‹ƒfƒBƒXƒNƒŠƒvƒ^‚É•Ï‰»‚ª‚È‚¢‚©ŠÄ‹‚·‚é
+	//ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚¿ã«å¤‰åŒ–ãŒãªã„ã‹ç›£è¦–ã™ã‚‹
 	int monitor_socket_descriptor(const std::vector<ClientHandler::Client>& client_list);
 
 
-	//ƒƒbƒZ[ƒW—p‚ÌƒŠƒbƒXƒ“ƒ\ƒPƒbƒg‚ğƒAƒNƒeƒBƒu‚É‚·‚é
+	//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ç”¨ã®ãƒªãƒƒã‚¹ãƒ³ã‚½ã‚±ãƒƒãƒˆã‚’ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã«ã™ã‚‹
 	bool open_tcp_listen_socket();
 
 
-	//ƒNƒ‰ƒCƒAƒ“ƒg‚ÌIPƒAƒhƒŒƒX‚ğ’Šo‚·‚é
+	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®IPã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŠ½å‡ºã™ã‚‹
 	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);
 
-	//acceptˆ—(ƒƒbƒZ[ƒW—p‚Ìƒ\ƒPƒbƒg)
+	//acceptå‡¦ç†(ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ç”¨ã®ã‚½ã‚±ãƒƒãƒˆ)
 	std::tuple<SOCKET, sockaddr_in> accept_client_socket(socklen_t client_sockaddr_in_length);
 
 	
-	//Ú‘±’†‚ÌƒNƒ‰ƒCƒAƒ“ƒgƒ\ƒPƒbƒg‚ğƒNƒ[ƒY‚·‚é
+	//æ¥ç¶šä¸­ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚½ã‚±ãƒƒãƒˆã‚’ã‚¯ãƒ­ãƒ¼ã‚ºã™ã‚‹
 	void disconnect_socket(const SOCKET client_socket);
 
-	//ƒ\ƒPƒbƒg‚ª—LŒø‚Å‚ ‚é‚©”»’è‚·‚éy–¢À‘•z
+	//ã‚½ã‚±ãƒƒãƒˆãŒæœ‰åŠ¹ã§ã‚ã‚‹ã‹åˆ¤å®šã™ã‚‹ã€æœªå®Ÿè£…ã€‘
 	bool check_valid_socket(SOCKET request_socket);
 
-	//selectŠÖ”‚Ì‰Šú‰»
+	//selecté–¢æ•°ã®åˆæœŸåŒ–
 	void setting_select_info_to_listen_socket();
 
 

@@ -1,4 +1,4 @@
-#include "MT001Receiver.h"
+Ôªø#include "MT001Receiver.h"
 
 MT001Receiver::MT001Receiver()
 {
@@ -13,7 +13,7 @@ MT001Receiver::~MT001Receiver()
 
 void MT001Receiver::show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result)
 {
-	LogHandler::get_instance().logging_info(StringFormat("\033[33mMT001\033[m received from client[%d](IP address : %s) ÅÀ SERVER).", detect_num, ipv4_addr, receive_result));
+	LogHandler::get_instance().logging_info(StringFormat("\033[33mMT001\033[m received from client[%d](IP address : %s) ‚áí SERVER).", detect_num, ipv4_addr, receive_result));
 }
 
 void MT001Receiver::show_receive_info(const json& receive_json, const std::string& ip, int receive_byte)
@@ -390,7 +390,7 @@ uint8_t MT001Receiver::extraction_client_name_byte_size_(const std::string& data
 		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeÅF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeÔºö%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -411,7 +411,7 @@ std::string MT001Receiver::extraction_client_name_(const std::string& data, uint
 		return client_name;
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeÅF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeÔºö%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -433,7 +433,7 @@ uint8_t MT001Receiver::extraction_client_mail_addr_byte_size_(const std::string&
 		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeÅF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeÔºö%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -455,7 +455,7 @@ std::string MT001Receiver::extraction_client_mail_addr_(const std::string& data,
 		return client_mail_addr;
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeÅF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeÔºö%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -480,7 +480,7 @@ uint8_t MT001Receiver::extraction_client_password_byte_size_(const std::string& 
 		THROW_APP_EXCEPTION(StringFormat("Invalid argument : %s", ia_ex.what()));
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeÅF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeÔºö%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -504,7 +504,7 @@ std::string MT001Receiver::extraction_client_password_(const std::string& data, 
 		return client_password;
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeÅF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeÔºö%s", oor_ex.what()));
 	}
 
 	catch (const exception::ExceptionBase& ex)

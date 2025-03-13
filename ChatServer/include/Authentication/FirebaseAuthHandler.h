@@ -1,4 +1,4 @@
-#ifndef FIREBASEAUTHHANDLER_H_
+﻿#ifndef FIREBASEAUTHHANDLER_H_
 #define FIREBASEAUTHHANDLER_H_
 
 #include "firebase/app.h"

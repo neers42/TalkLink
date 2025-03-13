@@ -1,4 +1,4 @@
-#ifndef __MESSAGE_TYPE_102_H__
+﻿#ifndef __MESSAGE_TYPE_102_H__
 #define __MESSAGE_TYPE_102_H__
 #include "BaseMessage.h"
 class MessageType102 :

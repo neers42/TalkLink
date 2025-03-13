@@ -1,23 +1,23 @@
-#ifndef APPEXCEPTION_H_
+ï»¿#ifndef APPEXCEPTION_H_
 #define APPEXCEPTION_H_
 
 #include "ExceptionBase.h"
 #include <vector>
 namespace exception
 {
-    /* Application ExceptionƒNƒ‰ƒXéŒ¾ */
+    /* Application Exceptionã‚¯ãƒ©ã‚¹å®£è¨€ */
     class AppException : public ExceptionBase
     {
     public:
-        /* ƒRƒ“ƒXƒgƒ‰ƒNƒ^ */
+        /* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
         AppException(const std::string& message);
-        /* ƒRƒ“ƒXƒgƒ‰ƒNƒ^ */
+        /* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
         AppException(const std::string& message, const std::string& file, const std::string& func, const int line);
-        /* ƒfƒXƒgƒ‰ƒNƒ^ */
+        /* ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
         virtual ~AppException();
     };
 }
-/* Application Exception‚Ìthrow */
+/* Application Exceptionã®throw */
 #define THROW_APP_EXCEPTION(message) \
     throw exception::AppException(message, __FILE__, __FUNCTION__, __LINE__)
 

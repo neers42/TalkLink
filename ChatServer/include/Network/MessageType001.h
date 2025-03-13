@@ -1,4 +1,4 @@
-#ifndef MESSAGETYPE001
+ï»¿#ifndef MESSAGETYPE001
 #define MESSAGETYPE001
 #include "BaseMessage.h"
 #include "common.h"
@@ -30,16 +30,16 @@ private:
     std::string _client_password;
 
 public:
-    //ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+    //ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
     MessageType001();
     MessageType001(SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password);
     MessageType001(int s_type, int a_type, const std::string& name, const std::string& mail_addr, const std::string& password);
     MessageType001(ContentType c_type, const std::string& mt, SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password);
     MessageType001(int c_type, const std::string& mt, int s_type, int a_type, const std::string& name, const std::string& mail_addr, const std::string& password);
-    //ƒfƒXƒgƒ‰ƒNƒ^
+    //ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
     ~MessageType001();
 
-    //ŠeíƒAƒNƒZƒbƒT(getter/setter)
+    //å„ç¨®ã‚¢ã‚¯ã‚»ãƒƒã‚µ(getter/setter)
     SignType get_sign_type() const;
 	int get_sign_type_int() const;
     void set_sign_type(SignType s_type);

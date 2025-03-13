@@ -1,4 +1,4 @@
-#ifndef LOGHANDLER_H_
+ï»¿#ifndef LOGHANDLER_H_
 #define LOGHANDLER_H_
 
 #include <iostream>
@@ -39,10 +39,10 @@ public:
 		return logger;
 	}
 
-	//ƒRƒs[ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ðíœ
+	//ã‚³ãƒ”ãƒ¼ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã‚’å‰Šé™¤
 	LogHandler(const LogHandler&) = delete;
 
-	//‘ã“ü‰‰ŽZŽq‚ðíœ
+	//ä»£å…¥æ¼”ç®—å­ã‚’å‰Šé™¤
 	LogHandler& operator=(const LogHandler&) = delete;
 
 	int get_log_level() { return this->log_level; }

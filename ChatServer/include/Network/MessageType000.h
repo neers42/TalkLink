@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "BaseMessage.h"
 class MessageType000 :
     public BaseMessage

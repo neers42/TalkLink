@@ -1,4 +1,4 @@
-#ifndef STRINGFORMAT_H_
+ï»¿#ifndef STRINGFORMAT_H_
 #define STRINGFORMAT_H_
 #include <string>
 #include <cstdio>
@@ -9,45 +9,45 @@
 namespace detail
 {
 #if 1
-    /* C++ 17”Å */
-    /* std::stringŒ^‚ğconst char*‚É•ÏŠ·‚µA‚»‚êˆÈŠO‚Í‚»‚Ì‚Ü‚Üo—Í */
+    /* C++ 17ç‰ˆ */
+    /* std::stringå‹ã‚’const char*ã«å¤‰æ›ã—ã€ãã‚Œä»¥å¤–ã¯ãã®ã¾ã¾å‡ºåŠ› */
     template<typename T>
     auto Convert(T&& value)
     {
-        /* std::stringŒ^‚ğconst char*‚É•ÏŠ· */
+        /* std::stringå‹ã‚’const char*ã«å¤‰æ› */
         if constexpr (std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value)
         {
             return std::forward<T>(value).c_str();
         }
-        /* std::stringŒ^ˆÈŠO‚ÍA‚»‚Ì‚Ü‚Üo—Í */
+        /* std::stringå‹ä»¥å¤–ã¯ã€ãã®ã¾ã¾å‡ºåŠ› */
         else
         {
             return std::forward<T>(value);
         }
     }
 #else
-    /* C++ 11/14”Å */
-    /* std::stringŒ^‚ğconst char*‚É•ÏŠ· */
+    /* C++ 11/14ç‰ˆ */
+    /* std::stringå‹ã‚’const char*ã«å¤‰æ› */
     template<typename T, typename std::enable_if<std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value>::type* = nullptr>
     auto Convert(T&& value)
     {
         return std::forward<T>(value).c_str();
     }
-    /* std::stringŒ^ˆÈŠO‚ÍA‚»‚Ì‚Ü‚Üo—Í */
+    /* std::stringå‹ä»¥å¤–ã¯ã€ãã®ã¾ã¾å‡ºåŠ› */
     template<typename T, typename std::enable_if<!std::is_same<std::remove_cv_t<std::remove_reference_t<T>>, std::string>::value>::type* = nullptr>
     auto Convert(T&& value)
     {
         return std::forward<T>(value);
     }
 #endif
-    /* •¶š—ñ‚ÌƒtƒH[ƒ}ƒbƒeƒBƒ“ƒO(“à•”ˆ—) */
+    /* æ–‡å­—åˆ—ã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒ†ã‚£ãƒ³ã‚°(å†…éƒ¨å‡¦ç†) */
     template<typename ... Args>
     std::string StringFormatInternal(const std::string& format, Args&& ... args)
     {
-        /* ƒtƒH[ƒ}ƒbƒgŒã‚Ì•¶š”‚ğZo */
+        /* ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆå¾Œã®æ–‡å­—æ•°ã‚’ç®—å‡º */
         int str_len = std::snprintf(nullptr, 0, format.c_str(), std::forward<Args>(args) ...);
         std::string error_msg = "String Formatting Error";
-        /* ƒtƒH[ƒ}ƒbƒg¸”s */
+        /* ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆå¤±æ•— */
         if (str_len < 0)
         {
             std::runtime_error(error_msg.c_str());
@@ -56,21 +56,21 @@ namespace detail
         {
             /* Nothing to do */
         }
-        /* ƒoƒbƒtƒ@ƒTƒCƒY‚ğZo(•¶š—ñ’· + null•¶šƒTƒCƒY) */
+        /* ãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚ºã‚’ç®—å‡º(æ–‡å­—åˆ—é•· + nullæ–‡å­—ã‚µã‚¤ã‚º) */
         size_t buffer_size = str_len + sizeof(char);
-        /* ƒoƒbƒtƒ@ƒTƒCƒY•ªƒƒ‚ƒŠŠm•Û */
+        /* ãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚ºåˆ†ãƒ¡ãƒ¢ãƒªç¢ºä¿ */
         std::unique_ptr<char[]> buffer(new char[buffer_size]);
-        /* •¶š—ñ‚ÌƒtƒH[ƒ}ƒbƒg */
+        /* æ–‡å­—åˆ—ã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ */
         std::snprintf(buffer.get(), buffer_size, format.c_str(), args ...);
-        /* •¶š—ñ‚ğstd::stringŒ^‚É•ÏŠ·‚µ‚Äo—Í */
+        /* æ–‡å­—åˆ—ã‚’std::stringå‹ã«å¤‰æ›ã—ã¦å‡ºåŠ› */
         return std::string(buffer.get(), buffer.get() + str_len);
     }
 }
-/* •¶š—ñ‚ÌƒtƒH[ƒ}ƒbƒeƒBƒ“ƒO */
+/* æ–‡å­—åˆ—ã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒ†ã‚£ãƒ³ã‚° */
 template<typename ... Args>
 std::string StringFormat(const std::string& format, Args&& ... args)
 {
-    /* Šeƒpƒ‰ƒ[ƒ^‚ÌŒ^‚ğ•ÏŠ·‚µ‚ÄA•¶š—ñ‚ÌƒtƒH[ƒ}ƒbƒeƒBƒ“ƒO */
+    /* å„ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®å‹ã‚’å¤‰æ›ã—ã¦ã€æ–‡å­—åˆ—ã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒ†ã‚£ãƒ³ã‚° */
     return detail::StringFormatInternal(format, detail::Convert(std::forward<Args>(args)) ...);
 }
 

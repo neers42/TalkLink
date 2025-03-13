@@ -1,11 +1,14 @@
 ﻿// main.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
 //
-
+//#pragma execution_character_set("utf-8")
 #include <iostream>
 #include "ServerControlleFacade.h"
-
+#include "spdlog/spdlog.h"
 int main()
 {
+    spdlog::set_level(spdlog::level::debug);
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
+	spdlog::info("Starting MyChat server version 1.0.0!!");
     LogHandler::get_instance().logging_info("Starting MyChat server version 1.0.0!!");
     std::unique_ptr<ServerControlleFacade> server_cont_facade;
     server_cont_facade = std::make_unique<ServerControlleFacade>();

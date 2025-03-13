@@ -1,4 +1,4 @@
-#include "LogHandler.h"
+ï»¿#include "LogHandler.h"
 std::mutex LogHandler::cout_mutex;
 
 LogHandler::LogHandler() : log_level{10}
@@ -78,62 +78,62 @@ void LogHandler::logging(LogLevel level, std::ostream& os, const std::string& lo
 
 void LogHandler::logging_debug(const std::string& debug_message)
 {
-	//ƒƒOƒŒƒxƒ‹‚ªDEBUGˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚½ê‡‚ÍƒƒO‚ğo—Í‚·‚éB
+	//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒDEBUGä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãŸå ´åˆã¯ãƒ­ã‚°ã‚’å‡ºåŠ›ã™ã‚‹ã€‚
 	if (this->log_level <= static_cast<uint8_t>(LogLevel::DEBUG)) {
 		LogHandler::logging(LogLevel::DEBUG, std::cerr, debug_message);
 	}
 	else {
-		//ƒƒOƒŒƒxƒ‹‚ªDEBUGˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚È‚¢‚Æ‰½‚ào—Í‚µ‚È‚¢B
+		//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒDEBUGä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãªã„ã¨ä½•ã‚‚å‡ºåŠ›ã—ãªã„ã€‚
 	}
 }
 
 void LogHandler::logging_info(const std::string& info_message)
 {
-	//ƒƒOƒŒƒxƒ‹‚ªDEBUGˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚½ê‡‚ÍƒƒO‚ğo—Í‚·‚éB
+	//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒDEBUGä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãŸå ´åˆã¯ãƒ­ã‚°ã‚’å‡ºåŠ›ã™ã‚‹ã€‚
 	if (this->log_level <= static_cast<uint8_t>(LogLevel::INFO)) {
 		LogHandler::logging(LogLevel::INFO, std::cerr, info_message);
 	}
 	else {
-		//ƒƒOƒŒƒxƒ‹‚ªDEBUGˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚È‚¢‚Æ‰½‚ào—Í‚µ‚È‚¢B
+		//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒDEBUGä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãªã„ã¨ä½•ã‚‚å‡ºåŠ›ã—ãªã„ã€‚
 	}
 }
 
 void LogHandler::logging_warning(const std::string& warning_message)
 {
-	//ƒƒOƒŒƒxƒ‹‚ªINFOˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚½ê‡‚ÍƒƒO‚ğo—Í‚·‚éB
+	//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒINFOä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãŸå ´åˆã¯ãƒ­ã‚°ã‚’å‡ºåŠ›ã™ã‚‹ã€‚
 	if (this->log_level <= static_cast<uint8_t>(LogLevel::WARNING)) {
 		LogHandler::logging(LogLevel::WARNING, std::cerr, warning_message);
 	}
 	else {
-		//ƒƒOƒŒƒxƒ‹‚ªINFOˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚È‚¢‚Æ‰½‚ào—Í‚µ‚È‚¢B
+		//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒINFOä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãªã„ã¨ä½•ã‚‚å‡ºåŠ›ã—ãªã„ã€‚
 	}
 }
 
 void LogHandler::logging_error(const std::string& error_message)
 {
-	//ƒƒOƒŒƒxƒ‹‚ªPROGRAM_ERRORˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚½ê‡‚ÍƒƒO‚ğo—Í‚·‚éB
+	//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒPROGRAM_ERRORä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãŸå ´åˆã¯ãƒ­ã‚°ã‚’å‡ºåŠ›ã™ã‚‹ã€‚
 	if (this->log_level <= static_cast<uint8_t>(LogLevel::PROGRAM_ERROR)) {
 		LogHandler::logging(LogLevel::PROGRAM_ERROR, std::cerr, error_message);
 	}
 	else {
-		//ƒƒOƒŒƒxƒ‹‚ªPROGRAM_ERRORˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚È‚¢‚Æ‰½‚ào—Í‚µ‚È‚¢B
+		//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒPROGRAM_ERRORä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãªã„ã¨ä½•ã‚‚å‡ºåŠ›ã—ãªã„ã€‚
 	}
 }
 
 void LogHandler::logging_critical(const std::string& critical_message)
 {
-	//ƒƒOƒŒƒxƒ‹‚ªCRITICALˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚½ê‡‚ÍƒƒO‚ğo—Í‚·‚éB
+	//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒCRITICALä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãŸå ´åˆã¯ãƒ­ã‚°ã‚’å‡ºåŠ›ã™ã‚‹ã€‚
 	if (this->log_level <= static_cast<uint8_t>(LogLevel::CRITICAL)) {
 		LogHandler::logging(LogLevel::CRITICAL, std::cerr, critical_message);
 	}
 	else {
-		//ƒƒOƒŒƒxƒ‹‚ªCRITICALˆÈã‚Éİ’è‚³‚ê‚Ä‚¢‚È‚¢‚Æ‰½‚ào—Í‚µ‚È‚¢B
+		//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ãŒCRITICALä»¥ä¸Šã«è¨­å®šã•ã‚Œã¦ã„ãªã„ã¨ä½•ã‚‚å‡ºåŠ›ã—ãªã„ã€‚
 	}
 }
 
 bool LogHandler::is_ASCII(const std::string& str)
 {
-	//ASCII•¶š‚Í0x00‚©‚ç0x7F‚Ì”ÍˆÍ‚Ì’l‚ğ‚Â‚½‚ßA”ÍˆÍ“à‚Å‚ ‚ê‚ÎASCII•¶šƒR[ƒh‚Æ‚È‚é
+	//ASCIIæ–‡å­—ã¯0x00ã‹ã‚‰0x7Fã®ç¯„å›²ã®å€¤ã‚’æŒã¤ãŸã‚ã€ç¯„å›²å†…ã§ã‚ã‚Œã°ASCIIæ–‡å­—ã‚³ãƒ¼ãƒ‰ã¨ãªã‚‹
 	for (char c : str) {
 		if (static_cast<unsigned char>(c) > 0x7F) {
 			return false;
@@ -144,17 +144,17 @@ bool LogHandler::is_ASCII(const std::string& str)
 
 bool LogHandler::is_valid_UTF8(const std::string& str)
 {
-	//1•¶š‚ª1ƒoƒCƒg‚©‚çÅ‘å4ƒoƒCƒg‚Å‚ ‚éê‡‚ÍUTF-8‚ÅƒGƒ“ƒR[ƒh‚³‚ê‚Ä‚¢‚é
+	//1æ–‡å­—ãŒ1ãƒã‚¤ãƒˆã‹ã‚‰æœ€å¤§4ãƒã‚¤ãƒˆã§ã‚ã‚‹å ´åˆã¯UTF-8ã§ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‰ã•ã‚Œã¦ã„ã‚‹
 	int count = 0;
 	for (unsigned char c : str) {
 		if (count == 0) {
-			if ((c >> 5) == 0x06) { count = 1; } // 2ƒoƒCƒg•¶š
-			else if ((c >> 4) == 0x0E) { count = 2; } // 3ƒoƒCƒg•¶š
-			else if ((c >> 3) == 0x1E) { count = 3; } // 4ƒoƒCƒg•¶š
-			else if ((c >> 7)) { return false; } // UTF-8‚Å‚Í‚È‚¢
+			if ((c >> 5) == 0x06) { count = 1; } // 2ãƒã‚¤ãƒˆæ–‡å­—
+			else if ((c >> 4) == 0x0E) { count = 2; } // 3ãƒã‚¤ãƒˆæ–‡å­—
+			else if ((c >> 3) == 0x1E) { count = 3; } // 4ãƒã‚¤ãƒˆæ–‡å­—
+			else if ((c >> 7)) { return false; } // UTF-8ã§ã¯ãªã„
 		}
 		else {
-			if ((c >> 6) != 0x02) { return false; } // Œp‘±ƒoƒCƒg‚Ìƒ`ƒFƒbƒN
+			if ((c >> 6) != 0x02) { return false; } // ç¶™ç¶šãƒã‚¤ãƒˆã®ãƒã‚§ãƒƒã‚¯
 			--count;
 		}
 	}
@@ -165,24 +165,24 @@ bool LogHandler::is_ShiftJIS(const std::string& str)
 {
 	for (size_t i = 0; i < str.length(); ++i) {
 		unsigned char c = static_cast<unsigned char>(str[i]);
-		// Shift-JIS‚Ì1ƒoƒCƒg–Ú‚Ì”ÍˆÍƒ`ƒFƒbƒN
+		// Shift-JISã®1ãƒã‚¤ãƒˆç›®ã®ç¯„å›²ãƒã‚§ãƒƒã‚¯
 		if ((c >= 0x81 && c <= 0x9F) || (c >= 0xE0 && c <= 0xEF)) {
-			// Shift-JIS‚Ì2ƒoƒCƒg–Ú‚Ì”ÍˆÍƒ`ƒFƒbƒN
+			// Shift-JISã®2ãƒã‚¤ãƒˆç›®ã®ç¯„å›²ãƒã‚§ãƒƒã‚¯
 			if (i + 1 < str.length()) {
 				unsigned char next = static_cast<unsigned char>(str[i + 1]);
 				if ((next >= 0x40 && next <= 0x7E) || (next >= 0x80 && next <= 0xFC)) {
-					i++; // 2ƒoƒCƒg•¶š‚È‚Ì‚ÅƒCƒ“ƒfƒbƒNƒX‚ği‚ß‚é
+					i++; // 2ãƒã‚¤ãƒˆæ–‡å­—ãªã®ã§ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’é€²ã‚ã‚‹
 				}
 				else {
 					return false;
 				}
 			}
 			else {
-				return false; // •¶š—ñ‚Ì“r’†‚ÅI—¹‚µ‚Ä‚¢‚é
+				return false; // æ–‡å­—åˆ—ã®é€”ä¸­ã§çµ‚äº†ã—ã¦ã„ã‚‹
 			}
 		}
 		else if (c < 0x20 || c > 0x7E) {
-			// §Œä•¶š‚âASCII”ÍˆÍŠO‚Í•s³
+			// åˆ¶å¾¡æ–‡å­—ã‚„ASCIIç¯„å›²å¤–ã¯ä¸æ­£
 			return false;
 		}
 	}

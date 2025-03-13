@@ -1,4 +1,4 @@
-#ifndef THREADPOOLHANDLER_H_
+ï»¿#ifndef THREADPOOLHANDLER_H_
 #define THREADPOOLHANDLER_H_
 #include <iostream>
 #include <vector>
@@ -18,7 +18,7 @@
 class ThreadPoolHandler
 {
 private:
-	//•Ï”
+	//å¤‰æ•°
 	std::vector<std::thread> workers;
 	std::queue<std::function<void()>> tasks;
 
@@ -26,7 +26,7 @@ private:
 	std::condition_variable condition;
 	bool stop;
 
-	//ŠÖ”
+	//é–¢æ•°
 	void process_task();
 	
 
@@ -43,14 +43,14 @@ public:
 			auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
 
 			{
-				//tasks‚Étask‚ğ’Ç‰Á‚·‚é‚½‚ßAmutex‚ğlock‚·‚éB’†‚©‚Á‚±‚ğ”²‚¯‚é‚Æmutex‚ÌƒƒbƒN‚ÍŠO‚ê‚é
+				//tasksã«taskã‚’è¿½åŠ ã™ã‚‹ãŸã‚ã€mutexã‚’lockã™ã‚‹ã€‚ä¸­ã‹ã£ã“ã‚’æŠœã‘ã‚‹ã¨mutexã®ãƒ­ãƒƒã‚¯ã¯å¤–ã‚Œã‚‹
 				std::unique_lock<std::mutex> lock(queue_mutex);
 
 				if (stop) {
 					throw std::runtime_error("Enqueue on stopped ThreadPool.");
 				}
 
-				//task‚ğ’Ç‰Á‚·‚éB
+				//taskã‚’è¿½åŠ ã™ã‚‹ã€‚
 				tasks.emplace(task);
 
 			}
@@ -64,7 +64,7 @@ public:
 			LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 		}
 
-		//V‚µ‚¢ƒ^ƒXƒN‚ª’Ç‰Á‚³‚ê‚½‚±‚Æ‚ğƒXƒŒƒbƒh‚É’Ê’m‚·‚é
+		//æ–°ã—ã„ã‚¿ã‚¹ã‚¯ãŒè¿½åŠ ã•ã‚ŒãŸã“ã¨ã‚’ã‚¹ãƒ¬ãƒƒãƒ‰ã«é€šçŸ¥ã™ã‚‹
 		condition.notify_one();
 	}
 

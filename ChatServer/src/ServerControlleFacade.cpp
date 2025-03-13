@@ -1,15 +1,15 @@
-#include "ServerControlleFacade.h"
+ï»¿#include "ServerControlleFacade.h"
 
 std::time_t ServerTime::current_time;
 std::tm ServerTime::time_info;
 
 ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 {
+	//ãƒ­ã‚°ãƒ¬ãƒ™ãƒ«ã®è¨­å®š
 #ifdef DEBUG_MODE
 	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::DEBUG));
 #else
 	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::INFO));
-
 #endif // DEBUG_MODE
 
 	_socket_handler = std::make_unique<SocketHandler>();
@@ -33,11 +33,13 @@ ServerControlleFacade::~ServerControlleFacade()
 	
 }
 
-//ƒT[ƒoƒvƒƒOƒ‰ƒ€‚ÌÀs
+//ã‚µãƒ¼ãƒãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®å®Ÿè¡Œ
 void ServerControlleFacade::run()
 {
-	//ƒŠƒbƒXƒ“ƒ\ƒPƒbƒg‚Ì¶¬
+	//spdlog::info("server started!!!");
+	//ãƒªãƒƒã‚¹ãƒ³ã‚½ã‚±ãƒƒãƒˆã®ç”Ÿæˆ
 	if (!_socket_handler->open_tcp_listen_socket()) {
+		//spdlog::error("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again.");
 		LogHandler::get_instance().logging_critical("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again.");
 		exit(1);
 	}
@@ -53,7 +55,7 @@ void ServerControlleFacade::run()
 	this->_thread_pool_handler->enqueue_task([this]() {_thread_pool_handler->monitor_worker(); });
 	this->_thread_pool_handler->enqueue_task([this]() {heart_beat_check_process(); });
 
-	//ƒfƒBƒXƒNƒŠƒvƒVƒ‡ƒ“ŠÄ‹ƒXƒ^[ƒg
+	//ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚·ãƒ§ãƒ³ç›£è¦–ã‚¹ã‚¿ãƒ¼ãƒˆ
 	while (1) {
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->_socket_handler->setting_select_info_to_listen_socket();
@@ -68,14 +70,14 @@ void ServerControlleFacade::run()
 		case SOCKET_ERROR:
 			break;
 
-			//ƒAƒNƒZƒvƒg—v‹‚ª‚ ‚Á‚½ê‡
+			//ã‚¢ã‚¯ã‚»ãƒ—ãƒˆè¦æ±‚ãŒã‚ã£ãŸå ´åˆ
 		case REQUEST_ACCEPT_CLIENT_DETECTION:
 		{
 			this->_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
 		};
 			break;
 		
-		//Ú‘±’†‚ÌƒNƒ‰ƒCƒAƒ“ƒgƒŠƒXƒg‚©‚ç’Ê’m‚ª‚ ‚Á‚½ê‡
+		//æ¥ç¶šä¸­ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãƒªã‚¹ãƒˆã‹ã‚‰é€šçŸ¥ãŒã‚ã£ãŸå ´åˆ
 		default:
 			this->_thread_pool_handler->enqueue_task([this, detection_num]() {message_handle_process(detection_num); });
 			break;
@@ -92,7 +94,7 @@ void ServerControlleFacade::setting_select_info()
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 		for (int i = 0; i < this->_client_handler->connected_clients.size(); i++) {
-			//—LŒø‚Èƒ\ƒPƒbƒg‚ÉFDSET‚ğÀs‚·‚é
+			//æœ‰åŠ¹ãªã‚½ã‚±ãƒƒãƒˆã«FDSETã‚’å®Ÿè¡Œã™ã‚‹
 			if (this->_client_handler->connected_clients[i].get_client_socket() != INVALID_SOCKET) {
 				_socket_handler->bind_select_info_to_socket(this->_client_handler->connected_clients[i].get_client_socket(), &_socket_handler->get_fd_read());
 			}
@@ -122,7 +124,7 @@ bool ServerControlleFacade::accept_client_socket_process()
 	socklen_t new_client_socklen_t = 0;
 	std::string new_client_ipv4_addr;
 
-	//TCPƒ\ƒPƒbƒg‚ÌƒAƒNƒZƒvƒgˆ—
+	//TCPã‚½ã‚±ãƒƒãƒˆã®ã‚¢ã‚¯ã‚»ãƒ—ãƒˆå‡¦ç†
 	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(this->_client_handler->init_client.get_sockaddr_in_length());
 	if (new_client_socket == INVALID_SOCKET) {
 		LogHandler::get_instance().logging_error(StringFormat("The accepted socket for message could not be added to the list because it was an INVALID SOCKET"));
@@ -132,19 +134,19 @@ bool ServerControlleFacade::accept_client_socket_process()
 		new_client_ipv4_addr = this->_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client_ipv4_addr));
 	}
 
-	//SSLƒAƒNƒZƒvƒgˆ—
+	//SSLã‚¢ã‚¯ã‚»ãƒ—ãƒˆå‡¦ç†
 	WOLFSSL* new_client_ssl = this->_protocol_handler->wolfssl_accept(new_client_socket);
 	if (new_client_ssl == nullptr) {
-		LogHandler::get_instance().logging_error(StringFormat("failed, client ssl is not accepted(client socket : %d),", new_client_socket));
+		LogHandler::get_instance().logging_error(StringFormat("client ssl is not accepted(client socket : %d),", new_client_socket));
 		wolfSSL_free(new_client_ssl);
 		return ACCEPT_FAILED;
 	}
 	else {
-		LogHandler::get_instance().logging_info(StringFormat("success, client ssl is accepted(client socket : %d),", new_client_socket));
+		LogHandler::get_instance().logging_info(StringFormat("client ssl is accepted(client socket : %d),", new_client_socket));
 		this->_protocol_handler->get_peer_cetificate(new_client_ssl);
 	}
 
-	//V‹KƒNƒ‰ƒCƒAƒ“ƒg‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‚ğ¶¬
+	//æ–°è¦ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆ
 	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, new_client_ipv4_addr, new_client_ssl);
 
 	{
@@ -211,12 +213,12 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 
 	mt = receive_json["message_type"];
 	//BaseMessage::print_received_message_info(receive_json, this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr());
-	//mt000 = ƒn[ƒgƒr[ƒg‚ğóM‚µ‚½Û‚Ìˆ—
+	//mt000 = ãƒãƒ¼ãƒˆãƒ“ãƒ¼ãƒˆã‚’å—ä¿¡ã—ãŸéš›ã®å‡¦ç†
 	if (mt == "000") {
 		this->mt000_process(receive_data, detection_num);
 
 	}
-	//MT001 = Auth”FØƒƒbƒZ[ƒW‚Ìê‡
+	//MT001 = Authèªè¨¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®å ´åˆ
 	else if (mt == "001") {
 		auto mt001 = this->_protocol_handler->serialize_message<MessageType001>(receive_json);
 		if (mt001 == nullptr) {
@@ -226,13 +228,13 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 		this->mt001_process(mt001, detection_num);
 
 	}
-	//MT002 = ’ÊíƒƒbƒZ[ƒW‚Ìê‡
+	//MT002 = é€šå¸¸ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®å ´åˆ
 	else if (mt == "002") {
 		auto mt002 = this->_protocol_handler->serialize_message<MessageType002>(receive_json);
 		if (mt002 == nullptr) {
 			return;
 		}
-		this->_protocol_handler->print_received_message_info(mt002, mt002->get_message_id(), mt002->get_src_client_id(), mt002->get_dst_client_id(),
+		this->_protocol_handler->print_received_message_info(mt002, mt002->get_message_id(), mt002->get_sender_id(), mt002->get_receiver_id(),
 			_client_handler->connected_clients[detection_num].get_client_ipv4_addr(), _client_handler->connected_clients[detection_num].get_client_socket());
 		this->mt002_process(mt002, detection_num);
 	}
@@ -268,16 +270,16 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 		return;
 	}
 	mt = _protocol_handler->data_extraction_mt(receive_data);
-	//mt000 = ƒn[ƒgƒr[ƒg‚ğóM‚µ‚½Û‚Ìˆ—
+	//mt000 = ãƒãƒ¼ãƒˆãƒ“ãƒ¼ãƒˆã‚’å—ä¿¡ã—ãŸéš›ã®å‡¦ç†
 	if (mt == "000") {
 		this->mt000_process(receive_data, detection_num);
 	}
-	//MT001 = Auth”FØƒƒbƒZ[ƒW‚Ìê‡
+	//MT001 = Authèªè¨¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®å ´åˆ
 	else if (mt == "001") {
 		auto mt001 = this->_mt001receiver->create_mt001_instance(receive_data);
 		this->mt001_process(mt001, detection_num);
 	}
-	//MT002 = ’ÊíƒƒbƒZ[ƒW‚Ìê‡
+	//MT002 = é€šå¸¸ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®å ´åˆ
 	else if (mt == "002") {
 		auto mt002 = this->_mt002receiver->create_mt002_instance(receive_data);
 		this->mt002_process(mt002, detection_num);
@@ -329,23 +331,23 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		switch (mt001->get_sign_type_int())
 		{
 		case 0:			//sign up
-			//ƒƒbƒZ[ƒW‚ªsign_up‚Ìê‡‚Ìˆ—‚ğ’Ç‹L
+			//ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒsign_upã®å ´åˆã®å‡¦ç†ã‚’è¿½è¨˜
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
 			auto& client = this->_client_handler->connected_clients[detection_num];
 			client_id = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.get_client_ipv4_addr());
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 				LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed up, Client id:%s", client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
-				//SIGN UP‚ª¬Œ÷‚µ‚½ê‡‚ÉAƒNƒ‰ƒCƒAƒ“ƒgî•ñ‚ğ“o˜^‚·‚é
+				//SIGN UPãŒæˆåŠŸã—ãŸå ´åˆã«ã€ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆæƒ…å ±ã‚’ç™»éŒ²ã™ã‚‹
 				client.set_client_id(client_id);
 				client.set_client_name(mt001->get_client_name());
 				client.set_client_mail_addr(mt001->get_client_mail_addr());
 				client.set_client_password(mt001->get_client_password());
 
-				//ƒf[ƒ^ƒx[ƒX‚Éƒ†[ƒUî•ñ‚ğ“o˜^‚·‚éB
-				//TODO@ƒf[ƒ^‚×[ƒXˆ—‚ğ’Ç‹L‚·‚éB
+				//ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã«ãƒ¦ãƒ¼ã‚¶æƒ…å ±ã‚’ç™»éŒ²ã™ã‚‹ã€‚
+				//TODOã€€ãƒ‡ãƒ¼ã‚¿ã¹ãƒ¼ã‚¹å‡¦ç†ã‚’è¿½è¨˜ã™ã‚‹ã€‚
 
-				//Auth status‚ğ•ÏX‚·‚é
+				//Auth statusã‚’å¤‰æ›´ã™ã‚‹
 				this->_client_handler->change_client_auth_status(detection_num);
 			}
 			this->_client_handler->show_client_info(detection_num);
@@ -361,18 +363,18 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 
 				LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed in, Client id:%s",client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
-				//ƒf[ƒ^ƒx[ƒX‚©‚çƒ†[ƒUî•ñ‚ğ“Ç‚İæ‚éB
+				//ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã‹ã‚‰ãƒ¦ãƒ¼ã‚¶æƒ…å ±ã‚’èª­ã¿å–ã‚‹ã€‚
 				std::string client_name, client_mail_addr, client_password;
 				client.set_client_id(client_id);
 				client.set_client_name(client_name);
 				client.set_client_mail_addr(client_mail_addr);
 				client.set_client_password(client_password);
 
-				//Auth status‚ğ•ÏX‚·‚é
+				//Auth statusã‚’å¤‰æ›´ã™ã‚‹
 				this->_client_handler->change_client_auth_status(detection_num);
 
 				//TODO
-				//MT101‚ğ‘—M‚·‚éˆ—‚ğ‹LÚ‚·‚é
+				//MT101ã‚’é€ä¿¡ã™ã‚‹å‡¦ç†ã‚’è¨˜è¼‰ã™ã‚‹
 				//
 			}
 		}
@@ -411,7 +413,7 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 	try
 	{
 		if (mt002 == nullptr || mt002->is_valid() == false) {
-			// ƒƒbƒZ[ƒWˆ—
+			// ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‡¦ç†
 			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
 		}
 		/*	std::tie(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content)
@@ -423,14 +425,14 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 			//	auto mt002_intance = this->_mt002receiver->create_mt002data_instance(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content);
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			send_socket_num = _client_handler->search_client_id_from_con_list(mt002->get_dst_client_id());
+			send_socket_num = _client_handler->search_client_id_from_con_list(mt002->get_receiver_id());
 			LogHandler::get_instance().logging_info(StringFormat("send_socket_num : %d", send_socket_num));
 
 
-			////===================‚±‚±À‘•‚µ‚Ä‚¢‚È‚¢============================================
-			//connect_list‚Ì’†‚É‚¢‚È‚¢ê‡‚ÍAƒf[ƒ^ƒx[ƒX‚Ì’†‚É“ü‚ê‚éB
-			//‡@ƒf[ƒ^ƒx[ƒX‚É“o˜^‚³‚ê‚Ä‚¢‚éid‚©‚çŒŸõ
-			//‡Aƒf[ƒ^ƒx[ƒX‚É“o˜^‚³‚ê‚Ä‚¢‚éid‚ª‚ ‚éê‡‚ÍAƒƒbƒZ[ƒW‚ğ•Û‘¶‚µA‚È‚¢ê‡‚ÍƒƒbƒZ[ƒW‚ğ”jŠü‚·‚é
+			////===================ã“ã“å®Ÿè£…ã—ã¦ã„ãªã„============================================
+			//connect_listã®ä¸­ã«ã„ãªã„å ´åˆã¯ã€ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã®ä¸­ã«å…¥ã‚Œã‚‹ã€‚
+			//â‘ ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã«ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹idã‹ã‚‰æ¤œç´¢
+			//â‘¡ãƒ‡ãƒ¼ã‚¿ãƒ™ãƒ¼ã‚¹ã«ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹idãŒã‚ã‚‹å ´åˆã¯ã€ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’ä¿å­˜ã—ã€ãªã„å ´åˆã¯ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’ç ´æ£„ã™ã‚‹
 			if (send_socket_num == -1) {
 				THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
 			}
@@ -439,21 +441,21 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 
 
 			//=========================================================================================
-			//‚±‚±‚ÉƒƒbƒZ[ƒW‚Ì‘—Mˆ—‚ğ‹LÚ‚·‚é
+			//ã“ã“ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®é€ä¿¡å‡¦ç†ã‚’è¨˜è¼‰ã™ã‚‹
 			//=========================================================================================
 
 			//switch (mt002->get_trans_type_int())
 			//{
-			//	//TCPƒ†ƒjƒLƒƒƒXƒg
+			//	//TCPãƒ¦ãƒ‹ã‚­ãƒ£ã‚¹ãƒˆ
 			//case 0:
 			//	_sender->tcp_unicast_data(_client_handler->connected_client_list[send_socket_num].get_client_socket(),
 			//		receive_json, receive_result, mt002->get_dst_client_id(), mt002->get_src_client_id());
 			//	break;
 
-			//	//TCP‚Åƒ}ƒ‹ƒ`ƒLƒƒƒXƒg
+			//	//TCPã§ãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆ
 			//case 1:
-			//	//TODO@ˆÈ‰º‚ğÀ‘•‚·‚é
-			//	//mt002‚ÌƒpƒPƒbƒg‚Ì’†g‚ªTCPƒ}ƒ‹ƒ`ƒLƒƒƒXƒg‚Ìê‡(ƒOƒ‹[ƒv“à‚Å‚Ìƒ`ƒƒƒbƒg‚Ì)AƒOƒ‹[ƒvƒ`ƒƒƒbƒg‚©‚ç
+			//	//TODOã€€ä»¥ä¸‹ã‚’å®Ÿè£…ã™ã‚‹
+			//	//mt002ã®ãƒ‘ã‚±ãƒƒãƒˆã®ä¸­èº«ãŒTCPãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆã®å ´åˆ(ã‚°ãƒ«ãƒ¼ãƒ—å†…ã§ã®ãƒãƒ£ãƒƒãƒˆã®æ™‚)ã€ã‚°ãƒ«ãƒ¼ãƒ—ãƒãƒ£ãƒƒãƒˆã‹ã‚‰
 			//	chatroom_list_num = this->_chat_room_handler->search_chatroom_id_from_list(mt002->get_dst_chatroom_id());
 			//	for (auto&& client : _chat_room_handler->get_client_list(chatroom_list_num)) {
 			//		send_sockets.push_back(client.get_client_socket());
@@ -464,9 +466,9 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 			//	_sender->tcp_multicast_data(send_sockets, receive_json, receive_result);
 			//	break;
 
-			//	//UDPƒuƒ[ƒhƒLƒƒƒXƒg
+			//	//UDPãƒ–ãƒ­ãƒ¼ãƒ‰ã‚­ãƒ£ã‚¹ãƒˆ
 			//case 2:
-			//	//TODO@UDP‚Ìƒuƒ[ƒhƒLƒƒƒXƒg‚ğÀ‘•‚·‚é
+			//	//TODOã€€UDPã®ãƒ–ãƒ­ãƒ¼ãƒ‰ã‚­ãƒ£ã‚¹ãƒˆã‚’å®Ÿè£…ã™ã‚‹
 			//	break;
 
 			//default:
@@ -493,8 +495,8 @@ void ServerControlleFacade::heart_beat_send_process()
 		auto abs_time_10 = time_now + std::chrono::seconds(10);
 		auto abs_time_5 = time_now + std::chrono::seconds(5);
 
-		//‘—Mˆ—‚ğˆÈ‰º‚É‹LÚ‚·‚é
-		//‡@Ú‘±‚³‚ê‚Ä‚¢‚ésocket‚ğWŒv‚·‚é
+		//é€ä¿¡å‡¦ç†ã‚’ä»¥ä¸‹ã«è¨˜è¼‰ã™ã‚‹
+		//â‘ æ¥ç¶šã•ã‚Œã¦ã„ã‚‹socketã‚’é›†è¨ˆã™ã‚‹
 
 		{
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
@@ -507,13 +509,13 @@ void ServerControlleFacade::heart_beat_send_process()
 			
 		}
 		
-		//‡AsocketƒŠƒXƒg‚Éƒ}ƒ‹ƒ`ƒLƒƒƒXƒg‚ğ‚·‚é
-		if (send_sockets.size() > 0) {	//Ú‘±’†‚ÌƒNƒ‰ƒCƒAƒ“ƒg‚ª‚¢‚éê‡ƒn[ƒgƒr[ƒgƒƒbƒZ[ƒW‚ğ‘—‚é
+		//â‘¡socketãƒªã‚¹ãƒˆã«ãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆã‚’ã™ã‚‹
+		if (send_sockets.size() > 0) {	//æ¥ç¶šä¸­ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒã„ã‚‹å ´åˆãƒãƒ¼ãƒˆãƒ“ãƒ¼ãƒˆãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’é€ã‚‹
 			fail_send_sockets = this->_sender->send_heart_beat_message(send_sockets);
 			LogHandler::get_instance().logging_info("The server sent a heartbeat message to the client.");
 		}
 		
-		//5•bŒã‚ÉÄ‘—ˆ—‚ğ‚·‚é
+		//5ç§’å¾Œã«å†é€å‡¦ç†ã‚’ã™ã‚‹
 		std::this_thread::sleep_until(abs_time_5);
 		if (fail_send_sockets.size() > 0) {
 			LogHandler::get_instance().logging_info("Heartbeat message was resent from server to client");
@@ -536,18 +538,18 @@ void ServerControlleFacade::heart_beat_check_process()
 		//auto time_now = std::chrono::system_clock::now();
 		//int search_client_num = -1;
 
-		//Œ»İÚ‘±‚µ‚Ä‚¢‚éƒNƒ‰ƒCƒAƒ“ƒgƒŠƒXƒg‚ğ’Šo
+		//ç¾åœ¨æ¥ç¶šã—ã¦ã„ã‚‹ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãƒªã‚¹ãƒˆã‚’æŠ½å‡º
 		std::vector<ClientHandler::Client> current_connect_clients;
 		{
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 			current_connect_clients = this->_client_handler->connected_clients;
 		}
 
-		//30•bwait
+		//30ç§’wait
 		/*auto abs_time_30 = time_now + std::chrono::seconds(30);
 		std::this_thread::sleep_until(abs_time_30);*/
 
-		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30•bŠÔŠu
+		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30ç§’é–“éš”
 
 		for (const auto& client : current_connect_clients) {
 			if (client.get_client_heart_beat_count() == 0) {
@@ -555,7 +557,7 @@ void ServerControlleFacade::heart_beat_check_process()
 			}
 		}
 		
-		//ƒn[ƒgƒr[ƒg‰ñ”‚ğƒNƒŠƒA‚·‚é
+		//ãƒãƒ¼ãƒˆãƒ“ãƒ¼ãƒˆå›æ•°ã‚’ã‚¯ãƒªã‚¢ã™ã‚‹
 		{
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 			this->_client_handler->all_clear_heart_beat_count();
@@ -566,9 +568,9 @@ void ServerControlleFacade::heart_beat_check_process()
 
 void ServerControlleFacade::heart_beat_no_response_process(const int hb_zero_client_num)
 {
-	//ƒn[ƒgƒr[ƒg‚Ì‰ñ”‚ªƒ[ƒ‚Ìê‡ƒNƒ‰ƒCƒAƒ“ƒg‚ğØ’f‚·‚é
+	//ãƒãƒ¼ãƒˆãƒ“ãƒ¼ãƒˆã®å›æ•°ãŒã‚¼ãƒ­ã®å ´åˆã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚’åˆ‡æ–­ã™ã‚‹
 	if (this->_client_handler->connected_clients[hb_zero_client_num].get_client_heart_beat_count() == 0) {
-		//ƒNƒ‰ƒCƒAƒ“ƒg‚ªŠù‚É”FØÏ‚İ‚Ìê‡
+		//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒæ—¢ã«èªè¨¼æ¸ˆã¿ã®å ´åˆ
 		if(this->_client_handler->connected_clients[hb_zero_client_num].get_auth_status() == true) {
 			LogHandler::get_instance().logging_info(StringFormat("Client (Socket : %d ID: %s), disconnect.(Not response)",
 				this->_client_handler->connected_clients[hb_zero_client_num].get_client_socket(), this->_client_handler->connected_clients[hb_zero_client_num].get_client_id()));
@@ -577,7 +579,7 @@ void ServerControlleFacade::heart_beat_no_response_process(const int hb_zero_cli
 			LogHandler::get_instance().logging_info(StringFormat("Client (Socket : %d ID: None), disconnect.(Not response)",
 				this->_client_handler->connected_clients[hb_zero_client_num].get_client_socket()));
 		}
-		//ƒNƒ‰ƒCƒAƒ“ƒgØ’fˆ—
+		//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆåˆ‡æ–­å‡¦ç†
 		_socket_handler->disconnect_socket(_client_handler->connected_clients[hb_zero_client_num].get_client_socket());
 		_client_handler->delete_client(hb_zero_client_num);
 	}	
@@ -587,15 +589,15 @@ void ServerControlleFacade::heart_beat_response_process(const ClientHandler::Cli
 {
 	std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 
-	// ƒNƒ‰ƒCƒAƒ“ƒg‚ª still connected ‚©Šm”F
+	// ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãŒ still connected ã‹ç¢ºèª
 	auto& clients = _client_handler->connected_clients;
 	auto it = std::find(clients.begin(), clients.end(), client);
 
 	if (it == clients.end() || it->get_client_heart_beat_count() > 0) {
-		return;  // Šù‚Éíœ‚³‚ê‚Ä‚¢‚é or ƒn[ƒgƒr[ƒg‚ªƒŠƒZƒbƒg‚³‚ê‚½ê‡
+		return;  // æ—¢ã«å‰Šé™¤ã•ã‚Œã¦ã„ã‚‹ or ãƒãƒ¼ãƒˆãƒ“ãƒ¼ãƒˆãŒãƒªã‚»ãƒƒãƒˆã•ã‚ŒãŸå ´åˆ
 	}
 
-	// ƒƒOo—Í
+	// ãƒ­ã‚°å‡ºåŠ›
 	if (it->get_auth_status()) {
 		LogHandler::get_instance().logging_info(StringFormat(
 			"Client (Socket : %d ID: %s), disconnect.(Not response)",
@@ -607,10 +609,10 @@ void ServerControlleFacade::heart_beat_response_process(const ClientHandler::Cli
 			it->get_client_socket()));
 	}
 
-	// ƒNƒ‰ƒCƒAƒ“ƒgØ’fˆ—
+	// ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆåˆ‡æ–­å‡¦ç†
 	_socket_handler->disconnect_socket(it->get_client_socket());
 
-	// ƒNƒ‰ƒCƒAƒ“ƒgíœiƒCƒeƒŒ[ƒ^‚ğg‚Á‚ÄˆÀ‘S‚Éíœj
+	// ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆå‰Šé™¤ï¼ˆã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿ã‚’ä½¿ã£ã¦å®‰å…¨ã«å‰Šé™¤ï¼‰
 	this->_client_handler->delete_client(it);
 }
 

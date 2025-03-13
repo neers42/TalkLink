@@ -1,19 +1,19 @@
-#include "AppException.h"
+ï»¿#include "AppException.h"
 namespace exception
 {
-    /* ƒRƒ“ƒXƒgƒ‰ƒNƒ^ */
+    /* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
     AppException::AppException(const std::string& message)
         : ExceptionBase(message)
     {
         /* Nothing to do */
     }
-    /* ƒRƒ“ƒXƒgƒ‰ƒNƒ^ */
+    /* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
     AppException::AppException(const std::string& message, const std::string& file, const std::string& func, const int line)
         : ExceptionBase(message, file, func, line)
     {
         /* Nothing to do */
     }
-    /* ƒfƒXƒgƒ‰ƒNƒ^ */
+    /* ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
     AppException::~AppException()
     {
         /* Nothing to do */

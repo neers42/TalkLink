@@ -1,18 +1,18 @@
-#include "SocketHandler.h"
+ï»¿#include "SocketHandler.h"
 
 //#define DEBUG
 
 /*
-* y–¢À‘•ƒŠƒXƒgz
-* ƒ}ƒ‹ƒ`ƒLƒƒƒXƒg—pƒ\ƒPƒbƒg‹y‚Ñƒuƒ[ƒhƒLƒƒƒXƒg—p‚Ìƒ\ƒPƒbƒg‚É‘Î‰‚·‚é
+* ã€æœªå®Ÿè£…ãƒªã‚¹ãƒˆã€‘
+* ãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆç”¨ã‚½ã‚±ãƒƒãƒˆåŠã³ãƒ–ãƒ­ãƒ¼ãƒ‰ã‚­ãƒ£ã‚¹ãƒˆç”¨ã®ã‚½ã‚±ãƒƒãƒˆã«å¯¾å¿œã™ã‚‹
 */
 
 /**********************************************************************************
- * @fn	  SocketHandlerƒfƒtƒHƒ‹ƒgƒRƒ“ƒXƒgƒ‰ƒNƒ^
- * @brief İ’èƒtƒ@ƒCƒ‹“Ç‚İ‚İ(int)
+ * @fn	  SocketHandlerãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+ * @brief è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«èª­ã¿è¾¼ã¿(int)
  *
- * @param [in] ‚È‚µ
- * @return [out]‚È‚µ
+ * @param [in] ãªã—
+ * @return [out]ãªã—
  *
  **********************************************************************************/
 SocketHandler::SocketHandler() : 
@@ -28,23 +28,23 @@ SocketHandler::SocketHandler() :
 		if (!init_wsa_result) {
 			switch (init_wsa_result) {
 			case WSASYSNOTREADY:
-				THROW_APP_EXCEPTION("CASE:WSASYSNOTREADY(ƒlƒbƒgƒ[ƒNƒTƒuƒVƒXƒeƒ€‚ªƒlƒbƒgƒ[ƒN‚Ö‚ÌÚ‘±‚ğ€”õo—ˆ‚Ä‚¢‚Ü‚¹‚ñ)");
+				THROW_APP_EXCEPTION("CASE:WSASYSNOTREADY(ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã‚µãƒ–ã‚·ã‚¹ãƒ†ãƒ ãŒãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã¸ã®æ¥ç¶šã‚’æº–å‚™å‡ºæ¥ã¦ã„ã¾ã›ã‚“)");
 				break;
 
 			case WSAVERNOTSUPPORTED:
-				THROW_APP_EXCEPTION("CASE:WSAVERNOTSUPPORTED:(—v‹‚³‚ê‚½ Windows ƒ\ƒPƒbƒg‚ÌƒTƒ|[ƒg‚Ìƒo[ƒWƒ‡ƒ“‚ÍA‚±‚Ì“Á’è‚Ì Windows ƒ\ƒPƒbƒg‚ÌÀ‘•‚Å‚Í’ñ‹Ÿ‚³‚ê‚Ü‚¹‚ñ)");
+				THROW_APP_EXCEPTION("CASE:WSAVERNOTSUPPORTED:(è¦æ±‚ã•ã‚ŒãŸ Windows ã‚½ã‚±ãƒƒãƒˆã®ã‚µãƒãƒ¼ãƒˆã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã¯ã€ã“ã®ç‰¹å®šã® Windows ã‚½ã‚±ãƒƒãƒˆã®å®Ÿè£…ã§ã¯æä¾›ã•ã‚Œã¾ã›ã‚“)");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("CASE:WSAEINPROGRESS(Windows ƒ\ƒPƒbƒg 1.1 ‚ÌƒuƒƒbƒN‘€ì‚ªis’†‚Å‚·)");
+				THROW_APP_EXCEPTION("CASE:WSAEINPROGRESS(Windows ã‚½ã‚±ãƒƒãƒˆ 1.1 ã®ãƒ–ãƒ­ãƒƒã‚¯æ“ä½œãŒé€²è¡Œä¸­ã§ã™)");
 				break;
 
 			case WSAEPROCLIM:
-				THROW_APP_EXCEPTION("CASE:WSAEPROCLIM(Windows ƒ\ƒPƒbƒg‚ÌÀ‘•‚ÅƒTƒ|[ƒg‚³‚ê‚éƒ^ƒXƒN‚Ì”‚Ì§ŒÀ‚É’B‚µ‚Ü‚µ‚½)");
+				THROW_APP_EXCEPTION("CASE:WSAEPROCLIM(Windows ã‚½ã‚±ãƒƒãƒˆã®å®Ÿè£…ã§ã‚µãƒãƒ¼ãƒˆã•ã‚Œã‚‹ã‚¿ã‚¹ã‚¯ã®æ•°ã®åˆ¶é™ã«é”ã—ã¾ã—ãŸ)");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("CASE:WSAEFAULT(lpWSAData ƒpƒ‰ƒ[ƒ^[‚ª—LŒø‚Èƒ|ƒCƒ“ƒ^[‚Å‚Í‚ ‚è‚Ü‚¹‚ñ)");
+				THROW_APP_EXCEPTION("CASE:WSAEFAULT(lpWSAData ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒæœ‰åŠ¹ãªãƒã‚¤ãƒ³ã‚¿ãƒ¼ã§ã¯ã‚ã‚Šã¾ã›ã‚“)");
 				break;
 			}
 		}
@@ -55,25 +55,25 @@ SocketHandler::SocketHandler() :
 		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
-	//ƒtƒ@ƒCƒ‹ƒfƒBƒXƒNƒŠƒvƒ^ƒLƒƒƒbƒ`—p‚Ìfds‚ğ‰Šú‰»
+	//ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚¿ã‚­ãƒ£ãƒƒãƒç”¨ã®fdsã‚’åˆæœŸåŒ–
 	FD_ZERO(&m_fds);
 	FD_ZERO(&m_fd_read);
 
-	//selectŠÖ”‚Ìƒ^ƒCƒ€ƒAƒEƒg‰Šúİ’è(tv_sec=•b‚Ìw’è@tv_usec=ƒ}ƒCƒNƒ•b‚Ìw’è)
-	//ƒfƒtƒHƒ‹ƒgƒRƒ“ƒXƒgƒ‰ƒNƒ^‚Å‚Í500ƒ}ƒCƒNƒ•b * 1000@Ë 500ƒ~ƒŠ•b‚Éİ’è
+	//selecté–¢æ•°ã®ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆåˆæœŸè¨­å®š(tv_sec=ç§’ã®æŒ‡å®šã€€tv_usec=ãƒã‚¤ã‚¯ãƒ­ç§’ã®æŒ‡å®š)
+	//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã§ã¯500ãƒã‚¤ã‚¯ãƒ­ç§’ * 1000ã€€â‡’ 500ãƒŸãƒªç§’ã«è¨­å®š
 	_timeout.tv_sec = 0;
 	_timeout.tv_usec = 500 * 1000;
 
-	//ƒŠƒbƒXƒ“ƒ\ƒPƒbƒg‚Ì‰Šú‰»
+	//ãƒªãƒƒã‚¹ãƒ³ã‚½ã‚±ãƒƒãƒˆã®åˆæœŸåŒ–
 	_tcp_listen_socket = INVALID_SOCKET;
 
-	//UDPƒuƒ[ƒhƒLƒƒƒXƒg‘—M—pƒ\ƒPƒbƒg‚Ì‰Šú‰»
+	//UDPãƒ–ãƒ­ãƒ¼ãƒ‰ã‚­ãƒ£ã‚¹ãƒˆé€ä¿¡ç”¨ã‚½ã‚±ãƒƒãƒˆã®åˆæœŸåŒ–
 	_udp_bloadcast_tx_socket = INVALID_SOCKET;
 
-	//UDPƒ}ƒ‹ƒ`ƒLƒƒƒXƒg‘—M—pƒ\ƒPƒbƒg
+	//UDPãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆé€ä¿¡ç”¨ã‚½ã‚±ãƒƒãƒˆ
 	_udp_multicast_tx_socket = INVALID_SOCKET;
 
-	//ƒ\ƒPƒbƒg‰Šú‰»—p‚Ì•Ï”‚Ì‰Šú‰»
+	//ã‚½ã‚±ãƒƒãƒˆåˆæœŸåŒ–ç”¨ã®å¤‰æ•°ã®åˆæœŸåŒ–
 	_init_sockaddr_in.sin_family = AF_INET;
 	_init_sockaddr_in.sin_port = 0;
 	_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
@@ -83,40 +83,40 @@ SocketHandler::SocketHandler() :
 }
 
 /**********************************************************************************
- * @fn	  SocketHandlerƒRƒs[ƒRƒ“ƒXƒgƒ‰ƒNƒ^
- * @brief İ’èƒtƒ@ƒCƒ‹“Ç‚İ‚İ(int)
+ * @fn	  SocketHandlerã‚³ãƒ”ãƒ¼ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+ * @brief è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«èª­ã¿è¾¼ã¿(int)
  *
- * @param [in] ‚È‚µ
- * @return [out]‚È‚µ
+ * @param [in] ãªã—
+ * @return [out]ãªã—
  *
  **********************************************************************************/
 SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 {
 	ZeroMemory(&m_param_tcp, sizeof(m_param_tcp));
-	//wsa_data‚Ì‰Šú‰»
+	//wsa_dataã®åˆæœŸåŒ–
 	try
 	{
 		int init_wsa_result = WSAStartup(MAKEWORD(2, 2), &m_wsa_data);
 		if (!init_wsa_result) {
 			switch (init_wsa_result) {
 			case WSASYSNOTREADY:
-				THROW_APP_EXCEPTION("CASE:WSASYSNOTREADY(ƒlƒbƒgƒ[ƒNƒTƒuƒVƒXƒeƒ€‚ªƒlƒbƒgƒ[ƒN‚Ö‚ÌÚ‘±‚ğ€”õo—ˆ‚Ä‚¢‚Ü‚¹‚ñ)");
+				THROW_APP_EXCEPTION("CASE:WSASYSNOTREADY(ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã‚µãƒ–ã‚·ã‚¹ãƒ†ãƒ ãŒãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã¸ã®æ¥ç¶šã‚’æº–å‚™å‡ºæ¥ã¦ã„ã¾ã›ã‚“)");
 				break;
 
 			case WSAVERNOTSUPPORTED:
-				THROW_APP_EXCEPTION("CASE:WSAVERNOTSUPPORTED:(—v‹‚³‚ê‚½ Windows ƒ\ƒPƒbƒg‚ÌƒTƒ|[ƒg‚Ìƒo[ƒWƒ‡ƒ“‚ÍA‚±‚Ì“Á’è‚Ì Windows ƒ\ƒPƒbƒg‚ÌÀ‘•‚Å‚Í’ñ‹Ÿ‚³‚ê‚Ü‚¹‚ñ)");
+				THROW_APP_EXCEPTION("CASE:WSAVERNOTSUPPORTED:(è¦æ±‚ã•ã‚ŒãŸ Windows ã‚½ã‚±ãƒƒãƒˆã®ã‚µãƒãƒ¼ãƒˆã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³ã¯ã€ã“ã®ç‰¹å®šã® Windows ã‚½ã‚±ãƒƒãƒˆã®å®Ÿè£…ã§ã¯æä¾›ã•ã‚Œã¾ã›ã‚“)");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("CASE:WSAEINPROGRESS(Windows ƒ\ƒPƒbƒg 1.1 ‚ÌƒuƒƒbƒN‘€ì‚ªis’†‚Å‚·)");
+				THROW_APP_EXCEPTION("CASE:WSAEINPROGRESS(Windows ã‚½ã‚±ãƒƒãƒˆ 1.1 ã®ãƒ–ãƒ­ãƒƒã‚¯æ“ä½œãŒé€²è¡Œä¸­ã§ã™)");
 				break;
 
 			case WSAEPROCLIM:
-				THROW_APP_EXCEPTION("CASE:WSAEPROCLIM(Windows ƒ\ƒPƒbƒg‚ÌÀ‘•‚ÅƒTƒ|[ƒg‚³‚ê‚éƒ^ƒXƒN‚Ì”‚Ì§ŒÀ‚É’B‚µ‚Ü‚µ‚½)");
+				THROW_APP_EXCEPTION("CASE:WSAEPROCLIM(Windows ã‚½ã‚±ãƒƒãƒˆã®å®Ÿè£…ã§ã‚µãƒãƒ¼ãƒˆã•ã‚Œã‚‹ã‚¿ã‚¹ã‚¯ã®æ•°ã®åˆ¶é™ã«é”ã—ã¾ã—ãŸ)");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("CASE:WSAEFAULT(lpWSAData ƒpƒ‰ƒ[ƒ^[‚ª—LŒø‚Èƒ|ƒCƒ“ƒ^[‚Å‚Í‚ ‚è‚Ü‚¹‚ñ)");
+				THROW_APP_EXCEPTION("CASE:WSAEFAULT(lpWSAData ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒæœ‰åŠ¹ãªãƒã‚¤ãƒ³ã‚¿ãƒ¼ã§ã¯ã‚ã‚Šã¾ã›ã‚“)");
 				break;
 			}
 		}
@@ -126,16 +126,16 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
 	}
 
-	//ƒtƒ@ƒCƒ‹ƒfƒBƒXƒNƒŠƒvƒ^ƒLƒƒƒbƒ`—p‚Ìfds‚ğ‰Šú‰»
+	//ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚¿ã‚­ãƒ£ãƒƒãƒç”¨ã®fdsã‚’åˆæœŸåŒ–
 	FD_ZERO(&m_fds);
 	FD_ZERO(&m_fd_read);
 
 
-	//selectŠÖ”‚Ìƒ^ƒCƒ€ƒAƒEƒg‰Šúİ’è(tv_sec=•b‚Ìw’è@tv_usec=ƒ}ƒCƒNƒ•b‚Ìw’è)
+	//selecté–¢æ•°ã®ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆåˆæœŸè¨­å®š(tv_sec=ç§’ã®æŒ‡å®šã€€tv_usec=ãƒã‚¤ã‚¯ãƒ­ç§’ã®æŒ‡å®š)
 	_timeout.tv_sec = tv_sec;
 	_timeout.tv_usec = tv_usec;
 
-	//ƒŠƒbƒXƒ“ƒ\ƒPƒbƒg‚Ì‰Šú‰»
+	//ãƒªãƒƒã‚¹ãƒ³ã‚½ã‚±ãƒƒãƒˆã®åˆæœŸåŒ–
 	_tcp_listen_socket = INVALID_SOCKET;
 
 
@@ -145,7 +145,7 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 
 }
 
-//ƒfƒXƒgƒ‰ƒNƒ^
+//ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 SocketHandler::~SocketHandler()
 {
 	freeaddrinfo(m_result_tcp);
@@ -155,12 +155,12 @@ SocketHandler::~SocketHandler()
 }
 
 
-//‚±‚±‚Ìtry\•¶Œ©’¼‚·
-//İ’è’l‚Ì“Ç‚İ‚İ
+//ã“ã“ã®tryæ§‹æ–‡è¦‹ç›´ã™
+//è¨­å®šå€¤ã®èª­ã¿è¾¼ã¿
 bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass)
 {
 
-	//iniƒtƒ@ƒCƒ‹‚Ì“Ç‚İ‚İ
+	//iniãƒ•ã‚¡ã‚¤ãƒ«ã®èª­ã¿è¾¼ã¿
 	ini::IniFile socket_param_setting_ini;
 	try
 	{
@@ -191,7 +191,7 @@ bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass
 
 bool SocketHandler::setting_multicast_tx_socket_param(const std::string& file_pass)
 {
-	//iniƒtƒ@ƒCƒ‹‚Ì“Ç‚İ‚İ
+	//iniãƒ•ã‚¡ã‚¤ãƒ«ã®èª­ã¿è¾¼ã¿
 	ini::IniFile multicast_socket_setting_ini;
 	try
 	{
@@ -234,11 +234,11 @@ bool SocketHandler::setting_bloadcast_tx_socket_param(const std::string& file_pa
 
 /**********************************************************************************
  * @fn	  get_client_ip
- * Ú‘±—v‹‚ª‚ ‚Á‚½Û‚ÌƒNƒ‰ƒCƒAƒ“ƒgƒ\ƒPƒbƒg‚É‘Î‚µ‚Äacceptˆ—‚ğÀs‚·‚é
- * @brief acceptˆ—
+ * æ¥ç¶šè¦æ±‚ãŒã‚ã£ãŸéš›ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚½ã‚±ãƒƒãƒˆã«å¯¾ã—ã¦acceptå‡¦ç†ã‚’å®Ÿè¡Œã™ã‚‹
+ * @brief acceptå‡¦ç†
  *
- * @param [in] client_num  IPƒAƒhƒŒƒX•ÏŠ·‚ğ‚·‚éÛ‚ÌƒNƒ‰ƒCƒAƒ“ƒgƒŠƒXƒg‚Ì”Ô†
- * @return ˆ—Œ‹‰Ê(true:¬Œ÷/false:ƒGƒ‰[)
+ * @param [in] client_num  IPã‚¢ãƒ‰ãƒ¬ã‚¹å¤‰æ›ã‚’ã™ã‚‹éš›ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãƒªã‚¹ãƒˆã®ç•ªå·
+ * @return å‡¦ç†çµæœ(true:æˆåŠŸ/false:ã‚¨ãƒ©ãƒ¼)
  *
  * @detail
  **********************************************************************************/
@@ -259,11 +259,11 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 			switch (WSAGetLastError())
 			{
 			case WSAEAFNOSUPPORT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEAFNOSUPPORT(Family ƒpƒ‰ƒ[ƒ^[‚Åw’è‚³‚ê‚½ƒAƒhƒŒƒX ƒtƒ@ƒ~ƒŠ ‚ÍƒTƒ|[ƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB ‚±‚ÌƒGƒ‰[‚ÍAw’è‚³‚ê‚½ Family ƒpƒ‰ƒ[ƒ^[‚ª AF_INET ‚Ü‚½‚Í AF_INET6‚³‚ê‚Ä‚¢‚È‚¢ê‡‚É•Ô‚³‚ê‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEAFNOSUPPORT(Family ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã§æŒ‡å®šã•ã‚ŒãŸã‚¢ãƒ‰ãƒ¬ã‚¹ ãƒ•ã‚¡ãƒŸãƒª ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚ ã“ã®ã‚¨ãƒ©ãƒ¼ã¯ã€æŒ‡å®šã•ã‚ŒãŸ Family ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒ AF_INET ã¾ãŸã¯ AF_INET6ã•ã‚Œã¦ã„ãªã„å ´åˆã«è¿”ã•ã‚Œã¾ã™ã€‚)");
 				break;
 
 			case ERROR_INVALID_PARAMETER:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:ERROR_INVALID_PARAMETER(–³Œø‚Èƒpƒ‰ƒ[ƒ^[‚ªŠÖ”‚É“n‚³‚ê‚Ü‚µ‚½B ‚±‚ÌƒGƒ‰[‚ÍApStringBuf ‚Å NULL ƒ|ƒCƒ“ƒ^[‚ª“n‚³‚ê‚½ê‡A‚Ü‚½‚Í StringBufSize ƒpƒ‰ƒ[ƒ^[‚ª 0 ‚Ìê‡‚É•Ô‚³‚ê‚Ü‚·B ‚±‚ÌƒGƒ‰[‚ÍA pStringBuf ƒpƒ‰ƒ[ƒ^[‚ªw‚·ƒoƒbƒtƒ@[‚Ì’·‚³‚ª IP ƒAƒhƒŒƒX‚Ì•¶š—ñ•\Œ»‚ğó‚¯æ‚é‚Ì‚É\•ª‚È‘å‚«‚³‚Å‚È‚¢ê‡‚É‚à•Ô‚³‚ê‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:ERROR_INVALID_PARAMETER(ç„¡åŠ¹ãªãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒé–¢æ•°ã«æ¸¡ã•ã‚Œã¾ã—ãŸã€‚ ã“ã®ã‚¨ãƒ©ãƒ¼ã¯ã€pStringBuf ã§ NULL ãƒã‚¤ãƒ³ã‚¿ãƒ¼ãŒæ¸¡ã•ã‚ŒãŸå ´åˆã€ã¾ãŸã¯ StringBufSize ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒ 0 ã®å ´åˆã«è¿”ã•ã‚Œã¾ã™ã€‚ ã“ã®ã‚¨ãƒ©ãƒ¼ã¯ã€ pStringBuf ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒæŒ‡ã™ãƒãƒƒãƒ•ã‚¡ãƒ¼ã®é•·ã•ãŒ IP ã‚¢ãƒ‰ãƒ¬ã‚¹ã®æ–‡å­—åˆ—è¡¨ç¾ã‚’å—ã‘å–ã‚‹ã®ã«ååˆ†ãªå¤§ãã•ã§ãªã„å ´åˆã«ã‚‚è¿”ã•ã‚Œã¾ã™ã€‚)");
 				break;
 
 			default:
@@ -383,7 +383,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 		return false;
 	}
 	
-	//setsoclopt‚Ìİ’è
+	//setsocloptã®è¨­å®š
 	try
 	{
 		int multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket, 
@@ -440,7 +440,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 		LogHandler::get_instance().logging_error(StringFormat("%s", ex.what_for_str()));
 		return false;
 		
-		//TODOƒlƒbƒgƒ[ƒNƒCƒ“ƒ^ƒtƒF[ƒX‚Ì”‚Å–ß‚è’l‚ğ•Ï‚¦‚½‚¢
+		//TODOãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹ã®æ•°ã§æˆ»ã‚Šå€¤ã‚’å¤‰ãˆãŸã„
 	}
 	
 	try
@@ -513,7 +513,7 @@ bool SocketHandler::generate_udp_bloadcast_tx_socket()
 
 bool SocketHandler::setting_tcp_flags(ini::IniFile tcp_listen_socket_param_setting_ini)
 {
-	//ƒtƒ‰ƒbƒO‚Ìİ’è
+	//ãƒ•ãƒ©ãƒƒã‚°ã®è¨­å®š
 	std::string temp_flag = tcp_listen_socket_param_setting_ini["SocketSetting"]["flags"].as<std::string>();
 	if (trans_flags(temp_flag, &m_param_tcp) == false) {
 		return false;
@@ -526,8 +526,8 @@ bool SocketHandler::setting_tcp_flags(ini::IniFile tcp_listen_socket_param_setti
 
 bool SocketHandler::setting_tcp_family(ini::IniFile tcp_listen_socket_param_setting_ini)
 {
-	//iniƒtƒ@ƒCƒ‹‚ÌŠeƒZƒNƒVƒ‡ƒ“‚©‚çƒL[‚ğ“Ç‚İ‚Ş
-	//ƒAƒhƒŒƒXƒtƒ@ƒ~ƒŠ‚Ìİ’è(ipv4 or ipv6)
+	//iniãƒ•ã‚¡ã‚¤ãƒ«ã®å„ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‹ã‚‰ã‚­ãƒ¼ã‚’èª­ã¿è¾¼ã‚€
+	//ã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ•ã‚¡ãƒŸãƒªã®è¨­å®š(ipv4 or ipv6)
 	std::string temp_family = tcp_listen_socket_param_setting_ini["SocketSetting"]["family"].as<std::string>();
 	if (trans_family(temp_family, &m_param_tcp) == false) {
 		return false;
@@ -540,7 +540,7 @@ bool SocketHandler::setting_tcp_family(ini::IniFile tcp_listen_socket_param_sett
 
 bool SocketHandler::setting_tcp_socktype(ini::IniFile tcp_listen_socket_param_setting_ini)
 {
-	//ƒ\ƒPƒbƒgŒ^‚Ìİ’è
+	//ã‚½ã‚±ãƒƒãƒˆå‹ã®è¨­å®š
 	std::string temp_socket_type = tcp_listen_socket_param_setting_ini["SocketSetting"]["socktype"].as<std::string>();
 	if (trans_socktype(temp_socket_type, &m_param_tcp) == false) {
 		return false;
@@ -552,10 +552,10 @@ bool SocketHandler::setting_tcp_socktype(ini::IniFile tcp_listen_socket_param_se
 
 bool SocketHandler::setting_tcp_protocol(ini::IniFile tcp_listen_socket_param_setting_ini)
 {
-	//ƒvƒƒgƒRƒ‹‚Ìİ’è
+	//ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®è¨­å®š
 	std::string temp_protocol = tcp_listen_socket_param_setting_ini["SocketSetting"]["protocol"].as<std::string>();
 	//std::equal(temp_family.begin(), temp_family.end(), "AF_INET")
-	//ƒvƒƒgƒRƒ‹‚ğtcp‚Éİ’è‚·‚éê‡
+	//ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’tcpã«è¨­å®šã™ã‚‹å ´åˆ
 	if (trans_protocol(temp_protocol, &m_param_tcp) == false) {
 		return false;
 	}
@@ -566,7 +566,7 @@ bool SocketHandler::setting_tcp_protocol(ini::IniFile tcp_listen_socket_param_se
 
 bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_setting_ini)
 {
-	//ƒ|[ƒg‚Ìİ’è
+	//ãƒãƒ¼ãƒˆã®è¨­å®š
 	try
 	{
 		int temp_port = tcp_listen_socket_param_setting_ini["SocketSetting"]["message_port"].as<int>();
@@ -598,7 +598,7 @@ bool SocketHandler::setting_multicast_tx_sock_af(ini::IniFile socket_param_setti
 
 bool SocketHandler::setting_multicast_tx_sock_type(ini::IniFile socket_param_setting_ini)
 {
-	//ƒ\ƒPƒbƒgƒ^ƒCƒv‚Ìİ’è
+	//ã‚½ã‚±ãƒƒãƒˆã‚¿ã‚¤ãƒ—ã®è¨­å®š
 	std::string temp_socktype = socket_param_setting_ini["MulticastTX_SocketSetting"]["type"].as<std::string>();
 	if (trans_socktype(temp_socktype, &m_multicast_tx_param) == false) {
 		return false;
@@ -621,57 +621,57 @@ bool SocketHandler::setting_multicast_tx_sock_protocol(ini::IniFile socket_param
 
 bool SocketHandler::setting_multicast_tx_sin_family(ini::IniFile socket_param_setting_ini)
 {
-	//ƒAƒhƒŒƒXƒtƒ@ƒ~ƒŠ‚Ìİ’è(socketŠÖ”‚Ìˆø”İ’è)
+	//ã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ•ã‚¡ãƒŸãƒªã®è¨­å®š(socketé–¢æ•°ã®å¼•æ•°è¨­å®š)
 	std::string temp_af = socket_param_setting_ini["MulticastTX_SocketSetting"]["sin_family"].as<std::string>();
 
 	if (std::equal(temp_af.begin(), temp_af.end(), "AF_UNSPEC")) {
 		m_multicast_tx_addr.sin_family = AF_UNSPEC;
 	}
 #ifdef DEBUG
-	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)paramFsin_family = AF_INET"));
+	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)paramï¼šsin_family = AF_INET"));
 #endif // DEBUG
 
 	if (std::equal(temp_af.begin(), temp_af.end(), "AF_INET")) {
 		m_multicast_tx_addr.sin_family = AF_INET;
 #ifdef DEBUG
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)paramFaf‚ÍAF_INET(IPv4)‚Éİ’è‚³‚ê‚Ü‚µ‚½B"));
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)paramï¼šafã¯AF_INET(IPv4)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚"));
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_IPX")) {
 		m_multicast_tx_addr.sin_family = AF_IPX;
 #ifdef DEBUG
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)paramFaf‚ÍAF_IPX‚Éİ’è‚³‚ê‚Ü‚µ‚½B"));
+		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)paramï¼šafã¯AF_IPXã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚"));
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_APPLETALK")) {
 		m_multicast_tx_addr.sin_family = AF_APPLETALK;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramFaf‚ÍAF_APPLETALK‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramï¼šafã¯AF_APPLETALKã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_NETBIOS")) {
 		m_multicast_tx_addr.sin_family = AF_NETBIOS;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramFaf‚ÍAF_NETBIOS‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramï¼šafã¯AF_NETBIOSã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_INET6")) {
 		m_multicast_tx_addr.sin_family = AF_INET6;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramFaf‚ÍAF_INET6(IPv6)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramï¼šafã¯AF_INET6(IPv6)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_IRDA")) {
 		m_multicast_tx_addr.sin_family = AF_IRDA;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramFaf‚ÍAF_IRDA‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramï¼šafã¯AF_IRDAã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_BTH")) {
 		m_multicast_tx_addr.sin_family = AF_BTH;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramFaf‚ÍAF_BTH‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)paramï¼šafã¯AF_BTHã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else {
@@ -685,7 +685,7 @@ bool SocketHandler::setting_multicast_tx_sin_family(ini::IniFile socket_param_se
 
 bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_setting_ini)
 {
-	//ƒ}ƒ‹ƒ`ƒLƒƒƒXƒg‚Ìƒ|[ƒg‚ğİ’è‚·‚éB
+	//ãƒãƒ«ãƒã‚­ãƒ£ã‚¹ãƒˆã®ãƒãƒ¼ãƒˆã‚’è¨­å®šã™ã‚‹ã€‚
 	try
 	{
 		int temp_port = socket_param_setting_ini["MulticastTX_SocketSetting"]["sin_port"].as<int>();
@@ -715,7 +715,7 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 {
 	std::string temp_multicast_addr = socket_param_setting_ini["MulticastTX_SocketSetting"]["sin_address"].as<std::string>();
 
-	//inet_addr‚Ìİ’è
+	//inet_addrã®è¨­å®š
 	try
 	{
 		int inet_pton_result = inet_pton(m_multicast_tx_param.ai_family, temp_multicast_addr.c_str(), &m_multicast_tx_addr.sin_addr);
@@ -723,11 +723,11 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 			switch (WSAGetLastError())
 			{
 			case WSAEAFNOSUPPORT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEAFNOSUPPORT(Family ƒpƒ‰ƒ[ƒ^[‚Åw’è‚³‚ê‚½ƒAƒhƒŒƒX ƒtƒ@ƒ~ƒŠ ‚ÍƒTƒ|[ƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB ‚±‚ÌƒGƒ‰[‚ÍAw’è‚³‚ê‚½ Family ƒpƒ‰ƒ[ƒ^[‚ª AF_INET ‚Ü‚½‚Í AF_INET6‚³‚ê‚Ä‚¢‚È‚¢ê‡‚É•Ô‚³‚ê‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEAFNOSUPPORT(Family ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã§æŒ‡å®šã•ã‚ŒãŸã‚¢ãƒ‰ãƒ¬ã‚¹ ãƒ•ã‚¡ãƒŸãƒª ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚ ã“ã®ã‚¨ãƒ©ãƒ¼ã¯ã€æŒ‡å®šã•ã‚ŒãŸ Family ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒ AF_INET ã¾ãŸã¯ AF_INET6ã•ã‚Œã¦ã„ãªã„å ´åˆã«è¿”ã•ã‚Œã¾ã™ã€‚)");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(pszAddrString ƒpƒ‰ƒ[ƒ^[‚Ü‚½‚Í pAddrBuf ƒpƒ‰ƒ[ƒ^[‚ª NULL ‚Å‚ ‚é‚©Aƒ†[ƒU[ ƒAƒhƒŒƒX‹óŠÔ‚Ìˆê•”‚Å‚Í‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(pszAddrString ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã¾ãŸã¯ pAddrBuf ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒ NULL ã§ã‚ã‚‹ã‹ã€ãƒ¦ãƒ¼ã‚¶ãƒ¼ ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ã®ä¸€éƒ¨ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 
 			default:
@@ -735,9 +735,9 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 			}
 		}
 		else if (inet_pton_result == 0) {
-			THROW_APP_EXCEPTION("pAddrBuf ƒpƒ‰ƒ[ƒ^[‚ª—LŒø‚È IPv4 ƒhƒbƒg 10 i”•¶š—ñ‚Ü‚½‚Í—LŒø‚È IPv6 ƒAƒhƒŒƒX•¶š—ñ‚Å‚Í‚È‚¢•¶š—ñ‚ğw‚µ‚Ä‚¢‚Ü‚·B");
+			THROW_APP_EXCEPTION("pAddrBuf ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒæœ‰åŠ¹ãª IPv4 ãƒ‰ãƒƒãƒˆ 10 é€²æ•°æ–‡å­—åˆ—ã¾ãŸã¯æœ‰åŠ¹ãª IPv6 ã‚¢ãƒ‰ãƒ¬ã‚¹æ–‡å­—åˆ—ã§ã¯ãªã„æ–‡å­—åˆ—ã‚’æŒ‡ã—ã¦ã„ã¾ã™ã€‚");
 		}
-		//IPƒAƒhƒŒƒX‚ÌƒoƒCƒiƒŠ‰»‚ª³í‚ÉI—¹‚µ‚½ê‡
+		//IPã‚¢ãƒ‰ãƒ¬ã‚¹ã®ãƒã‚¤ãƒŠãƒªåŒ–ãŒæ­£å¸¸ã«çµ‚äº†ã—ãŸå ´åˆ
 		else {
 #ifdef DEBUG
 			LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Transmission address for multicast set successfully (address: %s)", temp_multicast_addr));
@@ -757,7 +757,7 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 std::string SocketHandler::obtain_local_ip_addr()
 {
 	DWORD get_ip_addr_table_result;
-	//IPƒAƒhƒŒƒXƒe[ƒuƒ‹‚Ìæ“¾
+	//IPã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ†ãƒ¼ãƒ–ãƒ«ã®å–å¾—
 	try
 	{
 		if (GetIpAddrTable(NULL, &m_dw_size, 0) == ERROR_INSUFFICIENT_BUFFER) {
@@ -794,7 +794,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 	}
 
 
-	//IPƒAƒhƒŒƒXƒe[ƒuƒ‹‚ÌŒ‹‰Ê‚ğŠi”[
+	//IPã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ†ãƒ¼ãƒ–ãƒ«ã®çµæœã‚’æ ¼ç´
 	try
 	{
 		DWORD dw_ret_val_result = GetIpAddrTable(m_ip_addr_table, &m_dw_size, 0);
@@ -867,11 +867,11 @@ bool SocketHandler::bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinf
 
 /**********************************************************************************
  * @fn	  accept_client_socket
- * Ú‘±—v‹‚ª‚ ‚Á‚½Û‚ÌƒNƒ‰ƒCƒAƒ“ƒgƒ\ƒPƒbƒg‚É‘Î‚µ‚Äacceptˆ—‚ğÀs‚·‚é
- * @brief acceptˆ—
+ * æ¥ç¶šè¦æ±‚ãŒã‚ã£ãŸéš›ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‚½ã‚±ãƒƒãƒˆã«å¯¾ã—ã¦acceptå‡¦ç†ã‚’å®Ÿè¡Œã™ã‚‹
+ * @brief acceptå‡¦ç†
  *
- * @param [in] ‚È‚µ
- * @return ˆ—Œ‹‰Ê(true:¬Œ÷/false:ƒGƒ‰[)
+ * @param [in] ãªã—
+ * @return å‡¦ç†çµæœ(true:æˆåŠŸ/false:ã‚¨ãƒ©ãƒ¼)
  *
  * @detail 
  **********************************************************************************/
@@ -884,56 +884,56 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 		struct sockaddr_in accept_sockaddr_in_result;
 		accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
 
-		//accept‚µ‚½ƒ\ƒPƒbƒg‚ªINVALID_SOCKET‚Å‚ ‚éê‡
+		//acceptã—ãŸã‚½ã‚±ãƒƒãƒˆãŒINVALID_SOCKETã§ã‚ã‚‹å ´åˆ
 		if (accept_client_socket_result == INVALID_SOCKET) {
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(‚±‚ÌŠÖ”‚ğg—p‚·‚é‘O‚É AWSAStartup ŒÄ‚Ño‚µ‚ª³í‚És‚í‚ê‚é•K—v‚ª‚ ‚è‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(ã“ã®é–¢æ•°ã‚’ä½¿ç”¨ã™ã‚‹å‰ã« ã€WSAStartup å‘¼ã³å‡ºã—ãŒæ­£å¸¸ã«è¡Œã‚ã‚Œã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚)");
 				break;
 
 			case WSAECONNRESET:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAECONNRESET(’…MÚ‘±‚ª¦‚³‚ê‚Ü‚µ‚½‚ªA‚»‚ÌŒãAŒÄ‚Ño‚µ‚ğó‚¯“ü‚ê‚é‘O‚ÉƒŠƒ‚[ƒg ƒsƒA‚É‚æ‚Á‚ÄI—¹‚³‚ê‚Ü‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAECONNRESET(ç€ä¿¡æ¥ç¶šãŒç¤ºã•ã‚Œã¾ã—ãŸãŒã€ãã®å¾Œã€å‘¼ã³å‡ºã—ã‚’å—ã‘å…¥ã‚Œã‚‹å‰ã«ãƒªãƒ¢ãƒ¼ãƒˆ ãƒ”ã‚¢ã«ã‚ˆã£ã¦çµ‚äº†ã•ã‚Œã¾ã—ãŸã€‚)");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(addrlen ƒpƒ‰ƒ[ƒ^[‚ª¬‚³‚·‚¬‚é‚©Aaddr ‚ªƒ†[ƒU[ ƒAƒhƒŒƒX‹óŠÔ‚Ì—LŒø‚È•”•ª‚Å‚Í‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(addrlen ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒå°ã•ã™ãã‚‹ã‹ã€addr ãŒãƒ¦ãƒ¼ã‚¶ãƒ¼ ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ã®æœ‰åŠ¹ãªéƒ¨åˆ†ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 
 			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall ‚ğg—p‚µ‚ÄAƒuƒƒbƒN‚µ‚Ä‚¢‚é Windows ƒ\ƒPƒbƒg 1.1 ŒÄ‚Ño‚µ‚ªæ‚èÁ‚³‚ê‚Ü‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall ã‚’ä½¿ç”¨ã—ã¦ã€ãƒ–ãƒ­ãƒƒã‚¯ã—ã¦ã„ã‚‹ Windows ã‚½ã‚±ãƒƒãƒˆ 1.1 å‘¼ã³å‡ºã—ãŒå–ã‚Šæ¶ˆã•ã‚Œã¾ã—ãŸã€‚)");
 				break;
 
 			case WSAEINVAL:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(ƒŠƒbƒXƒ“ŠÖ”‚ÍAó‚¯“ü‚ê‚é‘O‚ÉŒÄ‚Ño‚³‚ê‚Ü‚¹‚ñ‚Å‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(ãƒªãƒƒã‚¹ãƒ³é–¢æ•°ã¯ã€å—ã‘å…¥ã‚Œã‚‹å‰ã«å‘¼ã³å‡ºã•ã‚Œã¾ã›ã‚“ã§ã—ãŸã€‚)");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ƒuƒƒbƒN‚µ‚Ä‚¢‚é Windows Sockets 1.1 ŒÄ‚Ño‚µ‚ªis’†‚Å‚ ‚é‚©AƒT[ƒrƒX ƒvƒƒoƒCƒ_[‚ªƒR[ƒ‹ƒoƒbƒNŠÖ”‚ğˆ—‚µ‚Ä‚¢‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ãƒ–ãƒ­ãƒƒã‚¯ã—ã¦ã„ã‚‹ Windows Sockets 1.1 å‘¼ã³å‡ºã—ãŒé€²è¡Œä¸­ã§ã‚ã‚‹ã‹ã€ã‚µãƒ¼ãƒ“ã‚¹ ãƒ—ãƒ­ãƒã‚¤ãƒ€ãƒ¼ãŒã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°ã‚’å‡¦ç†ã—ã¦ã„ã¾ã™ã€‚)");
 				break;
 
 			case EMFILE:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:EMFILE(ƒLƒ…[‚ÍA ó‚¯“ü‚ê‚é ƒGƒ“ƒgƒŠ‚É‹ó‚«‚ª‚È‚­Ag—p‰Â”\‚È‹Lqq‚ª‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:EMFILE(ã‚­ãƒ¥ãƒ¼ã¯ã€ å—ã‘å…¥ã‚Œã‚‹ ã‚¨ãƒ³ãƒˆãƒªã«ç©ºããŒãªãã€ä½¿ç”¨å¯èƒ½ãªè¨˜è¿°å­ãŒã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 
 			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENETDOWN(ƒlƒbƒgƒ[ƒN ƒTƒuƒVƒXƒeƒ€‚ª¸”s‚µ‚Ü‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENETDOWN(ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ ã‚µãƒ–ã‚·ã‚¹ãƒ†ãƒ ãŒå¤±æ•—ã—ã¾ã—ãŸã€‚)");
 				break;
 
 			case WSAENOBUFS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOBUFS(ƒoƒbƒtƒ@[‚É‹ó‚«—Ìˆæ‚ª‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOBUFS(ãƒãƒƒãƒ•ã‚¡ãƒ¼ã«ç©ºãé ˜åŸŸãŒã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(‹Lqq‚Íƒ\ƒPƒbƒg‚Å‚Í‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(è¨˜è¿°å­ã¯ã‚½ã‚±ãƒƒãƒˆã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 
 			case WSAEOPNOTSUPP:
-				THROW_APP_EXCEPTION("CASE:WSAEOPNOTSUPP(QÆ‚³‚ê‚éƒ\ƒPƒbƒg‚ÍAÚ‘±wŒüƒT[ƒrƒX‚ğƒTƒ|[ƒg‚·‚éŒ^‚Å‚Í‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("CASE:WSAEOPNOTSUPP(å‚ç…§ã•ã‚Œã‚‹ã‚½ã‚±ãƒƒãƒˆã¯ã€æ¥ç¶šæŒ‡å‘ã‚µãƒ¼ãƒ“ã‚¹ã‚’ã‚µãƒãƒ¼ãƒˆã™ã‚‹å‹ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 
 			case WSAEWOULDBLOCK:
-				THROW_APP_EXCEPTION("CASE:WSAEWOULDBLOCK(ƒ\ƒPƒbƒg‚Í”ñƒuƒƒbƒLƒ“ƒO‚Æ‚µ‚Äƒ}[ƒN‚³‚êAó‚¯“ü‚ê‚ç‚ê‚éÚ‘±‚Í‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("CASE:WSAEWOULDBLOCK(ã‚½ã‚±ãƒƒãƒˆã¯éãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°ã¨ã—ã¦ãƒãƒ¼ã‚¯ã•ã‚Œã€å—ã‘å…¥ã‚Œã‚‰ã‚Œã‚‹æ¥ç¶šã¯ã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 
 			default:
@@ -942,7 +942,7 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 			}
 		}
 		else {
-			//accept‚ª¬Œ÷‚µ‚½ê‡
+			//acceptãŒæˆåŠŸã—ãŸå ´åˆ
 			return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result);
 		}
 	}
@@ -964,27 +964,27 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSANOTINITIALISED(‚±‚ÌŠÖ”‚ğg—p‚·‚é‘O‚ÉA WSAStartup ŒÄ‚Ño‚µ‚ª³í‚És‚í‚ê‚é•K—v‚ª‚ ‚è‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSANOTINITIALISED(ã“ã®é–¢æ•°ã‚’ä½¿ç”¨ã™ã‚‹å‰ã«ã€ WSAStartup å‘¼ã³å‡ºã—ãŒæ­£å¸¸ã«è¡Œã‚ã‚Œã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚)");
 				break;
 
 			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETDOWN(ƒlƒbƒgƒ[ƒN ƒTƒuƒVƒXƒeƒ€‚ª¸”s‚µ‚Ü‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETDOWN(ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ ã‚µãƒ–ã‚·ã‚¹ãƒ†ãƒ ãŒå¤±æ•—ã—ã¾ã—ãŸã€‚)");
 				break;
 
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTSOCK(‹Lqq‚Íƒ\ƒPƒbƒg‚Å‚Í‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTSOCK(è¨˜è¿°å­ã¯ã‚½ã‚±ãƒƒãƒˆã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINPROGRESS(ƒuƒƒbƒN‚µ‚Ä‚¢‚é Windows Sockets 1.1 ŒÄ‚Ño‚µ‚ªis’†‚Å‚ ‚é‚©AƒT[ƒrƒX ƒvƒƒoƒCƒ_[‚ªƒR[ƒ‹ƒoƒbƒNŠÖ”‚ğˆ—‚µ‚Ä‚¢‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINPROGRESS(ãƒ–ãƒ­ãƒƒã‚¯ã—ã¦ã„ã‚‹ Windows Sockets 1.1 å‘¼ã³å‡ºã—ãŒé€²è¡Œä¸­ã§ã‚ã‚‹ã‹ã€ã‚µãƒ¼ãƒ“ã‚¹ ãƒ—ãƒ­ãƒã‚¤ãƒ€ãƒ¼ãŒã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°ã‚’å‡¦ç†ã—ã¦ã„ã¾ã™ã€‚)");
 				break;
 
 			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINTR((ƒuƒƒbƒLƒ“ƒO) Windows Socket 1.1 ŒÄ‚Ño‚µ‚Í AWSACancelBlockingCall ‚ğ‰î‚µ‚Äæ‚èÁ‚³‚ê‚Ü‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINTR((ãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°) Windows Socket 1.1 å‘¼ã³å‡ºã—ã¯ ã€WSACancelBlockingCall ã‚’ä»‹ã—ã¦å–ã‚Šæ¶ˆã•ã‚Œã¾ã—ãŸã€‚)");
 				break;
 
 			case WSAEWOULDBLOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEWOULDBLOCK(ƒ\ƒPƒbƒg‚Í”ñƒuƒƒbƒLƒ“ƒO‚Æ‚µ‚Äƒ}[ƒN‚³‚ê‚Ä‚¢‚Ü‚·‚ªAc—¯\‘¢‚Ìl_onoff ƒƒ“ƒo[‚Í 0 ˆÈŠO‚Éİ’è‚³‚êAc—¯\‘¢‚Ìl_linger ƒƒ“ƒo[‚Í 0 ˆÈŠO‚Ìƒ^ƒCƒ€ƒAƒEƒg’l‚Éİ’è‚³‚ê‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEWOULDBLOCK(ã‚½ã‚±ãƒƒãƒˆã¯éãƒ–ãƒ­ãƒƒã‚­ãƒ³ã‚°ã¨ã—ã¦ãƒãƒ¼ã‚¯ã•ã‚Œã¦ã„ã¾ã™ãŒã€æ®‹ç•™æ§‹é€ ã®l_onoff ãƒ¡ãƒ³ãƒãƒ¼ã¯ 0 ä»¥å¤–ã«è¨­å®šã•ã‚Œã€æ®‹ç•™æ§‹é€ ã®l_linger ãƒ¡ãƒ³ãƒãƒ¼ã¯ 0 ä»¥å¤–ã®ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆå€¤ã«è¨­å®šã•ã‚Œã¾ã™ã€‚)");
 				break;
 
 			default:
@@ -1008,12 +1008,12 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 
 bool SocketHandler::generate_tcp_listen_socket()
 {
-	//ƒpƒ‰ƒ[ƒ^İ’è
+	//ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¨­å®š
 	if (!setting_tcp_listen_socket_param(INIT_FILE_PASS)) {
 		return false;
 	}
 
-	//–¼‘O‰ğŒˆ
+	//åå‰è§£æ±º
 	try
 	{
 		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_port).c_str(), &m_param_tcp, &m_result_tcp);
@@ -1021,45 +1021,45 @@ bool SocketHandler::generate_tcp_listen_socket()
 			switch (get_addr_result_msg)
 			{
 			case EAI_AGAIN:
-				THROW_APP_EXCEPTION("–¼‘O‰ğŒˆ‚Ìˆê“I‚ÈƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½B");
+				THROW_APP_EXCEPTION("åå‰è§£æ±ºã®ä¸€æ™‚çš„ãªã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸã€‚");
 				break;
 
 			case EAI_BADFLAGS:
-				THROW_APP_EXCEPTION("pHints ƒpƒ‰ƒ[ƒ^[‚Ìai_flags ƒƒ“ƒo[‚É–³Œø‚È’l‚ªw’è‚³‚ê‚Ü‚µ‚½B");
+				THROW_APP_EXCEPTION("pHints ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã®ai_flags ãƒ¡ãƒ³ãƒãƒ¼ã«ç„¡åŠ¹ãªå€¤ãŒæŒ‡å®šã•ã‚Œã¾ã—ãŸã€‚");
 				break;
 			
 			case EAI_FAIL:
-				THROW_APP_EXCEPTION("–¼‘O‰ğŒˆ‚Å‰ñ•œ•s‰Â”\‚ÈƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½B");
+				THROW_APP_EXCEPTION("åå‰è§£æ±ºã§å›å¾©ä¸å¯èƒ½ãªã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸã€‚");
 				break;
 
 			case EAI_FAMILY:
-				THROW_APP_EXCEPTION("pHints ƒpƒ‰ƒ[ƒ^[‚Ìai_familyƒƒ“ƒo[‚ÍƒTƒ|[ƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB");
+				THROW_APP_EXCEPTION("pHints ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã®ai_familyãƒ¡ãƒ³ãƒãƒ¼ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚");
 				break;
 
 			case EAI_MEMORY:
-				THROW_APP_EXCEPTION("ƒƒ‚ƒŠŠ„‚è“–‚ÄƒGƒ‰[‚ª”­¶‚µ‚Ü‚µ‚½B");
+				THROW_APP_EXCEPTION("ãƒ¡ãƒ¢ãƒªå‰²ã‚Šå½“ã¦ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ã¾ã—ãŸã€‚");
 				break;
 
 			case EAI_NONAME:
-				THROW_APP_EXCEPTION("w’è‚³‚ê‚½ƒpƒ‰ƒ[ƒ^[‚Ì–¼‘O‚ª‰ğŒˆ‚³‚ê‚È‚¢‚©A pNodeName ƒpƒ‰ƒ[ƒ^[‚Æ pServiceName ƒpƒ‰ƒ[ƒ^[‚ªw’è‚³‚ê‚Ü‚¹‚ñ‚Å‚µ‚½B");
+				THROW_APP_EXCEPTION("æŒ‡å®šã•ã‚ŒãŸãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã®åå‰ãŒè§£æ±ºã•ã‚Œãªã„ã‹ã€ pNodeName ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã¨ pServiceName ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒæŒ‡å®šã•ã‚Œã¾ã›ã‚“ã§ã—ãŸã€‚");
 				break;
 
 			case EAI_SERVICE:
-				THROW_APP_EXCEPTION("pServiceName ƒpƒ‰ƒ[ƒ^[‚ÍApHints ƒpƒ‰ƒ[ƒ^[‚Ìw’è‚µ‚½ai_socktype ƒƒ“ƒo[‚Å‚ÍƒTƒ|[ƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB");
+				THROW_APP_EXCEPTION("pServiceName ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã¯ã€pHints ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã®æŒ‡å®šã—ãŸai_socktype ãƒ¡ãƒ³ãƒãƒ¼ã§ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚");
 				break;
 
 			case EAI_SOCKTYPE:
-				THROW_APP_EXCEPTION("pHints ƒpƒ‰ƒ[ƒ^[‚Ìai_socktype ƒƒ“ƒo[‚ÍƒTƒ|[ƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB");
+				THROW_APP_EXCEPTION("pHints ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ã®ai_socktype ãƒ¡ãƒ³ãƒãƒ¼ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ã€‚");
 				break;
 
 			default:
-				THROW_APP_EXCEPTION("‰½‚ç‚©‚ÌŒ´ˆö‚Ågetaddrinfo‚ÌŒ‹‰Ê‚ª³í‚Å‚Í‚ ‚è‚Ü‚¹‚ñB");
+				THROW_APP_EXCEPTION("ä½•ã‚‰ã‹ã®åŸå› ã§getaddrinfoã®çµæœãŒæ­£å¸¸ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚");
 				break;
 			}
 		}
 
 		//std::cout << StringFormat("[%s][INFO]Creating TCP listening socket...", ServerTime::get_current_time());
-		//ƒŠƒbƒXƒ“ƒ\ƒPƒbƒg‚Ì¶¬
+		//ãƒªãƒƒã‚¹ãƒ³ã‚½ã‚±ãƒƒãƒˆã®ç”Ÿæˆ
 		_tcp_listen_socket = socket(m_result_tcp -> ai_family, m_result_tcp -> ai_socktype, m_result_tcp->ai_protocol);
 		if (_tcp_listen_socket == INVALID_SOCKET) {
 			THROW_APP_EXCEPTION("The generated listening socket for message is not valid.");
@@ -1094,39 +1094,39 @@ bool SocketHandler::trans_flags(const std::string& flag_str, struct addrinfo* pa
 	if (std::equal(flag_str.begin(), flag_str.end(), "AI_PASSIVE")) {
 		param->ai_flags = AI_PASSIVE;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_flags‚ÍAI_PASSIVE‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_flagsã¯AI_PASSIVEã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_CANONNAME")) {
 		param->ai_flags = AI_CANONNAME;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_flags‚ÍAI_CANONNAME‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_flagsã¯AI_CANONNAMEã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_NUMERICHOST")) {
 		param->ai_flags = AI_NUMERICHOST;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_flags‚ÍAI_NUMERICHOST‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_flagsã¯AI_NUMERICHOSTã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_ALL")) {
 		param->ai_flags = AI_ALL;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_flags‚ÍAI_ALL‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_flagsã¯AI_ALLã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_ADDRCONFIG")) {
 		param->ai_flags = AI_ADDRCONFIG;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_flags‚ÍAI_ADDRCONFIG‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_flagsã¯AI_ADDRCONFIGã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG	
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_V4MAPPED")) {
 		param->ai_flags = AI_V4MAPPED;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_flags‚ÍAI_V4MAPPED‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_flagsã¯AI_V4MAPPEDã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else {
@@ -1141,24 +1141,24 @@ bool SocketHandler::trans_family(const std::string& family_str, addrinfo* param)
 	if (std::equal(family_str.begin(), family_str.end(), "AF_INET")) {
 		param->ai_family = AF_INET;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_family‚ÍAF_INET(ƒAƒhƒŒƒXƒtƒ@ƒ~ƒŠ‚Íipv4‚Éİ’è‚³‚ê‚Ü‚µ‚½)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_familyã¯AF_INET(ã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ•ã‚¡ãƒŸãƒªã¯ipv4ã«è¨­å®šã•ã‚Œã¾ã—ãŸ)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 
 	}
-	//’ÊMƒvƒƒgƒRƒ‹‚ğipv6‚Éİ’è‚·‚éê‡
+	//é€šä¿¡ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ipv6ã«è¨­å®šã™ã‚‹å ´åˆ
 	else if (std::equal(family_str.begin(), family_str.end(), "AF_INET6")) {
 		param->ai_family = AF_INET6;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_family‚ÍAF_INET6(ƒAƒhƒŒƒXƒtƒ@ƒ~ƒŠ‚Íipv6‚Éİ’è‚³‚ê‚Ü‚µ‚½)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_familyã¯AF_INET6(ã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ•ã‚¡ãƒŸãƒªã¯ipv6ã«è¨­å®šã•ã‚Œã¾ã—ãŸ)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 
 	}
-	//’ÊMƒvƒƒgƒRƒ‹‚ªaf_unspec‚Éİ’è‚³‚ê‚½ê‡(ipv4‚Æipv6‚É‘Î‰)
-	//’ÊMƒvƒƒgƒRƒ‹‚ª‚Ç‚¿‚ç‚É‚àİ’è‚µ‚Ä‚¢‚È‚¢ê‡‹y‚Ñ“Ç‚İæ‚ê‚È‚©‚Á‚½ê‡(af_unspec‚Éİ’è)
+	//é€šä¿¡ãƒ—ãƒ­ãƒˆã‚³ãƒ«ãŒaf_unspecã«è¨­å®šã•ã‚ŒãŸå ´åˆ(ipv4ã¨ipv6ã«å¯¾å¿œ)
+	//é€šä¿¡ãƒ—ãƒ­ãƒˆã‚³ãƒ«ãŒã©ã¡ã‚‰ã«ã‚‚è¨­å®šã—ã¦ã„ãªã„å ´åˆåŠã³èª­ã¿å–ã‚Œãªã‹ã£ãŸå ´åˆ(af_unspecã«è¨­å®š)
 	else if (std::equal(family_str.begin(), family_str.end(), "AF_UNSPEC")) {
 		param->ai_family = AF_UNSPEC;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_family‚ÍAF_UNSPEC(ƒAƒhƒŒƒXƒtƒ@ƒ~ƒŠ‚ÍAF=UNSPEC‚Éİ’è‚³‚ê‚Ü‚µ‚½)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_familyã¯AF_UNSPEC(ã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ•ã‚¡ãƒŸãƒªã¯AF=UNSPECã«è¨­å®šã•ã‚Œã¾ã—ãŸ)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else {
@@ -1173,33 +1173,33 @@ bool SocketHandler::trans_socktype(const std::string& socktype_str, addrinfo* pa
 	if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_STREAM")) {
 		param->ai_socktype = SOCK_STREAM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_socktype‚ÍSOCK_STREAM(TCPƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_socktypeã¯SOCK_STREAM(TCPãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG		
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_DGRAM")) {
 		param->ai_socktype = SOCK_DGRAM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_socktype‚Ísock_dgram(UDPƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_socktypeã¯sock_dgram(UDPãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_RAW")) {
 		param->ai_socktype = SOCK_RAW;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_socktype‚Ísock_dgram(UDPƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_socktypeã¯sock_dgram(UDPãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_RDM")) {
 		param->ai_socktype = SOCK_RDM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_socktype‚ÍSOCK_RDM(RDMƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_socktypeã¯SOCK_RDM(RDMãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_SEQPACKET")) {
 		param->ai_socktype = SOCK_SEQPACKET;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_socktype‚ÍSOCK_SEQPACKET(SEQPACKETƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_socktypeã¯SOCK_SEQPACKET(SEQPACKETãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 
 #endif // DEBUG
 	}
@@ -1215,22 +1215,22 @@ bool SocketHandler::trans_protocol(const std::string& protocol_str, addrinfo* pa
 	if ((std::equal(protocol_str.begin(), protocol_str.end(), "IPPROTO_TCP")) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_STREAM)) {
 		param->ai_protocol = IPPROTO_TCP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚ÍIPPROTO_TCP(tcpƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯IPPROTO_TCP(tcpãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 
-	//ƒvƒƒgƒRƒ‹‚ğudp‚Éİ’è‚·‚éê‡
+	//ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’udpã«è¨­å®šã™ã‚‹å ´åˆ
 	else if ((std::equal(protocol_str.begin(), protocol_str.end(), "IPPROTO_UDP")) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_DGRAM)) {
 		param->ai_protocol = IPPROTO_UDP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚Íipproto_tcp(tcpƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯ipproto_tcp(tcpãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
-	//ƒvƒƒgƒRƒ‹‚ğpgm‚Éİ’è‚·‚éê‡
+	//ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’pgmã«è¨­å®šã™ã‚‹å ´åˆ
 	else if ((std::equal(protocol_str.begin(), protocol_str.end(), "IPPROTO_PGM")) && param->ai_family == AF_INET && param->ai_socktype == SOCK_RDM) {
 		param->ai_protocol = IPPROTO_PGM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚Íipproto_pgm(pgmƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯ipproto_pgm(pgmãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	else {
@@ -1243,48 +1243,48 @@ bool SocketHandler::trans_protocol(const std::string& protocol_str, addrinfo* pa
 bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 {
 
-	//protocol = ICMP‚Ìê‡
+	//protocol = ICMPã®å ´åˆ
 	if ((protocol_int == 1) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6 || param->ai_family == AF_UNSPEC) && (param->ai_socktype == SOCK_RAW || param->ai_family == 0))) {
 		param->ai_protocol = IPPROTO_ICMP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚ÍIPPROTO_ICMP(ICMPƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯IPPROTO_ICMP(ICMPãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 
-	//protocol = IGMP‚Ìê‡
+	//protocol = IGMPã®å ´åˆ
 	if ((protocol_int == 2) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6 || param->ai_family == AF_UNSPEC) && (param->ai_socktype == SOCK_RAW || param->ai_family == 0))) {
 		param->ai_protocol = IPPROTO_IGMP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚ÍIPPROTO_ICMP(ICMPƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯IPPROTO_ICMP(ICMPãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 	if ((protocol_int == 6) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_STREAM)) {
 		param->ai_protocol = IPPROTO_TCP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚ÍIPPROTO_TCP(tcpƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯IPPROTO_TCP(tcpãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 
-	//ƒvƒƒgƒRƒ‹‚ğudp‚Éİ’è‚·‚éê‡
+	//ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’udpã«è¨­å®šã™ã‚‹å ´åˆ
 	else if ((protocol_int == 17) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_DGRAM)) {
 		param->ai_protocol = IPPROTO_UDP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚Íipproto_tcp(tcpƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯ipproto_tcp(tcpãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
 
-	//protocol = RFCOMM‚Ìê‡
+	//protocol = RFCOMMã®å ´åˆ
 	else if ((protocol_int == 58) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6 || param->ai_family == AF_UNSPEC) && (param->ai_socktype == SOCK_RAW || param->ai_family == 0))) {
 		param->ai_protocol = IPPROTO_ICMPV6;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚ÍIPPROTO_ICMP(ICMPƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯IPPROTO_ICMP(ICMPãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG
 	}
-	//ƒvƒƒgƒRƒ‹‚ğpgm‚Éİ’è‚·‚éê‡
+	//ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’pgmã«è¨­å®šã™ã‚‹å ´åˆ
 	else if ((protocol_int == 113) && param->ai_family == AF_INET && param->ai_socktype == SOCK_RDM) {
 		param->ai_protocol = IPPROTO_PGM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramFai_protocol‚Íipproto_pgm(pgmƒvƒƒgƒRƒ‹‚ğg—p)‚Éİ’è‚³‚ê‚Ü‚µ‚½B" << std::endl;
+		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)paramï¼šai_protocolã¯ipproto_pgm(pgmãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’ä½¿ç”¨)ã«è¨­å®šã•ã‚Œã¾ã—ãŸã€‚" << std::endl;
 #endif // DEBUG	
 	}
 	else if (protocol_int == 0) {
@@ -1309,36 +1309,36 @@ int SocketHandler::monitor_socket_descriptor(const std::vector<ClientHandler::Cl
 
 		switch (select_result)
 		{
-			//fd_set\‘¢‘Ì‚ÉŠÜ‚Ü‚ê‚Ä‚¢‚éƒ\ƒPƒbƒg ƒnƒ“ƒhƒ‹‚Ì‡Œv”AŠúŒÀØ‚ê‚Ìê‡
+			//fd_setæ§‹é€ ä½“ã«å«ã¾ã‚Œã¦ã„ã‚‹ã‚½ã‚±ãƒƒãƒˆ ãƒãƒ³ãƒ‰ãƒ«ã®åˆè¨ˆæ•°ã€æœŸé™åˆ‡ã‚Œã®å ´åˆ
 		case 0:
-			//THROW_APP_EXCEPTION("CASE:SELECT FUNCTION ERROR(fd_set\‘¢‘Ì‚ÉŠÜ‚Ü‚ê‚Ä‚¢‚éƒ\ƒPƒbƒg ƒnƒ“ƒhƒ‹‚Ì‡Œv”AŠúŒÀØ‚ê‚Å‚·B)");
+			//THROW_APP_EXCEPTION("CASE:SELECT FUNCTION ERROR(fd_setæ§‹é€ ä½“ã«å«ã¾ã‚Œã¦ã„ã‚‹ã‚½ã‚±ãƒƒãƒˆ ãƒãƒ³ãƒ‰ãƒ«ã®åˆè¨ˆæ•°ã€æœŸé™åˆ‡ã‚Œã§ã™ã€‚)");
 			return SELECT_TIME_OUT;
 			break;
 
-			//ƒGƒ‰[‚ª”­¶‚µ‚½ê‡
+			//ã‚¨ãƒ©ãƒ¼ãŒç™ºç”Ÿã—ãŸå ´åˆ
 		case SOCKET_ERROR:
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(‚±‚ÌŠÖ”‚ğg—p‚·‚é‘O‚É AWSAStartup ŒÄ‚Ño‚µ‚ª¬Œ÷‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(ã“ã®é–¢æ•°ã‚’ä½¿ç”¨ã™ã‚‹å‰ã« ã€WSAStartup å‘¼ã³å‡ºã—ãŒæˆåŠŸã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚)");
 				break;
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(Windows ƒ\ƒPƒbƒg‚ÌÀ‘•‚Å‚ÍA“à•”‘€ì‚É•K—v‚ÈƒŠƒ\[ƒX‚ğŠ„‚è“–‚Ä‚é‚±‚Æ‚ª‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B‚Ü‚½‚ÍA readfdsA writefdsA exceptfdsA‚Ü‚½‚Í timeval ƒpƒ‰ƒ[ƒ^[‚ªƒ†[ƒU[ ƒAƒhƒŒƒX‹óŠÔ‚Ìˆê•”‚Å‚Í‚ ‚è‚Ü‚¹‚ñB)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(Windows ã‚½ã‚±ãƒƒãƒˆã®å®Ÿè£…ã§ã¯ã€å†…éƒ¨æ“ä½œã«å¿…è¦ãªãƒªã‚½ãƒ¼ã‚¹ã‚’å‰²ã‚Šå½“ã¦ã‚‹ã“ã¨ãŒã§ãã¾ã›ã‚“ã§ã—ãŸã€‚ã¾ãŸã¯ã€ readfdsã€ writefdsã€ exceptfdsã€ã¾ãŸã¯ timeval ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒãƒ¦ãƒ¼ã‚¶ãƒ¼ ã‚¢ãƒ‰ãƒ¬ã‚¹ç©ºé–“ã®ä¸€éƒ¨ã§ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚)");
 				break;
 			case ENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:ENETDOWN(ƒlƒbƒgƒ[ƒN ƒTƒuƒVƒXƒeƒ€‚ª¸”s‚µ‚Ü‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:ENETDOWN(ãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ ã‚µãƒ–ã‚·ã‚¹ãƒ†ãƒ ãŒå¤±æ•—ã—ã¾ã—ãŸã€‚)");
 				break;
 			case WSAEINVAL:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(ƒ^ƒCƒ€ƒAƒEƒg’l‚ª–³Œø‚Å‚ ‚é‚©A3 ‚Â‚Ì‹Lqqƒpƒ‰ƒ[ƒ^[‚ª‚·‚×‚Ä null ‚Å‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆå€¤ãŒç„¡åŠ¹ã§ã‚ã‚‹ã‹ã€3 ã¤ã®è¨˜è¿°å­ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼ãŒã™ã¹ã¦ null ã§ã—ãŸã€‚)");
 				break;
 			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall ‚ğg—p‚µ‚ÄAWindows ƒ\ƒPƒbƒg 1.1 ŒÄ‚Ño‚µ‚ÌƒuƒƒbƒN‚ªæ‚èÁ‚³‚ê‚Ü‚µ‚½B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall ã‚’ä½¿ç”¨ã—ã¦ã€Windows ã‚½ã‚±ãƒƒãƒˆ 1.1 å‘¼ã³å‡ºã—ã®ãƒ–ãƒ­ãƒƒã‚¯ãŒå–ã‚Šæ¶ˆã•ã‚Œã¾ã—ãŸã€‚)");
 				break;
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ƒuƒƒbƒN’†‚Ì Windows ƒ\ƒPƒbƒg 1.1 ŒÄ‚Ño‚µ‚ªis’†‚Å‚ ‚é‚©AƒT[ƒrƒX ƒvƒƒoƒCƒ_[‚ªƒR[ƒ‹ƒoƒbƒNŠÖ”‚ğˆ—‚µ‚Ä‚¢‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ãƒ–ãƒ­ãƒƒã‚¯ä¸­ã® Windows ã‚½ã‚±ãƒƒãƒˆ 1.1 å‘¼ã³å‡ºã—ãŒé€²è¡Œä¸­ã§ã‚ã‚‹ã‹ã€ã‚µãƒ¼ãƒ“ã‚¹ ãƒ—ãƒ­ãƒã‚¤ãƒ€ãƒ¼ãŒã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°ã‚’å‡¦ç†ã—ã¦ã„ã¾ã™ã€‚)");
 				break;
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(‹LqqƒZƒbƒg‚Ì 1 ‚Â‚ÉAƒ\ƒPƒbƒg‚Å‚Í‚È‚¢ƒGƒ“ƒgƒŠ‚ªŠÜ‚Ü‚ê‚Ä‚¢‚Ü‚·B)");
+				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(è¨˜è¿°å­ã‚»ãƒƒãƒˆã® 1 ã¤ã«ã€ã‚½ã‚±ãƒƒãƒˆã§ã¯ãªã„ã‚¨ãƒ³ãƒˆãƒªãŒå«ã¾ã‚Œã¦ã„ã¾ã™ã€‚)");
 				break;
 			default:
 				break;
@@ -1347,13 +1347,13 @@ int SocketHandler::monitor_socket_descriptor(const std::vector<ClientHandler::Cl
 
 
 
-			//ƒfƒBƒXƒNƒŠƒvƒVƒ‡ƒ“‚É•Ï‰»‚ª‹N‚±‚Á‚½ê‡
+			//ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚·ãƒ§ãƒ³ã«å¤‰åŒ–ãŒèµ·ã“ã£ãŸå ´åˆ
 		default:
 			if (FD_ISSET(_tcp_listen_socket, &m_fds)) {
 				return REQUEST_ACCEPT_CLIENT_DETECTION;
 			}
 			else {
-				//Ú‘±’†‚ÌƒNƒ‰ƒCƒAƒ“ƒgƒŠƒXƒg‚Ì‚Ç‚ÌƒNƒ‰ƒCƒAƒ“ƒg‚©‚ç‚Ì’Ê’m‚©‚ğ”»’è‚·‚é
+				//æ¥ç¶šä¸­ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãƒªã‚¹ãƒˆã®ã©ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã‹ã‚‰ã®é€šçŸ¥ã‹ã‚’åˆ¤å®šã™ã‚‹
 				for (int detection_client_num = 0; detection_client_num < client_list.size(); detection_client_num++) {
 					if (client_list[detection_client_num].get_client_socket() != INVALID_SOCKET && FD_ISSET(client_list[detection_client_num].get_client_socket(), &m_fds)) {
 						return detection_client_num;
@@ -1376,7 +1376,7 @@ bool SocketHandler::open_tcp_listen_socket()
 {
 	try
 	{
-		//tcp_listen_socket‚ÌƒI[ƒvƒ“‚É¸”s‚µ‚½ê‡
+		//tcp_listen_socketã®ã‚ªãƒ¼ãƒ—ãƒ³ã«å¤±æ•—ã—ãŸå ´åˆ
 		if (!generate_tcp_listen_socket()) {
 			THROW_APP_EXCEPTION("Failed to generate TCP listen socket for message.");
 			return false;
@@ -1412,8 +1412,8 @@ bool SocketHandler::open_tcp_listen_socket()
 
 /**********************************************************************************
  * @fn	  check_client_socket(SOCKET socket)
- * socket‚ª•Â‚¶‚Ä‚¢‚é‚©Šm”F‚·‚éB
- * @brief socket‚ª•Â‚¶‚Ä‚¢‚é‚©Šm”F‚·‚éB
+ * socketãŒé–‰ã˜ã¦ã„ã‚‹ã‹ç¢ºèªã™ã‚‹ã€‚
+ * @brief socketãŒé–‰ã˜ã¦ã„ã‚‹ã‹ç¢ºèªã™ã‚‹ã€‚
  * @param [in] SOCKET socket
  * @return
  **********************************************************************************/

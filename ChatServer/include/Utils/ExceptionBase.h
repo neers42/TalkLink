@@ -1,4 +1,4 @@
-#ifndef EXCEPTIONBASE_H_
+ï»¿#ifndef EXCEPTIONBASE_H_
 #define EXCEPTIONBASE_H_
 
 
@@ -7,16 +7,16 @@
 #include <iostream>
 namespace exception
 {
-    /* ƒGƒ‰[î•ñ */
+    /* ã‚¨ãƒ©ãƒ¼æƒ…å ± */
     struct ErrorInfo
     {
-        /* ƒtƒ@ƒCƒ‹ƒpƒX */
+        /* ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ */
         std::string file_path;
-        /* ŠÖ”–¼ */
+        /* é–¢æ•°å */
         std::string function_name;
-        /* ƒtƒ@ƒCƒ‹s”Ô† */
+        /* ãƒ•ã‚¡ã‚¤ãƒ«è¡Œç•ªå· */
         int line_number;
-        /* ƒRƒ“ƒXƒgƒ‰ƒNƒ^ */
+        /* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
         ErrorInfo(const std::string& file, const std::string& func, const int line)
             : file_path(file)
             , function_name(func)
@@ -25,41 +25,41 @@ namespace exception
             /* Nothing to do */
         }
     };
-    /* Exception BaseƒNƒ‰ƒXéŒ¾ */
+    /* Exception Baseã‚¯ãƒ©ã‚¹å®£è¨€ */
     class ExceptionBase : public std::exception
     {
     public:
-        /* ƒRƒ“ƒXƒgƒ‰ƒNƒ^ */
+        /* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
         ExceptionBase(const std::string& message);
-        /* ƒRƒ“ƒXƒgƒ‰ƒNƒ^ */
+        /* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
         ExceptionBase(const std::string& message, const std::string& file, const std::string& func, const int line);
-        /* ƒfƒXƒgƒ‰ƒNƒ^ */
+        /* ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ */
         virtual ~ExceptionBase();
-        /* ƒtƒ@ƒCƒ‹ƒpƒX‚ğæ“¾ */
+        /* ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ã‚’å–å¾— */
         const std::string& GetFilePath();
-        /* ŠÖ”–¼‚ğæ“¾ */
+        /* é–¢æ•°åã‚’å–å¾— */
         const std::string& GetFunctionName();
-        /* ƒtƒ@ƒCƒ‹s”Ô†‚ğæ“¾ */
+        /* ãƒ•ã‚¡ã‚¤ãƒ«è¡Œç•ªå·ã‚’å–å¾— */
         int GetLineNumber();
-        /* ƒGƒ‰[î•ñ‚ğæ“¾ */
+        /* ã‚¨ãƒ©ãƒ¼æƒ…å ±ã‚’å–å¾— */
         const ErrorInfo& GetErrorInfo();
-        /* ƒGƒ‰[—vˆö‚ğæ“¾ */
+        /* ã‚¨ãƒ©ãƒ¼è¦å› ã‚’å–å¾— */
         virtual char const* what() const noexcept override;
 
         std::string const what_for_str() const;
 
     protected:
-        /* ƒGƒ‰[ƒƒbƒZ[ƒW */
+        /* ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ */
         std::string m_Message;
-        /* ƒtƒ@ƒCƒ‹ƒpƒX */
+        /* ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ */
         std::string m_FilePath;
-        /* ŠÖ”–¼ */
+        /* é–¢æ•°å */
         std::string m_FunctionName;
-        /* ƒtƒ@ƒCƒ‹s”Ô† */
+        /* ãƒ•ã‚¡ã‚¤ãƒ«è¡Œç•ªå· */
         int m_LineNumber;
-        /* ƒGƒ‰[î•ñ */
+        /* ã‚¨ãƒ©ãƒ¼æƒ…å ± */
         ErrorInfo m_ErrorInfo;
-        /* ƒGƒ‰[î•ñ—L–³ */
+        /* ã‚¨ãƒ©ãƒ¼æƒ…å ±æœ‰ç„¡ */
         bool m_IsErrorInfoExists;
     };
 }

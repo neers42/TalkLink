@@ -1,4 +1,4 @@
-#include "BaseMessage.h"
+﻿#include "BaseMessage.h"
 
 BaseMessage::BaseMessage()
 	:_content_type{ ContentType::TEXT }, _message_type{""}, _time_stamp{ServerTime::get_current_time()}, _message_id{""}
@@ -117,7 +117,7 @@ BaseMessage::ContentType BaseMessage::exchange_content_type_from_int(int value)
 
 bool BaseMessage::is_valid_mesasge_type(const std::string& mt)
 {
-	//Messagge_type��3byte�ł͂Ȃ��ꍇ
+	//Messagge_typeが3byteではない場合
 	if (mt.size() != 3) {
 		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Message Type is invalid. Message Type byte size : %d", mt.size()));
 		return false;

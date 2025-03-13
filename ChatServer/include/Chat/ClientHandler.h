@@ -1,4 +1,4 @@
-#ifndef CLIENT_HANDLER_H_
+ï»¿#ifndef CLIENT_HANDLER_H_
 #define CLIENT_HANDLER_H_
 
 #include <iostream>
@@ -27,20 +27,20 @@ private:
 	class Client
 	{
 
-		//Client private•Ï”
+		//Client privateå¤‰æ•°
 	private:
-		std::string _id;	//ƒNƒ‰ƒCƒAƒ“ƒgID
-		std::string _name;	//ƒNƒ‰ƒCƒAƒ“ƒgƒl[ƒ€
-		std::string _mail_address;	//ƒNƒ‰ƒCƒAƒ“ƒg‚Ìƒ[ƒ‹ƒAƒhƒŒƒX
-		SOCKET _socket;		//ƒNƒ‰ƒCƒAƒ“ƒg‚Ìƒ\ƒPƒbƒg
-		struct sockaddr_in _sockaddr_in;	//ƒNƒ‰ƒCƒAƒ“ƒg‚Ìsockaddr_inî•ñ
+		std::string _id;	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆID
+		std::string _name;	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãƒãƒ¼ãƒ 
+		std::string _mail_address;	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®ãƒ¡ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+		SOCKET _socket;		//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®ã‚½ã‚±ãƒƒãƒˆ
+		struct sockaddr_in _sockaddr_in;	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®sockaddr_inæƒ…å ±
 		socklen_t _socket_address_in_length = sizeof(this->_sockaddr_in);
-		std::string _ipv4_address = "";		//ƒNƒ‰ƒCƒAƒ“ƒg‚Ì’[––ipv4ƒAƒhƒŒƒX
-		std::string _password = "";			//ƒNƒ‰ƒCƒAƒ“ƒg‚ÌƒpƒXƒ[ƒh
-		firebase::auth::Auth* _firebase_auth;	//ƒNƒ‰ƒCƒAƒ“ƒg‚Ì”FØî•ñ
-		int _heart_beat_count;		//ƒNƒ‰ƒCƒAƒ“ƒg‚Ìƒn[ƒgƒr[ƒg‰ñ”
-		bool _auth_status = false;	//ƒNƒ‰ƒCƒAƒ“ƒg‚Ì”FØó‘Ô
-		WOLFSSL* _ssl;				//ƒNƒ‰ƒCƒAƒ“ƒg‚Ìƒ\ƒPƒbƒg‚ÉƒAƒ^ƒbƒ`‚³‚ê‚½sslƒIƒuƒWƒFƒNƒg
+		std::string _ipv4_address = "";		//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®ç«¯æœ«ipv4ã‚¢ãƒ‰ãƒ¬ã‚¹
+		std::string _password = "";			//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰
+		firebase::auth::Auth* _firebase_auth;	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®èªè¨¼æƒ…å ±
+		int _heart_beat_count;		//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®ãƒãƒ¼ãƒˆãƒ“ãƒ¼ãƒˆå›æ•°
+		bool _auth_status = false;	//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®èªè¨¼çŠ¶æ…‹
+		WOLFSSL* _ssl;				//ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆã®ã‚½ã‚±ãƒƒãƒˆã«ã‚¢ã‚¿ãƒƒãƒã•ã‚ŒãŸsslã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 
 
 	public:
@@ -99,20 +99,20 @@ private:
 	friend class LoginHandler;
 	friend class ServerControlleFacade;
 
-	//Ú‘±’†‚ÌƒNƒ‰ƒCƒAƒ“ƒgƒŠƒXƒg
+	//æ¥ç¶šä¸­ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆãƒªã‚¹ãƒˆ
 	std::vector<Client> connected_clients;
 
 	unsigned short connect_client_num;
 
 	std::mutex mtx;
 
-	//ƒn[ƒgƒr[ƒg—p‚Ìƒ\ƒPƒbƒgƒŠƒXƒg
+	//ãƒãƒ¼ãƒˆãƒ“ãƒ¼ãƒˆç”¨ã®ã‚½ã‚±ãƒƒãƒˆãƒªã‚¹ãƒˆ
 	std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>> heart_beat_list;
 
-	//‰Šú‰»—p‚ÌƒNƒ‰ƒCƒAƒ“ƒg
+	//åˆæœŸåŒ–ç”¨ã®ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆ
 	Client init_client = Client();
 
-	//privateŠÖ”
+	//privateé–¢æ•°
 	std::string generate_client_id();
 
 

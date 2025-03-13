@@ -1,4 +1,4 @@
-#include "ClientHandler.h"
+Ôªø#include "ClientHandler.h"
 
 ClientHandler::Client::Client():_id{""}
 							, _name{""}
@@ -305,7 +305,7 @@ std::string ClientHandler::generate_client_id()
 
 	std::string converted_uuid_str(reinterpret_cast<char*>(uuid_str));
 #ifdef DEBUG_UUID
-	LogHandler::get_instance().logging_debug(StringFormat("The UUID has been successfully generated. UUIDÅF%s", converted_uuid_str));
+	LogHandler::get_instance().logging_debug(StringFormat("The UUID has been successfully generated. UUIDÔºö%s", converted_uuid_str));
 #endif // DEBUG
 
 	RpcStringFreeA(&uuid_str);
@@ -324,7 +324,7 @@ ClientHandler::ClientHandler() :connect_client_num{0}
 
 	//}
 	//catch (const std::length_error& le) {
-	//	THROW_APP_EXCEPTION(StringFormat("Length ErrorÅF%s", le.what()));
+	//	THROW_APP_EXCEPTION(StringFormat("Length ErrorÔºö%s", le.what()));
 	//}
 	//catch (const exception::ExceptionBase& ex)
 	//{

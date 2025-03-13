@@ -1,4 +1,4 @@
-#include "MT002Receiver.h"
+ï»¿#include "MT002Receiver.h"
 
 
 MT002Receiver::MT002Receiver()
@@ -14,10 +14,10 @@ MT002Receiver::~MT002Receiver()
 
 /**********************************************************************************
  * @fn	  extraction_data_type
- * @brief óMƒf[ƒ^‚©‚çƒf[ƒ^ƒ^ƒCƒv‚ğ’Šo‚·‚é
+ * @brief å—ä¿¡ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚¿ã‚¤ãƒ—ã‚’æŠ½å‡ºã™ã‚‹
  *
  * @param [in] std::string& data
- *             óMƒf[ƒ^
+ *             å—ä¿¡ãƒ‡ãƒ¼ã‚¿
  *
  * @return [out]
  *
@@ -57,7 +57,7 @@ std::string MT002Receiver::extraction_dst_client_id(const std::string& data)
 		return dst_client_id;
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeï¼š%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -79,7 +79,7 @@ std::string MT002Receiver::extraction_src_client_id(const std::string& data)
 		return src_client_id;
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeï¼š%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -111,7 +111,7 @@ std::string MT002Receiver::extraction_dst_chatroom_id(const std::string& data)
 		return chatroom_id;
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeï¼š%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -122,10 +122,10 @@ std::string MT002Receiver::extraction_dst_chatroom_id(const std::string& data)
 
 /**********************************************************************************
  * @fn	  extraction_data_type
- * @brief óMƒf[ƒ^‚©‚çƒf[ƒ^ƒ^ƒCƒv‚ğ’Šo‚·‚é
+ * @brief å—ä¿¡ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚¿ã‚¤ãƒ—ã‚’æŠ½å‡ºã™ã‚‹
  *
  * @param [in] std::string& data
- *             óMƒf[ƒ^
+ *             å—ä¿¡ãƒ‡ãƒ¼ã‚¿
  * 
  * @return [out]
  *
@@ -143,7 +143,7 @@ int MT002Receiver::extraction_data_type(const std::string& data)
 		return data_type_int;
 	}
 	catch (const std::out_of_range& oor_ex) {
-		THROW_APP_EXCEPTION(StringFormat("Out of rangeF%s", oor_ex.what()));
+		THROW_APP_EXCEPTION(StringFormat("Out of rangeï¼š%s", oor_ex.what()));
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -155,7 +155,7 @@ int MT002Receiver::extraction_data_type(const std::string& data)
 
 /**********************************************************************************
  * @fn	  extraction_main_data
- * @brief óMƒf[ƒ^‚©‚çƒƒCƒ“‚Ìƒf[ƒ^‚ğ’Šo‚·‚éB 
+ * @brief å—ä¿¡ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ãƒ¡ã‚¤ãƒ³ã®ãƒ‡ãƒ¼ã‚¿ã‚’æŠ½å‡ºã™ã‚‹ã€‚ 
  *
  * @param [in]
  *
@@ -261,10 +261,10 @@ bool MT002Receiver::store_receive_data()
 	return false;
 }
 
-//óM‚µ‚½ˆÃ†‰»‚³‚ê‚½ƒƒbƒZ[ƒW‚ğ•\¦‚·‚éB
+//å—ä¿¡ã—ãŸæš—å·åŒ–ã•ã‚ŒãŸãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ç¤ºã™ã‚‹ã€‚
 void MT002Receiver::print_src_recv_data(const std::string& data, const std::string& dst_ipv4_addr, int& detection_num, int& receive_result)
 {
-	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("%d byte message was received from client list[%d] (IP addressF%s)", receive_result, detection_num, dst_ipv4_addr));
+	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("%d byte message was received from client list[%d] (IP addressï¼š%s)", receive_result, detection_num, dst_ipv4_addr));
 }
 
 
@@ -281,11 +281,11 @@ std::string MT002Receiver::remove_zero_padding(std::string& ip_address)
 	std::string segment;
 
 	while (std::getline(ss, segment, '.')) {
-		// ƒ[ƒƒpƒfƒBƒ“ƒO‚ğíœ‚µ‚ÄƒxƒNƒgƒ‹‚ÉƒZƒOƒƒ“ƒg‚ğ’Ç‰Á
+		// ã‚¼ãƒ­ãƒ‘ãƒ‡ã‚£ãƒ³ã‚°ã‚’å‰Šé™¤ã—ã¦ãƒ™ã‚¯ãƒˆãƒ«ã«ã‚»ã‚°ãƒ¡ãƒ³ãƒˆã‚’è¿½åŠ 
 		segments.push_back(std::to_string(std::stoi(segment)));
 	}
 
-	// ƒxƒNƒgƒ‹‚ÌƒZƒOƒƒ“ƒg‚ğ"."‚Å˜AŒ‹‚µ‚ÄV‚µ‚¢IPƒAƒhƒŒƒX‚ğì¬
+	// ãƒ™ã‚¯ãƒˆãƒ«ã®ã‚»ã‚°ãƒ¡ãƒ³ãƒˆã‚’"."ã§é€£çµã—ã¦æ–°ã—ã„IPã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ä½œæˆ
 	std::string new_ip_address = segments[0];
 	for (size_t i = 1; i < segments.size(); ++i) {
 		new_ip_address += "." + segments[i];
@@ -465,7 +465,7 @@ void MT002Receiver::MT002Data::print_message_contents()
 
 void MT002Receiver::show_receive_info(const std::string& ipv4_addr, int& detect_num, int& receive_result)
 {
-	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("\033[33mMT002\033[m received from client list [%d] (CLIENT(IP:%s) Ë SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
+	LogHandler::logging(LogHandler::LogType::RECEIVE, std::cout, StringFormat("\033[33mMT002\033[m received from client list [%d] (CLIENT(IP:%s) â‡’ SERVER). (BYTE size of the message: %d)", detect_num, ipv4_addr, receive_result));
 }
 
 void MT002Receiver::show_receive_info(const json& receive_json, const std::string& ip, int receive_byte)
