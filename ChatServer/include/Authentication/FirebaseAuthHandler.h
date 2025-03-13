@@ -11,6 +11,7 @@
 #include "common.h"
 #include "assert.h"
 #include <iostream>
+#include "spdlog/spdlog.h"
 
 
 class FirebaseAuthHandler

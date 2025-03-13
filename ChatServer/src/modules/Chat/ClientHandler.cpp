@@ -278,7 +278,7 @@ std::string ClientHandler::generate_client_id()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::get_instance().logging_error(ex.what_for_str());
+		spdlog::error(ex.what_for_str());
 		return "";
 	}
 	
@@ -299,13 +299,13 @@ std::string ClientHandler::generate_client_id()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::get_instance().logging_error(ex.what_for_str());
+		spdlog::error(ex.what_for_str());
 		return "";
 	}
 
 	std::string converted_uuid_str(reinterpret_cast<char*>(uuid_str));
 #ifdef DEBUG_UUID
-	LogHandler::get_instance().logging_debug(StringFormat("The UUID has been successfully generated. UUID：%s", converted_uuid_str));
+	spdlog::debug("The UUID has been successfully generated. UUID：{:s}", converted_uuid_str);
 #endif // DEBUG
 
 	RpcStringFreeA(&uuid_str);
@@ -350,7 +350,7 @@ bool ClientHandler::add_client(const Client& client)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::get_instance().logging_error(ex.what_for_str());
+		spdlog::error(ex.what_for_str());
 		return false;
 	}
 
@@ -367,17 +367,15 @@ void ClientHandler::delete_client(const uint32_t delete_num)
 		this->connected_clients.erase(it);
 	}
 	else {
-		LogHandler::get_instance().logging_error(StringFormat("Invalid delete_num:%d", delete_num));
-		std::cerr << "Invalid delete_num: " << delete_num << std::endl;
+		spdlog::error("Invalid delete_num: {:d}", delete_num);
 	}
-	//this->connected_client_list.erase(this->connected_client_list.begin() + delete_num);
 	this->connect_client_num--;
 }
 
 void ClientHandler::delete_client(std::vector<Client>::iterator it)
 {
 	if (this->connected_clients.empty() == true) {
-		LogHandler::get_instance().logging_error("Client list is empty.");
+		spdlog::error("Client list is empty.");
 		return;
 	}
 	else {
@@ -420,16 +418,16 @@ int ClientHandler::search_client_id_from_con_list(const std::string& search_clie
 			return search_result;
 		}
 	}
-	LogHandler::get_instance().logging_error(StringFormat("search client id, failed, Not exits client id(%s)", search_client_id));
+	spdlog::error("search client id, failed, Not exits client id({:s})", search_client_id);
 	return NOT_EXIST_CLIENT_ID;
 }
 
 void ClientHandler::show_client_info(const int& client_num)
 {
-	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] ID : %s", client_num, this->connected_clients[client_num].get_client_id()));
-	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Name : %s", client_num, this->connected_clients[client_num].get_client_name()));
-	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Mail : %s", client_num, this->connected_clients[client_num].get_client_mail_addr()));
-	LogHandler::get_instance().logging_info(StringFormat("Client list[%d] Password : %s", client_num, this->connected_clients[client_num].get_client_password()));
+	spdlog::debug("Client list[{:d}] ID : {:s}", client_num, this->connected_clients[client_num].get_client_id());
+	spdlog::debug("Client list[{:d}] Name : {:s}", client_num, this->connected_clients[client_num].get_client_name());
+	spdlog::debug("Client list[{:d}] Mail : {:s}", client_num, this->connected_clients[client_num].get_client_mail_addr());
+	spdlog::debug("Client list[{:d}] Password : {:s}", client_num, this->connected_clients[client_num].get_client_password());
 }
 
 std::vector<SOCKET> ClientHandler::extract_conneted_sockets()

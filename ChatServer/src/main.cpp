@@ -6,10 +6,9 @@
 #include "spdlog/spdlog.h"
 int main()
 {
-    spdlog::set_level(spdlog::level::debug);
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
-	spdlog::info("Starting MyChat server version 1.0.0!!");
-    LogHandler::get_instance().logging_info("Starting MyChat server version 1.0.0!!");
+
+   
+    //LogHandler::get_instance().logging_info("Starting MyChat server version 1.0.0!!");
     std::unique_ptr<ServerControlleFacade> server_cont_facade;
     server_cont_facade = std::make_unique<ServerControlleFacade>();
     server_cont_facade->run();

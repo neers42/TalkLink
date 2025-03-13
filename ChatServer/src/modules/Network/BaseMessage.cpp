@@ -73,12 +73,11 @@ bool BaseMessage::is_valid()
 {
 	if (is_valid_mesasge_type(this->_message_type) == true &&
 		is_valid_message_id(this->_message_id) == true) {
-
-		LogHandler::get_instance().logging_debug(StringFormat("message(receive time stamp : %s) is valid.", this->_time_stamp));
+		spdlog::info("message(receive time stamp : {:s}) is valid.", this->_time_stamp);
 		return true;
 	}
 	else {
-		LogHandler::get_instance().logging_error(StringFormat("message(receive time stamp : %s) is not valid.", this->_time_stamp));
+		spdlog::error("message(receive time stamp : {:s}) is not valid.", this->_time_stamp);
 		return false;
 	}
 }
@@ -88,8 +87,8 @@ bool BaseMessage::is_valid()
 void BaseMessage::print_received_message_info(const json& recv_json, const std::string& ip_addr)
 {
 	std::string mt = recv_json["message_type"];
-	LogHandler::get_instance().logging_info(StringFormat("\033[33mMT%s\033[m receive, server received message from client(IP : %s)", mt, ip_addr));
-	LogHandler::get_instance().logging_debug(StringFormat("Recevive JSON DATA (MT%s): %s", mt, recv_json.dump(4)));
+	spdlog::info("\033[33mMT{:s}\033[m receive, server received message from client(IP : {:s})", mt, ip_addr);
+	spdlog::debug("Recevive JSON DATA (MT{:s}): {:s}", mt, recv_json.dump(4));
 }
 
 
@@ -119,7 +118,7 @@ bool BaseMessage::is_valid_mesasge_type(const std::string& mt)
 {
 	//Messagge_typeが3byteではない場合
 	if (mt.size() != 3) {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Message Type is invalid. Message Type byte size : %d", mt.size()));
+		spdlog::error("Message Type is invalid. Message Type byte size : {:d}", mt.size());
 		return false;
 	}
 	return true;

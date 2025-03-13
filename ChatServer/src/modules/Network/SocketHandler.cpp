@@ -52,7 +52,7 @@ SocketHandler::SocketHandler() :
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
@@ -123,7 +123,7 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
@@ -168,8 +168,7 @@ bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::get_instance().logging_error(StringFormat("Failed to load the file for initialization."));
-		//THROW_APP_EXCEPTION("Failed to load the file for initialization.");
+		spdlog::error(ex.what_for_str());
 	}
 	if (this->setting_tcp_flags(socket_param_setting_ini) == false) {
 		return false;
@@ -199,10 +198,8 @@ bool SocketHandler::setting_multicast_tx_socket_param(const std::string& file_pa
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		//THROW_APP_EXCEPTION("Failed to load the file for initialization.");
-		LogHandler::get_instance().logging_error(StringFormat("Failed to load the file for initialization."));
+		spdlog::error(ex.what_for_str());
 	}
-	LogHandler::get_instance().logging_debug(StringFormat("server open file for initialization."));
 
 	if (this->setting_multicast_tx_sock_af(multicast_socket_setting_ini) == false) {
 		return false;
@@ -275,7 +272,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 	}
 }
 
@@ -310,7 +307,7 @@ void SocketHandler::copy_fd_read_to_fds(fd_set* fds, fd_set* fd)
 bool SocketHandler::generate_udp_multicast_tx_socket()
 {
 	if (!setting_multicast_tx_socket_param(INIT_FILE_PASS)) {
-		LogHandler::get_instance().logging_error(StringFormat("udp multicast socket, failed, The socket configuration for multicast transmission was not completed successfully and will be terminated."));
+		spdlog::error("udp multicast socket, failed, The socket configuration for multicast transmission was not completed successfully and will be terminated.");
 		return false;
 	}
 
@@ -379,7 +376,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		return false;
 	}
 	
@@ -437,7 +434,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::get_instance().logging_error(StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		return false;
 		
 		//TODOネットワークインタフェースの数で戻り値を変えたい
@@ -498,11 +495,10 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::get_instance().logging_error(StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		return false;
 	}
-	
-	LogHandler::get_instance().logging_info(StringFormat("UDP multicast TX socket(%d), success, server generate udp muluticast tx socket.", _udp_multicast_tx_socket));
+	spdlog::info("UDP multicast TX socket({:d}), success, server generate udp muluticast tx socket.", _udp_multicast_tx_socket);
 	return true;
 }
 
@@ -579,7 +575,7 @@ bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_settin
 }
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 
 		return false;
 	}
@@ -699,13 +695,13 @@ bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_sett
 		}
 		m_multicast_tx_addr.sin_port = temp_port;
 #ifdef DEBUG
-		LogHandler::logging_info(LogHandler::LogType::DEBUG_INFO, std::cout, StringFormat("The send port for multicast is now set to %d", m_multicast_tx_addr.sin_port));
+		spdlog::info("The send port for multicast is now set to {:d}", m_multicast_tx_addr.sin_port);
 #endif // DEBUG
 
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		return false;
 	}
 	return true;
@@ -740,13 +736,13 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 		//IPアドレスのバイナリ化が正常に終了した場合
 		else {
 #ifdef DEBUG
-			LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("Transmission address for multicast set successfully (address: %s)", temp_multicast_addr));
+			spdlog::info("The multicast transmission address has been set successfully (address: {:s})", temp_multicast_addr);
 #endif // DEBUG
 		}
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 	}
 
 
@@ -789,7 +785,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 
 	}
 
@@ -822,7 +818,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		std::cerr << StringFormat("%s\033[31m[ERROR]\033[m%s", ServerTime::get_current_time(), ex.what_for_str()) << std::endl;
+		spdlog::error(ex.what_for_str());
 	}
 	if (m_ip_addr_table->dwNumEntries > 0) {
 		char temp_local_ip_addr[100];
@@ -833,10 +829,10 @@ std::string SocketHandler::obtain_local_ip_addr()
 				m_local_ip_addr = temp_local_ip_addr;
 			}
 		}
-		LogHandler::get_instance().logging_info(StringFormat("%s,  server-ip, success, obtain server ip address.", m_local_ip_addr));
+		spdlog::info("server-ip, success, obtain server ip address.");
 	}
 	else{
-		LogHandler::get_instance().get_instance().logging_critical("server-ip, failed, failed obtain server ip address.");
+		spdlog::error("server-ip, failed, failed obtain server ip address.");
 	}
 
 	return m_local_ip_addr;
@@ -857,7 +853,7 @@ bool SocketHandler::bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinf
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		return false;
 	}
 
@@ -948,7 +944,7 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		struct sockaddr_in error_addr_in = { 0 };
 		return std::make_tuple(INVALID_SOCKET, error_addr_in);
 	}
@@ -992,13 +988,13 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 			}
 		}
 		else {
-			LogHandler::get_instance().logging_debug(StringFormat("client socket(%d) is closed.", client_socket));
+			spdlog::info("client socket({:d}) is closed.", client_socket);
 		}
 
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::get_instance().logging_error(StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 	}
 
 
@@ -1058,7 +1054,6 @@ bool SocketHandler::generate_tcp_listen_socket()
 			}
 		}
 
-		//std::cout << StringFormat("[%s][INFO]Creating TCP listening socket...", ServerTime::get_current_time());
 		//リッスンソケットの生成
 		_tcp_listen_socket = socket(m_result_tcp -> ai_family, m_result_tcp -> ai_socktype, m_result_tcp->ai_protocol);
 		if (_tcp_listen_socket == INVALID_SOCKET) {
@@ -1067,20 +1062,20 @@ bool SocketHandler::generate_tcp_listen_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		freeaddrinfo(m_result_tcp);
 		WSACleanup();
 		return false;
 	}
-	//std::cout << "\033[32m [OK] \033[m" << std::endl;
 	LogHandler::get_instance().logging_debug(StringFormat("server generated listen socket(%d).", _tcp_listen_socket));
+	spdlog::debug("server generated listen socket({:d}).", _tcp_listen_socket);
 
 	bool bind_result = bind_tcp_listen_socket(&_tcp_listen_socket, m_result_tcp);
 	if (bind_result == true) {
-		LogHandler::get_instance().logging_debug(StringFormat("server bind setting on listen socket(%d).", _tcp_listen_socket));
+		spdlog::info("server bind setting on listen socket({:d}).", _tcp_listen_socket);
 	}
 	else {
-		LogHandler::get_instance().logging_error(StringFormat("listen socket(%d), failed, server can't bind setting.", _tcp_listen_socket));
+		spdlog::error("server can't bind setting on listen socket({:d}).", _tcp_listen_socket);
 		return false;
 	}
 
@@ -1094,43 +1089,42 @@ bool SocketHandler::trans_flags(const std::string& flag_str, struct addrinfo* pa
 	if (std::equal(flag_str.begin(), flag_str.end(), "AI_PASSIVE")) {
 		param->ai_flags = AI_PASSIVE;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_PASSIVEに設定されました。" << std::endl;
+		spdlog::debug("param：ai_flags is set to AI_PASSIVE.");
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_CANONNAME")) {
 		param->ai_flags = AI_CANONNAME;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_CANONNAMEに設定されました。" << std::endl;
+		spdlog::debug("param：ai_flags is set to AI_CANONNAME.");
 #endif // DEBUG
-
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_NUMERICHOST")) {
 		param->ai_flags = AI_NUMERICHOST;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_NUMERICHOSTに設定されました。" << std::endl;
+		spdlog::debug("param：ai_flags is set to AI_NUMERICHOST.");
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_ALL")) {
 		param->ai_flags = AI_ALL;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_ALLに設定されました。" << std::endl;
+		spdlog::debug("param：ai_flags is set to AI_ALL.");
 #endif // DEBUG
 
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_ADDRCONFIG")) {
 		param->ai_flags = AI_ADDRCONFIG;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_ADDRCONFIGに設定されました。" << std::endl;
+		spdlog::debug("param：ai_flags is set to AI_ADDRCONFIG.");
 #endif // DEBUG	
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_V4MAPPED")) {
 		param->ai_flags = AI_V4MAPPED;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_flagsはAI_V4MAPPEDに設定されました。" << std::endl;
+		spdlog::debug("param：ai_flags is set to AI_V4MAPPED.");
 #endif // DEBUG
 	}
 	else {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Failed to set ai_flags."));
+		spdlog::error("Failed to set ai_flags.");
 		return false;
 	}
 	return true;
@@ -1141,7 +1135,7 @@ bool SocketHandler::trans_family(const std::string& family_str, addrinfo* param)
 	if (std::equal(family_str.begin(), family_str.end(), "AF_INET")) {
 		param->ai_family = AF_INET;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_INET(アドレスファミリはipv4に設定されました)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_family is set to AF_INET.");
 #endif // DEBUG
 
 	}
@@ -1149,7 +1143,7 @@ bool SocketHandler::trans_family(const std::string& family_str, addrinfo* param)
 	else if (std::equal(family_str.begin(), family_str.end(), "AF_INET6")) {
 		param->ai_family = AF_INET6;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_INET6(アドレスファミリはipv6に設定されました)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_family is set to AF_INET6.");
 #endif // DEBUG
 
 	}
@@ -1158,11 +1152,11 @@ bool SocketHandler::trans_family(const std::string& family_str, addrinfo* param)
 	else if (std::equal(family_str.begin(), family_str.end(), "AF_UNSPEC")) {
 		param->ai_family = AF_UNSPEC;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_familyはAF_UNSPEC(アドレスファミリはAF=UNSPECに設定されました)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_family is set to AF_UNSPEC.");
 #endif // DEBUG
 	}
 	else {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Failed to set ai_family."));
+		spdlog::error("Failed to set ai_family.");
 		return false;
 	}
 	return true;
@@ -1173,38 +1167,37 @@ bool SocketHandler::trans_socktype(const std::string& socktype_str, addrinfo* pa
 	if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_STREAM")) {
 		param->ai_socktype = SOCK_STREAM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはSOCK_STREAM(TCPプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_socktype is set to SOCK_STREAM.");
 #endif // DEBUG		
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_DGRAM")) {
 		param->ai_socktype = SOCK_DGRAM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはsock_dgram(UDPプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_socktype is set to SOCK_DGRAM.");
 #endif // DEBUG
-
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_RAW")) {
 		param->ai_socktype = SOCK_RAW;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはsock_dgram(UDPプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_socktype is set to SOCK_RAW.");
 #endif // DEBUG
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_RDM")) {
 		param->ai_socktype = SOCK_RDM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはSOCK_RDM(RDMプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_socktype is set to SOCK_RDM.");
 #endif // DEBUG
 
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_SEQPACKET")) {
 		param->ai_socktype = SOCK_SEQPACKET;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_socktypeはSOCK_SEQPACKET(SEQPACKETプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_socktype is set to SOCK_SEQPACKET.");
 
 #endif // DEBUG
 	}
 	else {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Failed to set socktype."));
+		spdlog::error("Failed to set ai_socktype.");
 		return false;
 	}
 	return true;
@@ -1215,7 +1208,7 @@ bool SocketHandler::trans_protocol(const std::string& protocol_str, addrinfo* pa
 	if ((std::equal(protocol_str.begin(), protocol_str.end(), "IPPROTO_TCP")) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_STREAM)) {
 		param->ai_protocol = IPPROTO_TCP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはIPPROTO_TCP(tcpプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_TCP.");
 #endif // DEBUG
 	}
 
@@ -1223,18 +1216,18 @@ bool SocketHandler::trans_protocol(const std::string& protocol_str, addrinfo* pa
 	else if ((std::equal(protocol_str.begin(), protocol_str.end(), "IPPROTO_UDP")) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_DGRAM)) {
 		param->ai_protocol = IPPROTO_UDP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはipproto_tcp(tcpプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_UDP.");
 #endif // DEBUG
 	}
 	//プロトコルをpgmに設定する場合
 	else if ((std::equal(protocol_str.begin(), protocol_str.end(), "IPPROTO_PGM")) && param->ai_family == AF_INET && param->ai_socktype == SOCK_RDM) {
 		param->ai_protocol = IPPROTO_PGM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはipproto_pgm(pgmプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_PGM.");
 #endif // DEBUG
 	}
 	else {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Failed to set protocol."));
+		spdlog::error("Failed to set ai_protocol.");
 		return false;
 	}
 	return true;
@@ -1247,7 +1240,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 	if ((protocol_int == 1) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6 || param->ai_family == AF_UNSPEC) && (param->ai_socktype == SOCK_RAW || param->ai_family == 0))) {
 		param->ai_protocol = IPPROTO_ICMP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはIPPROTO_ICMP(ICMPプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_ICMP.");
 #endif // DEBUG
 	}
 
@@ -1255,13 +1248,13 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 	if ((protocol_int == 2) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6 || param->ai_family == AF_UNSPEC) && (param->ai_socktype == SOCK_RAW || param->ai_family == 0))) {
 		param->ai_protocol = IPPROTO_IGMP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはIPPROTO_ICMP(ICMPプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_IGMP.");
 #endif // DEBUG
 	}
 	if ((protocol_int == 6) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_STREAM)) {
 		param->ai_protocol = IPPROTO_TCP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはIPPROTO_TCP(tcpプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_TCP.");
 #endif // DEBUG
 	}
 
@@ -1269,7 +1262,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 	else if ((protocol_int == 17) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_DGRAM)) {
 		param->ai_protocol = IPPROTO_UDP;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはipproto_tcp(tcpプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_UDP.");
 #endif // DEBUG
 	}
 
@@ -1277,21 +1270,21 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 	else if ((protocol_int == 58) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6 || param->ai_family == AF_UNSPEC) && (param->ai_socktype == SOCK_RAW || param->ai_family == 0))) {
 		param->ai_protocol = IPPROTO_ICMPV6;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはIPPROTO_ICMP(ICMPプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_ICMPV6.");
 #endif // DEBUG
 	}
 	//プロトコルをpgmに設定する場合
 	else if ((protocol_int == 113) && param->ai_family == AF_INET && param->ai_socktype == SOCK_RDM) {
 		param->ai_protocol = IPPROTO_PGM;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](tcp_listen setting)param：ai_protocolはipproto_pgm(pgmプロトコルを使用)に設定されました。" << std::endl;
+		spdlog::debug("param：ai_protocol is set to IPPROTO_PGM.");
 #endif // DEBUG	
 	}
 	else if (protocol_int == 0) {
 		//param->ai_protocol == IPPROTO_UDP;
 	}
 	else {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Failed to set protocol."));
+		spdlog::error("Failed to set ai_protocol.");
 		return false;
 	}
 	return true;
@@ -1365,7 +1358,7 @@ int SocketHandler::monitor_socket_descriptor(const std::vector<ClientHandler::Cl
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		return SOCKET_ERROR;
 	}
 
@@ -1384,7 +1377,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 	}
 
 	try
@@ -1399,12 +1392,12 @@ bool SocketHandler::open_tcp_listen_socket()
 		}
 		else
 		{
-			LogHandler::get_instance().logging_info(StringFormat("listen socket(%d), success, server open listen socket.", _tcp_listen_socket));
+			spdlog::info("server open listen socket({:d}), success, server open listen socket.", _tcp_listen_socket);
 		}
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 	}
 	return true;
 }

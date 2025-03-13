@@ -1,6 +1,7 @@
 ﻿#ifndef BASEMESSAGE
 #define BASEMESSAGE
 #include "common.h"
+#include "spdlog/spdlog.h"
 
 
 class BaseMessage

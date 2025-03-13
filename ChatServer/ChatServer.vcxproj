@@ -152,6 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\modules\Database\CassandraClient.cpp" />
     <ClCompile Include="src\modules\Network\MessageType102.cpp" />
     <ClCompile Include="src\modules\Network\MessageType101.cpp" />
     <ClCompile Include="src\modules\Network\MessageType000.cpp" />
@@ -169,7 +170,7 @@
     <ClCompile Include="src\modules\Chat\ClientHandler.cpp" />
     <ClCompile Include="src\modules\Utils\ServerTime.cpp" />
     <ClCompile Include="src\modules\Utils\LogHandler.cpp" />
-    <ClCompile Include="src\modules\Database\DataBaseAccesor.cpp" />
+    <ClCompile Include="src\modules\Database\MySQLClient.cpp" />
     <ClCompile Include="src\modules\Chat\Sender.cpp" />
     <ClCompile Include="src\modules\Chat\MT002Receiver.cpp" />
     <ClCompile Include="src\modules\Utils\AppException.cpp" />
@@ -181,6 +182,8 @@
     <ClCompile Include="src\modules\Utils\ThreadPoolHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Database\CassandraClient.h" />
+    <ClInclude Include="include\Database\DataBaseInterface.h" />
     <ClInclude Include="include\Network\MessageType003.h" />
     <ClInclude Include="include\Network\MessageType002.h" />
     <ClInclude Include="include\Network\MessageType001.h" />
@@ -468,7 +471,7 @@
     <ClInclude Include="include\Authentication\FirebaseAuthHandler.h" />
     <ClInclude Include="include\Chat\ChatRoomHandler.h" />
     <ClInclude Include="include\Chat\ClientHandler.h" />
-    <ClInclude Include="include\Database\DataBaseAccesor.h" />
+    <ClInclude Include="include\Database\MySQLClient.h" />
     <ClInclude Include="include\Utils\AppException.h" />
     <ClInclude Include="include\Utils\ExceptionBase.h" />
     <ClInclude Include="include\Authentication\firebase\analytics.h" />

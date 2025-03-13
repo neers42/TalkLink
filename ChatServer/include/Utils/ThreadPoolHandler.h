@@ -13,6 +13,7 @@
 #include <string>
 #include "common.h"
 #include "LogHandler.h"
+#include "spdlog/spdlog.h"
 
 
 class ThreadPoolHandler

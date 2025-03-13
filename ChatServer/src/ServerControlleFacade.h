@@ -15,9 +15,10 @@
 #include "ThreadPoolHandler.h"
 #include "common.h"
 #include "LogHandler.h"
-#include "DataBaseAccesor.h"
+#include "MySQLClient.h"
 #include "ProtocolHandler.h"
 #include <mutex>
+#include "spdlog/spdlog.h"
 
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
@@ -30,7 +31,7 @@ class ServerControlleFacade
 {
 private:
 	std::unique_ptr<FirebaseAuthHandler> _firebase_auth_handler;
-	std::unique_ptr<DataBaseAccesor> _db_accesor;
+	std::unique_ptr<MySQLClient> _db_accesor;
 	std::unique_ptr<ProtocolHandler> _protocol_handler;
 	std::unique_ptr<SocketHandler> _socket_handler;
 	std::unique_ptr<MT000Receiver> _mt000receiver;
@@ -75,11 +76,8 @@ public:
 
 	void mt002_process(const std::unique_ptr<MessageType002>& mt002, int& receive_result);
 
-	void heart_beat_send_process();
 
 	void heart_beat_check_process();
-
-	void heart_beat_no_response_process(const int hb_zero_client_num);
 
 	void heart_beat_response_process(const ClientHandler::Client& client);
 

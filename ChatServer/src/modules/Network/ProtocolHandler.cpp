@@ -56,7 +56,7 @@ const std::string ProtocolHandler::generate_message_id()
 	//第二引数：0~255範囲の乱数を生成する関数
 	ulid::ULID ulid = ulid::Create(now, random::random_byte);
 	std::string message_id = ulid::Marshal(ulid);
-	LogHandler::get_instance().logging_info(StringFormat("generated message id:%s.", message_id));
+	spdlog::info("generated message id:{:s}.", message_id);
 	return message_id;
 }
 
@@ -65,12 +65,12 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 	WOLFSSL* new_client_ssl = wolfSSL_new(this->_server_w_ctx);
 	//クライアントのSSL生成が正常に処理されなかった場合
 	if (new_client_ssl == NULL) {
-		LogHandler::get_instance().logging_error(StringFormat("new client ssl object creation failed."));
+		spdlog::error("new client ssl object creation failed.");
 		wolfSSL_free(new_client_ssl);
 	}
 	//クライアントのSSL生成が正常に処理された場合
 	else {
-		LogHandler::get_instance().logging_debug("new client ssl object creation success!!.");
+		spdlog::info("new client ssl object creation success!!.");
 		//SSLオブジェクトとクライアントソケットを関連付けする。
 		wolfSSL_set_fd(new_client_ssl, client_socket);
 		return new_client_ssl;
@@ -97,6 +97,7 @@ void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
 {
 	int ret = wolfSSL_shutdown(client_ssl);
 	if (ret == WOLFSSL_SUCCESS) {
+		spdlog::debug("wolfSSL shutdown success.");
 		LogHandler::get_instance().logging_debug("wolfSSL shutdown success.");
 	}
 	else
@@ -126,7 +127,8 @@ std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 				//jsonメッセージの解析
 				recv_msg_json = json::from_msgpack(message_buffer);
 				//完全なメッセージが解析された場合は中身を表示
-				LogHandler::get_instance().logging_debug(StringFormat("message receive success, received message size : %d.", bytes_read));
+				spdlog::debug("message receive success, received message size : {:d}.", bytes_read);
+				//LogHandler::get_instance().logging_debug(StringFormat("message receive success, received message size : %d.", bytes_read));
 			}
 			catch (const json::parse_error& e)
 			{
@@ -159,15 +161,15 @@ std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 			//システムコール関連のエラーが発生した場合
 			else if (recv_error == WOLFSSL_ERROR_SYSCALL) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
-					LogHandler::get_instance().logging_error(StringFormat("message receive failed, wolfSSL read timeout occured."));
+					spdlog::error("message receive failed, wolfSSL read timeout occured.");
 				}
 				else {
-					LogHandler::get_instance().logging_error(StringFormat("message receive failed, wolfSSL read syscall error occured."));
+					spdlog::error("message receive failed, wolfSSL read syscall error occured.");
 				}
 			}
 			//それ以外の理由
 			else {
-				LogHandler::get_instance().logging_error(StringFormat("message receive failed."));
+				spdlog::error("message receive failed.");
 			}
 			return std::make_tuple(json(), disconnect_flag);
 
@@ -195,15 +197,13 @@ bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 		if (err == WOLFSSL_ERROR_WANT_WRITE || err == WOLFSSL_ERROR_WANT_READ) {
 			// 一時的なエラー、リトライ
 			this->print_wolfssl_error(client_ssl);
-			LogHandler::get_instance().logging_info("Temporary error (WANT_WRITE/WANT_READ), retrying...");
-			//printf("Temporary error (WANT_WRITE/WANT_READ), retrying...\n");
+			spdlog::info("Temporary error (WANT_WRITE/WANT_READ), retrying...");
 			continue;
 		}
 		else {
 			// 致命的なエラー
 			this->print_wolfssl_error(client_ssl);
-			LogHandler::get_instance().logging_error(StringFormat("wolfSSL_write failed: %d", err));
-			//printf("wolfSSL_write failed: %d\n", err);
+			spdlog::error("wolfSSL_write failed: {:d}", err);
 			wolfSSL_shutdown(client_ssl);
 			return false;
 		}
@@ -232,7 +232,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 		cert_not_before_buffer[32] = { 0 },
 		cert_not_after_buffer[32] = { 0 };
 	if (!ssl) {
-		LogHandler::get_instance().logging_error("SSL object is null.");
+		spdlog::error("SSL object is null.");
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
 
@@ -241,7 +241,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 
 	WOLFSSL_X509* server_cert = wolfSSL_get_peer_certificate(ssl);
 	if (!server_cert) {
-		LogHandler::get_instance().logging_warning("No client certificate received.");
+		spdlog::warn("No client certificate received.");
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
 	// 証明書のサブジェクト名（発行対象）
@@ -296,10 +296,10 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 
 	// 証明書オブジェクトを解放
 	wolfSSL_X509_free(server_cert);
-	std::cout << " * Server Certificate Subject Name : " << cert_subject_name << std::endl;
-	std::cout << " * Server Certificate Issuer Name : " << cert_issuer_name << std::endl;
-	std::cout << " * Server Certificate Not Before : " << cert_not_before << std::endl;
-	std::cout << " * Server Certificate Not After : " << cert_not_after << std::endl;
+	spdlog::info(" * Server Certificate Subject Name : {:s}", cert_subject_name);
+	spdlog::info(" * Server Certificate Issuer Name : {:s}", cert_issuer_name);
+	spdlog::info(" * Server Certificate Not Before : {:s}", cert_not_before);
+	spdlog::info(" * Server Certificate Not After : {:s}", cert_not_after);
 	return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 
 }
@@ -309,16 +309,16 @@ void ProtocolHandler::wolfssl_log_callback(const int log_level, const char* log_
 	std::string log_str(log_message);
 	switch (log_level) {
 	case ERROR_LOG:
-		LogHandler::get_instance().logging_error(log_str);
+		spdlog::error(log_str);
 			break;
 	case INFO_LOG:
-		LogHandler::get_instance().logging_info(log_str);
+		spdlog::info(log_str);
 		break;
 	case ENTER_LOG:
-		LogHandler::get_instance().logging_debug(log_str);
+		spdlog::debug(log_str);
 		break;
 	default:
-		LogHandler::get_instance().logging_debug(log_str); // 未定義レベルは DEBUG 扱い
+		spdlog::debug(log_str);
 		break;
 	}
 }
@@ -331,7 +331,7 @@ void ProtocolHandler::print_wolfssl_global_error()
 	char buffer[80];
 	err = wolfSSL_ERR_get_error();
 	wolfSSL_ERR_error_string(err, buffer);
-	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, failed, error content : %s (code : %d)", std::string(buffer), err));
+	spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d})", std::string(buffer), err);
 }
 
 //SSL通信で発生するエラーの表示
@@ -341,7 +341,7 @@ void ProtocolHandler::print_wolfssl_error(WOLFSSL* client_ssl)
 	char buffer[80];
 	err = wolfSSL_get_error(client_ssl, 0);
 	wolfSSL_ERR_error_string(err, buffer);
-	LogHandler::get_instance().logging_critical(StringFormat("wolfSSL, failed, error content : %s (code : %d)", std::string(buffer), err));
+	spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d})", std::string(buffer), err);
 }
 
 void ProtocolHandler::initialize_wolfssl()
@@ -362,12 +362,12 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 	//TLS接続時のバージョン指定(v23＝サーバー及びクライアントがサポートする最も高いバージョンを指定)
 	auto server_method = wolfSSLv23_server_method();
 	if (server_method == NULL) {
-		LogHandler::get_instance().logging_critical(StringFormat("SSL v23 server method, failed, unable to get method."));
+		spdlog::critical("SSL v23 server method, failed, unable to get method.");
 		exit(1);
 	}
 	else
 	{
-		LogHandler::get_instance().logging_debug("server_method set v23 for wolfssl context.");
+		spdlog::debug("server_method set v23 for wolfssl context.");
 	}
 #endif // SERVER_METHOD_SSLV23
 
@@ -375,11 +375,11 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 	//TLS接続時のバージョン指定(v23＝サーバー及びクライアントがサポートする最も高いバージョンを指定)
 	auto server_method = wolfTLSv1_3_server_method();
 	if (server_method == NULL) {
-		LogHandler::get_instance().logging_critical(StringFormat("TLS v1.3 server method, failed, unable to get method."));
+		spdlog::critical("TLS v1.3 server method, failed, unable to get method.");
 	}
 	else
 	{
-		LogHandler::get_instance().logging_debug("server_method set TLS 1.3 for wolfssl context.");
+		spdlog::debug("server_method set TLS 1.3 for wolfssl context.");
 	}
 
 #endif // server_method_TLS1_3
@@ -388,7 +388,7 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 	//TLS接続時のバージョン指定(v23＝サーバー及びクライアントがサポートする最も高いバージョンを指定)
 	auto server_method = wolfTLSv1_2_server_method();
 	if (server_method == NULL) {
-		LogHandler::get_instance().logging_critical(StringFormat("TLS v1.2 server method, failed, unable to get method."));
+		spdlog::critical("TLS v1.2 server method, failed, unable to get method.");
 	}
 	else
 	{
@@ -401,10 +401,12 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 	//TLS接続時のバージョン指定(v23＝サーバー及びクライアントがサポートする最も高いバージョンを指定)
 	auto server_method = wolfTLSv1_1_server_method();
 	if (server_method == NULL) {
+		spdlog::critical("TLS v1.1 server method, failed, unable to get method.");
 		LogHandler::get_instance().logging_critical(StringFormat("TLS v1.1 server method, failed, unable to get method."));
 	}
 	else
 	{
+		spdlog::debug("server_method set TLS 1.1 for wolfssl context.");
 		LogHandler::get_instance().logging_debug("server_method set TLS 1.1 for wolfssl context.");
 	}
 #endif // SERVER_METHOD_TLS_1_1
@@ -418,7 +420,7 @@ void ProtocolHandler::generate_ssl_context(WOLFSSL_METHOD* method)
 	//wolf contextの確保
 	_server_w_ctx = wolfSSL_CTX_new(method);
 	if (_server_w_ctx == NULL) {
-		LogHandler::get_instance().logging_critical(StringFormat("SSL context, failed, context creation failed."));
+		spdlog::critical("SSL context, failed, context creation failed.");
 		exit(1);
 	}
 }

@@ -17,8 +17,7 @@ bool ChatroomHandler::ChatRoom::add_client_chatroom(const ClientHandler::Client&
 		THROW_APP_EXCEPTION("Failed to allocate memory while adding a client to a chat room.");
 	}
 	catch (const exception::ExceptionBase& ex) {
-		LogHandler::get_instance().logging_error(ex.what_for_str());
-		//LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		spdlog::error(ex.what_for_str());
 		return false;
 	}
 	
@@ -72,8 +71,7 @@ const std::vector<ClientHandler::Client>& ChatroomHandler::ChatRoom::get_client_
 		}
 		else {
 #ifdef DEBUG
-
-			std::cout << StringFormat("%s[DEBUG]Search number: %c", ServerTime::get_current_time(), *iterator) << std::endl;
+			spdlog::debug("Search number: {:c}", *iterator);
 #endif // DEBUG
 			return iterator;
 		}
@@ -81,7 +79,7 @@ const std::vector<ClientHandler::Client>& ChatroomHandler::ChatRoom::get_client_
 	 }
 	 catch (const exception::ExceptionBase& ex)
 	 {
-		 LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
+		 spdlog::error(ex.what_for_str());
 		return this->_client_list.end();
 	 }
 }

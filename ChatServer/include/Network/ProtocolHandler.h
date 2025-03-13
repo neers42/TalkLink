@@ -12,6 +12,7 @@
 #include "MessageType003.h"
 #include "ulid/ulid.hh"
 #include "ulid/ulid_struct.hh"
+#include "spdlog/spdlog.h"
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
 //#define SERVER_METHOD_TLS_1_3	//TLS1.3で接続
@@ -90,8 +91,7 @@ public:
 				message_instance.get_message_id()));*/
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType001>) {
-			LogHandler::get_instance().logging_info(StringFormat("server received \033[33mMessage Type 001\033[m from client(ip:%s, socket_num:%d)"
-				, ipv4, socket_num));
+			spdlog::info("server received \033[33mMessage Type 001\033[m from sender(ip:{:s}, socket:{:d})", ipv4, socket_num);
 			/*	LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
 					"Content Type : %d\n"
 					"Message Type : %s\n"
@@ -111,8 +111,8 @@ public:
 					message_instance.get_client_password()));*/
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType002>) {
-			LogHandler::get_instance().logging_info(StringFormat("server received \033[33mMessage Type 002(message id:%s)\033[m from src client(id:%s, ip:%s, socket_num:%d) ==> dst client(id:%s)"
-				, message_id, src_id, ipv4, socket_num, dst_id));
+			spdlog::info("server received \033[33mMessage Type 002\033[m(message id:{:s}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"
+				, message_id, src_id, ipv4, socket_num, dst_id);
 			/*LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
 				"Content Type : %d\n"
 				"Message Type : %s\n"
@@ -202,7 +202,7 @@ private:
 				content, message_id, trans_type, dst_chatroom_id);
 		}
 		else {
-			LogHandler::get_instance().logging_error("Unsupported message type");
+			spdlog::error("Unsupported message type");
 			return nullptr;
 		}
 	}

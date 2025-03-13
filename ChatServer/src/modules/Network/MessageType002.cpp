@@ -162,7 +162,7 @@ bool MessageType002::is_valid_dst_chatroom(const std::string& cr_id)
 {
 	//dst_idが28byteではない場合
 	if (cr_id.size() != 36) {
-		LogHandler::get_instance().logging_error(StringFormat("dst chatroom id is invalid. dst chatroom id byte size : %d", cr_id.size()));
+		spdlog::error("dst chatroom id is invalid. dst chatroom id byte size : {:d}", cr_id.size());
 		return false;
 	}
 	return true;
@@ -172,7 +172,7 @@ bool MessageType002::is_valid_receiver_id(const std::string& dst_id)
 {
 	//dst_idが28byteではない場合
 	if (dst_id.size() != 28) {
-		LogHandler::get_instance().logging_error(StringFormat("dst client id is invalid. dst client id byte size : %d", dst_id.size()));
+		spdlog::error("receiver id is invalid. dst client id byte size : {:d}", dst_id.size());
 		return false;
 	}
 	return true;
@@ -182,7 +182,7 @@ bool MessageType002::is_valid_sender_id(const std::string& src_id)
 {
 	//dst_idが28byteではない場合
 	if (src_id.size() != 28) {
-		LogHandler::get_instance().logging_error(StringFormat("src client id is invalid. src client id byte size : %d", src_id.size()));
+		spdlog::error("sender id is invalid. src client id byte size : {:d}", src_id.size());
 		return false;
 	}
 	return true;
@@ -192,7 +192,7 @@ bool MessageType002::is_valid_conent(const std::string& content)
 {
 	//dst_idが28byteではない場合
 	if (content.size() <= 0) {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("content is invalid. content byte size : %d", content.size()));
+		spdlog::error("content is invalid. content byte size : {:d}", content.size());
 		return false;
 	}
 	return true;

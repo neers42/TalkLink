@@ -48,7 +48,7 @@
     <ClCompile Include="src\modules\Utils\LogHandler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\Database\DataBaseAccesor.cpp">
+    <ClCompile Include="src\modules\Database\MySQLClient.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\modules\Chat\Sender.cpp">
@@ -96,6 +96,9 @@
     <ClCompile Include="src\modules\Network\MessageType102.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\Database\CassandraClient.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Utils\common.h">
@@ -110,7 +113,7 @@
     <ClInclude Include="include\Chat\ClientHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Database\DataBaseAccesor.h">
+    <ClInclude Include="include\Database\MySQLClient.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="include\Utils\AppException.h">
@@ -1728,6 +1731,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="include\Utils\spdlog\version.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\DataBaseInterface.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\CassandraClient.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

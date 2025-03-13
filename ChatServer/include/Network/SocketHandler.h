@@ -14,6 +14,7 @@
 #include "LogHandler.h"
 #include "ClientHandler.h"
 #include "common.h"
+#include "spdlog/spdlog.h"
 #define INIT_FILE_PASS  ".//////conf/socket_setting.ini"
 //#define MAX_CONNECT_NUM 10000
 #define SELECT_TIME_OUT -2
