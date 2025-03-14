@@ -96,7 +96,10 @@
     <ClCompile Include="src\modules\Network\MessageType102.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\Database\CassandraClient.cpp">
+    <ClCompile Include="src\modules\Database\RedisClient.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\Chat\MessageIDGenerator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1736,7 +1739,49 @@
     <ClInclude Include="include\Database\DataBaseInterface.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Database\CassandraClient.h">
+    <ClInclude Include="include\Database\RedisClient.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\hiredis.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\alloc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\async.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\async_private.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\dict.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\fmacros.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\hiredis_ssl.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\net.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\read.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\sds.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\sdsalloc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\sockcompat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database\hiredis\win32.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Chat\MessageIDGenerator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1775,6 +1820,7 @@
     <Library Include="lib\firebase\MD\x64\Release\firebase_remote_config.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
     <Library Include="lib\wolfssl\x64\wolfssl.lib" />
+    <Library Include="lib\hiredis\x64\hiredis.lib" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="include\Network\wolfssl\sniffer_error.rc">

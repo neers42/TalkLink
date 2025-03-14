@@ -313,7 +313,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 
 	try
 	{
-		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(m_multicast_tx_addr.sin_port).c_str(), &m_multicast_tx_param, &m_result_multicast);
+		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_multicast_tx_addr.sin_port).c_str(), &m_multicast_tx_param, &m_result_multicast);
 		this->_udp_multicast_tx_socket = socket(m_multicast_tx_param.ai_family, m_multicast_tx_param.ai_socktype, 0);
 		if (this->_udp_multicast_tx_socket == INVALID_SOCKET) {
 			switch (WSAGetLastError())
@@ -385,8 +385,8 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	{
 		int multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket, 
 											IPPROTO_IP, IP_MULTICAST_IF,
-											this->m_local_ip_addr.c_str(), 
-											sizeof(this->m_local_ip_addr.c_str()));
+											this->_local_ip_addr.c_str(), 
+											sizeof(this->_local_ip_addr.c_str()));
 		if (!multicast_if_set_sockopt_result) {
 			switch (WSAGetLastError())
 			{
@@ -621,57 +621,57 @@ bool SocketHandler::setting_multicast_tx_sin_family(ini::IniFile socket_param_se
 	std::string temp_af = socket_param_setting_ini["MulticastTX_SocketSetting"]["sin_family"].as<std::string>();
 
 	if (std::equal(temp_af.begin(), temp_af.end(), "AF_UNSPEC")) {
-		m_multicast_tx_addr.sin_family = AF_UNSPEC;
+		_multicast_tx_addr.sin_family = AF_UNSPEC;
 	}
 #ifdef DEBUG
-	LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)param：sin_family = AF_INET"));
+	spdlog::debug("multicast param：sin_family = AF_UNSPEC");
 #endif // DEBUG
 
 	if (std::equal(temp_af.begin(), temp_af.end(), "AF_INET")) {
-		m_multicast_tx_addr.sin_family = AF_INET;
+		_multicast_tx_addr.sin_family = AF_INET;
 #ifdef DEBUG
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)param：afはAF_INET(IPv4)に設定されました。"));
+		spdlog::debug("multicast param：sin_family = AF_INET");
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_IPX")) {
-		m_multicast_tx_addr.sin_family = AF_IPX;
+		_multicast_tx_addr.sin_family = AF_IPX;
 #ifdef DEBUG
-		LogHandler::logging_info(LogHandler::LogType::INFO, std::cout, StringFormat("(multicast_tx)param：afはAF_IPXに設定されました。"));
+		spdlog::debug("multicast param：sin_family = AF_IPX");
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_APPLETALK")) {
-		m_multicast_tx_addr.sin_family = AF_APPLETALK;
+		_multicast_tx_addr.sin_family = AF_APPLETALK;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)param：afはAF_APPLETALKに設定されました。" << std::endl;
+		spdlog::debug("multicast param：sin_family = AF_APPLETALK");
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_NETBIOS")) {
-		m_multicast_tx_addr.sin_family = AF_NETBIOS;
+		_multicast_tx_addr.sin_family = AF_NETBIOS;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)param：afはAF_NETBIOSに設定されました。" << std::endl;
+		spdlog::debug("multicast param：sin_family = AF_NETBIOS");
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_INET6")) {
-		m_multicast_tx_addr.sin_family = AF_INET6;
+		_multicast_tx_addr.sin_family = AF_INET6;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)param：afはAF_INET6(IPv6)に設定されました。" << std::endl;
+		spdlog::debug("multicast param：sin_family = AF_INET6");
 #endif // DEBUG
 
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_IRDA")) {
-		m_multicast_tx_addr.sin_family = AF_IRDA;
+		_multicast_tx_addr.sin_family = AF_IRDA;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)param：afはAF_IRDAに設定されました。" << std::endl;
+		spdlog::debug("multicast param：sin_family = AF_IRDA");
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_BTH")) {
-		m_multicast_tx_addr.sin_family = AF_BTH;
+		_multicast_tx_addr.sin_family = AF_BTH;
 #ifdef DEBUG
-		std::cout << ServerTime::get_current_time() << "[INFO](multicast_tx)param：afはAF_BTHに設定されました。" << std::endl;
+		spdlog::debug("multicast param：sin_family = AF_BTH");
 #endif // DEBUG
 	}
 	else {
-		LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("The multicast transmit socket settings were not set correctly(sin_family). Exit the program."));
+		spdlog::error("The multicast transmit socket settings were not set correctly(sin_family). Exit the program.");
 		return false;
 	}
 	return true;
@@ -693,9 +693,9 @@ bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_sett
 		if (temp_port == _port) {
 			THROW_APP_EXCEPTION("There is a conflict between the application port used for TCP and the application port used for UDP multicast. Please reset the settings.");
 		}
-		m_multicast_tx_addr.sin_port = temp_port;
+		_multicast_tx_addr.sin_port = temp_port;
 #ifdef DEBUG
-		spdlog::info("The send port for multicast is now set to {:d}", m_multicast_tx_addr.sin_port);
+		spdlog::debug("The send port for multicast is now set to {:d}", m_multicast_tx_addr.sin_port);
 #endif // DEBUG
 
 	}
@@ -714,7 +714,7 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 	//inet_addrの設定
 	try
 	{
-		int inet_pton_result = inet_pton(m_multicast_tx_param.ai_family, temp_multicast_addr.c_str(), &m_multicast_tx_addr.sin_addr);
+		int inet_pton_result = inet_pton(m_multicast_tx_param.ai_family, temp_multicast_addr.c_str(), &_multicast_tx_addr.sin_addr);
 		if (inet_pton_result == -1) {
 			switch (WSAGetLastError())
 			{
@@ -736,7 +736,7 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 		//IPアドレスのバイナリ化が正常に終了した場合
 		else {
 #ifdef DEBUG
-			spdlog::info("The multicast transmission address has been set successfully (address: {:s})", temp_multicast_addr);
+			spdlog::debug("The multicast transmission address has been set successfully (address: {:s})", temp_multicast_addr);
 #endif // DEBUG
 		}
 	}
@@ -756,11 +756,11 @@ std::string SocketHandler::obtain_local_ip_addr()
 	//IPアドレステーブルの取得
 	try
 	{
-		if (GetIpAddrTable(NULL, &m_dw_size, 0) == ERROR_INSUFFICIENT_BUFFER) {
-			m_ip_addr_table = (MIB_IPADDRTABLE*)malloc(m_dw_size);
+		if (GetIpAddrTable(NULL, &_dw_size, 0) == ERROR_INSUFFICIENT_BUFFER) {
+			_ip_addr_table = (MIB_IPADDRTABLE*)malloc(_dw_size);
 		}
 
-		get_ip_addr_table_result = GetIpAddrTable(m_ip_addr_table, &m_dw_size, 0);
+		get_ip_addr_table_result = GetIpAddrTable(_ip_addr_table, &_dw_size, 0);
 		switch (get_ip_addr_table_result)
 		{
 		case ERROR_INSUFFICIENT_BUFFER:
@@ -793,7 +793,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 	//IPアドレステーブルの結果を格納
 	try
 	{
-		DWORD dw_ret_val_result = GetIpAddrTable(m_ip_addr_table, &m_dw_size, 0);
+		DWORD dw_ret_val_result = GetIpAddrTable(_ip_addr_table, &_dw_size, 0);
 		switch (dw_ret_val_result)
 		{
 		case ERROR_INSUFFICIENT_BUFFER:
@@ -820,13 +820,13 @@ std::string SocketHandler::obtain_local_ip_addr()
 	{
 		spdlog::error(ex.what_for_str());
 	}
-	if (m_ip_addr_table->dwNumEntries > 0) {
+	if (_ip_addr_table->dwNumEntries > 0) {
 		char temp_local_ip_addr[100];
-		for (m_i_count = 0; m_i_count < m_ip_addr_table->dwNumEntries; m_i_count++) {
+		for (_i_count = 0; _i_count < _ip_addr_table->dwNumEntries; _i_count++) {
 			//std::cout << StringFormat("Address : %s", inet_ntoa(*(struct in_addr*)&ip_addr_table->table[i_count].dwAddr));
-			inet_ntop(AF_INET, (struct in_addr*)&m_ip_addr_table->table[m_i_count].dwAddr, temp_local_ip_addr, sizeof(temp_local_ip_addr));
-			if (m_i_count == 0) {
-				m_local_ip_addr = temp_local_ip_addr;
+			inet_ntop(AF_INET, (struct in_addr*)&_ip_addr_table->table[_i_count].dwAddr, temp_local_ip_addr, sizeof(temp_local_ip_addr));
+			if (_i_count == 0) {
+				_local_ip_addr = temp_local_ip_addr;
 			}
 		}
 		spdlog::info("server-ip, success, obtain server ip address.");
@@ -835,7 +835,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 		spdlog::error("server-ip, failed, failed obtain server ip address.");
 	}
 
-	return m_local_ip_addr;
+	return _local_ip_addr;
 }
 
 

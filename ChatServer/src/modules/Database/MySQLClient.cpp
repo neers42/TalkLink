@@ -11,26 +11,26 @@ MySQLClient::MySQLClient(const std::string& host, const std::string& user_name, 
 
 MySQLClient::~MySQLClient()
 {
-	if (!m_connection)
-		delete m_connection;
+	if (!_connection)
+		delete _connection;
 
-	if (!m_statement)
-		delete m_statement;
+	if (!_statement)
+		delete _statement;
 
-	if (!m_mysql_res)
-		delete m_mysql_res;
+	if (!_mysql_res)
+		delete _mysql_res;
 
 	if (!m_prep_stmt)
 		delete m_prep_stmt;
 
 }
 
-void MySQLClient::connect_mysql()
+void MySQLClient::connect()
 {
 	try
 	{
-		m_connection = m_driver->connect(_mysql_host, _mysql_user_name, _mysql_password);
-		m_statement = m_connection->createStatement();
+		_connection = _driver->connect(_mysql_host, _mysql_user_name, _mysql_password);
+		_statement = _connection->createStatement();
 		spdlog::info("MYSQL Database connect success.");
 
 	}
@@ -39,5 +39,10 @@ void MySQLClient::connect_mysql()
 		spdlog::critical("SQL Exception Content : %s, SQL Error Code : %d, SQL State : %s", e.what(), e.getErrorCode(), e.getSQLState());
 		exit(1);
 	}
+}
+
+void MySQLClient::close()
+{
+
 }
 

@@ -13,6 +13,7 @@
 #include "ulid/ulid.hh"
 #include "ulid/ulid_struct.hh"
 #include "spdlog/spdlog.h"
+#include "MessageIDGenerator.h"
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
 //#define SERVER_METHOD_TLS_1_3	//TLS1.3で接続
@@ -25,6 +26,7 @@ class ProtocolHandler
 private:
 	WOLFSSL* _server_w_ssl = NULL;
 	WOLFSSL_CTX* _server_w_ctx = NULL;
+	std::unique_ptr<MessageIDGenerator> _message_id_generator;
 
 public:
 	//コンストラクタ
@@ -75,7 +77,7 @@ public:
 	//メッセージの受信情報を表示
 	template<typename T>
 	void print_received_message_info(const std::unique_ptr<T>& message_instance,
-		const std::string& message_id,
+		const uint64_t message_id,
 		const std::string& src_id,
 		const std::string dst_id,
 		const std::string& ipv4,
@@ -111,7 +113,7 @@ public:
 					message_instance.get_client_password()));*/
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType002>) {
-			spdlog::info("server received \033[33mMessage Type 002\033[m(message id:{:s}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"
+			spdlog::info("server received \033[33mMessage Type 002\033[m(message id:{:d}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"
 				, message_id, src_id, ipv4, socket_num, dst_id);
 			/*LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
 				"Content Type : %d\n"
@@ -193,7 +195,7 @@ private:
 			std::string dst_client_id = recv_json["dst_client_id"];    // std::string型
 			std::string src_client_id = recv_json["src_client_id"];    // std::string型
 			std::string content = recv_json["content"];                // std::string型
-			std::string message_id = this->generate_message_id();  // 空の文字列
+			uint64_t message_id = this->_message_id_generator->generate_message_id();  // 空の文字列
 			int trans_type = recv_json["trans_type"].get<int>();  // int型
 			std::string dst_chatroom_id = recv_json["dst_chatroom_id"];  // std::string型
 

@@ -23,10 +23,10 @@ public:
     MessageType002();
 	MessageType002(BaseMessage::ContentType c_type, const std::string& mt, 
 		const std::string& dst_id, const std::string& src_id, const std::string& content,
-		const std::string& m_id,TransType tt, const std::string& dst_chatroom_id);
+		const uint64_t m_id,TransType tt, const std::string& dst_chatroom_id);
 	MessageType002(int c_type, const std::string& mt,
 		const std::string& dst_id, const std::string& src_id, const std::string& content,
-		const std::string& m_id, int trans_type, const std::string& dst_chatroom_id);
+		const uint64_t m_id, int trans_type, const std::string& dst_chatroom_id);
 	
 	//デストラクタ
 	~MessageType002();

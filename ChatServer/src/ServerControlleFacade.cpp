@@ -18,11 +18,11 @@ ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 	//ログのフォーマット設定
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
 	spdlog::info("Starting MyChat server version 1.0.0!!");
-
 	_socket_handler = std::make_unique<SocketHandler>();
 	this->set_server_ip(this->_socket_handler->obtain_local_ip_addr());
 	_firebase_auth_handler = std::make_unique<FirebaseAuthHandler>();
-	_db_accesor = std::make_unique<MySQLClient>();
+	_mysql_client = std::make_unique<MySQLClient>();
+	_redis_client = std::make_unique<RedisClient>();
 	_protocol_handler = std::make_unique<ProtocolHandler>();
 	_mt000receiver = std::make_unique<MT000Receiver>();
 	_mt001receiver = std::make_unique<MT001Receiver>();
@@ -57,7 +57,8 @@ void ServerControlleFacade::run()
 		exit(1);
 	}
 	
-	this->_db_accesor->connect_mysql();
+	this->_mysql_client->connect();
+	this->_redis_client->connect();
 
 	//LogHandler::get_instance().logging_info("Start monitoring requests from clients.");
 	spdlog::info("Start monitoring requests from clients.");
@@ -240,7 +241,7 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 		if (mt001 == nullptr) {
 			return;
 		}
-		this->_protocol_handler->print_received_message_info(mt001, "", "", "", _client_handler->connected_clients[detection_num].get_client_ipv4_addr(), _client_handler->connected_clients[detection_num].get_client_socket());
+		this->_protocol_handler->print_received_message_info(mt001, 0, "", "", _client_handler->connected_clients[detection_num].get_client_ipv4_addr(), _client_handler->connected_clients[detection_num].get_client_socket());
 		this->mt001_process(mt001, detection_num);
 
 	}

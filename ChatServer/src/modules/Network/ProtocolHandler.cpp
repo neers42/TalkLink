@@ -1,6 +1,6 @@
 ﻿#include "ProtocolHandler.h"
 
-ProtocolHandler::ProtocolHandler()
+ProtocolHandler::ProtocolHandler() :_message_id_generator(std::make_unique<MessageIDGenerator>())
 {
 	//wolfSSLの初期化
 	initialize_wolfssl();
@@ -19,8 +19,6 @@ ProtocolHandler::ProtocolHandler()
 	//サーバの秘密鍵のロード
 	load_private_key();
 
-	
-	
 }
 
 ProtocolHandler::~ProtocolHandler()

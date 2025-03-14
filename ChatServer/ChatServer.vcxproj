@@ -135,7 +135,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;OPENSSL_EXTRA_X509_SMALL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;OPENSSL_EXTRA_X509_SMALL;HIREDIS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)/src;$(ProjectDir)/src/modules/Utils/include;$(ProjectDir)/src/modules/Database/include;$(ProjectDir)/src/modules/Authentication/include;$(ProjectDir)/src/modules/Chat/include;$(ProjectDir)/src/modules/Network/include;$(ProjectDir)/src/modules/Network/include/wolfssl</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -147,12 +147,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\firebase\MD\x64\Release;$(ProjectDir)\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(ProjectDir)\lib\boost\x64\lib;$(ProjectDir)\lib\wolfssl\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;Rpcrt4.lib;firebase_auth.lib;firebase_app.lib;firebase_app_check.lib;firebase_firestore.lib;firebase_functions.lib;firebase_database.lib;firebase_remote_config.lib;firebase_storage.lib;firebase_analytics.lib;firebase_dynamic_links.lib;firebase_gma.lib;firebase_installations.lib;firebase_messaging.lib;crypt32.lib;rpcrt4.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;icu.lib;ws2_32.lib;Ws2_32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;wolfssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\firebase\MD\x64\Release;$(ProjectDir)\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(ProjectDir)\lib\boost\x64\lib;$(ProjectDir)\lib\wolfssl\x64;$(ProjectDir)\lib\hiredis\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;Rpcrt4.lib;firebase_auth.lib;firebase_app.lib;firebase_app_check.lib;firebase_firestore.lib;firebase_functions.lib;firebase_database.lib;firebase_remote_config.lib;firebase_storage.lib;firebase_analytics.lib;firebase_dynamic_links.lib;firebase_gma.lib;firebase_installations.lib;firebase_messaging.lib;crypt32.lib;rpcrt4.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;icu.lib;ws2_32.lib;Ws2_32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;wolfssl.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\modules\Database\CassandraClient.cpp" />
+    <ClCompile Include="src\modules\Chat\MessageIDGenerator.cpp" />
+    <ClCompile Include="src\modules\Database\RedisClient.cpp" />
     <ClCompile Include="src\modules\Network\MessageType102.cpp" />
     <ClCompile Include="src\modules\Network\MessageType101.cpp" />
     <ClCompile Include="src\modules\Network\MessageType000.cpp" />
@@ -182,7 +183,20 @@
     <ClCompile Include="src\modules\Utils\ThreadPoolHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Database\CassandraClient.h" />
+    <ClInclude Include="include\Database\hiredis\alloc.h" />
+    <ClInclude Include="include\Database\hiredis\async.h" />
+    <ClInclude Include="include\Database\hiredis\async_private.h" />
+    <ClInclude Include="include\Database\hiredis\dict.h" />
+    <ClInclude Include="include\Database\hiredis\fmacros.h" />
+    <ClInclude Include="include\Database\hiredis\hiredis.h" />
+    <ClInclude Include="include\Database\hiredis\hiredis_ssl.h" />
+    <ClInclude Include="include\Database\hiredis\net.h" />
+    <ClInclude Include="include\Database\hiredis\read.h" />
+    <ClInclude Include="include\Database\hiredis\sds.h" />
+    <ClInclude Include="include\Database\hiredis\sdsalloc.h" />
+    <ClInclude Include="include\Database\hiredis\sockcompat.h" />
+    <ClInclude Include="include\Database\hiredis\win32.h" />
+    <ClInclude Include="include\Database\RedisClient.h" />
     <ClInclude Include="include\Database\DataBaseInterface.h" />
     <ClInclude Include="include\Network\MessageType003.h" />
     <ClInclude Include="include\Network\MessageType002.h" />
@@ -715,6 +729,7 @@
     <ClInclude Include="include\Utils\spdlog\version.h" />
     <ClInclude Include="include\Utils\ulid\ulid.hh" />
     <ClInclude Include="include\Utils\ulid\ulid_struct.hh" />
+    <ClInclude Include="include\Chat\MessageIDGenerator.h" />
     <ClInclude Include="src\ServerControlleFacade.h" />
     <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\StringFormat.h" />
@@ -766,6 +781,7 @@
     <Library Include="lib\firebase\MD\x64\Release\firebase_messaging.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_remote_config.lib" />
     <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
+    <Library Include="lib\hiredis\x64\hiredis.lib" />
     <Library Include="lib\wolfssl\x64\wolfssl.lib" />
   </ItemGroup>
   <ItemGroup>

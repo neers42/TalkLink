@@ -1,23 +1,23 @@
 ﻿#include "BaseMessage.h"
 
 BaseMessage::BaseMessage()
-	:_content_type{ ContentType::TEXT }, _message_type{""}, _time_stamp{ServerTime::get_current_time()}, _message_id{""}
+	:_content_type{ ContentType::TEXT }, _message_type{""}, _time_stamp{ServerTime::get_current_time()}, _message_id{0}
 {
 
 }
 
 BaseMessage::BaseMessage(ContentType c_type, const std::string& mt)
-	:_content_type{c_type}, _message_type{mt}, _time_stamp{ServerTime::get_current_time()}, _message_id{""}
+	:_content_type{c_type}, _message_type{mt}, _time_stamp{ServerTime::get_current_time()}, _message_id{0}
 {
 }
 
 BaseMessage::BaseMessage(int c_type, const std::string& mt)
-	:_content_type{ this->exchange_content_type_from_int(c_type)}, _message_type{mt}, _time_stamp{ServerTime::get_current_time()}, _message_id{""}
+	:_content_type{ this->exchange_content_type_from_int(c_type)}, _message_type{mt}, _time_stamp{ServerTime::get_current_time()}, _message_id{0}
 {
 }
 
 
-BaseMessage::BaseMessage(ContentType c_type, const std::string& m_type, const std::string& id)
+BaseMessage::BaseMessage(ContentType c_type, const std::string& m_type, const uint64_t id)
 	:_content_type{ c_type }, _message_type{m_type}, _time_stamp{ ServerTime::get_current_time()}, _message_id{id}
 {
 
@@ -59,12 +59,12 @@ void BaseMessage::set_content_type(int type_num)
 }
 
 
-std::string BaseMessage::get_message_id() const
+uint64_t BaseMessage::get_message_id() const
 {
 	return this->_message_id;
 }
 
-void BaseMessage::set_message_id(const std::string& m_id)
+void BaseMessage::set_message_id(const uint64_t m_id)
 {
 	this->_message_id = m_id;
 }
@@ -125,7 +125,7 @@ bool BaseMessage::is_valid_mesasge_type(const std::string& mt)
 }
 
 
-bool BaseMessage::is_valid_message_id(const std::string& m_id)
+bool BaseMessage::is_valid_message_id(const uint64_t m_id)
 {
 
 	return false;

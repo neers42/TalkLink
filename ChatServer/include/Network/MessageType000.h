@@ -8,7 +8,7 @@ private:
 
 public:
 	explicit MessageType000();
-	explicit MessageType000(int content_type, std::string& mt, const std::string message_id, const std::string& client_id);
+	explicit MessageType000(int content_type, std::string& mt, const std::string& client_id);
 	~MessageType000();
 };
 

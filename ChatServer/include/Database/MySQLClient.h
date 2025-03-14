@@ -13,10 +13,10 @@
 class MySQLClient : public DataBaseInterface
 {
 private:
-	sql::Driver* m_driver = sql::mysql::get_mysql_driver_instance();
-	sql::Connection* m_connection = nullptr;
-	sql::Statement* m_statement = nullptr;
-	sql::ResultSet* m_mysql_res = nullptr;
+	sql::Driver* _driver = sql::mysql::get_mysql_driver_instance();
+	sql::Connection* _connection = nullptr;
+	sql::Statement* _statement = nullptr;
+	sql::ResultSet* _mysql_res = nullptr;
 	sql::mysql::MySQL_Prepared_Statement* m_prep_stmt = nullptr;
 	
 	std::string _mysql_host = "tcp://127.0.0.1:3306";
@@ -32,7 +32,8 @@ public:
 
 	~MySQLClient();
 
-	void connect_mysql();
+	void connect() override;
+	void close() override;
 };
 
 

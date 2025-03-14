@@ -18,7 +18,7 @@ protected:
 	ContentType _content_type;	//メッセージコンテンツの内容
 	std::string _message_type;	//メッセージタイプ
 	std::string _time_stamp;	//タイムスタンプ
-	std::string _message_id;	//メッセージID
+	uint64_t _message_id;	//メッセージID
 
 
 public:
@@ -27,7 +27,7 @@ public:
 	BaseMessage();
 	BaseMessage(ContentType c_type, const std::string& mt);
 	BaseMessage(int c_type, const std::string& mt);
-	BaseMessage(ContentType c_type, const std::string& m_type,const std::string& id);
+	BaseMessage(ContentType c_type, const std::string& m_type,const uint64_t id);
 
 	//デストラクタ
 	virtual ~BaseMessage();
@@ -37,8 +37,8 @@ public:
 	void set_content_type(ContentType type);
 	void set_content_type(int type_num);
 
-	std::string get_message_id() const;
-	void set_message_id(const std::string& m_id);
+	uint64_t get_message_id() const;
+	void set_message_id(const std::uint64_t m_id);
 
 	//メッセージ検証
 	virtual bool is_valid();
@@ -54,7 +54,7 @@ public:
 protected:
 	//メッセージ内容検証
 	bool is_valid_mesasge_type(const std::string& mt);
-	bool is_valid_message_id(const std::string& m_id);
+	bool is_valid_message_id(const uint64_t m_id);
 	
 };
 

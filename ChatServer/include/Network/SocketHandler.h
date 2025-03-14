@@ -55,14 +55,14 @@ private:
 	struct sockaddr_in _init_sockaddr_in;
 	
 	//マルチキャスト用のsockaddr_in構造体
-	struct sockaddr_in m_multicast_tx_addr, m_bloadcast_tx_addr;
+	struct sockaddr_in _multicast_tx_addr, _bloadcast_tx_addr;
 
 	//ローカルIPアドレス
-	DWORD m_i_count;
-	PMIB_IPADDRTABLE m_ip_addr_table;
-	DWORD m_dw_size = 0;
-	DWORD m_dw_ret_val = 0;
-	std::string m_local_ip_addr = "";
+	DWORD _i_count;
+	PMIB_IPADDRTABLE _ip_addr_table;
+	DWORD _dw_size = 0;
+	DWORD _dw_ret_val = 0;
+	std::string _local_ip_addr = "";
 
 	int m_ttl = 0;
 
@@ -155,7 +155,7 @@ public:
 	
 
 	std::string& get_server_ip_address() {
-		return m_local_ip_addr;
+		return _local_ip_addr;
 	}
 
 	int get_port() {

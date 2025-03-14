@@ -13,9 +13,11 @@
 #include "ChatRoomHandler.h"
 #include "FirebaseAuthHandler.h"
 #include "ThreadPoolHandler.h"
+#include "MessageIDGenerator.h"
 #include "common.h"
 #include "LogHandler.h"
 #include "MySQLClient.h"
+#include "RedisClient.h"
 #include "ProtocolHandler.h"
 #include <mutex>
 #include "spdlog/spdlog.h"
@@ -31,7 +33,8 @@ class ServerControlleFacade
 {
 private:
 	std::unique_ptr<FirebaseAuthHandler> _firebase_auth_handler;
-	std::unique_ptr<MySQLClient> _db_accesor;
+	std::unique_ptr<MySQLClient> _mysql_client;
+	std::unique_ptr<RedisClient> _redis_client;
 	std::unique_ptr<ProtocolHandler> _protocol_handler;
 	std::unique_ptr<SocketHandler> _socket_handler;
 	std::unique_ptr<MT000Receiver> _mt000receiver;

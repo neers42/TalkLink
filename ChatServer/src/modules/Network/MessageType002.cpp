@@ -5,13 +5,12 @@ MessageType002::MessageType002()
 {
 }
 
-MessageType002::MessageType002(BaseMessage::ContentType c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const std::string& m_id, TransType tt, const std::string& dst_chatroom_id)
-	:BaseMessage::BaseMessage(c_type, mt, m_id),_trans_type{tt}, 
-	_dst_chatroom_id{dst_chatroom_id}
+MessageType002::MessageType002(BaseMessage::ContentType c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const uint64_t m_id, TransType tt, const std::string& dst_chatroom_id)
+	:BaseMessage::BaseMessage(c_type, mt, m_id),_trans_type{tt}, _dst_chatroom_id{dst_chatroom_id}
 {
 }
 
-MessageType002::MessageType002(int c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const std::string& m_id, int trans_type, const std::string& dst_chatroom_id)
+MessageType002::MessageType002(int c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const uint64_t m_id, int trans_type, const std::string& dst_chatroom_id)
 	:BaseMessage::BaseMessage(exchange_content_type_from_int(c_type), mt, m_id),
 	_trans_type{exchange_trans_type_from_int(trans_type)},
 	_receiver_id{dst_id},
