@@ -22,6 +22,7 @@ public:
 
 	void connect() override;
 	void close() override;
+	bool execute_query(const std::string& query) override;
 
 private:
 	const char* host = "127.0.0.1";

@@ -22,8 +22,16 @@ private:
 	std::string _mysql_host = "tcp://127.0.0.1:3306";
 	std::string _mysql_user_name = "root";
 	std::string _mysql_password = "***REMOVED***";
-	std::string _mysql_db_name = "";
+	std::string _mysql_db_name = "MyChat";
 	std::string _mysql_port = "";
+	std::string _mysql_table_name_clients = "clients";
+	std::string _mysql_table_name_chatrooms = "chatrooms";
+	std::string _mysql_table_name_chat_members = "chat_members";
+	std::string _mysql_table_name_chat_messages = "chat_messages";
+	std::string _mysql_table_name_unread_messages = "unread_messages";
+
+
+
 
 
 public:
@@ -34,6 +42,18 @@ public:
 
 	void connect() override;
 	void close() override;
+	bool execute_query(const std::string& query) override;
+	void print_sql_error(sql::SQLException& e);
+	void create_database();
+	bool create_table();
+
+private:
+	bool create_table_clients();
+	bool create_table_chatrooms();
+	bool create_table_chat_members();
+	bool create_table_chat_messages();
+	bool create_table_unread_messages();
+	
 };
 
 

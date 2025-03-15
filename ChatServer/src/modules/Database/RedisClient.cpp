@@ -15,23 +15,28 @@ void RedisClient::connect()
 	
 	if (context == NULL || context->err) {
 		if (context) {
-			spdlog::error("Connection error: {}", context->errstr);
+			spdlog::error("Redis Connection error: {}", context->errstr);
 			redisFree(context);
 		}
 		else {
-			spdlog::error("Connection error: can't allocate redis context");
+			spdlog::error("Redis Connection error: can't allocate redis context");
 		}
 		//throw std::runtime_error("Connection error");
 	}
 	else {
-		spdlog::info("Connected to redis server.");
+		spdlog::info("Redis Database Connect success!");
 	}
 }
 
 void RedisClient::close()
 {
 	redisFree(this->context);
-	spdlog::info("Connection closed.");
+	spdlog::info("Redis Connection closed.");
+}
+
+bool RedisClient::execute_query(const std::string& query)
+{
+	return true;
 }
 
 

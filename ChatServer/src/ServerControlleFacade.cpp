@@ -58,6 +58,9 @@ void ServerControlleFacade::run()
 	}
 	
 	this->_mysql_client->connect();
+	this->_mysql_client->create_database();
+	this->_mysql_client->execute_query("USE mychat");
+	this->_mysql_client->create_table();
 	this->_redis_client->connect();
 
 	//LogHandler::get_instance().logging_info("Start monitoring requests from clients.");
