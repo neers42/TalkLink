@@ -64,28 +64,35 @@ void ServerControlleFacade::run()
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->_socket_handler->setting_select_info_to_listen_socket();
 		this->setting_select_info();
-		int detection_num = _socket_handler->monitor_socket_descriptor(this->_client_handler->connected_clients);
+		std::vector<SOCKET> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
+		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
+			[this](SOCKET changed_socket) {handle_changed_socket_process(changed_socket); });
 
-		switch (detection_num)
-		{
-		case SELECT_TIME_OUT:
-			break;
 
-		case SOCKET_ERROR:
-			break;
-
-			//アクセプト要求があった場合
-		case REQUEST_ACCEPT_CLIENT_DETECTION:
-		{
-			this->_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
-		};
-			break;
-		
-		//接続中のクライアントリストから通知があった場合
-		default:
-			this->_thread_pool_handler->enqueue_task([this, detection_num]() {message_handle_process(detection_num); });
-			break;
-		}
+//#ifdef ver0.1
+//		int detection_num = _socket_handler->monitor_socket_descriptor(this->_client_handler->connected_clients);
+//
+//		switch (detection_num)
+//		{
+//		case SELECT_TIME_OUT:
+//			break;
+//
+//		case SOCKET_ERROR:
+//			break;
+//
+//			//アクセプト要求があった場合
+//		case REQUEST_ACCEPT_CLIENT_DETECTION:
+//		{
+//			this->_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
+//		};
+//			break;
+//		
+//		//接続中のクライアントリストから通知があった場合
+//		default:
+//			this->_thread_pool_handler->enqueue_task([this, detection_num]() {message_handle_process(detection_num); });
+//			break;
+//		}
+//#endif // ver0.1
 		
 		std::this_thread::sleep_until(abs_time);
 
@@ -97,12 +104,20 @@ void ServerControlleFacade::setting_select_info()
 {
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-		for (int i = 0; i < this->_client_handler->connected_clients.size(); i++) {
+		for (auto& client : this->_client_handler->connected_clients) {
 			//有効なソケットにFDSETを実行する
-			if (this->_client_handler->connected_clients[i].get_client_socket() != INVALID_SOCKET) {
-				_socket_handler->bind_select_info_to_socket(this->_client_handler->connected_clients[i].get_client_socket(), &_socket_handler->get_fd_read());
+			if (client.socket != INVALID_SOCKET) {
+				FD_SET(client.socket, &_socket_handler->get_fd_read());
+				//_socket_handler->bind_select_info_to_socket(client.get_client_socket(), &_socket_handler->get_fd_read());
 			}
 		}
+
+		//for (int i = 0; i < this->_client_handler->connected_clients.size(); i++) {
+		//	//有効なソケットにFDSETを実行する
+		//	if (this->_client_handler->connected_clients[i].get_client_socket() != INVALID_SOCKET) {
+		//		_socket_handler->bind_select_info_to_socket(this->_client_handler->connected_clients[i].get_client_socket(), &_socket_handler->get_fd_read());
+		//	}
+		//}
 	}
 
 	this->_socket_handler->copy_fd_read_to_fds(&(_socket_handler->get_fds()), &(_socket_handler->get_fd_read()));
@@ -129,7 +144,7 @@ bool ServerControlleFacade::accept_client_socket_process()
 	std::string new_client_ipv4_addr;
 
 	//TCPソケットのアクセプト処理
-	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(this->_client_handler->init_client.get_sockaddr_in_length());
+	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(this->_client_handler->init_client.socket_address_in_length);
 	if (new_client_socket == INVALID_SOCKET) {
 		spdlog::error("The accepted socket for message could not be added to the list because it was an INVALID SOCKET");
 		return ACCEPT_FAILED;
@@ -159,7 +174,7 @@ bool ServerControlleFacade::accept_client_socket_process()
 			return ACCEPT_FAILED;
 		}
 	}
-	spdlog::info("client ip : {:s} , success, server accept client(socket:{:d}).", new_client.get_client_ipv4_addr(), new_client.get_client_socket());
+	spdlog::info("client ip : {:s} , success, server accept client(socket:{:d}).", new_client.ipv4_address, new_client.socket);
 	return ACCEPT_SUCCEEDED;
 }
 
@@ -173,23 +188,36 @@ void ServerControlleFacade::set_server_ip(const std::string& ip)
 	this->_server_ip = ip;
 }
 
+//ソケットの変化を検知し、処理を振り分ける
+void ServerControlleFacade::handle_changed_socket_process(const SOCKET socket)
+{
+	if (socket == this->_socket_handler->get_listen_socket()) {
+		this->_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
+	}
+	else {
+		// 既存クライアントのデータを処理
+		//int detection_num = this->_client_handler->find_socket_from_client_list(socket);
+		this->_thread_pool_handler->enqueue_task([this, socket]() {message_handle_process(socket); });
+	}
+}
 
-void ServerControlleFacade::message_handle_process(int detection_num)
+//メッセージの処理を行う
+void ServerControlleFacade::message_handle_process(const SOCKET socket)
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	std::string receive_data, mt, data_time_stamp;
 	json receive_json;
 	bool disconnect_flag = false;
+	int detection_num = -1;
 
 
 #ifdef TLS_PROTOCOL
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+		detection_num = this->_client_handler->find_socket_from_client_list(socket);
 		auto& client = _client_handler->connected_clients[detection_num];
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
-			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client.get_ssl());
-
-
+			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client.ssl);
 		}
 		else {
 			return;
@@ -200,9 +228,9 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 
 			/*LogHandler::get_instance().logging_info(StringFormat("client(ip:%s, client id:%s) is disconnected, server initialize client info."
 				, client.get_client_ipv4_addr(), client.get_client_id()));*/
-			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.get_client_ipv4_addr(), client.get_client_id());
-				this->_protocol_handler->shutdown_wolfssl(client.get_ssl());
-				_socket_handler->disconnect_socket(client.get_client_socket());
+			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.ipv4_address, client.id);
+				this->_protocol_handler->shutdown_wolfssl(client.ssl);
+				_socket_handler->disconnect_socket(client.socket);
 				_client_handler->delete_client(detection_num);
 
 			return;
@@ -228,7 +256,7 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 		if (mt001 == nullptr) {
 			return;
 		}
-		this->_protocol_handler->print_received_message_info(mt001, 0, "", "", _client_handler->connected_clients[detection_num].get_client_ipv4_addr(), _client_handler->connected_clients[detection_num].get_client_socket());
+		this->_protocol_handler->print_received_message_info(mt001, 0, "", "", _client_handler->connected_clients[detection_num].ipv4_address, _client_handler->connected_clients[detection_num].socket);
 		this->mt001_process(mt001, detection_num);
 
 	}
@@ -239,7 +267,7 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 			return;
 		}
 		this->_protocol_handler->print_received_message_info(mt002, mt002->get_message_id(), mt002->get_sender_id(), mt002->get_receiver_id(),
-			_client_handler->connected_clients[detection_num].get_client_ipv4_addr(), _client_handler->connected_clients[detection_num].get_client_socket());
+			_client_handler->connected_clients[detection_num].ipv4_address, _client_handler->connected_clients[detection_num].socket);
 		this->mt002_process(mt002, detection_num);
 	}
 
@@ -258,7 +286,7 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 		auto& client = _client_handler->connected_client_list[detection_num];
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
-			std::tie(receive_data, disconnect_flag) = _socket_handler->receive_message(client.get_client_socket());
+			std::tie(receive_data, disconnect_flag) = _socket_handler->receive_message(client.socket);
 		}
 		else {
 			return;
@@ -343,9 +371,9 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
 			auto& client = this->_client_handler->connected_clients[detection_num];
-			client_id = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.get_client_ipv4_addr());
+			client_id = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.ipv4_address);
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
-				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client.get_client_ipv4_addr(), client.get_client_socket(), client_id);
+				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client.ipv4_address, client.socket, client_id);
 				//LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed up, Client id:%s", client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
 				//SIGN UPが成功した場合に、クライアント情報を登録する
 				client.set_client_id(client_id);
@@ -367,10 +395,10 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
 			auto& client = this->_client_handler->connected_clients[detection_num];
-			client_id = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.get_client_ipv4_addr(), client_id_ptr);
+			client_id = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.ipv4_address, client_id_ptr);
 			
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
-				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client.get_client_ipv4_addr(), client.get_client_socket(), client_id);
+				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client.ipv4_address, client.socket, client_id);
 				//LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed in, Client id:%s",client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
 				//データベースからユーザ情報を読み取る。
 				std::string client_name, client_mail_addr, client_password;
@@ -393,7 +421,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
 			auto& client = this->_client_handler->connected_clients[detection_num];
-			_firebase_auth_handler->sign_out(client.get_client_id(), client.get_client_mail_addr());
+			_firebase_auth_handler->sign_out(client.id, client.mail_address);
 			break;
 		}
 		default:
@@ -518,7 +546,7 @@ void ServerControlleFacade::heart_beat_check_process()
 		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30秒間隔
 
 		for (const auto& client : current_connect_clients) {
-			if (client.get_client_heart_beat_count() == 0) {
+			if (client.heart_beat_count == 0) {
 				this->heart_beat_response_process(client);
 			}
 		}
@@ -541,22 +569,22 @@ void ServerControlleFacade::heart_beat_response_process(const ClientHandler::Cli
 	auto& clients = _client_handler->connected_clients;
 	auto it = std::find(clients.begin(), clients.end(), client);
 
-	if (it == clients.end() || it->get_client_heart_beat_count() > 0) {
+	if (it == clients.end() || it->heart_beat_count > 0) {
 		return;  // 既に削除されている or ハートビートがリセットされた場合
 	}
 
 	// ログ出力
-	if (it->get_auth_status()) {
-		spdlog::info("Client (Socket : {:d} ID: {:s}), disconnect.(Not response)", it->get_client_socket(), it->get_client_id());
+	if (it->auth_status == true) {
+		spdlog::info("Client (Socket : {:d} ID: {:s}), disconnect.(Not response)", it->socket, it->id);
 	
 	}
 	else {
-		spdlog::info("Client (Socket : {:d} ID: None), disconnect.(Not response)", it->get_client_socket());
+		spdlog::info("Client (Socket : {:d} ID: None), disconnect.(Not response)", it->socket);
 
 	}
 
 	// クライアント切断処理
-	_socket_handler->disconnect_socket(it->get_client_socket());
+	_socket_handler->disconnect_socket(it->socket);
 
 	// クライアント削除（イテレータを使って安全に削除）
 	this->_client_handler->delete_client(it);
@@ -574,6 +602,8 @@ void ServerControlleFacade::setting_select_process()
 		}
 	}
 }
+
+
 
 
 

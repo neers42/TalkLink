@@ -28,19 +28,19 @@ private:
 	{
 
 		//Client private変数
-	private:
-		std::string _id;	//クライアントID
-		std::string _name;	//クライアントネーム
-		std::string _mail_address;	//クライアントのメールアドレス
-		SOCKET _socket;		//クライアントのソケット
-		struct sockaddr_in _sockaddr_in;	//クライアントのsockaddr_in情報
-		socklen_t _socket_address_in_length = sizeof(this->_sockaddr_in);
-		std::string _ipv4_address = "";		//クライアントの端末ipv4アドレス
-		std::string _password = "";			//クライアントのパスワード
-		firebase::auth::Auth* _firebase_auth;	//クライアントの認証情報
-		int _heart_beat_count;		//クライアントのハートビート回数
-		bool _auth_status = false;	//クライアントの認証状態
-		WOLFSSL* _ssl;				//クライアントのソケットにアタッチされたsslオブジェクト
+	public:
+		std::string id;	//クライアントID
+		std::string name;	//クライアントネーム
+		std::string mail_address;	//クライアントのメールアドレス
+		SOCKET socket;		//クライアントのソケット
+		struct sockaddr_in sockaddr_in;	//クライアントのsockaddr_in情報
+		socklen_t socket_address_in_length = sizeof(this->sockaddr_in);
+		std::string ipv4_address = "";		//クライアントの端末ipv4アドレス
+		std::string password = "";			//クライアントのパスワード
+		firebase::auth::Auth* firebase_auth;	//クライアントの認証情報
+		int heart_beat_count;		//クライアントのハートビート回数
+		bool auth_status = false;	//クライアントの認証状態
+		WOLFSSL* ssl;				//クライアントのソケットにアタッチされたsslオブジェクト
 
 
 	public:
@@ -50,31 +50,7 @@ private:
 		~Client();
 
 
-		//getter
-		std::string get_client_id();
-		const std::string get_client_id() const;
-		std::string get_client_name();
-		const std::string get_client_name() const;
-		std::string get_client_mail_addr();
-		const std::string get_client_mail_addr() const;
-		SOCKET get_client_socket();
-		const SOCKET get_client_socket() const;
-		struct sockaddr_in get_sockaddr_in();
-		const struct sockaddr_in get_sockaddr_in() const;
-		socklen_t get_sockaddr_in_length();
-		const socklen_t get_sockaddr_in_length() const;
-		std::string get_client_ipv4_addr();
-		const std::string get_client_ipv4_addr() const;
-		std::string get_client_password();
-		const std::string get_client_password() const;
-		firebase::auth::Auth* get_client_auth();
-		int get_client_heart_beat_count();
-		const int get_client_heart_beat_count() const;
-		bool get_auth_status();
-		const bool get_auth_status() const;
-		WOLFSSL* get_ssl();
-		WOLFSSL* get_ssl() const;
-
+	
 		//setter
 		void set_client_id(std::string id);
 		void set_client_name(std::string name);
@@ -92,11 +68,7 @@ private:
 
 	};
 	friend class SocketHandler;
-	friend class Receiver;
-	friend class MT002Receiver;
-	friend class Sender;
 	friend class ChatroomHandler;
-	friend class LoginHandler;
 	friend class ServerControlleFacade;
 
 	//接続中のクライアントリスト
@@ -104,7 +76,6 @@ private:
 
 	unsigned short connect_client_num;
 
-	std::mutex mtx;
 
 	//ハートビート用のソケットリスト
 	std::vector<std::tuple<SOCKET, struct sockaddr_in, int, std::string>> heart_beat_list;
@@ -115,8 +86,8 @@ private:
 	//private関数
 	std::string generate_client_id();
 
-
-
+public:
+	std::mutex mtx;
 
 public:
 	ClientHandler();
@@ -125,6 +96,7 @@ public:
 	//getter
 	std::vector<Client> get_connected_client_list();
 	const std::vector<Client> get_connected_client_list() const;
+	const std::vector<SOCKET> get_all_connected_sockets() const;
 	Client get_init_client();
 	const Client get_init_client() const;
 	bool get_client_auth_status(const int client_num);
@@ -153,8 +125,8 @@ public:
 	void delete_client_hbsock_from_hb_list(const std::uint32_t delete_num);
 	int check_next_invalid_socket();
 	int search_client_id_from_con_list(const std::string& search_client_id);
+	int find_socket_from_client_list(const SOCKET& search_socket);
 	void show_client_info(const int& client_num);
-	std::vector<SOCKET> extract_conneted_sockets();
 	
 };
 

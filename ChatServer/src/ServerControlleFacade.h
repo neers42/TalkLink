@@ -63,7 +63,9 @@ public:
 	const std::string& get_server_ip();
 	void set_server_ip(const std::string& ip);
 
-	void message_handle_process(int detection_num);
+	void handle_changed_socket_process(const SOCKET socket);
+
+	void message_handle_process(const SOCKET socket);
 
 	void mt000_process(std::string& receive_data, int monitor_result);
 

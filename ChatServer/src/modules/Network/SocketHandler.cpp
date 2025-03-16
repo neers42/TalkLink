@@ -507,6 +507,37 @@ bool SocketHandler::generate_udp_bloadcast_tx_socket()
 	return false;
 }
 
+bool SocketHandler::add_connect_socket(const SOCKET socket)
+{
+	try
+	{
+		if (this->_connect_sockets.size() >= MAX_CONNECT_NUM) {
+			THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");
+		}
+	}
+	catch (const exception::ExceptionBase& ex)
+	{
+		spdlog::error(ex.what_for_str());
+		return false;
+	}
+
+	this->_connect_sockets.push_back(socket);
+	return true;
+}
+
+bool SocketHandler::delete_connect_socket(const SOCKET socket)
+{
+	if (this->_connect_sockets.empty() == true) {
+		spdlog::error("Client list is empty.");
+		return false;
+	}
+	else {
+		auto it = std::find(this->_connect_sockets.begin(), this->_connect_sockets.end(), socket);
+		this->_connect_sockets.erase(it);
+		return true;
+	}
+}
+
 bool SocketHandler::setting_tcp_flags(ini::IniFile tcp_listen_socket_param_setting_ini)
 {
 	//フラッグの設定
@@ -1292,22 +1323,85 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 
 
 
-int SocketHandler::monitor_socket_descriptor(const std::vector<ClientHandler::Client>& client_list)
+//int SocketHandler::monitor_socket_descriptor(const std::vector<ClientHandler::Client>& client_list)
+//{
+//	try
+//	{
+//		int select_result = 0;
+//		select_result = select(0, &m_fds, NULL, NULL, &_timeout);
+//
+//		switch (select_result)
+//		{
+//			//fd_set構造体に含まれているソケット ハンドルの合計数、期限切れの場合
+//		case 0:
+//			//THROW_APP_EXCEPTION("CASE:SELECT FUNCTION ERROR(fd_set構造体に含まれているソケット ハンドルの合計数、期限切れです。)");
+//			return SELECT_TIME_OUT;
+//			break;
+//
+//			//エラーが発生した場合
+//		case SOCKET_ERROR:
+//			switch (WSAGetLastError())
+//			{
+//			case WSANOTINITIALISED:
+//				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが成功する必要があります。)");
+//				break;
+//			case WSAEFAULT:
+//				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(Windows ソケットの実装では、内部操作に必要なリソースを割り当てることができませんでした。または、 readfds、 writefds、 exceptfds、または timeval パラメーターがユーザー アドレス空間の一部ではありません。)");
+//				break;
+//			case ENETDOWN:
+//				THROW_APP_EXCEPTION("WSA ERROR CASE:ENETDOWN(ネットワーク サブシステムが失敗しました。)");
+//				break;
+//			case WSAEINVAL:
+//				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(タイムアウト値が無効であるか、3 つの記述子パラメーターがすべて null でした。)");
+//				break;
+//			case WSAEINTR:
+//				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、Windows ソケット 1.1 呼び出しのブロックが取り消されました。)");
+//				break;
+//			case WSAEINPROGRESS:
+//				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロック中の Windows ソケット 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+//				break;
+//			case WSAENOTSOCK:
+//				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子セットの 1 つに、ソケットではないエントリが含まれています。)");
+//				break;
+//			default:
+//				break;
+//			}
+//			break;
+//
+//
+//
+//			//ディスクリプションに変化が起こった場合
+//		default:
+//			if (FD_ISSET(_tcp_listen_socket, &m_fds)) {
+//				return REQUEST_ACCEPT_CLIENT_DETECTION;
+//			}
+//			else {
+//				//接続中のクライアントリストのどのクライアントからの通知かを判定する
+//				for (int detection_client_num = 0; detection_client_num < client_list.size(); detection_client_num++) {
+//					if (client_list[detection_client_num].socket != INVALID_SOCKET && FD_ISSET(client_list[detection_client_num].socket, &m_fds)) {
+//						return detection_client_num;
+//					}
+//				}
+//			}
+//			break;
+//		}
+//	}
+//	catch (const exception::ExceptionBase& ex)
+//	{
+//		spdlog::error(ex.what_for_str());
+//		return SOCKET_ERROR;
+//	}
+//
+//}
+
+void SocketHandler::monitor_socket_descriptor(const std::vector<SOCKET>& socket_list, std::function<void(SOCKET)> callback)
 {
-	try
-	{
-		int select_result = 0;
-		select_result = select(0, &m_fds, NULL, NULL, &_timeout);
+	try {
+		int select_result = select(0, &m_fds, NULL, NULL, &_timeout);
 
-		switch (select_result)
-		{
-			//fd_set構造体に含まれているソケット ハンドルの合計数、期限切れの場合
+		switch (select_result) {
 		case 0:
-			//THROW_APP_EXCEPTION("CASE:SELECT FUNCTION ERROR(fd_set構造体に含まれているソケット ハンドルの合計数、期限切れです。)");
-			return SELECT_TIME_OUT;
-			break;
-
-			//エラーが発生した場合
+			return; // タイムアウト
 		case SOCKET_ERROR:
 			switch (WSAGetLastError())
 			{
@@ -1335,32 +1429,22 @@ int SocketHandler::monitor_socket_descriptor(const std::vector<ClientHandler::Cl
 			default:
 				break;
 			}
-			break;
-
-
-
-			//ディスクリプションに変化が起こった場合
+			return;
 		default:
 			if (FD_ISSET(_tcp_listen_socket, &m_fds)) {
-				return REQUEST_ACCEPT_CLIENT_DETECTION;
+				callback(_tcp_listen_socket); // 新しい接続リクエスト
 			}
-			else {
-				//接続中のクライアントリストのどのクライアントからの通知かを判定する
-				for (int detection_client_num = 0; detection_client_num < client_list.size(); detection_client_num++) {
-					if (client_list[detection_client_num].get_client_socket() != INVALID_SOCKET && FD_ISSET(client_list[detection_client_num].get_client_socket(), &m_fds)) {
-						return detection_client_num;
-					}
+			for (const auto& socket : socket_list) {
+				if (socket != INVALID_SOCKET && FD_ISSET(socket, &m_fds)) {
+					callback(socket); // 変化のあったソケットを通知
 				}
 			}
 			break;
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
-	{
+	catch (const exception::ExceptionBase& ex) {
 		spdlog::error(ex.what_for_str());
-		return SOCKET_ERROR;
 	}
-
 }
 
 

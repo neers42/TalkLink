@@ -66,6 +66,8 @@ private:
 
 	int m_ttl = 0;
 
+	std::vector<SOCKET> _connect_sockets;
+
 
 /*
 :::::::::::::::::::::::::::::::
@@ -164,7 +166,7 @@ public:
 
 
 	//ファイルディスクリプタに変化がないか監視する
-	int monitor_socket_descriptor(const std::vector<ClientHandler::Client>& client_list);
+	void monitor_socket_descriptor(const std::vector<SOCKET>& socket_list, std::function<void(SOCKET)> callback);
 
 
 	//メッセージ用のリッスンソケットをアクティブにする
@@ -199,6 +201,10 @@ public:
 	bool generate_udp_multicast_tx_socket();
 
 	bool generate_udp_bloadcast_tx_socket();
+
+	bool add_connect_socket(const SOCKET socket);
+	bool delete_connect_socket(const SOCKET socket);
+
 	
 
 };

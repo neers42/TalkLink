@@ -1,42 +1,42 @@
 ﻿#include "ClientHandler.h"
 
-ClientHandler::Client::Client():_id{""}
-							, _name{""}
-							, _mail_address{""}
-							, _socket{INVALID_SOCKET}
-							, _ipv4_address{""}
-							, _password{""}
-							, _heart_beat_count{0}
+ClientHandler::Client::Client():id{""}
+							, name{""}
+							, mail_address{""}
+							, socket{INVALID_SOCKET}
+							, ipv4_address{""}
+							, password{""}
+							, heart_beat_count{0}
 {
-	this -> _sockaddr_in.sin_family = AF_INET;
-	this->_sockaddr_in.sin_port = 0;
-	this->_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+	this -> sockaddr_in.sin_family = AF_INET;
+	this->sockaddr_in.sin_port = 0;
+	this->sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 }
 
-ClientHandler::Client::Client(const std::string id, const std::string name, const std::string mail_addr, const SOCKET socket, const sockaddr_in sockaddr_in, const std::string client_ipv4_addr, WOLFSSL* ssl)
-	:_id{id},
-	_name{name},
-	_mail_address{mail_addr},
-	_socket{socket},
-	_sockaddr_in{sockaddr_in},
-	_firebase_auth{nullptr},
-	_ipv4_address{client_ipv4_addr},
-	_heart_beat_count{ 0 },
-	_ssl{ssl}
+ClientHandler::Client::Client(const std::string id, const std::string name, const std::string mail_addr, const SOCKET socket, const struct sockaddr_in sockaddr_in, const std::string client_ipv4_addr, WOLFSSL* ssl)
+	:id{id},
+	name{name},
+	mail_address{mail_addr},
+	socket{socket},
+	sockaddr_in{sockaddr_in},
+	firebase_auth{nullptr},
+	ipv4_address{client_ipv4_addr},
+	heart_beat_count{ 0 },
+	ssl{ssl}
 {
 
 }
 
-ClientHandler::Client::Client(const SOCKET socket, const sockaddr_in sockaddr_in, const socklen_t length, std::string& ipv4_addr, WOLFSSL* ssl)
-	:_id{ "" },
-	_name{ "" },
-	_mail_address{ "" },
-	_socket{ socket },
-	_sockaddr_in{ sockaddr_in },
-	_firebase_auth{nullptr},
-	_ipv4_address{ ipv4_addr },
-	_heart_beat_count{ 0 },
-	_ssl{ssl}
+ClientHandler::Client::Client(const SOCKET socket, const struct sockaddr_in sockaddr_in, const socklen_t length, std::string& ipv4_addr, WOLFSSL* ssl)
+	:id{ "" },
+	name{ "" },
+	mail_address{ "" },
+	socket{ socket },
+	sockaddr_in{ sockaddr_in },
+	firebase_auth{nullptr},
+	ipv4_address{ ipv4_addr },
+	heart_beat_count{ 0 },
+	ssl{ssl}
 {
 }
 
@@ -45,196 +45,178 @@ ClientHandler::Client::~Client()
 
 }
 
-std::string ClientHandler::Client::get_client_id()
-{
-	return this->_id;
-}
 
-const std::string ClientHandler::Client::get_client_id() const
-{
-	return this->_id;
-}
 
-std::string ClientHandler::Client::get_client_name()
-{
-	return this->_name;
-}
-
-const std::string ClientHandler::Client::get_client_name() const
-{
-	return this->_name;
-}
-
-std::string ClientHandler::Client::get_client_mail_addr()
-{
-	return this->_mail_address;
-}
-
-const std::string ClientHandler::Client::get_client_mail_addr() const
-{
-	return this->_mail_address;
-}
-
-SOCKET ClientHandler::Client::get_client_socket()
-{
-	return this->_socket;
-}
-
-const SOCKET ClientHandler::Client::get_client_socket() const
-{
-	return this->_socket;
-}
-
-sockaddr_in ClientHandler::Client::get_sockaddr_in()
-{
-	return this->_sockaddr_in;
-}
-
-const sockaddr_in ClientHandler::Client::get_sockaddr_in() const
-{
-	return this->_sockaddr_in;
-}
-
-socklen_t ClientHandler::Client::get_sockaddr_in_length()
-{
-	return this->_socket_address_in_length;
-}
-
-const socklen_t ClientHandler::Client::get_sockaddr_in_length() const
-{
-	return this->_socket_address_in_length;
-}
-
-std::string ClientHandler::Client::get_client_ipv4_addr()
-{
-	return this->_ipv4_address;
-}
-
-const std::string ClientHandler::Client::get_client_ipv4_addr() const
-{
-	return this->_ipv4_address;
-}
-
-std::string ClientHandler::Client::get_client_password()
-{
-	return this->_password;
-}
-
-const std::string ClientHandler::Client::get_client_password() const
-{
-	return this->_password;
-}
-
-firebase::auth::Auth* ClientHandler::Client::get_client_auth()
-{
-	return this->_firebase_auth;
-}
-
-int ClientHandler::Client::get_client_heart_beat_count()
-{
-	return this->_heart_beat_count;
-}
-
-const int ClientHandler::Client::get_client_heart_beat_count() const
-{
-	return this->_heart_beat_count;
-}
-
-bool ClientHandler::Client::get_auth_status()
-{
-	return this->_auth_status;
-}
-
-const bool ClientHandler::Client::get_auth_status() const
-{
-	return this->_auth_status;
-}
-
-WOLFSSL* ClientHandler::Client::get_ssl()
-{
-	return this->_ssl;
-}
-
-WOLFSSL* ClientHandler::Client::get_ssl() const
-{
-	return this->_ssl;
-}
+//std::string ClientHandler::Client::get_client_mail_addr()
+//{
+//	return this->mail_address;
+//}
+//
+//const std::string ClientHandler::Client::get_client_mail_addr() const
+//{
+//	return this->mail_address;
+//}
+//
+//SOCKET ClientHandler::Client::get_client_socket()
+//{
+//	return this->socket;
+//}
+//
+//const SOCKET ClientHandler::Client::get_client_socket() const
+//{
+//	return this->socket;
+//}
+//
+//sockaddr_in ClientHandler::Client::get_sockaddr_in()
+//{
+//	return this->sockaddr_in;
+//}
+//
+//const sockaddr_in ClientHandler::Client::get_sockaddr_in() const
+//{
+//	return this->sockaddr_in;
+//}
+//
+//socklen_t ClientHandler::Client::get_sockaddr_in_length()
+//{
+//	return this->socket_address_in_length;
+//}
+//
+//const socklen_t ClientHandler::Client::get_sockaddr_in_length() const
+//{
+//	return this->socket_address_in_length;
+//}
+//
+//std::string ClientHandler::Client::get_client_ipv4_addr()
+//{
+//	return this->ipv4_address;
+//}
+//
+//const std::string ClientHandler::Client::get_client_ipv4_addr() const
+//{
+//	return this->ipv4_address;
+//}
+//
+//std::string ClientHandler::Client::get_client_password()
+//{
+//	return this->password;
+//}
+//
+//const std::string ClientHandler::Client::get_client_password() const
+//{
+//	return this->password;
+//}
+//
+//firebase::auth::Auth* ClientHandler::Client::get_client_auth()
+//{
+//	return this->firebase_auth;
+//}
+//
+//int ClientHandler::Client::get_client_heart_beat_count()
+//{
+//	return this->heart_beat_count;
+//}
+//
+//const int ClientHandler::Client::get_client_heart_beat_count() const
+//{
+//	return this->heart_beat_count;
+//}
+//
+//bool ClientHandler::Client::get_auth_status()
+//{
+//	return this->auth_status;
+//}
+//
+//const bool ClientHandler::Client::get_auth_status() const
+//{
+//	return this->auth_status;
+//}
+//
+//WOLFSSL* ClientHandler::Client::get_ssl()
+//{
+//	return this->ssl;
+//}
+//
+//WOLFSSL* ClientHandler::Client::get_ssl() const
+//{
+//	return this->ssl;
+//}
 
 void ClientHandler::Client::set_client_id(std::string id)
 {
-	this->_id = id;
+	this->id = id;
 }
 
 void ClientHandler::Client::set_client_name(std::string name)
 {
-	this->_name = name;
+	this->name = name;
 }
 
 void ClientHandler::Client::set_client_mail_addr(std::string mail_addr)
 {
-	this->_mail_address = mail_addr;
+	this->mail_address = mail_addr;
 }
 
 void ClientHandler::Client::set_client_socket(SOCKET socket)
 {
-	this->_socket = socket;
+	this->socket = socket;
 }
 
-void ClientHandler::Client::set_client_sockaddr_in(sockaddr_in sock_in)
+void ClientHandler::Client::set_client_sockaddr_in(struct sockaddr_in sock_in)
 {
-	this->_sockaddr_in = sock_in;
+	this->sockaddr_in = sock_in;
 }
 
 void ClientHandler::Client::set_socket_addr_in_length(socklen_t length)
 {
-	this->_socket_address_in_length = length;
+	this->socket_address_in_length = length;
 }
 
 void ClientHandler::Client::set_client_ipv4_addr(std::string ipv4_addr)
 {
-	this->_ipv4_address = ipv4_addr;
+	this->ipv4_address = ipv4_addr;
 }
 
 void ClientHandler::Client::set_client_password(std::string password)
 {
-	this->_password = password;
+	this->password = password;
 }
 
 void ClientHandler::Client::incliment_heart_beat_count()
 {
-	this->_heart_beat_count++;
+	this->heart_beat_count++;
 }
 
 void ClientHandler::Client::clear_heart_beat_count()
 {
-	this->_heart_beat_count = 0;
+	this->heart_beat_count = 0;
 }
 
 void ClientHandler::Client::change_auth_status()
 {
-	if (_auth_status == true) {
-		_auth_status = false;
+	if (auth_status == true) {
+		auth_status = false;
 	}
 	else {
-		_auth_status = true;
+		auth_status = true;
 	}
 }
 
 bool ClientHandler::Client::operator==(const Client& other_client) const
 {
-	return this->_id == other_client._id;
+	return this->id == other_client.id;
 }
 
 ClientHandler::Client& ClientHandler::Client::operator=(const Client& other_client)
 {
-	_id = other_client._id;
-	_name = other_client._name;
-	_mail_address = other_client._mail_address;
-	_socket = other_client._socket;
-	_sockaddr_in = other_client._sockaddr_in;
-	_socket_address_in_length = other_client._socket_address_in_length;
-	_ipv4_address = other_client._ipv4_address;
-	_password = other_client._password;
+	id = other_client.id;
+	name = other_client.name;
+	mail_address = other_client.mail_address;
+	socket = other_client.socket;
+	sockaddr_in = other_client.sockaddr_in;
+	socket_address_in_length = other_client.socket_address_in_length;
+	ipv4_address = other_client.ipv4_address;
+	password = other_client.password;
 	return *this;
 }
 
@@ -388,7 +370,7 @@ int ClientHandler::check_next_invalid_socket()
 {
 	for (int n_invalid_socket = 0; n_invalid_socket < MAX_CONNECT_NUM; n_invalid_socket++) {
 
-		if (this->connected_clients[n_invalid_socket].get_client_socket() == INVALID_SOCKET)
+		if (this->connected_clients[n_invalid_socket].socket == INVALID_SOCKET)
 			return n_invalid_socket;
 	}
 	return -1;
@@ -401,7 +383,7 @@ void ClientHandler::delete_client_hbsock_from_hb_list(const std::uint32_t delete
 
 bool ClientHandler::get_client_auth_status(const int client_num)
 {
-	return this->connected_clients[client_num].get_auth_status();
+	return this->connected_clients[client_num].auth_status;
 }
 
 
@@ -414,7 +396,7 @@ int ClientHandler::search_client_id_from_con_list(const std::string& search_clie
 {
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 
-		if (this->connected_clients[search_result].get_client_id() == search_client_id) {
+		if (this->connected_clients[search_result].id == search_client_id) {
 			return search_result;
 		}
 	}
@@ -422,24 +404,24 @@ int ClientHandler::search_client_id_from_con_list(const std::string& search_clie
 	return NOT_EXIST_CLIENT_ID;
 }
 
-void ClientHandler::show_client_info(const int& client_num)
+int ClientHandler::find_socket_from_client_list(const SOCKET& search_socket)
 {
-	spdlog::debug("Client list[{:d}] ID : {:s}", client_num, this->connected_clients[client_num].get_client_id());
-	spdlog::debug("Client list[{:d}] Name : {:s}", client_num, this->connected_clients[client_num].get_client_name());
-	spdlog::debug("Client list[{:d}] Mail : {:s}", client_num, this->connected_clients[client_num].get_client_mail_addr());
-	spdlog::debug("Client list[{:d}] Password : {:s}", client_num, this->connected_clients[client_num].get_client_password());
-}
-
-std::vector<SOCKET> ClientHandler::extract_conneted_sockets()
-{
-	std::vector<SOCKET> connected_socket_list;
-	for (int i = 0; i < MAX_CONNECT_NUM; i++) {
-		if (this->connected_clients[i].get_client_socket() != NULL) {
-			connected_socket_list.push_back(this->connected_clients[i].get_client_socket());
+	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
+		if (this->connected_clients[search_result].socket == search_socket) {
+			return search_result;
 		}
 	}
-	return connected_socket_list;
+	return -1;
 }
+
+void ClientHandler::show_client_info(const int& client_num)
+{
+	spdlog::debug("Client list[{:d}] ID : {:s}", client_num, this->connected_clients[client_num].id);
+	spdlog::debug("Client list[{:d}] Name : {:s}", client_num, this->connected_clients[client_num].name);
+	spdlog::debug("Client list[{:d}] Mail : {:s}", client_num, this->connected_clients[client_num].mail_address);
+	spdlog::debug("Client list[{:d}] Password : {:s}", client_num, this->connected_clients[client_num].password);
+}
+
 
 
 std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list()
@@ -450,6 +432,22 @@ std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list()
 const std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list() const
 {
 	return this->connected_clients;
+}
+
+const std::vector<SOCKET> ClientHandler::get_all_connected_sockets() const
+{
+	std::vector<SOCKET> socket_list;
+	{
+		std::mutex mutex;
+		std::unique_lock<std::mutex> lock(mutex);
+		for (const auto& client : connected_clients) {
+			if (client.socket != INVALID_SOCKET) {
+				socket_list.push_back(client.socket);
+			}
+		}
+	}
+	
+	return socket_list;
 }
 
 ClientHandler::Client ClientHandler::get_init_client()
