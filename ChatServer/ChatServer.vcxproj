@@ -162,24 +162,17 @@
     <ClCompile Include="src\modules\Network\MessageType001.cpp" />
     <ClCompile Include="src\modules\Network\BaseMessage.cpp" />
     <ClCompile Include="src\modules\Network\ProtocolHandler.cpp" />
-    <ClCompile Include="src\modules\Chat\MT000Receiver.cpp" />
-    <ClCompile Include="src\modules\Chat\MT102Sender.cpp" />
-    <ClCompile Include="src\modules\Chat\MT101Sender.cpp" />
     <ClCompile Include="src\modules\Authentication\FirebaseAuthHandler.cpp" />
-    <ClCompile Include="src\modules\Chat\MT001Receiver.cpp" />
     <ClCompile Include="src\modules\Chat\ChatRoomHandler.cpp" />
     <ClCompile Include="src\modules\Chat\ClientHandler.cpp" />
     <ClCompile Include="src\modules\Utils\ServerTime.cpp" />
     <ClCompile Include="src\modules\Utils\LogHandler.cpp" />
     <ClCompile Include="src\modules\Database\MySQLClient.cpp" />
-    <ClCompile Include="src\modules\Chat\Sender.cpp" />
-    <ClCompile Include="src\modules\Chat\MT002Receiver.cpp" />
     <ClCompile Include="src\modules\Utils\AppException.cpp" />
     <ClCompile Include="src\modules\Utils\ExceptionBase.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ServerControlleFacade.cpp" />
     <ClCompile Include="src\modules\Network\SocketHandler.cpp" />
-    <ClCompile Include="src\modules\Chat\Receiver.cpp" />
     <ClCompile Include="src\modules\Utils\ThreadPoolHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -733,16 +726,9 @@
     <ClInclude Include="src\ServerControlleFacade.h" />
     <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\StringFormat.h" />
-    <ClInclude Include="include\Chat\Receiver.h" />
-    <ClInclude Include="include\Chat\MT002Receiver.h" />
-    <ClInclude Include="include\Chat\Sender.h" />
     <ClInclude Include="include\Utils\LogHandler.h" />
     <ClInclude Include="include\Utils\ServerTime.h" />
-    <ClInclude Include="include\Chat\MT001Receiver.h" />
     <ClInclude Include="include\Utils\ThreadPoolHandler.h" />
-    <ClInclude Include="include\Chat\MT101Sender.h" />
-    <ClInclude Include="include\Chat\MT102Sender.h" />
-    <ClInclude Include="include\Chat\MT000Receiver.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />

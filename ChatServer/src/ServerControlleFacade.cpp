@@ -24,10 +24,6 @@ ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 	_mysql_client = std::make_unique<MySQLClient>();
 	_redis_client = std::make_unique<RedisClient>();
 	_protocol_handler = std::make_unique<ProtocolHandler>();
-	_mt000receiver = std::make_unique<MT000Receiver>();
-	_mt001receiver = std::make_unique<MT001Receiver>();
-	_mt002receiver = std::make_unique<MT002Receiver>();
-	_sender = std::make_unique<Sender>();
 	_server_time = std::make_unique<ServerTime>();
 	_client_handler = std::make_unique<ClientHandler>();
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
@@ -317,29 +313,29 @@ void ServerControlleFacade::message_handle_process(int detection_num)
 
 void ServerControlleFacade::mt000_process(std::string& receive_data, int detection_num)
 {
-	std::string src_client_id = "";
-	std::string* client_id_ptr = new std::string();
-	try
-	{
-		src_client_id = this->_mt000receiver->data_extraction_(receive_data);
-		if(src_client_id.size() != 28){
-			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT000 were invalid.");
-		}
+	//std::string src_client_id = "";
+	//std::string* client_id_ptr = new std::string();
+	//try
+	//{
+	//	src_client_id = this->_mt000receiver->data_extraction_(receive_data);
+	//	if(src_client_id.size() != 28){
+	//		THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT000 were invalid.");
+	//	}
 
-		auto mt000_instance = this->_mt000receiver->create_mt000_instance(src_client_id);
-		{
-			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			if (mt000_instance->get_src_client_id() == this->_client_handler->connected_clients[detection_num].get_client_id()) {
-				this->_client_handler->incliment_heart_beat_count(detection_num);
-			}
-		}
-		
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		spdlog::error(ex.what_for_str());
-		//LogHandler::get_instance().logging_error(ex.what_for_str());
-	}
+	//	auto mt000_instance = this->_mt000receiver->create_mt000_instance(src_client_id);
+	//	{
+	//		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+	//		if (mt000_instance->get_src_client_id() == this->_client_handler->connected_clients[detection_num].get_client_id()) {
+	//			this->_client_handler->incliment_heart_beat_count(detection_num);
+	//		}
+	//	}
+	//	
+	//}
+	//catch (const exception::ExceptionBase& ex)
+	//{
+	//	spdlog::error(ex.what_for_str());
+	//	//LogHandler::get_instance().logging_error(ex.what_for_str());
+	//}
 }
 
 void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, int detection_num)

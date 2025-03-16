@@ -1,13 +1,9 @@
 ﻿#ifndef SERVERCONTROLLFACADE_H_
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
-#include "MT000Receiver.h"
-#include "MT001Receiver.h"
-#include "MT002Receiver.h"
 #include "MessageType001.h"
 #include "MessageType002.h"
 #include "MessageType003.h"
-#include "Sender.h"
 #include "ServerTime.h"
 #include "ClientHandler.h"
 #include "ChatRoomHandler.h"
@@ -37,10 +33,6 @@ private:
 	std::unique_ptr<RedisClient> _redis_client;
 	std::unique_ptr<ProtocolHandler> _protocol_handler;
 	std::unique_ptr<SocketHandler> _socket_handler;
-	std::unique_ptr<MT000Receiver> _mt000receiver;
-	std::unique_ptr<MT001Receiver> _mt001receiver;
-	std::unique_ptr<MT002Receiver> _mt002receiver;
-	std::unique_ptr<Sender> _sender;
 	std::unique_ptr<ServerTime> _server_time;
 	std::unique_ptr<ClientHandler> _client_handler;
 	std::unique_ptr<ThreadPoolHandler> _thread_pool_handler;
