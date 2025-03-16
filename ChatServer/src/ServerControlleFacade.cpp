@@ -7,14 +7,13 @@ ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 {
 	//ログレベルの設定
 #ifdef DEBUG_MODE
-	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::DEBUG));
 	spdlog::set_level(spdlog::level::debug);
 #else
-	LogHandler::get_instance().set_log_level(static_cast<int>(LogHandler::LogLevel::INFO));
-#endif // DEBUG_MODE
-
 	//ログのレベル設定
 	spdlog::set_level(spdlog::level::info);
+
+#endif // DEBUG_MODE
+
 	//ログのフォーマット設定
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
 	spdlog::info("Starting MyChat server version 1.0.0!!");
@@ -39,17 +38,14 @@ ServerControlleFacade::~ServerControlleFacade()
 //サーバプログラムの実行
 void ServerControlleFacade::run()
 {
-	//spdlog::info("server started!!!");
 	//リッスンソケットの生成
 	if (!_socket_handler->open_tcp_listen_socket()) {
 		spdlog::error("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again.");
-		//LogHandler::get_instance().logging_critical("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again.");
 		exit(1);
 	}
 
 	if (!_socket_handler->generate_udp_multicast_tx_socket()) {
 		spdlog::error("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
-		//LogHandler::get_instance().logging_critical("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
 	
@@ -59,7 +55,6 @@ void ServerControlleFacade::run()
 	this->_mysql_client->create_table();
 	this->_redis_client->connect();
 
-	//LogHandler::get_instance().logging_info("Start monitoring requests from clients.");
 	spdlog::info("Start monitoring requests from clients.");
 	this->_thread_pool_handler->enqueue_task([this]() {_thread_pool_handler->monitor_worker(); });
 	this->_thread_pool_handler->enqueue_task([this]() {heart_beat_check_process(); });
@@ -137,7 +132,6 @@ bool ServerControlleFacade::accept_client_socket_process()
 	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(this->_client_handler->init_client.get_sockaddr_in_length());
 	if (new_client_socket == INVALID_SOCKET) {
 		spdlog::error("The accepted socket for message could not be added to the list because it was an INVALID SOCKET");
-		//LogHandler::get_instance().logging_error(StringFormat("The accepted socket for message could not be added to the list because it was an INVALID SOCKET"));
 		return ACCEPT_FAILED;
 	}
 	else {
@@ -148,13 +142,11 @@ bool ServerControlleFacade::accept_client_socket_process()
 	WOLFSSL* new_client_ssl = this->_protocol_handler->wolfssl_accept(new_client_socket);
 	if (new_client_ssl == nullptr) {
 		spdlog::error("client ssl is not accepted(socket:{:d})", new_client_socket);
-		//LogHandler::get_instance().logging_error(StringFormat("client ssl is not accepted(client socket : %d),", new_client_socket));
 		wolfSSL_free(new_client_ssl);
 		return ACCEPT_FAILED;
 	}
 	else {
 		spdlog::info("client ssl is accepted(socket:{:d})", new_client_socket);
-		//LogHandler::get_instance().logging_info(StringFormat("client ssl is accepted(client socket : %d),", new_client_socket));
 		this->_protocol_handler->get_peer_cetificate(new_client_ssl);
 	}
 
@@ -168,9 +160,6 @@ bool ServerControlleFacade::accept_client_socket_process()
 		}
 	}
 	spdlog::info("client ip : {:s} , success, server accept client(socket:{:d}).", new_client.get_client_ipv4_addr(), new_client.get_client_socket());
-	//LogHandler::get_instance().logging_info(StringFormat("client ip : %s , success, server accept client(socket : %d)."
-	//	, _client_handler->connected_clients[this->_client_handler->connect_client_num - 1].get_client_ipv4_addr()
-	//	, _client_handler->connected_clients[this->_client_handler->connect_client_num - 1].get_client_socket()));
 	return ACCEPT_SUCCEEDED;
 }
 
@@ -188,7 +177,6 @@ void ServerControlleFacade::set_server_ip(const std::string& ip)
 void ServerControlleFacade::message_handle_process(int detection_num)
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
-	//int receive_bytes = 0;
 	std::string receive_data, mt, data_time_stamp;
 	json receive_json;
 	bool disconnect_flag = false;
@@ -428,7 +416,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>& mt002, int& receive_result)
 {
 	std::vector<SOCKET> send_sockets;
-	std::vector<std::string> dst_clients;
+	std::vector<std::string> receive_clients;
 	int chatroom_list_num = -1;
 	int send_socket_num = 0;
 
@@ -448,7 +436,7 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
 			send_socket_num = _client_handler->search_client_id_from_con_list(mt002->get_receiver_id());
-			spdlog::info("send_socket_num:{:d}", send_socket_num);
+			spdlog::debug("send_socket_num:{:d}", send_socket_num);
 			//LogHandler::get_instance().logging_info(StringFormat("send_socket_num : %d", send_socket_num));
 
 

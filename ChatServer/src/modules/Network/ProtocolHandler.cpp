@@ -310,7 +310,7 @@ void ProtocolHandler::wolfssl_log_callback(const int log_level, const char* log_
 		spdlog::error(log_str);
 			break;
 	case INFO_LOG:
-		spdlog::info(log_str);
+		spdlog::debug(log_str);
 		break;
 	case ENTER_LOG:
 		spdlog::debug(log_str);

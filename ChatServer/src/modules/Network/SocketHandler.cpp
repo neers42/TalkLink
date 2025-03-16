@@ -307,7 +307,7 @@ void SocketHandler::copy_fd_read_to_fds(fd_set* fds, fd_set* fd)
 bool SocketHandler::generate_udp_multicast_tx_socket()
 {
 	if (!setting_multicast_tx_socket_param(INIT_FILE_PASS)) {
-		spdlog::error("udp multicast socket, failed, The socket configuration for multicast transmission was not completed successfully and will be terminated.");
+		spdlog::error("The socket configuration for multicast transmission was not completed successfully and will be terminated.");
 		return false;
 	}
 
@@ -498,7 +498,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 		spdlog::error(ex.what_for_str());
 		return false;
 	}
-	spdlog::info("UDP multicast TX socket({:d}), success, server generate udp muluticast tx socket.", _udp_multicast_tx_socket);
+	spdlog::info("server generate udp muluticast tx socket:{:d}.", _udp_multicast_tx_socket);
 	return true;
 }
 
@@ -1067,12 +1067,11 @@ bool SocketHandler::generate_tcp_listen_socket()
 		WSACleanup();
 		return false;
 	}
-	LogHandler::get_instance().logging_debug(StringFormat("server generated listen socket(%d).", _tcp_listen_socket));
 	spdlog::debug("server generated listen socket({:d}).", _tcp_listen_socket);
 
 	bool bind_result = bind_tcp_listen_socket(&_tcp_listen_socket, m_result_tcp);
 	if (bind_result == true) {
-		spdlog::info("server bind setting on listen socket({:d}).", _tcp_listen_socket);
+		spdlog::debug("server bind setting on listen socket({:d}).", _tcp_listen_socket);
 	}
 	else {
 		spdlog::error("server can't bind setting on listen socket({:d}).", _tcp_listen_socket);
@@ -1392,7 +1391,7 @@ bool SocketHandler::open_tcp_listen_socket()
 		}
 		else
 		{
-			spdlog::info("server open listen socket({:d}), success, server open listen socket.", _tcp_listen_socket);
+			spdlog::info("server open listen socket:{:d}.", _tcp_listen_socket);
 		}
 	}
 	catch (const exception::ExceptionBase& ex)

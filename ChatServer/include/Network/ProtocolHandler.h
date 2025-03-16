@@ -192,16 +192,16 @@ private:
 		else if constexpr (std::is_same<T, MessageType002>::value) {
 			int content_type = recv_json["content_type"].get<int>();  // int型
 			std::string message_type = recv_json["message_type"];      // std::string型
-			std::string dst_client_id = recv_json["dst_client_id"];    // std::string型
-			std::string src_client_id = recv_json["src_client_id"];    // std::string型
+			std::string receiver_id = recv_json["receiver_id"];    // std::string型
+			std::string sender_id = recv_json["sender_id"];    // std::string型
 			std::string content = recv_json["content"];                // std::string型
 			uint64_t message_id = this->_message_id_generator->generate_message_id();  // 空の文字列
-			int trans_type = recv_json["trans_type"].get<int>();  // int型
-			std::string dst_chatroom_id = recv_json["dst_chatroom_id"];  // std::string型
+			int chat_type = recv_json["chat_type"].get<int>();  // int型
+			std::string room_id = recv_json["room_id"];  // std::string型
 
 			//MT002を返す
-			return std::make_unique<T>(content_type, message_type, dst_client_id, src_client_id,
-				content, message_id, trans_type, dst_chatroom_id);
+			return std::make_unique<T>(content_type, message_type, receiver_id, sender_id,
+				content, message_id, chat_type, room_id);
 		}
 		else {
 			spdlog::error("Unsupported message type");

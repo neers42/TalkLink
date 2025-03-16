@@ -128,5 +128,5 @@ bool BaseMessage::is_valid_mesasge_type(const std::string& mt)
 bool BaseMessage::is_valid_message_id(const uint64_t m_id)
 {
 
-	return false;
+	return true;
 }
