@@ -4,7 +4,6 @@
 #include "DataBaseInterface.h"
 #include "spdlog/spdlog.h"
 #include "hiredis/hiredis.h"
-
 class RedisClient : public DataBaseInterface
 {
 public:

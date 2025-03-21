@@ -46,7 +46,8 @@ public:
 	void print_sql_error(sql::SQLException& e);
 	void create_database();
 	bool create_table();
-
+	bool insert_client_data(const std::string& cid, const std::string& name, const std::string& email, const std::string& password_hash, const std::string& created_at);
+	std::tuple<std:: string, std::string, std::string> select_client_info(const std::string& cid);
 private:
 	bool create_table_clients();
 	bool create_table_chatrooms();

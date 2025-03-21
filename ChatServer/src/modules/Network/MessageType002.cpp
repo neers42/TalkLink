@@ -6,21 +6,31 @@ MessageType002::MessageType002()
 }
 
 MessageType002::MessageType002(BaseMessage::ContentType c_type, const std::string& mt,
-	const std::string& receiver_id, const std::string& sender_id, const std::string& content,
-	const uint64_t m_id, ChatType tt, const std::string& room_id)
+	const std::string& room_id, const std::string& receiver_id, const std::string& sender_id, 
+	const std::string& send_time, const std::string& content,
+	const uint64_t m_id, ChatType tt)
 	//BaseMessage::ContentType c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const uint64_t m_id, ChatType tt, const std::string& dst_chatroom_id)
-	:BaseMessage::BaseMessage(c_type, mt, m_id),_chat_type{tt}, _room_id{room_id}
+	:BaseMessage::BaseMessage(c_type, mt, m_id),
+	_room_id{room_id},
+	_receiver_id{receiver_id},
+	_sender_id{sender_id},
+	_send_time{send_time},
+	_content{ content },
+	_chat_type{tt}
 {
 }
 
 MessageType002::MessageType002(int c_type, const std::string& mt,
-	const std::string& receiver_id, const std::string& sender_id, const std::string& content,
-	const uint64_t m_id, int chat_type, const std::string& room_id)
+	const std::string& room_id,
+	const std::string& receiver_id, const std::string& sender_id, 
+	const std::string& send_time, const std::string& content,
+	const uint64_t m_id, int chat_type)
 	//int c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const uint64_t m_id, int trans_type, const std::string& dst_chatroom_id)
 	:BaseMessage::BaseMessage(exchange_content_type_from_int(c_type), mt, m_id),
 	_chat_type{exchange_trans_type_from_int(chat_type)},
 	_receiver_id{receiver_id},
 	_sender_id{sender_id},
+	_send_time{send_time},
 	_content{content},
 	_room_id{room_id}
 {
@@ -160,7 +170,8 @@ bool MessageType002::is_valid_room_id(const std::string& room_id)
 {
 	//dst_idが28byteではない場合
 	if (room_id.size() != 36) {
-		spdlog::error("dst chatroom id is invalid. dst chatroom id byte size : {:d}", room_id.size());
+		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {:d}", room_id.size());
+		//spdlog::error("dst chatroom id is invalid. dst chatroom id byte size : {:d}", room_id.size());
 		return false;
 	}
 	return true;
@@ -170,7 +181,8 @@ bool MessageType002::is_valid_receiver_id(const std::string& receiver)
 {
 	//dst_idが28byteではない場合
 	if (receiver.size() != 28) {
-		spdlog::error("receiver id is invalid. dst client id byte size : {:d}", receiver.size());
+		LOG_ERROR("receiver id is invalid. dst client id byte size : {:d}", receiver.size());
+		//spdlog::error("receiver id is invalid. dst client id byte size : {:d}", receiver.size());
 		return false;
 	}
 	return true;
@@ -180,7 +192,8 @@ bool MessageType002::is_valid_sender_id(const std::string& sender_id)
 {
 	//dst_idが28byteではない場合
 	if (sender_id.size() != 28) {
-		spdlog::error("sender id is invalid. src client id byte size : {:d}", sender_id.size());
+		LOG_ERROR("sender id is invalid. src client id byte size : {:d}", sender_id.size());
+		//spdlog::error("sender id is invalid. src client id byte size : {:d}", sender_id.size());
 		return false;
 	}
 	return true;
@@ -190,7 +203,8 @@ bool MessageType002::is_valid_conent(const std::string& content)
 {
 	//dst_idが28byteではない場合
 	if (content.size() <= 0) {
-		spdlog::error("content is invalid. content byte size : {:d}", content.size());
+		LOG_ERROR("content is invalid. content byte size : {:d}", content.size());
+		//spdlog::error("content is invalid. content byte size : {:d}", content.size());
 		return false;
 	}
 	return true;

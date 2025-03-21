@@ -14,7 +14,7 @@ ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 
 #endif // DEBUG_MODE
 
-	//ログのフォーマット設定
+	////ログのフォーマット設定
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
 	spdlog::info("Starting MyChat server version 1.0.0!!");
 	_socket_handler = std::make_unique<SocketHandler>();
@@ -40,12 +40,12 @@ void ServerControlleFacade::run()
 {
 	//リッスンソケットの生成
 	if (!_socket_handler->open_tcp_listen_socket()) {
-		spdlog::error("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again.");
+		LOG_ERROR("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again.");
 		exit(1);
 	}
 
 	if (!_socket_handler->generate_udp_multicast_tx_socket()) {
-		spdlog::error("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
+		LOG_ERROR("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
 	
@@ -112,13 +112,7 @@ void ServerControlleFacade::setting_select_info()
 			}
 		}
 
-		//for (int i = 0; i < this->_client_handler->connected_clients.size(); i++) {
-		//	//有効なソケットにFDSETを実行する
-		//	if (this->_client_handler->connected_clients[i].get_client_socket() != INVALID_SOCKET) {
-		//		_socket_handler->bind_select_info_to_socket(this->_client_handler->connected_clients[i].get_client_socket(), &_socket_handler->get_fd_read());
-		//	}
-		//}
-	}
+			}
 
 	this->_socket_handler->copy_fd_read_to_fds(&(_socket_handler->get_fds()), &(_socket_handler->get_fd_read()));
 
@@ -146,7 +140,7 @@ bool ServerControlleFacade::accept_client_socket_process()
 	//TCPソケットのアクセプト処理
 	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(this->_client_handler->init_client.socket_address_in_length);
 	if (new_client_socket == INVALID_SOCKET) {
-		spdlog::error("The accepted socket for message could not be added to the list because it was an INVALID SOCKET");
+		LOG_ERROR("The accepted socket for message could not be added to the list because it was an INVALID SOCKET");
 		return ACCEPT_FAILED;
 	}
 	else {
@@ -156,7 +150,8 @@ bool ServerControlleFacade::accept_client_socket_process()
 	//SSLアクセプト処理
 	WOLFSSL* new_client_ssl = this->_protocol_handler->wolfssl_accept(new_client_socket);
 	if (new_client_ssl == nullptr) {
-		spdlog::error("client ssl is not accepted(socket:{:d})", new_client_socket);
+		LOG_ERROR("client ssl is not accepted(socket:{:d})", new_client_socket);
+		//spdlog::error("client ssl is not accepted(socket:{:d})", new_client_socket);
 		wolfSSL_free(new_client_ssl);
 		return ACCEPT_FAILED;
 	}
@@ -196,7 +191,6 @@ void ServerControlleFacade::handle_changed_socket_process(const SOCKET socket)
 	}
 	else {
 		// 既存クライアントのデータを処理
-		//int detection_num = this->_client_handler->find_socket_from_client_list(socket);
 		this->_thread_pool_handler->enqueue_task([this, socket]() {message_handle_process(socket); });
 	}
 }
@@ -226,8 +220,6 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 
 		if (disconnect_flag == true) {
 
-			/*LogHandler::get_instance().logging_info(StringFormat("client(ip:%s, client id:%s) is disconnected, server initialize client info."
-				, client.get_client_ipv4_addr(), client.get_client_id()));*/
 			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.ipv4_address, client.id);
 				this->_protocol_handler->shutdown_wolfssl(client.ssl);
 				_socket_handler->disconnect_socket(client.socket);
@@ -244,7 +236,6 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 	
 
 	mt = receive_json["message_type"];
-	//BaseMessage::print_received_message_info(receive_json, this->_client_handler->connected_client_list[detection_num].get_client_ipv4_addr());
 	//mt000 = ハートビートを受信した際の処理
 	if (mt == "000") {
 		this->mt000_process(receive_data, detection_num);
@@ -272,9 +263,9 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 	}
 
 	else {
-		spdlog::error("The receive process was interrupted due to a bad message.");
-		//LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
+		LOG_ERROR("The receive process was interrupted due to a bad message.");
 	}
+	this->_protocol_handler->print_json_message(receive_json);
 
 
 #endif // TLS_PROTOCOL
@@ -293,8 +284,6 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		}
 		if (disconnect_flag == true) {
 			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.get_client_ipv4_addr(), client.get_client_id());
-			/*LogHandler::get_instance().logging_info(StringFormat("client(ip:%s, client id:%s) is disconnected, server initialize client info."
-				, client.get_client_ipv4_addr(), client.get_client_id()));*/
 			_socket_handler->disconnect_socket(client.get_client_socket());
 			_client_handler->delete_client(detection_num);
 			return;
@@ -319,8 +308,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		this->mt002_process(mt002, detection_num);
 	}
 	else {
-		spdlog::error("The receive process was interrupted due to a bad message.");
-		//LogHandler::get_instance().logging_error("The receive process was interrupted due to a bad message.");
+		LOG_ERROR("The receive process was interrupted due to a bad message.");
 	} 
 #endif // TCP_PROTOCOL
 
@@ -374,16 +362,20 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 			client_id = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.ipv4_address);
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client.ipv4_address, client.socket, client_id);
-				//LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed up, Client id:%s", client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
 				//SIGN UPが成功した場合に、クライアント情報を登録する
-				client.set_client_id(client_id);
-				client.set_client_name(mt001->get_client_name());
-				client.set_client_mail_addr(mt001->get_client_mail_addr());
-				client.set_client_password(mt001->get_client_password());
-
-				//データベースにユーザ情報を登録する。
-				//TODO　データべース処理を追記する。
-
+				client.id = client_id;
+				client.name = mt001->get_client_name();
+				client.mail_address = mt001->get_client_mail_addr();
+				client.password = mt001->get_client_password();
+				
+				//データベースにユーザ情報を登録する
+				if (insert_client_info_to_db(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password()) == true) {
+					spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client.ipv4_address, client.socket, client_id);
+				}
+				else {
+					LOG_ERROR("Client(ip:{:s}, socket num:{:d}) failed to sign up, Client id:{:s}", client.ipv4_address, client.socket, client_id);
+				}
+				
 				//Auth statusを変更する
 				this->_client_handler->change_client_auth_status(detection_num);
 			}
@@ -399,14 +391,21 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 			
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client.ipv4_address, client.socket, client_id);
-				//LogHandler::get_instance().logging_info(StringFormat("Client(ip:%s, socket num:%d) successfully signed in, Client id:%s",client.get_client_ipv4_addr(), client.get_client_socket(), client_id));
 				//データベースからユーザ情報を読み取る。
-				std::string client_name, client_mail_addr, client_password;
-				client.set_client_id(client_id);
-				client.set_client_name(client_name);
-				client.set_client_mail_addr(client_mail_addr);
-				client.set_client_password(client_password);
 
+				
+				std::string client_name, client_mail_addr, client_password;
+				std::tie(client_name, client_mail_addr, client_password) = this->_mysql_client->select_client_info(client_id);
+				client.id = client_id;
+				client.name = client_name;
+				client.mail_address = client_mail_addr;
+				client.password = client_password;
+				spdlog::debug("client name:{:s}, mail address:{:s}, password:{:s}", client_name, client_mail_addr, client_password);
+				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client.ipv4_address, client.socket, client_id);
+
+				//TODO　ここでcidに関するメッセージをデータベースから取得する。
+
+				
 				//Auth statusを変更する
 				this->_client_handler->change_client_auth_status(detection_num);
 
@@ -431,8 +430,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
-		//LogHandler::get_instance().logging_error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 	delete client_id_ptr;
 
@@ -517,7 +515,8 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
+		//spdlog::error(ex.what_for_str());
 		//LogHandler::get_instance().logging_error(ex.what_for_str());
 	}
 
@@ -530,7 +529,6 @@ void ServerControlleFacade::heart_beat_check_process()
 	while (true) {
 		
 		//auto time_now = std::chrono::system_clock::now();
-		//int search_client_num = -1;
 
 		//現在接続しているクライアントリストを抽出
 		std::vector<ClientHandler::Client> current_connect_clients;
@@ -603,10 +601,6 @@ void ServerControlleFacade::setting_select_process()
 	}
 }
 
-
-
-
-
 std::string ServerControlleFacade::sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip)
 {
 	std::string user_id = this->_firebase_auth_handler->create_user_with_email_and_password(mail_addr, password, ip
@@ -645,6 +639,27 @@ std::string ServerControlleFacade::sign_in_process(int& auth_type, const char* t
 		break;
 	}
 	return std::string();
+}
+
+bool ServerControlleFacade::insert_client_info_to_db(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password_hash)
+{
+	// 現在時刻を取得してDATETIME形式に変換
+	auto now = std::chrono::system_clock::now();
+	std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+	std::tm tm;
+	localtime_s(&tm, &now_c);  // 安全な関数 localtime_s を使用
+
+	std::ostringstream datetime_ss;
+	datetime_ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+	std::string datetime_str = datetime_ss.str();
+
+	//データベースにユーザ情報を登録する。
+	if (this->_mysql_client->insert_client_data(id, name, mail_addr, password_hash, datetime_str) == true) {
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 

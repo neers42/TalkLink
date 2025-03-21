@@ -1,6 +1,6 @@
 ﻿#ifndef LOGHANDLER_H_
 #define LOGHANDLER_H_
-
+#include "spdlog/spdlog.h"
 #include <iostream>
 #include <string>
 #include <mutex>
@@ -14,6 +14,10 @@
 #define ASCII_CODE 0
 #define UTF_8_CODE 1
 #define SHIFT_JIS_CODE 2
+#define LOG_ERROR(...) spdlog::error("{}({}:L.{} => function:{}())", \
+    fmt::format(__VA_ARGS__), (std::string(__FILE__).find_last_of("/\\") != std::string::npos ? \
+    std::string(__FILE__).substr(std::string(__FILE__).find_last_of("/\\") + 1) : std::string(__FILE__)), \
+    __LINE__, __func__)
 
 class LogHandler
 {

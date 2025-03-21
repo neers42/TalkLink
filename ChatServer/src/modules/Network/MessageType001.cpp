@@ -159,7 +159,7 @@ bool MessageType001::is_valid_name(const std::string& name)
         return true;
     }
     else {
-		spdlog::error("Client name is invalid by byte size error(name byte size : {:d}).", name.size());
+		LOG_ERROR("Client name is invalid by byte size error(name byte size : {:d}).", name.size());
         return false;
     }
 }
@@ -171,7 +171,7 @@ bool MessageType001::is_valid_mail_addr(const std::string& mail_addr)
         return true;
     }
     else {
-		spdlog::error("Client Mail Address is invalid by byte size error(mailAddress byte size : {:d}).", mail_addr.size());
+		LOG_ERROR("Client Mail Address is invalid by byte size error(mailAddress byte size : {:d}).", mail_addr.size());
         return false;
     }
     return false;
@@ -184,7 +184,7 @@ bool MessageType001::is_valid_password(const std::string& password)
         return true;
     }
     else {
-		spdlog::error("Password is invalid by byte size error(password byte size : {:d}).", password.size());
+		LOG_ERROR("Password is invalid by byte size error(password byte size : {:d}).", password.size());
         return false;
     }
 }

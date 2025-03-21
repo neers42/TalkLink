@@ -63,7 +63,8 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 	WOLFSSL* new_client_ssl = wolfSSL_new(this->_server_w_ctx);
 	//クライアントのSSL生成が正常に処理されなかった場合
 	if (new_client_ssl == NULL) {
-		spdlog::error("new client ssl object creation failed.");
+		LOG_ERROR("new client ssl object creation failed.");
+		//spdlog::error("new client ssl object creation failed.");
 		wolfSSL_free(new_client_ssl);
 	}
 	//クライアントのSSL生成が正常に処理された場合
@@ -159,15 +160,18 @@ std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 			//システムコール関連のエラーが発生した場合
 			else if (recv_error == WOLFSSL_ERROR_SYSCALL) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
-					spdlog::error("message receive failed, wolfSSL read timeout occured.");
+					LOG_ERROR("message receive failed, wolfSSL read timeout occured.");
+					//spdlog::error("message receive failed, wolfSSL read timeout occured.");
 				}
 				else {
-					spdlog::error("message receive failed, wolfSSL read syscall error occured.");
+					LOG_ERROR("message receive failed, wolfSSL read syscall error occured.");
+					//spdlog::error("message receive failed, wolfSSL read syscall error occured.");
 				}
 			}
 			//それ以外の理由
 			else {
-				spdlog::error("message receive failed.");
+				LOG_ERROR("message receive failed.");
+				//spdlog::error("message receive failed.");
 			}
 			return std::make_tuple(json(), disconnect_flag);
 
@@ -201,7 +205,8 @@ bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 		else {
 			// 致命的なエラー
 			this->print_wolfssl_error(client_ssl);
-			spdlog::error("wolfSSL_write failed: {:d}", err);
+			LOG_ERROR("wolfSSL_write failed: {:d}", err);
+			//spdlog::error("wolfSSL_write failed: {:d}", err);
 			wolfSSL_shutdown(client_ssl);
 			return false;
 		}
@@ -230,7 +235,8 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 		cert_not_before_buffer[32] = { 0 },
 		cert_not_after_buffer[32] = { 0 };
 	if (!ssl) {
-		spdlog::error("SSL object is null.");
+		LOG_ERROR("SSL object is null.");
+		//spdlog::error("SSL object is null.");
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
 
@@ -307,7 +313,8 @@ void ProtocolHandler::wolfssl_log_callback(const int log_level, const char* log_
 	std::string log_str(log_message);
 	switch (log_level) {
 	case ERROR_LOG:
-		spdlog::error(log_str);
+		LOG_ERROR(log_str);
+		//spdlog::error(log_str);
 			break;
 	case INFO_LOG:
 		spdlog::debug(log_str);
@@ -329,7 +336,8 @@ void ProtocolHandler::print_wolfssl_global_error()
 	char buffer[80];
 	err = wolfSSL_ERR_get_error();
 	wolfSSL_ERR_error_string(err, buffer);
-	spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d})", std::string(buffer), err);
+	LOG_ERROR("wolfSSL, failed, error content : {:s} (code : {:d}.)", std::string(buffer), err);
+	//spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d}.)", std::string(buffer), err);
 }
 
 //SSL通信で発生するエラーの表示
@@ -339,7 +347,8 @@ void ProtocolHandler::print_wolfssl_error(WOLFSSL* client_ssl)
 	char buffer[80];
 	err = wolfSSL_get_error(client_ssl, 0);
 	wolfSSL_ERR_error_string(err, buffer);
-	spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d})", std::string(buffer), err);
+	//spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d})", std::string(buffer), err);
+	LOG_ERROR("wolfSSL, failed, error content : {:s} (code : {:d}.)", std::string(buffer), err);
 }
 
 void ProtocolHandler::initialize_wolfssl()

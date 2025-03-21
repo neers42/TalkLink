@@ -52,7 +52,7 @@ SocketHandler::SocketHandler() :
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
@@ -123,7 +123,7 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
@@ -168,7 +168,7 @@ bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 	if (this->setting_tcp_flags(socket_param_setting_ini) == false) {
 		return false;
@@ -198,7 +198,7 @@ bool SocketHandler::setting_multicast_tx_socket_param(const std::string& file_pa
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 
 	if (this->setting_multicast_tx_sock_af(multicast_socket_setting_ini) == false) {
@@ -272,7 +272,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 }
 
@@ -307,7 +307,7 @@ void SocketHandler::copy_fd_read_to_fds(fd_set* fds, fd_set* fd)
 bool SocketHandler::generate_udp_multicast_tx_socket()
 {
 	if (!setting_multicast_tx_socket_param(INIT_FILE_PASS)) {
-		spdlog::error("The socket configuration for multicast transmission was not completed successfully and will be terminated.");
+		LOG_ERROR("The socket configuration for multicast transmission was not completed successfully and will be terminated.");
 		return false;
 	}
 
@@ -376,7 +376,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		return false;
 	}
 	
@@ -434,7 +434,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		return false;
 		
 		//TODOネットワークインタフェースの数で戻り値を変えたい
@@ -495,7 +495,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		return false;
 	}
 	spdlog::info("server generate udp muluticast tx socket:{:d}.", _udp_multicast_tx_socket);
@@ -517,7 +517,7 @@ bool SocketHandler::add_connect_socket(const SOCKET socket)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		return false;
 	}
 
@@ -528,7 +528,7 @@ bool SocketHandler::add_connect_socket(const SOCKET socket)
 bool SocketHandler::delete_connect_socket(const SOCKET socket)
 {
 	if (this->_connect_sockets.empty() == true) {
-		spdlog::error("Client list is empty.");
+		LOG_ERROR("Client list is empty.");
 		return false;
 	}
 	else {
@@ -606,7 +606,7 @@ bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_settin
 }
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 
 		return false;
 	}
@@ -702,7 +702,7 @@ bool SocketHandler::setting_multicast_tx_sin_family(ini::IniFile socket_param_se
 #endif // DEBUG
 	}
 	else {
-		spdlog::error("The multicast transmit socket settings were not set correctly(sin_family). Exit the program.");
+		LOG_ERROR("The multicast transmit socket settings were not set correctly(sin_family). Exit the program.");
 		return false;
 	}
 	return true;
@@ -732,7 +732,7 @@ bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_sett
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		return false;
 	}
 	return true;
@@ -773,7 +773,7 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 
 
@@ -816,7 +816,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 
 	}
 
@@ -849,7 +849,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 	if (_ip_addr_table->dwNumEntries > 0) {
 		char temp_local_ip_addr[100];
@@ -863,7 +863,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 		spdlog::info("server-ip, success, obtain server ip address.");
 	}
 	else{
-		spdlog::error("server-ip, failed, failed obtain server ip address.");
+		LOG_ERROR("Failed to obtain the server IP address.");
 	}
 
 	return _local_ip_addr;
@@ -884,7 +884,7 @@ bool SocketHandler::bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinf
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		return false;
 	}
 
@@ -975,7 +975,7 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		struct sockaddr_in error_addr_in = { 0 };
 		return std::make_tuple(INVALID_SOCKET, error_addr_in);
 	}
@@ -1025,7 +1025,7 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 
 
@@ -1093,7 +1093,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		freeaddrinfo(m_result_tcp);
 		WSACleanup();
 		return false;
@@ -1105,7 +1105,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 		spdlog::debug("server bind setting on listen socket({:d}).", _tcp_listen_socket);
 	}
 	else {
-		spdlog::error("server can't bind setting on listen socket({:d}).", _tcp_listen_socket);
+		LOG_ERROR("server can't bind setting on listen socket({:d}).", _tcp_listen_socket);
 		return false;
 	}
 
@@ -1154,7 +1154,7 @@ bool SocketHandler::trans_flags(const std::string& flag_str, struct addrinfo* pa
 #endif // DEBUG
 	}
 	else {
-		spdlog::error("Failed to set ai_flags.");
+		LOG_ERROR("Failed to set ai_flags.");
 		return false;
 	}
 	return true;
@@ -1186,7 +1186,7 @@ bool SocketHandler::trans_family(const std::string& family_str, addrinfo* param)
 #endif // DEBUG
 	}
 	else {
-		spdlog::error("Failed to set ai_family.");
+		LOG_ERROR("Failed to set ai_family.");
 		return false;
 	}
 	return true;
@@ -1227,7 +1227,7 @@ bool SocketHandler::trans_socktype(const std::string& socktype_str, addrinfo* pa
 #endif // DEBUG
 	}
 	else {
-		spdlog::error("Failed to set ai_socktype.");
+		LOG_ERROR("Failed to set ai_socktype.");
 		return false;
 	}
 	return true;
@@ -1257,7 +1257,7 @@ bool SocketHandler::trans_protocol(const std::string& protocol_str, addrinfo* pa
 #endif // DEBUG
 	}
 	else {
-		spdlog::error("Failed to set ai_protocol.");
+		LOG_ERROR("Failed to set ai_protocol.");
 		return false;
 	}
 	return true;
@@ -1314,7 +1314,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 		//param->ai_protocol == IPPROTO_UDP;
 	}
 	else {
-		spdlog::error("Failed to set ai_protocol.");
+		LOG_ERROR("Failed to set ai_protocol.");
 		return false;
 	}
 	return true;
@@ -1443,7 +1443,7 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<SOCKET>& socket_
 		}
 	}
 	catch (const exception::ExceptionBase& ex) {
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 }
 
@@ -1460,7 +1460,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 
 	try
@@ -1480,7 +1480,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 	}
 	return true;
 }

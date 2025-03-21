@@ -17,7 +17,7 @@ public:
 protected:
 	ContentType _content_type;	//メッセージコンテンツの内容
 	std::string _message_type;	//メッセージタイプ
-	std::string _time_stamp;	//タイムスタンプ
+	std::string _created_at;	//タイムスタンプ
 	uint64_t _message_id;	//メッセージID
 
 

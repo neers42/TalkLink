@@ -142,45 +142,45 @@ ClientHandler::Client::~Client()
 //	return this->ssl;
 //}
 
-void ClientHandler::Client::set_client_id(std::string id)
-{
-	this->id = id;
-}
-
-void ClientHandler::Client::set_client_name(std::string name)
-{
-	this->name = name;
-}
-
-void ClientHandler::Client::set_client_mail_addr(std::string mail_addr)
-{
-	this->mail_address = mail_addr;
-}
-
-void ClientHandler::Client::set_client_socket(SOCKET socket)
-{
-	this->socket = socket;
-}
-
-void ClientHandler::Client::set_client_sockaddr_in(struct sockaddr_in sock_in)
-{
-	this->sockaddr_in = sock_in;
-}
-
-void ClientHandler::Client::set_socket_addr_in_length(socklen_t length)
-{
-	this->socket_address_in_length = length;
-}
-
-void ClientHandler::Client::set_client_ipv4_addr(std::string ipv4_addr)
-{
-	this->ipv4_address = ipv4_addr;
-}
-
-void ClientHandler::Client::set_client_password(std::string password)
-{
-	this->password = password;
-}
+//void ClientHandler::Client::set_client_id(std::string id)
+//{
+//	this->id = id;
+//}
+//
+//void ClientHandler::Client::set_client_name(std::string name)
+//{
+//	this->name = name;
+//}
+//
+//void ClientHandler::Client::set_client_mail_addr(std::string mail_addr)
+//{
+//	this->mail_address = mail_addr;
+//}
+//
+//void ClientHandler::Client::set_client_socket(SOCKET socket)
+//{
+//	this->socket = socket;
+//}
+//
+//void ClientHandler::Client::set_client_sockaddr_in(struct sockaddr_in sock_in)
+//{
+//	this->sockaddr_in = sock_in;
+//}
+//
+//void ClientHandler::Client::set_socket_addr_in_length(socklen_t length)
+//{
+//	this->socket_address_in_length = length;
+//}
+//
+//void ClientHandler::Client::set_client_ipv4_addr(std::string ipv4_addr)
+//{
+//	this->ipv4_address = ipv4_addr;
+//}
+//
+//void ClientHandler::Client::set_client_password(std::string password)
+//{
+//	this->password = password;
+//}
 
 void ClientHandler::Client::incliment_heart_beat_count()
 {
@@ -281,7 +281,7 @@ std::string ClientHandler::generate_client_id()
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		return "";
 	}
 
@@ -332,7 +332,7 @@ bool ClientHandler::add_client(const Client& client)
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
-		spdlog::error(ex.what_for_str());
+		LOG_ERROR(ex.what_for_str());
 		return false;
 	}
 
@@ -349,7 +349,7 @@ void ClientHandler::delete_client(const uint32_t delete_num)
 		this->connected_clients.erase(it);
 	}
 	else {
-		spdlog::error("Invalid delete_num: {:d}", delete_num);
+		LOG_ERROR("Invalid delete_num: {:d}", delete_num);
 	}
 	this->connect_client_num--;
 }
@@ -357,7 +357,7 @@ void ClientHandler::delete_client(const uint32_t delete_num)
 void ClientHandler::delete_client(std::vector<Client>::iterator it)
 {
 	if (this->connected_clients.empty() == true) {
-		spdlog::error("Client list is empty.");
+		LOG_ERROR("Client list is empty.");
 		return;
 	}
 	else {
@@ -392,6 +392,41 @@ void ClientHandler::change_client_auth_status(const int client_num)
 	this->connected_clients[client_num].change_auth_status();
 }
 
+void ClientHandler::set_client_id(std::string id, uint32_t list_num)
+{
+	this->connected_clients[list_num].id = id;
+}
+
+void ClientHandler::set_client_name(std::string name, uint32_t list_num)
+{
+	this->connected_clients[list_num].name = name;
+}
+
+void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
+{
+	this->connected_clients[list_num].mail_address = mail_addr;
+}
+
+void ClientHandler::set_clietn_socket(SOCKET socket, uint32_t list_num)
+{
+	this->connected_clients[list_num].socket = socket;
+}
+
+void ClientHandler::set_client_sockaddr_in(sockaddr_in sock_in, uint32_t list_num)
+{
+	this->connected_clients[list_num].sockaddr_in = sock_in;
+}
+
+void ClientHandler::set_socket_addr_in_length(socklen_t length, uint32_t list_num)
+{
+	this->connected_clients[list_num].socket_address_in_length = length;
+}
+
+void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num)
+{
+	this->connected_clients[list_num].ipv4_address = ipv4_addr;
+}
+
 int ClientHandler::search_client_id_from_con_list(const std::string& search_client_id)
 {
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
@@ -400,7 +435,7 @@ int ClientHandler::search_client_id_from_con_list(const std::string& search_clie
 			return search_result;
 		}
 	}
-	spdlog::error("search client id, failed, Not exits client id({:s})", search_client_id);
+	LOG_ERROR("search client id, failed, Not exits client id({:s})", search_client_id);
 	return NOT_EXIST_CLIENT_ID;
 }
 
@@ -461,47 +496,7 @@ const ClientHandler::Client ClientHandler::get_init_client() const
 }
 
 
-void ClientHandler::set_client_id(std::string id, uint32_t list_num)
-{
-	this->connected_clients[list_num].set_client_id(id);
-}
 
-void ClientHandler::set_client_name(std::string name, uint32_t list_num)
-{
-	this->connected_clients[list_num].set_client_name(name);
-}
-
-void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
-{
-	this->connected_clients[list_num].set_client_mail_addr(mail_addr);
-}
-
-void ClientHandler::set_clietn_socket(SOCKET socket, uint32_t list_num)
-{
-	this->connected_clients[list_num].set_client_socket(socket);
-}
-
-void ClientHandler::set_client_sockaddr_in(sockaddr_in sock_in, uint32_t list_num)
-{
-	this->connected_clients[list_num].set_client_sockaddr_in(sock_in);
-}
-
-void ClientHandler::set_socket_addr_in_length(socklen_t length, uint32_t list_num)
-{
-	this->connected_clients[list_num].set_socket_addr_in_length(length);
-}
-
-void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num)
-{
-	this->connected_clients[list_num].set_client_ipv4_addr(ipv4_addr);
-}
-
-
-void ClientHandler::set_count_hb_list(int list_num)
-{
-	int& count_ = std::get<2>(this->heart_beat_list[list_num]);
-	count_++;
-}
 
 void ClientHandler::incliment_heart_beat_count(uint32_t list_num)
 {
@@ -522,11 +517,6 @@ void ClientHandler::all_clear_heart_beat_count()
 
 
 
-void ClientHandler::set_client_id_to_hb_list(const std::string& id, int list_num) 
-{
-	std::string& change_id = std::get<3>(this->heart_beat_list[list_num]);
-	change_id = id;
-}
 
 
 

@@ -1,24 +1,24 @@
 ﻿#include "BaseMessage.h"
 
 BaseMessage::BaseMessage()
-	:_content_type{ ContentType::TEXT }, _message_type{""}, _time_stamp{ServerTime::get_current_time()}, _message_id{0}
+	:_content_type{ ContentType::TEXT }, _message_type{""}, _created_at{ServerTime::get_current_time()}, _message_id{0}
 {
 
 }
 
 BaseMessage::BaseMessage(ContentType c_type, const std::string& mt)
-	:_content_type{c_type}, _message_type{mt}, _time_stamp{ServerTime::get_current_time()}, _message_id{0}
+	:_content_type{c_type}, _message_type{mt}, _created_at{ServerTime::get_current_time()}, _message_id{0}
 {
 }
 
 BaseMessage::BaseMessage(int c_type, const std::string& mt)
-	:_content_type{ this->exchange_content_type_from_int(c_type)}, _message_type{mt}, _time_stamp{ServerTime::get_current_time()}, _message_id{0}
+	:_content_type{ this->exchange_content_type_from_int(c_type)}, _message_type{mt}, _created_at{ServerTime::get_current_time()}, _message_id{0}
 {
 }
 
 
 BaseMessage::BaseMessage(ContentType c_type, const std::string& m_type, const uint64_t id)
-	:_content_type{ c_type }, _message_type{m_type}, _time_stamp{ ServerTime::get_current_time()}, _message_id{id}
+	:_content_type{ c_type }, _message_type{m_type}, _created_at{ ServerTime::get_current_time()}, _message_id{id}
 {
 
 }
@@ -73,11 +73,11 @@ bool BaseMessage::is_valid()
 {
 	if (is_valid_mesasge_type(this->_message_type) == true &&
 		is_valid_message_id(this->_message_id) == true) {
-		spdlog::info("message(receive time stamp : {:s}) is valid.", this->_time_stamp);
+		spdlog::info("message(receive time stamp : {:s}) is valid.", this->_created_at);
 		return true;
 	}
 	else {
-		spdlog::error("message(receive time stamp : {:s}) is not valid.", this->_time_stamp);
+		LOG_ERROR("message(receive time stamp : {:s}) is not valid.", this->_created_at);
 		return false;
 	}
 }
@@ -118,7 +118,7 @@ bool BaseMessage::is_valid_mesasge_type(const std::string& mt)
 {
 	//Messagge_typeが3byteではない場合
 	if (mt.size() != 3) {
-		spdlog::error("Message Type is invalid. Message Type byte size : {:d}", mt.size());
+		LOG_ERROR("Message Type is invalid. Message Type byte size : {:d}", mt.size());
 		return false;
 	}
 	return true;

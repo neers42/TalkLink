@@ -52,14 +52,6 @@ private:
 
 	
 		//setter
-		void set_client_id(std::string id);
-		void set_client_name(std::string name);
-		void set_client_mail_addr(std::string mail_addr);
-		void set_client_socket(SOCKET socket);
-		void set_client_sockaddr_in(struct sockaddr_in sock_in);
-		void set_socket_addr_in_length(socklen_t length);
-		void set_client_ipv4_addr(std::string ipv4_addr);
-		void set_client_password(std::string password);
 		void incliment_heart_beat_count();
 		void clear_heart_beat_count();
 		void change_auth_status();
@@ -114,8 +106,6 @@ public:
 	void incliment_heart_beat_count(uint32_t list_num);
 	void clear_heart_beat_count(uint32_t list_num);
 	void all_clear_heart_beat_count();
-	void set_count_hb_list(int list_num);
-	void set_client_id_to_hb_list(const std::string& id, int list_num);
 	
 
 	//other

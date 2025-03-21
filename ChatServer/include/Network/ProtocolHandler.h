@@ -73,6 +73,10 @@ public:
 	const std::tuple<std::string, std::string, std::string, std::string> get_peer_cetificate(WOLFSSL* ssl);
 
 	static void wolfssl_log_callback(const int log_level, const char* log_message);
+
+	void print_json_message(const json& json_message) {
+		spdlog::debug("Receive JSON DATA :\n{:s}", json_message.dump(4));
+	}
 	
 	//メッセージの受信情報を表示
 	template<typename T>
@@ -194,17 +198,18 @@ private:
 			std::string message_type = recv_json["message_type"];      // std::string型
 			std::string receiver_id = recv_json["receiver_id"];    // std::string型
 			std::string sender_id = recv_json["sender_id"];    // std::string型
+			std::string send_time = recv_json["send_time"];    // std::string型
 			std::string content = recv_json["content"];                // std::string型
 			uint64_t message_id = this->_message_id_generator->generate_message_id();  // 空の文字列
 			int chat_type = recv_json["chat_type"].get<int>();  // int型
 			std::string room_id = recv_json["room_id"];  // std::string型
 
 			//MT002を返す
-			return std::make_unique<T>(content_type, message_type, receiver_id, sender_id,
-				content, message_id, chat_type, room_id);
+			return std::make_unique<T>(content_type, message_type, room_id, receiver_id, sender_id, send_time,
+				content, message_id, chat_type);
 		}
 		else {
-			spdlog::error("Unsupported message type");
+			LOG_ERROR("Unsupported message type");
 			return nullptr;
 		}
 	}

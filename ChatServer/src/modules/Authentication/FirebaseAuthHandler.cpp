@@ -9,7 +9,7 @@ void FirebaseAuthHandler::initialize_firebase()
 	options.set_app_id("1:114823736215:web:b75c724ada8be0401872d2");
 	options.set_project_id("mychat-e2542");
 	app = firebase::App::Create(options);
-	firebase::SetLogLevel(firebase::kLogLevelDebug);
+	firebase::SetLogLevel(firebase::kLogLevelError);
 	this->auth = firebase::auth::Auth::GetAuth(app);
 	spdlog::info("server auth, success, server auth setting complete!!.");
 }
@@ -67,13 +67,10 @@ void FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string
 			// 認証成功ならUIDを取得
 			const firebase::auth::AuthResult auth_result = *sign_in_result.result();
 			*(client_context->client_id) = auth_result.user.uid();
-			//LogHandler::get_instance().logging_info(StringFormat("%s, client id : %s, success, sign in with mail address(%s) and password.", client_context->ip.c_str(), *client_context->client_id, client_context->mail_addr));
 
 		}else {
 			// エラー処理（ログなど）
-			spdlog::error("Sign in failed with error : %s.", sign_in_result.error_message());
-			//LogHandler::get_instance().logging_error(StringFormat("Client id, failed, client auth failed(error message : %s)", sign_in_result.error_message()));
-			//LogHandler::get_instance().logging_error(StringFormat("%s, client id : NONE, failed, sign in with mail address(%s) and password.", client_context->ip, client_context->mail_addr));
+			LOG_ERROR("Sign in failed with error : {:s}.", sign_in_result.error_message());
 		
 		}
 		client_context->id = *client_context->client_id;
@@ -90,8 +87,7 @@ void FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string
 		// 経過時間をチェックしてタイムアウト処理
 		auto current_time = std::chrono::steady_clock::now();
 		if (std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time) > wait_duration) {
-			//LogHandler::get_instance().logging_error(StringFormat("%s, failed(timeout), Authentication interrupted due to timeout", c_con.ip));
-			spdlog::error("Authentication interrupted due to timeout.(Client ip:{:s})", c_con.ip);
+			LOG_ERROR("Authentication interrupted due to timeout.(Client ip:{:s})", c_con.ip);
 			break;
 
 		}
@@ -119,8 +115,7 @@ void FirebaseAuthHandler::on_auth_callback(const firebase::Future<firebase::auth
 		//LogHandler::get_instance().logging_info(StringFormat("%s, issue client id : %s, success, sign in user email(%s) and password.", ip, *user_id, mail_addr));
 	}
 	else {
-		spdlog::error("Sign in failed with error : %s.", result.error_message());
-		//LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("Sign in failed with error : %s.", result.error_message()));
+		LOG_ERROR("Sign in failed with error : {:s}.", result.error_message());
 	}
 }
 

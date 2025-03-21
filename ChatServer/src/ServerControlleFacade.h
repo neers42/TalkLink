@@ -17,12 +17,16 @@
 #include "ProtocolHandler.h"
 #include <mutex>
 #include "spdlog/spdlog.h"
-
+#include "spdlog/sinks/stdout_color_sinks.h"
+//#define LOG_ERROR(...) spdlog::error("[{}:L.{}@{}] {}", \
+//    (std::string(__FILE__).find_last_of("/\\") != std::string::npos ? \
+//    std::string(__FILE__).substr(std::string(__FILE__).find_last_of("/\\") + 1) : std::string(__FILE__)), \
+//    __LINE__, __func__, fmt::format(__VA_ARGS__))
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
 
-//#define DEBUG_MODE
+#define DEBUG_MODE
 #define TLS_PROTOCOL
 
 class ServerControlleFacade
@@ -72,20 +76,18 @@ public:
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, int detection_num);
 
 	void mt002_process(const std::unique_ptr<MessageType002>& mt002, int& receive_result);
-
-
 	void heart_beat_check_process();
-
 	void heart_beat_response_process(const ClientHandler::Client& client);
-
 	void setting_select_process();
+
 
 	
 private:
 	std::string sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip);
 	std::string sign_in_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id);
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
-	
+	bool insert_client_info_to_db(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password_hash);
+
 	
 };
 
