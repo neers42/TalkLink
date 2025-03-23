@@ -103,6 +103,11 @@ void MessageType002::set_sender_id(const std::string& src_id)
 	this->_sender_id = src_id;
 }
 
+std::string MessageType002::get_send_time() const
+{
+	return this->_send_time;
+}
+
 std::string MessageType002::get_content() const
 {
 	return this->_content;
@@ -169,7 +174,7 @@ bool MessageType002::is_valid()
 bool MessageType002::is_valid_room_id(const std::string& room_id)
 {
 	//dst_idが28byteではない場合
-	if (room_id.size() != 36) {
+	if (room_id.size() != 26) {
 		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {:d}", room_id.size());
 		//spdlog::error("dst chatroom id is invalid. dst chatroom id byte size : {:d}", room_id.size());
 		return false;

@@ -97,7 +97,6 @@ void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
 	int ret = wolfSSL_shutdown(client_ssl);
 	if (ret == WOLFSSL_SUCCESS) {
 		spdlog::debug("wolfSSL shutdown success.");
-		LogHandler::get_instance().logging_debug("wolfSSL shutdown success.");
 	}
 	else
 	{

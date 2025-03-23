@@ -46,6 +46,8 @@ public:
 	std::string get_sender_id() const;
 	void set_sender_id(const std::string& src_id);
 
+	std::string get_send_time() const;
+
 	std::string get_content() const;
 	void set_content(const std::string& content);
 

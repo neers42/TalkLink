@@ -370,10 +370,10 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 				
 				//データベースにユーザ情報を登録する
 				if (insert_client_info_to_db(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password()) == true) {
-					spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client.ipv4_address, client.socket, client_id);
+					spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client.ipv4_address, client.socket, client_id);
 				}
 				else {
-					LOG_ERROR("Client(ip:{:s}, socket num:{:d}) failed to sign up, Client id:{:s}", client.ipv4_address, client.socket, client_id);
+					LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client.ipv4_address, client.socket, client_id);
 				}
 				
 				//Auth statusを変更する
@@ -391,9 +391,9 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 			
 			if (client_id != "" && detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client.ipv4_address, client.socket, client_id);
-				//データベースからユーザ情報を読み取る。
-
+			
 				
+				//データベースからユーザ情報を読み取る。			
 				std::string client_name, client_mail_addr, client_password;
 				std::tie(client_name, client_mail_addr, client_password) = this->_mysql_client->select_client_info(client_id);
 				client.id = client_id;
@@ -401,7 +401,6 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 				client.mail_address = client_mail_addr;
 				client.password = client_password;
 				spdlog::debug("client name:{:s}, mail address:{:s}, password:{:s}", client_name, client_mail_addr, client_password);
-				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client.ipv4_address, client.socket, client_id);
 
 				//TODO　ここでcidに関するメッセージをデータベースから取得する。
 
@@ -452,24 +451,24 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 			// メッセージ処理
 			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
 		}
-		/*	std::tie(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content)
-				= this->_mt002receiver->data_extraction_(receive_json);
 
-			if (trans_type == 3 || d_client_id.size() != 28 || s_client_id.size() != 28 || d_chatroom_id.size() != 36 || data_type == 4 || main_content.size() == 0) {
-				THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
-			}*/
-			//	auto mt002_intance = this->_mt002receiver->create_mt002data_instance(trans_type, d_client_id, s_client_id, d_chatroom_id, data_type, main_content);
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
 			send_socket_num = _client_handler->search_client_id_from_con_list(mt002->get_receiver_id());
 			spdlog::debug("send_socket_num:{:d}", send_socket_num);
-			//LogHandler::get_instance().logging_info(StringFormat("send_socket_num : %d", send_socket_num));
-
 
 			////===================ここ実装していない============================================
 			//connect_listの中にいない場合は、データベースの中に入れる。
 			//①データベースに登録されているidから検索
 			//②データベースに登録されているidがある場合は、メッセージを保存し、ない場合はメッセージを破棄する
+			if (this->_mysql_client->insert_chat_message(mt002->get_message_id(), mt002->get_room_id(), mt002->get_sender_id(), mt002->get_send_time(), mt002->get_content())) {
+				spdlog::info("The message was successfully saved in the database.");
+			}
+			else {
+				spdlog::error("The message was not saved in the database.");
+			}
+
+
 			if (send_socket_num == -1) {
 				THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
 			}
@@ -516,8 +515,6 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 	catch (const exception::ExceptionBase& ex)
 	{
 		LOG_ERROR(ex.what_for_str());
-		//spdlog::error(ex.what_for_str());
-		//LogHandler::get_instance().logging_error(ex.what_for_str());
 	}
 
 

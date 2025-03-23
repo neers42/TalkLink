@@ -18,14 +18,9 @@
 #include <mutex>
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-//#define LOG_ERROR(...) spdlog::error("[{}:L.{}@{}] {}", \
-//    (std::string(__FILE__).find_last_of("/\\") != std::string::npos ? \
-//    std::string(__FILE__).substr(std::string(__FILE__).find_last_of("/\\") + 1) : std::string(__FILE__)), \
-//    __LINE__, __func__, fmt::format(__VA_ARGS__))
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
-
 #define DEBUG_MODE
 #define TLS_PROTOCOL
 

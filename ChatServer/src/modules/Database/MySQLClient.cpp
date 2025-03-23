@@ -127,11 +127,11 @@ bool MySQLClient::create_table()
 	return true;
 }
 
-bool MySQLClient::insert_client_data(const std::string& cid,const std::string& name,  const std::string& email, const std::string& password_hash, const std::string& created_at)
+bool MySQLClient::insert_client_data(const std::string& cid,const std::string& name,  const std::string& mail_address, const std::string& password_hash, const std::string& created_at)
 {
 	std::string query = "INSERT INTO " + _mysql_table_name_clients + 
-		"(cid, name, email, password_hash, created_at) "
-		"VALUES('" + cid + "','"+ name + "','" + email + "','" + password_hash + "','" + created_at + "');";
+		"(cid, name, mail_address, password_hash, created_at) "
+		"VALUES('" + cid + "','"+ name + "','" + mail_address + "','" + password_hash + "','" + created_at + "');";
 
 	if (this->execute_query(query) == true) {
 		spdlog::debug("MySQL:insert client data success.");
@@ -139,7 +139,6 @@ bool MySQLClient::insert_client_data(const std::string& cid,const std::string& n
 	}
 	else {
 		LOG_ERROR("MySQL:insert client data failed.");
-		//spdlog::error("MySQL:insert client data failed.");
 		return false;
 	}
 }
@@ -154,10 +153,10 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::select_client_in
 		{
 			if (_mysql_res != nullptr) {
 				std::string name = _mysql_res->getString("name");
-				std::string email = _mysql_res->getString("email");
+				std::string mail_address = _mysql_res->getString("mail_address");
 				std::string password_hash = _mysql_res->getString("password_hash");
-				spdlog::debug("MySQL:client name:{:s}, email:{:s}, password_hash:{:s}", name, email, password_hash);
-				return std::make_tuple(name, email, password_hash);
+				spdlog::debug("MySQL:client name:{:s}, mail_address:{:s}, password_hash:{:s}", name, mail_address, password_hash);
+				return std::make_tuple(name, mail_address, password_hash);
 			}
 			else {
 				LOG_ERROR("MySQL: ResultSet is null.");
@@ -168,8 +167,41 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::select_client_in
 	}
 	else {
 		LOG_ERROR("MySQL:select client data failed.");
-		//spdlog::error("MySQL:select client data failed.");
 		return std::make_tuple("", "", "");
+	}
+}
+
+bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content)
+{
+	/*std::string room_name = "sample";
+	std::string query_chat_room = "INSERT INTO " + _mysql_table_name_chatrooms +
+		"(room_id, room_name, created_at) "
+		"VALUES('" + room_id + "','" + room_name + "','" + send_time + "');";
+
+	if (this->execute_query(query_chat_room) == true) {
+		spdlog::debug("MySQL:insert chatroom success.");
+		return true;
+	}
+	else {
+		LOG_ERROR("MySQL:insert chatroom failed.");
+		return false;
+	}*/
+
+
+	std::string query = "INSERT INTO " + _mysql_table_name_chat_messages +
+		" (mid, room_id, sender_id, send_time, `message`) "
+		"VALUES (" + std::to_string(mid) + ",'" + room_id + "','" + sender_id + "','" + send_time + "','" + content + "');";
+	//std::string query = "INSERT INTO " + _mysql_table_name_chat_messages +
+		//"(mid, room_id, sender_id, send_time, 'message' )"
+		//"VALUES('" + std::to_string(mid) + "','" + room_id + "','" + sender_id + "','" + send_time + "','" + content + "');";
+
+	if (this->execute_query(query) == true) {
+		spdlog::debug("MySQL:insert chat message success.");
+		return true;
+	}
+	else {
+		LOG_ERROR("MySQL:insert chat message failed.");
+		return false;
 	}
 }
 
@@ -177,9 +209,9 @@ bool MySQLClient::create_table_clients()
 {
 
 	std::string query = "CREATE TABLE IF NOT EXISTS " + _mysql_table_name_clients +
-		"(cid VARCHAR(255) NOT NULL PRIMARY KEY,"
-		"name VARCHAR(255) NOT NULL,"
-		"email VARCHAR(255) NOT NULL,"
+		"(cid VARCHAR(28) NOT NULL PRIMARY KEY,"
+		"name VARCHAR(28) NOT NULL,"
+		"mail_address VARCHAR(256) NOT NULL,"
 		"password_hash VARCHAR(255) NOT NULL,"
 		"created_at DATETIME NOT NULL);";
 
@@ -188,7 +220,7 @@ bool MySQLClient::create_table_clients()
 		return true;
 	}
 	else {
-		spdlog::error("MySQL:create tbale(table name:{:s})  users failed.", _mysql_table_name_clients);
+		LOG_ERROR("MySQL:create tbale(table name:{:s})  users failed.", _mysql_table_name_clients);
 		return false;
 	}
 
@@ -197,15 +229,15 @@ bool MySQLClient::create_table_clients()
 bool MySQLClient::create_table_chatrooms()
 {
 	std::string query = "CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chatrooms + 
-		"(room_id INT NOT NULL PRIMARY KEY,"
-		"room_name VARCHAR(255),"
+		"(room_id VARCHAR(26) NOT NULL PRIMARY KEY,"
+		"room_name VARCHAR(50) NOT NULL,"
 		"created_at DATETIME);";
 	if (this->execute_query(query) == true) {
 		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_chatrooms);
 		return true;
 	}
 	else {
-		spdlog::error("MySQL:create tbale(table name:{:s}) failed.", _mysql_table_name_chatrooms);
+		LOG_ERROR("MySQL:create tbale(table name:{:s}) failed.", _mysql_table_name_chatrooms);
 		return false;
 	}
 }
@@ -213,8 +245,8 @@ bool MySQLClient::create_table_chatrooms()
 bool MySQLClient::create_table_chat_members()
 {
 	std::string query = "CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_members +
-		"(room_id INT NOT NULL,"
-		"cid VARCHAR(255) NOT NULL,"
+		"(room_id VARCHAR(50) NOT NULL,"
+		"cid VARCHAR(28) NOT NULL,"
 		"joined_at DATETIME,"
 		"PRIMARY KEY(room_id, cid),"
 		"FOREIGN KEY(room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE, "
@@ -225,7 +257,7 @@ bool MySQLClient::create_table_chat_members()
 		return true;
 	}
 	else {
-		spdlog::error("MySQL:create tbale(table name:{:s}) failed.", _mysql_table_name_chat_members);
+		LOG_ERROR("MySQL:create tbale(table name:{:s}) failed.", _mysql_table_name_chat_members);
 		return false;
 	}
 }
@@ -233,11 +265,11 @@ bool MySQLClient::create_table_chat_members()
 bool MySQLClient::create_table_chat_messages()
 {
 	std::string query = "CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_messages +
-		"(mid INT PRIMARY KEY,"
-		"room_id INT NOT NULL,"
-		"sender_id VARCHAR(255) NOT NULL,"
+		"(mid BIGINT PRIMARY KEY,"
+		"room_id VARCHAR(26) NOT NULL,"
+		"sender_id VARCHAR(28) NOT NULL,"
+		"send_time DATETIME NOT NULL,"
 		"message TEXT NOT NULL,"
-		"created_at DATETIME NOT NULL,"
 		"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE,"
 		"FOREIGN KEY (sender_id) REFERENCES clients(cid) ON DELETE CASCADE);";
 	if (this->execute_query(query) == true){
@@ -245,7 +277,7 @@ bool MySQLClient::create_table_chat_messages()
 		return true;
 	}
 	else {
-		spdlog::error("MySQL:create tbale(table name:{:s}) failed.", _mysql_table_name_chat_messages);
+		LOG_ERROR("MySQL:create tbale(table name:{:s}) failed.", _mysql_table_name_chat_messages);
 		return false;
 	}
 }
@@ -253,9 +285,9 @@ bool MySQLClient::create_table_chat_messages()
 bool MySQLClient::create_table_unread_messages()
 {
 	std::string query = "CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unread_messages +
-		"(mid INT NOT NULL,"
-		"cid VARCHAR(255) NOT NULL,"
-		"room_id INT NOT NULL,"
+		"(mid BIGINT NOT NULL,"
+		"cid VARCHAR(28) NOT NULL,"
+		"room_id VARCHAR(26) NOT NULL,"
 		"count INT NOT NULL,"
 		"PRIMARY KEY(mid, cid, room_id),"
 		"FOREIGN KEY (mid) REFERENCES chat_messages(mid) ON DELETE CASCADE ON UPDATE CASCADE,"
@@ -266,7 +298,7 @@ bool MySQLClient::create_table_unread_messages()
 		return true;
 	}
 	else {
-		spdlog::error("MySQL:create tbale(table name:{:s}) failed.", _mysql_table_name_unread_messages);
+		LOG_ERROR("MySQL:create tbale(table name:{:s}) failed.", _mysql_table_name_unread_messages);
 		return false;
 	}
 }
