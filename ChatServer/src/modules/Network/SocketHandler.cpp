@@ -860,7 +860,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 				_local_ip_addr = temp_local_ip_addr;
 			}
 		}
-		spdlog::info("server-ip, success, obtain server ip address.");
+		spdlog::debug("server-ip, success, obtain server ip address.");
 	}
 	else{
 		LOG_ERROR("Failed to obtain the server IP address.");

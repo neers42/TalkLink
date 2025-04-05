@@ -5,19 +5,36 @@ MessageType001::MessageType001()
 {
 }
 MessageType001::MessageType001(SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
-    :_sign_type{s_type}, _auth_type{a_type}, _client_name{name}, _client_mail_addr{mail_addr}, _client_password{password}
+    :_sign_type{s_type},
+    _auth_type{a_type},
+    _client_name{name},
+    _client_mail_addr{mail_addr},
+    _client_password{password}
 {
 }
 MessageType001::MessageType001(int s_type, int a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
-    :_sign_type{exchange_sign_type_from_int(s_type)}, _auth_type{exchange_auth_type_from_int(a_type)}, _client_name{name}, _client_mail_addr{mail_addr}, _client_password{password}
+    :_sign_type{exchange_sign_type_from_int(s_type)},
+    _auth_type{exchange_auth_type_from_int(a_type)},
+    _client_name{name},
+    _client_mail_addr{mail_addr},
+    _client_password{password}
 {
 }
 MessageType001::MessageType001(ContentType c_type, const std::string& mt, SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
-    :BaseMessage(c_type, mt), _sign_type{ s_type }, _auth_type{ a_type }, _client_name{ name }, _client_mail_addr{ mail_addr }, _client_password{ password }
+    :BaseMessage(c_type, mt),
+    _sign_type{ s_type },
+    _auth_type{ a_type },
+    _client_name{ name },
+    _client_mail_addr{ mail_addr },
+    _client_password{ password }
 {
 }
 MessageType001::MessageType001(int c_type, const std::string& mt, int s_type, int a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
-    :BaseMessage(c_type, mt), _sign_type{ this->exchange_sign_type_from_int(s_type)}, _auth_type{exchange_auth_type_from_int(a_type)}, _client_name{name}, _client_mail_addr{mail_addr}, _client_password{password}
+    :BaseMessage(c_type, mt),
+    _sign_type{ this->exchange_sign_type_from_int(s_type)},
+    _auth_type{exchange_auth_type_from_int(a_type)},
+    _client_name{name}, _client_mail_addr{mail_addr},
+    _client_password{password}
 {
 }
 MessageType001::~MessageType001()
@@ -150,6 +167,69 @@ bool MessageType001::is_valid()
     {
         return false;
     }
+}
+
+std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& json_message)
+{
+    try {
+        // 1. 必須キーがすべて存在するかチェック
+        static const std::vector<std::string> required_keys = {
+            "content_type", "message_type", "sign_type",
+            "auth_type", "name", "mail_address", "password"
+        };
+
+        for (const auto& key : required_keys) {
+            if (!json_message.contains(key)) {
+                throw std::runtime_error("Missing key: " + key);
+            }
+        }
+
+        // 2. 各フィールドの型を検証しながら読み取る
+        if (!json_message["content_type"].is_number_integer()) {
+            throw std::runtime_error("Invalid type for 'content_type'");
+        }
+        if (!json_message["message_type"].is_string()) {
+            throw std::runtime_error("Invalid type for 'message_type'");
+        }
+        if (!json_message["sign_type"].is_number_integer()) {
+			throw std::runtime_error("Invalid type for 'sign_type'");
+        }
+        if (!json_message["auth_type"].is_number_integer()) {
+            throw std::runtime_error("Invalid type for 'auth_type'");
+        }
+		if (!json_message["name"].is_string()) {
+			throw std::runtime_error("Invalid type for 'name'");
+		}
+		if (!json_message["mail_address"].is_string()) {
+			throw std::runtime_error("Invalid type for 'mail_address'");
+		}
+		if (!json_message["password"].is_string()) {
+			throw std::runtime_error("Invalid type for 'password'");
+		}
+		// 3. 各フィールドを読み取る
+        int content_type = json_message["content_type"];
+        std::string message_type = json_message["message_type"];
+        int sign_type = json_message["sign_type"];
+        int auth_type = json_message["auth_type"];
+        std::string client_name = json_message["name"];
+        std::string client_mail_addr = json_message["mail_address"];
+        std::string client_password = json_message["password"];
+
+        return std::make_unique<MessageType001>(
+            content_type,
+            message_type,
+            sign_type,
+            auth_type,
+            client_name,
+            client_mail_addr,
+            client_password
+        );
+    }
+    catch (const std::exception& e) {
+		LOG_ERROR("Error deserializing MessageType001: {}", e.what());
+        return nullptr;
+    }
+
 }
 
 bool MessageType001::is_valid_name(const std::string& name)

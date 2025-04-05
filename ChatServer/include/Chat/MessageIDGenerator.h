@@ -9,7 +9,7 @@ public:
 	MessageIDGenerator();
 	~MessageIDGenerator();
 
-    uint64_t generate_message_id();
+    static uint64_t generate_message_id();
 
 private:
     static constexpr uint64_t epoch = 1700000000000; // 任意の開始時間（2023年11月以降）
@@ -18,8 +18,9 @@ private:
     static constexpr uint64_t sequence_bits = 12;
     static constexpr uint64_t max_sequence = (1 << sequence_bits) - 1;
 
-    uint64_t last_timestamp = 0;
-    uint64_t sequence = 0;
+    static std::mutex mtx;
+    static uint64_t last_timestamp;
+    static uint64_t sequence;
 
 };
 #endif // !MESSAGEIDGENERATOR

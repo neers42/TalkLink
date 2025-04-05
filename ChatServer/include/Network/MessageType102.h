@@ -1,9 +1,12 @@
-﻿#ifndef __MESSAGE_TYPE_102_H__
-#define __MESSAGE_TYPE_102_H__
+﻿#ifndef MESSAGETYPE102_H
+#define MESSAGETYPE102_H
 #include "BaseMessage.h"
 class MessageType102 :
     public BaseMessage
 {
+public:
+	MessageType102();
+	~MessageType102();
 };
-#endif // !__MESSAGE_TYPE_102_H__
+#endif // !MESSAGETYPE102_H
 

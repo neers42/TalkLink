@@ -68,32 +68,6 @@ void ServerControlleFacade::run()
 		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
 			[this](SOCKET changed_socket) {handle_changed_socket_process(changed_socket); });
 
-
-//#ifdef ver0.1
-//		int detection_num = _socket_handler->monitor_socket_descriptor(this->_client_handler->connected_clients);
-//
-//		switch (detection_num)
-//		{
-//		case SELECT_TIME_OUT:
-//			break;
-//
-//		case SOCKET_ERROR:
-//			break;
-//
-//			//アクセプト要求があった場合
-//		case REQUEST_ACCEPT_CLIENT_DETECTION:
-//		{
-//			this->_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
-//		};
-//			break;
-//		
-//		//接続中のクライアントリストから通知があった場合
-//		default:
-//			this->_thread_pool_handler->enqueue_task([this, detection_num]() {message_handle_process(detection_num); });
-//			break;
-//		}
-//#endif // ver0.1
-		
 		std::this_thread::sleep_until(abs_time);
 
 	}
@@ -243,7 +217,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 	}
 	//MT001 = Auth認証メッセージの場合
 	else if (mt == "001") {
-		auto mt001 = this->_protocol_handler->serialize_message<MessageType001>(receive_json);
+		auto mt001 = MessageType001::serialize_message(receive_json);
 		if (mt001 == nullptr) {
 			return;
 		}
@@ -251,15 +225,19 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		this->mt001_process(mt001, detection_num);
 
 	}
-	//MT002 = 通常メッセージの場合
+	//MT002 = Group or Friend追加のメッセージの場合
 	else if (mt == "002") {
-		auto mt002 = this->_protocol_handler->serialize_message<MessageType002>(receive_json);
-		if (mt002 == nullptr) {
+
+	}
+	//MT003 = 通常メッセージの場合
+	else if (mt == "003") {
+		auto mt003 = MessageType003::serialize_message(receive_json);
+		if (mt003 == nullptr) {
 			return;
 		}
-		this->_protocol_handler->print_received_message_info(mt002, mt002->get_message_id(), mt002->get_sender_id(), mt002->get_receiver_id(),
+		this->_protocol_handler->print_received_message_info(mt003, mt003->get_message_id(), mt003->get_sender_id(), mt003->get_receiver_id(),
 			_client_handler->connected_clients[detection_num].ipv4_address, _client_handler->connected_clients[detection_num].socket);
-		this->mt002_process(mt002, detection_num);
+		this->mt003_process(mt003, detection_num);
 	}
 
 	else {
@@ -438,12 +416,13 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 
 
 
-void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>& mt002, int& receive_result)
+void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>& mt002, int& receive_result)
 {
 	std::vector<SOCKET> send_sockets;
 	std::vector<std::string> receive_clients;
 	int chatroom_list_num = -1;
 	int send_socket_num = 0;
+	bool client_db_exist_flag = false;
 
 	try
 	{
@@ -457,23 +436,23 @@ void ServerControlleFacade::mt002_process(const std::unique_ptr<MessageType002>&
 			send_socket_num = _client_handler->search_client_id_from_con_list(mt002->get_receiver_id());
 			spdlog::debug("send_socket_num:{:d}", send_socket_num);
 
-			////===================ここ実装していない============================================
-			//connect_listの中にいない場合は、データベースの中に入れる。
-			//①データベースに登録されているidから検索
-			//②データベースに登録されているidがある場合は、メッセージを保存し、ない場合はメッセージを破棄する
+			//データベースにクライアントIDが存在するか確認する
+			if (send_socket_num == -1) {
+				client_db_exist_flag = this->_mysql_client->is_client_id_exist(mt002->get_receiver_id());
+				if (client_db_exist_flag == false) {
+					LOG_ERROR("The client ID was not found in the database.");
+					THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
+					return;
+				}
+			}
+			//メッセージをデータベースに保存する
 			if (this->_mysql_client->insert_chat_message(mt002->get_message_id(), mt002->get_room_id(), mt002->get_sender_id(), mt002->get_send_time(), mt002->get_content())) {
 				spdlog::info("The message was successfully saved in the database.");
 			}
 			else {
-				spdlog::error("The message was not saved in the database.");
+				LOG_ERROR("The message was not saved in the database.");
 			}
 
-
-			if (send_socket_num == -1) {
-				THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
-			}
-
-			//=========================================================================================
 
 
 			//=========================================================================================

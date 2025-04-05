@@ -171,6 +171,37 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::select_client_in
 	}
 }
 
+bool MySQLClient::is_client_id_exist(const std::string& cid)
+{
+	std::string query = "SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_clients + " WHERE cid = '" + cid + "';";
+	if (this->execute_query(query) == true) {
+		spdlog::debug("MySQL:select client data success.");
+		_mysql_res = _statement->getResultSet();
+		while (_mysql_res->next())
+		{
+			if (_mysql_res != nullptr) {
+				int is_exist = _mysql_res->getBoolean(1);
+				if (is_exist == 1) {
+					spdlog::debug("MySQL:client id exists.");
+					return true;
+				}
+				else {
+					spdlog::debug("MySQL:client id does not exist.");
+					return false;
+				}
+			}
+			else {
+				LOG_ERROR("MySQL: ResultSet is null.");
+				return false;
+			}
+		}
+	}
+	else {
+		LOG_ERROR("MySQL:select client data failed.");
+		return false;
+	}
+}
+
 bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content)
 {
 	/*std::string room_name = "sample";

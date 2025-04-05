@@ -8,8 +8,12 @@
 #include "wolfssl/wolfcrypt/asn_public.h"
 #include "MessageType000.h"
 #include "MessageType001.h"
-#include "MessageType002.h"
 #include "MessageType003.h"
+#include "MessageType004.h"
+#include "MessageType101.h"
+#include "MessageType102.h"
+#include "MessageType103A.h"
+#include "MessageType103B.h"
 #include "ulid/ulid.hh"
 #include "ulid/ulid_struct.hh"
 #include "spdlog/spdlog.h"
@@ -26,7 +30,7 @@ class ProtocolHandler
 private:
 	WOLFSSL* _server_w_ssl = NULL;
 	WOLFSSL_CTX* _server_w_ctx = NULL;
-	std::unique_ptr<MessageIDGenerator> _message_id_generator;
+	//std::unique_ptr<MessageIDGenerator> _message_id_generator;
 
 public:
 	//コンストラクタ
@@ -88,52 +92,14 @@ public:
 		const int socket_num)
 	{
 		if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType000>) {
-			/*LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
-				"Content Type : %d\n"
-				"Message Type : %s\n"
-				"Message ID : %s\n"
-				message_instance.get_content_type(),
-				message_instance.get_message_type(),
-				message_instance.get_message_id()));*/
+		
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType001>) {
 			spdlog::info("server received \033[33mMessage Type 001\033[m from sender(ip:{:s}, socket:{:d})", ipv4, socket_num);
-			/*	LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
-					"Content Type : %d\n"
-					"Message Type : %s\n"
-					"Message ID : %s\n"
-					"Sign Type : %d\n"
-					"Auth Type : %d\n"
-					"Client Name : %s\n"
-					"Client Mail Address : %s\n"
-					"Client Password : %s\n",
-					message_instance.get_content_type(),
-					message_instance.get_message_type(),
-					message_instance.get_message_id(),
-					message_instance.get_sign_type_int(),
-					message_instance.get_auth_type_int(),
-					message_instance.get_client_name(),
-					message_instance.get_client_mail_addr(),
-					message_instance.get_client_password()));*/
 		}
-		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType002>) {
-			spdlog::info("server received \033[33mMessage Type 002\033[m(message id:{:d}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"
+		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType003>) {
+			spdlog::info("server received \033[33mMessage Type 003\033[m(message id:{:d}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"
 				, message_id, src_id, ipv4, socket_num, dst_id);
-			/*LogHandler::get_instance().logging_debug(StringFormat("Receive message info : \n"
-				"Content Type : %d\n"
-				"Message Type : %s\n"
-				"Message ID : %s\n"
-				"Source ID : %s\n"
-				"Destination ID : %s\n"
-				"Transaction Type : %d\n"
-				"Data Type : %d\n"
-				"Main Content : %s\n",
-				message_instance.get_content_type(),
-				message_instance.get_message_type(),
-				message_instance.get_message_id(),
-				message_instance.get_src_client_id(),
-				message_instance.get_dst_client_id(),
-				message_instance.get_content()));*/
 		}
 
 	}
@@ -162,8 +128,6 @@ private:
 	//サーバの秘密鍵をロード
 	void load_private_key();
 
-	//template <typename T>
-	//std::unique_ptr<T> serialize_message_impl(const json& recv_json);
 
 	template <typename T>
 	std::unique_ptr<T> serialize_message_impl(const json& recv_json)
@@ -189,28 +153,50 @@ private:
 			std::string client_password = recv_json["password"];
 
 			//MT001を返す
-			return std::make_unique<T>(content_type, message_type, sign_type, auth_type, client_name, client_mail_addr, client_password);
+			return std::make_unique<T>(
+				content_type, 
+				message_type, 
+				sign_type, 
+				auth_type, 
+				client_name, 
+				client_mail_addr, 
+				client_password);
 
 		}
-		//MT002の場合
-		else if constexpr (std::is_same<T, MessageType002>::value) {
+		//MT003の場合
+		else if constexpr (std::is_same<T, MessageType003>::value) {
 			int content_type = recv_json["content_type"].get<int>();  // int型
 			std::string message_type = recv_json["message_type"];      // std::string型
 			std::string receiver_id = recv_json["receiver_id"];    // std::string型
 			std::string sender_id = recv_json["sender_id"];    // std::string型
 			std::string send_time = recv_json["send_time"];    // std::string型
 			std::string content = recv_json["content"];                // std::string型
-			uint64_t message_id = this->_message_id_generator->generate_message_id();  // 空の文字列
+			uint64_t message_id = MessageIDGenerator::generate_message_id();  // 空の文字列
 			int chat_type = recv_json["chat_type"].get<int>();  // int型
 			std::string room_id = recv_json["room_id"];  // std::string型
 
 			//MT002を返す
-			return std::make_unique<T>(content_type, message_type, room_id, receiver_id, sender_id, send_time,
-				content, message_id, chat_type);
+			return std::make_unique<T>(
+				static_cast<int>(content_type), 
+				message_type, 
+				message_id, 
+				static_cast<int>(chat_type), 
+				room_id, 
+				receiver_id,
+				sender_id, 
+				send_time,
+				content);
 		}
 		else {
 			LOG_ERROR("Unsupported message type");
 			return nullptr;
+		}
+	}
+
+	template<typename T>
+	json deserialize_message(const T message) {
+		if constexpr (std::is_same<T, MessageType001>::value) {
+
 		}
 	}
 	

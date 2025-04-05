@@ -2,8 +2,8 @@
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
 #include "MessageType001.h"
-#include "MessageType002.h"
 #include "MessageType003.h"
+#include "MessageType004.h"
 #include "ServerTime.h"
 #include "ClientHandler.h"
 #include "ChatRoomHandler.h"
@@ -67,10 +67,8 @@ public:
 	void message_handle_process(const SOCKET socket);
 
 	void mt000_process(std::string& receive_data, int monitor_result);
-
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, int detection_num);
-
-	void mt002_process(const std::unique_ptr<MessageType002>& mt002, int& receive_result);
+	void mt003_process(const std::unique_ptr<MessageType003>& mt002, int& receive_result);
 	void heart_beat_check_process();
 	void heart_beat_response_process(const ClientHandler::Client& client);
 	void setting_select_process();

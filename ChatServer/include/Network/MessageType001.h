@@ -1,5 +1,5 @@
-﻿#ifndef MESSAGETYPE001
-#define MESSAGETYPE001
+﻿#ifndef MESSAGETYPE001_H_
+#define MESSAGETYPE001_H_
 #include "BaseMessage.h"
 #include "common.h"
 class MessageType001 :
@@ -59,6 +59,7 @@ public:
     void set_client_password(const std::string& password);
 
     bool is_valid() override;
+    static std::unique_ptr<MessageType001> serialize_message(const json& json_message);
 
 private:
     bool is_valid_name(const std::string& name);
