@@ -8,7 +8,12 @@
 #include "spdlog/spdlog.h"
 #include "DataBaseInterface.h"
 
-
+//struct UnreadMessage
+//{
+//	uint64_t mid;
+//	std::string cid;
+//	std::string room_id;
+//};
 
 class MySQLClient : public DataBaseInterface
 {
@@ -31,9 +36,6 @@ private:
 	std::string _mysql_table_name_unread_messages = "unread_messages";
 
 
-
-
-
 public:
 	MySQLClient();
 	MySQLClient(const std::string& host, const std::string& user_name, const std::string& password);
@@ -52,7 +54,8 @@ public:
 	bool is_client_id_exist(const std::string& cid);
 	bool insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content);
 	bool insert_unread_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
-	bool select_unread_message(const std::string& cid, const std::string& room_id, int select_num);
+	std::string get_client_last_login_fromDB(const std::string& cid);
+	json get_unread_message_fromDB(const std::string& cid, int limit);
 private:
 	bool create_table_clients();
 	bool create_table_chatrooms();

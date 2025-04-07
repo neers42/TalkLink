@@ -310,6 +310,92 @@ bool MySQLClient::insert_unread_message(const uint64_t mid, const std::string& c
 	}
 }
 
+std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
+{
+	std::string last_login_time = "";
+
+	try {
+		// クエリ: クライアントIDから最終ログイン日時を取得
+		std::string query = "SELECT last_login FROM " + _mysql_table_name_clients + " WHERE cid = ?";
+
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement(query)
+		);
+
+		// パラメータを設定
+		pre_stmt->setString(1, cid); // クライアントID
+
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+
+		// 結果を読み取る
+		if (res->next()) {
+			last_login_time = res->getString("last_login");
+		}
+
+		spdlog::debug("MySQL: Fetched last login time for client {}: {}", cid, last_login_time);
+
+	}
+	catch (const sql::SQLException& e) {
+		LOG_ERROR("MySQL: Failed to fetch last login time. Error: {}", e.what());
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Error while fetching last login time: {}", e.what());
+	}
+
+	return last_login_time;
+}
+
+json MySQLClient::get_unread_message_fromDB(const std::string& cid, int limit)
+{
+	try
+	{
+		// 最終ログイン日時を取得
+		std::string last_login_time = get_client_last_login_fromDB(cid);
+		if (last_login_time.empty()) {
+			LOG_ERROR("MySQL: No last login time found for client {}", cid);
+			return json();
+		}
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement(
+				"SELECT unread_messages.mid, unread_messages.cid, unread_messages.room_id "
+				"FROM " + _mysql_table_name_unread_messages + " "
+				"JOIN chat_messages ON unread_messages.mid = chat_messages.mid "
+				"WHERE unread_messages.cid = ? AND chat_messages.send_time > ?"
+			)
+		);
+		pre_stmt->setString(1, cid);
+		pre_stmt->setString(2, last_login_time);
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+		//未読メッセージの配列を作成
+		json unread_messages_json = json::array();
+		while (res -> next())
+		{
+			json message;
+			message["mid"] = res->getInt64("mid");
+			message["cid"] = res->getString("cid");
+			message["room_id"] = res->getString("room_id");
+			unread_messages_json.push_back(message);
+
+		}
+		spdlog::debug("MySQL: Unread messages fetched successfully for client {}", cid);
+		return unread_messages_json;
+	}
+	catch (const std::exception&)
+	{
+		LOG_ERROR("MySQL: Failed to fetch unread messages.");
+		return json();
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("MySQL: Failed to fetch unread messages. Error: {}", e.what());
+		return json();
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("MySQL: Failed to fetch unread messages. Error: {}", e.what());
+		return json();
+	}
+}
+
 bool MySQLClient::create_table_clients()
 {
 	try

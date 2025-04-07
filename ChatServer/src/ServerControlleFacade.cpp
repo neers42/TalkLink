@@ -190,7 +190,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 			return;
 		}
 
-
+		//クライアントの切断を検知した場合
 		if (disconnect_flag == true) {
 			
 			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.ipv4_address, client.id);
@@ -388,14 +388,17 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 				spdlog::debug("client name:{:s}, mail address:{:s}, password:{:s}", client_name, client_mail_addr, client_password);
 
 				//TODO　ここでcidに関するメッセージをデータベースから取得する。
-
+				json unread_messages_json;
+				unread_messages_json = this->_mysql_client->get_unread_message_fromDB(client_id, 20);
 				
 				//Auth statusを変更する
 				this->_client_handler->change_client_auth_status(detection_num);
 
 				//TODO
 				//MT101を送信する処理を記載する
-				//
+				auto mt101 = std::make_unique<MessageType101>(client_id, true);
+				json mt101_json = MessageType101::desirialize_message(mt101, unread_messages_json, "No Error.");
+				spdlog::debug("mt101_json : {}", mt101_json.dump(4));
 			}
 		}
 		break;
