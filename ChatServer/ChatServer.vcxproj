@@ -4,6 +4,8 @@
     <None Include="certs\server-cert.pem" />
     <None Include="certs\server-key.pem" />
     <None Include="diagram\class-diagram.md" />
+    <None Include="diagram\class-diagram.mmd" />
+    <None Include="diagram\sequence_login_diagram.md" />
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>

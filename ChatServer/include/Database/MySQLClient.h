@@ -46,10 +46,13 @@ public:
 	void print_sql_error(sql::SQLException& e);
 	void create_database();
 	bool create_table();
-	bool insert_client_data(const std::string& cid, const std::string& name, const std::string& mail_address, const std::string& password_hash, const std::string& created_at);
+	bool insert_client_data(const std::string& cid, const std::string& name, const std::string& mail_address, const std::string& password_hash, const std::string& created_at, const std::string& last_login);
 	std::tuple<std:: string, std::string, std::string> select_client_info(const std::string& cid);
+	bool update_last_login(const std::string& cid, const std::string& last_login);
 	bool is_client_id_exist(const std::string& cid);
 	bool insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content);
+	bool insert_unread_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
+	bool select_unread_message(const std::string& cid, const std::string& room_id, int select_num);
 private:
 	bool create_table_clients();
 	bool create_table_chatrooms();

@@ -23,6 +23,7 @@
 #define ACCEPT_SUCCEEDED 1
 #define DEBUG_MODE
 #define TLS_PROTOCOL
+#define LOAD_MESSAGE_NUM 20
 
 class ServerControlleFacade
 {
@@ -68,7 +69,7 @@ public:
 
 	void mt000_process(std::string& receive_data, int monitor_result);
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, int detection_num);
-	void mt003_process(const std::unique_ptr<MessageType003>& mt002, int& receive_result);
+	void mt003_process(const std::unique_ptr<MessageType003>& mt003, int& receive_result);
 	void heart_beat_check_process();
 	void heart_beat_response_process(const ClientHandler::Client& client);
 	void setting_select_process();

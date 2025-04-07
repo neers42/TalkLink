@@ -1758,9 +1758,11 @@
   <ItemGroup>
     <None Include="assets\google-services.json" />
     <None Include="conf\socket_setting.ini" />
-    <None Include="diagram\class-diagram.md" />
+    <None Include="diagram\class-diagram.mmd" />
     <None Include="certs\server-cert.pem" />
     <None Include="certs\server-key.pem" />
+    <None Include="diagram\sequence_login_diagram.md" />
+    <None Include="diagram\class-diagram.md" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\firebase\MD\x64\Debug\firebase_analytics.lib" />

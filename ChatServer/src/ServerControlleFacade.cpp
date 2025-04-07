@@ -82,7 +82,6 @@ void ServerControlleFacade::setting_select_info()
 			//有効なソケットにFDSETを実行する
 			if (client.socket != INVALID_SOCKET) {
 				FD_SET(client.socket, &_socket_handler->get_fd_read());
-				//_socket_handler->bind_select_info_to_socket(client.get_client_socket(), &_socket_handler->get_fd_read());
 			}
 		}
 
@@ -193,11 +192,12 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 
 
 		if (disconnect_flag == true) {
-
+			
 			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.ipv4_address, client.id);
-				this->_protocol_handler->shutdown_wolfssl(client.ssl);
-				_socket_handler->disconnect_socket(client.socket);
-				_client_handler->delete_client(detection_num);
+			this->_mysql_client->update_last_login(client.id, this->_server_time->get_current_time());
+			this->_protocol_handler->shutdown_wolfssl(client.ssl);
+			_socket_handler->disconnect_socket(client.socket);
+			_client_handler->delete_client(detection_num);
 
 			return;
 		}
@@ -221,7 +221,11 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		if (mt001 == nullptr) {
 			return;
 		}
-		this->_protocol_handler->print_received_message_info(mt001, 0, "", "", _client_handler->connected_clients[detection_num].ipv4_address, _client_handler->connected_clients[detection_num].socket);
+		{
+			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+			auto& client = _client_handler->connected_clients[detection_num];
+			this->_protocol_handler->print_received_message_info(mt001, 0, "", "", client.ipv4_address, client.socket);
+		}
 		this->mt001_process(mt001, detection_num);
 
 	}
@@ -235,8 +239,11 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		if (mt003 == nullptr) {
 			return;
 		}
-		this->_protocol_handler->print_received_message_info(mt003, mt003->get_message_id(), mt003->get_sender_id(), mt003->get_receiver_id(),
-			_client_handler->connected_clients[detection_num].ipv4_address, _client_handler->connected_clients[detection_num].socket);
+		{
+			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+			auto& client = _client_handler->connected_clients[detection_num];
+			this->_protocol_handler->print_received_message_info(mt003, mt003->get_message_id(), mt003->get_sender_id(), mt003->get_receiver_id(), client.ipv4_address, client.socket);
+		}
 		this->mt003_process(mt003, detection_num);
 	}
 
@@ -416,7 +423,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 
 
 
-void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>& mt002, int& receive_result)
+void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>& mt003, int& receive_result)
 {
 	std::vector<SOCKET> send_sockets;
 	std::vector<std::string> receive_clients;
@@ -426,27 +433,26 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 
 	try
 	{
-		if (mt002 == nullptr || mt002->is_valid() == false) {
+		if (mt003 == nullptr || mt003->is_valid() == false) {
 			// メッセージ処理
 			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
 		}
 
 		{
 			std::unique_lock<std::mutex> lock(this->_connect_client_list_mutex);
-			send_socket_num = _client_handler->search_client_id_from_con_list(mt002->get_receiver_id());
+			send_socket_num = _client_handler->search_client_id_from_con_list(mt003->get_receiver_id());
 			spdlog::debug("send_socket_num:{:d}", send_socket_num);
 
 			//データベースにクライアントIDが存在するか確認する
 			if (send_socket_num == -1) {
-				client_db_exist_flag = this->_mysql_client->is_client_id_exist(mt002->get_receiver_id());
+				client_db_exist_flag = this->_mysql_client->is_client_id_exist(mt003->get_receiver_id());
 				if (client_db_exist_flag == false) {
 					LOG_ERROR("The client ID was not found in the database.");
 					THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
-					return;
 				}
 			}
 			//メッセージをデータベースに保存する
-			if (this->_mysql_client->insert_chat_message(mt002->get_message_id(), mt002->get_room_id(), mt002->get_sender_id(), mt002->get_send_time(), mt002->get_content())) {
+			if (this->_mysql_client->insert_chat_message(mt003->get_message_id(), mt003->get_room_id(), mt003->get_sender_id(), mt003->get_send_time(), mt003->get_content())) {
 				spdlog::info("The message was successfully saved in the database.");
 			}
 			else {
@@ -494,6 +500,7 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 	catch (const exception::ExceptionBase& ex)
 	{
 		LOG_ERROR(ex.what_for_str());
+		return;
 	}
 
 
@@ -627,13 +634,15 @@ bool ServerControlleFacade::insert_client_info_to_db(const std::string& id, cons
 
 	std::ostringstream datetime_ss;
 	datetime_ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-	std::string datetime_str = datetime_ss.str();
+	std::string datetime_create_at_str = datetime_ss.str();
+	std::string datetime_last_login = "";
 
 	//データベースにユーザ情報を登録する。
-	if (this->_mysql_client->insert_client_data(id, name, mail_addr, password_hash, datetime_str) == true) {
+	if (this->_mysql_client->insert_client_data(id, name, mail_addr, password_hash, datetime_create_at_str, datetime_last_login) == true) {
 		return true;
 	}
 	else {
+		LOG_ERROR("Client information was not registered in the database.");
 		return false;
 	}
 }
