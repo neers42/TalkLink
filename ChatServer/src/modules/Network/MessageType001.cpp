@@ -1,7 +1,7 @@
 ﻿#include "MessageType001.h"
 
 MessageType001::MessageType001() 
-    :_sign_type{SignType::SIGNUP}, _auth_type{AuthType::NOMAL}, _client_name{""}, _client_mail_addr{""}, _client_password{""}
+    :_sign_type{SignType::SIGNUP}, _auth_type{AuthType::NORMAL}, _client_name{""}, _client_mail_addr{""}, _client_password{""}
 {
 }
 MessageType001::MessageType001(SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
@@ -105,7 +105,7 @@ void MessageType001::set_auth_type(int a_type)
     switch (a_type)
     {
     case 0:
-        this->_auth_type = AuthType::NOMAL;
+        this->_auth_type = AuthType::NORMAL;
         break;
     case 1:
         this->_auth_type = AuthType::GOOGLE;
@@ -185,16 +185,16 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
         }
 
         // 2. 各フィールドの型を検証しながら読み取る
-        if (!json_message["content_type"].is_number_integer()) {
+        if (!json_message["content_type"].is_string()) {
             throw std::runtime_error("Invalid type for 'content_type'");
         }
         if (!json_message["message_type"].is_string()) {
             throw std::runtime_error("Invalid type for 'message_type'");
         }
-        if (!json_message["sign_type"].is_number_integer()) {
+        if (!json_message["sign_type"].is_string()) {
 			throw std::runtime_error("Invalid type for 'sign_type'");
         }
-        if (!json_message["auth_type"].is_number_integer()) {
+        if (!json_message["auth_type"].is_string()) {
             throw std::runtime_error("Invalid type for 'auth_type'");
         }
 		if (!json_message["name"].is_string()) {
@@ -207,10 +207,61 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
 			throw std::runtime_error("Invalid type for 'password'");
 		}
 		// 3. 各フィールドを読み取る
-        int content_type = json_message["content_type"];
+        std::string content_type_str = json_message["content_type"];
+		int content_type;
+		if (content_type_str == "TEXT") {
+			content_type = 0;
+		}
+		else if (content_type_str == "IMAGE") {
+			content_type = 1;
+		}
+		else if (content_type_str == "VIDEO") {
+			content_type = 2;
+		}
+		else if (content_type_str == "NOTIFICATION") {
+			content_type = 3;
+		}
+		else {
+			throw std::runtime_error("Invalid content type");
+		}
         std::string message_type = json_message["message_type"];
-        int sign_type = json_message["sign_type"];
-        int auth_type = json_message["auth_type"];
+        std::string sign_type_str = json_message["sign_type"];
+		int sign_type;
+		if (sign_type_str == "SIGN UP") {
+			sign_type = 0;
+		}
+		else if (sign_type_str == "SIGN IN") {
+			sign_type = 1;
+		}
+		else if (sign_type_str == "SIGN OUT") {
+			sign_type = 2;
+		}
+		else {
+			throw std::runtime_error("Invalid sign type");
+		}
+        std::string auth_type_str = json_message["auth_type"];
+		int auth_type;
+		if (auth_type_str == "NORMAL") {
+			auth_type = 0;
+		}
+		else if (auth_type_str == "GOOGLE") {
+			auth_type = 1;
+		}
+		else if (auth_type_str == "FACEBOOK") {
+			auth_type = 2;
+		}
+		else if (auth_type_str == "TWITTER") {
+			auth_type = 3;
+		}
+		else if (auth_type_str == "MICROSOFT") {
+			auth_type = 4;
+		}
+		else if (auth_type_str == "YAHOO") {
+			auth_type = 5;
+		}
+		else {
+			throw std::runtime_error("Invalid auth type");
+		}
         std::string client_name = json_message["name"];
         std::string client_mail_addr = json_message["mail_address"];
         std::string client_password = json_message["password"];
@@ -292,7 +343,7 @@ MessageType001::AuthType MessageType001::exchange_auth_type_from_int(const int v
     switch (value)
     {
     case 0:
-        return AuthType::NOMAL;
+        return AuthType::NORMAL;
         break;
     case 1:
         return AuthType::GOOGLE;

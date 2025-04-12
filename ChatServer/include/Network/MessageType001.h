@@ -15,7 +15,7 @@ public:
 
     enum class AuthType
     {
-        NOMAL,
+        NORMAL,
         GOOGLE,
         FACEBOOK,
         TWITTER,

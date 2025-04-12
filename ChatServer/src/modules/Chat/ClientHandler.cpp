@@ -387,9 +387,9 @@ bool ClientHandler::get_client_auth_status(const int client_num)
 }
 
 
-void ClientHandler::change_client_auth_status(const int client_num)
+void ClientHandler::change_client_auth_status(Client& client)
 {
-	this->connected_clients[client_num].change_auth_status();
+	client.change_auth_status();
 }
 
 void ClientHandler::set_client_id(std::string id, uint32_t list_num)
@@ -449,12 +449,12 @@ int ClientHandler::find_socket_from_client_list(const SOCKET& search_socket)
 	return -1;
 }
 
-void ClientHandler::show_client_info(const int& client_num)
+void ClientHandler::show_client_info(const Client& client)
 {
-	spdlog::debug("Client list[{:d}] ID : {:s}", client_num, this->connected_clients[client_num].id);
-	spdlog::debug("Client list[{:d}] Name : {:s}", client_num, this->connected_clients[client_num].name);
-	spdlog::debug("Client list[{:d}] Mail : {:s}", client_num, this->connected_clients[client_num].mail_address);
-	spdlog::debug("Client list[{:d}] Password : {:s}", client_num, this->connected_clients[client_num].password);
+	spdlog::debug("Client  ID : {:s}", client.id);
+	spdlog::debug("Client  Name : {:s}", client.name);
+	spdlog::debug("Client  Mail : {:s}", client.mail_address);
+	spdlog::debug("Client  Password : {:s}", client.password);
 }
 
 
@@ -498,9 +498,9 @@ const ClientHandler::Client ClientHandler::get_init_client() const
 
 
 
-void ClientHandler::incliment_heart_beat_count(uint32_t list_num)
+void ClientHandler::incliment_heart_beat_count(Client& client)
 {
-	this->connected_clients[list_num].incliment_heart_beat_count();
+	client.incliment_heart_beat_count();
 }
 
 void ClientHandler::clear_heart_beat_count(uint32_t list_num)

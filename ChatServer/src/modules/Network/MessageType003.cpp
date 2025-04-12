@@ -188,13 +188,13 @@ std::unique_ptr<MessageType003> MessageType003::serialize_message(const json& js
 			}
 		}
 		// 2. 各フィールドの型をチェック
-		if (!json_message["content_type"].is_number_integer()) {
+		if (!json_message["content_type"].is_string()) {
 			throw std::runtime_error("Invalid type for 'content_type'");
 		}
 		if (!json_message["message_type"].is_string()) {
 			throw std::runtime_error("Invalid type for 'message_type'");
 		}
-		if (!json_message["chat_type"].is_number_integer()) {
+		if (!json_message["chat_type"].is_string()) {
 			throw std::runtime_error("Invalid type for 'chat_type'");
 		}
 		if (!json_message["room_id"].is_string()) {
@@ -213,9 +213,35 @@ std::unique_ptr<MessageType003> MessageType003::serialize_message(const json& js
 			throw std::runtime_error("Invalid type for 'content'");
 		}
 		// 3. 各フィールドを読み取る
-		int content_type = json_message["content_type"];
+		std::string content_type_str = json_message["content_type"];
+		int content_type;
+		if (content_type_str == "TEXT") {
+			content_type = 0;
+		}
+		else if (content_type_str == "IMAGE") {
+			content_type = 1;
+		}
+		else if (content_type_str == "VIDEO") {
+			content_type = 2;
+		}
+		else if (content_type_str == "NOTIFICATION") {
+			content_type = 3;
+		}
+		else {
+			throw std::runtime_error("Invalid content type");
+		}
 		std::string message_type = json_message["message_type"];
-		int chat_type = json_message["chat_type"];
+		std::string chat_type_str = json_message["chat_type"];
+		int chat_type;
+		if (chat_type_str == "Group") {
+			chat_type = 0;
+		}
+		else if (chat_type_str == "P2P") {
+			chat_type = 1;
+		}
+		else {
+			throw std::runtime_error("Invalid chat type");
+		}
 		std::string room_id = json_message["room_id"];
 		std::string receiver_id = json_message["receiver_id"];
 		std::string sender_id = json_message["sender_id"];

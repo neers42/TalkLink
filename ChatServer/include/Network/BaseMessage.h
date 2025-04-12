@@ -12,7 +12,8 @@ public:
 		TEXT,			//テキスト
 		IMAGE,			//画像
 		VIDEO,			//動画
-		NOTIFICATION	//通知
+		NOTIFICATION,	//通知
+		HEARTBEAT,		//ハートビート
 	};
 
 protected:

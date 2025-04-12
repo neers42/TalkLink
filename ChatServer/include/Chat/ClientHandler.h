@@ -92,7 +92,7 @@ public:
 	Client get_init_client();
 	const Client get_init_client() const;
 	bool get_client_auth_status(const int client_num);
-	void change_client_auth_status(const int client_num);
+	void change_client_auth_status(Client& client);
 
 	
 	//setter
@@ -103,7 +103,7 @@ public:
 	void set_client_sockaddr_in(struct sockaddr_in sock_in, uint32_t list_num);
 	void set_socket_addr_in_length(socklen_t length, uint32_t list_num);
 	void set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num);
-	void incliment_heart_beat_count(uint32_t list_num);
+	void incliment_heart_beat_count(Client& client);
 	void clear_heart_beat_count(uint32_t list_num);
 	void all_clear_heart_beat_count();
 	
@@ -116,7 +116,7 @@ public:
 	int check_next_invalid_socket();
 	int search_client_id_from_con_list(const std::string& search_client_id);
 	int find_socket_from_client_list(const SOCKET& search_socket);
-	void show_client_info(const int& client_num);
+	void show_client_info(const Client& client);
 	
 };
 

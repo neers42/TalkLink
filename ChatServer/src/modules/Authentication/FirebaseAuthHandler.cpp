@@ -20,33 +20,47 @@ void FirebaseAuthHandler::load_initialize_info()
 
 
 
-std::string FirebaseAuthHandler::create_user_with_email_and_password(const std::string& mail_addr, const std::string& password, const std::string& ip, void (FirebaseAuthHandler::*callback_func)(const firebase::Future<firebase::auth::AuthResult>&, std::string*, const std::string&, const std::string&))
+std::tuple<std::string, std::string>  FirebaseAuthHandler::create_user_with_email_and_password(
+	const std::string& mail_addr,
+	const std::string& password,
+	const std::string& ip,
+	void (FirebaseAuthHandler::*callback_func)(const firebase::Future<firebase::auth::AuthResult>&, std::string*, std::string*, const std::string&, const std::string&)
+)
 {
 	firebase::Future<firebase::auth::AuthResult> create_result = this->auth->CreateUserWithEmailAndPassword(mail_addr.c_str(), password.c_str());
 	firebase::Future<firebase::auth::AuthResult> result;
 	std::string user_id = "";
+	std::string error_msg = "None error.";
 
 	while (result.status() != firebase::kFutureStatusComplete) {
 		result = auth->CreateUserWithEmailAndPasswordLastResult();
 		if (result.status() == firebase::kFutureStatusComplete) {
-			(this->*callback_func)(result, &user_id, mail_addr, ip);
+			(this->*callback_func)(result, &user_id, &error_msg, mail_addr, ip);
 		}
 	}
 
-	return user_id;
+	return std::make_tuple(user_id, error_msg) ;
 }
 
 
 
 
-void FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* client_id)
+void FirebaseAuthHandler::sign_in_user_with_email_and_password(
+	const std::string& mail_addr,
+	const std::string& password,
+	const std::string& ip,
+	std::string* client_id,
+	std::string* error_msg
+)
 {
 	ClientContext c_con;
 	c_con.client_id = new std::string();
 	c_con.mail_addr = mail_addr;
 	c_con.ip = ip;
+	c_con.error_msg = "None error.";
 	firebase::Future<firebase::auth::AuthResult> sign_in_result = auth->SignInWithEmailAndPassword(mail_addr.c_str(), password.c_str());
-	std::string user_id = "";
+	//std::string user_id = "";
+	//std::string error_msg = "None error.";
 
 
 	// タイムアウトの設定（例: 10秒）
@@ -71,6 +85,7 @@ void FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string
 		}else {
 			// エラー処理（ログなど）
 			LOG_ERROR("Sign in failed with error : {:s}.", sign_in_result.error_message());
+			client_context->error_msg = sign_in_result.error_message();
 		
 		}
 		client_context->id = *client_context->client_id;
@@ -94,6 +109,7 @@ void FirebaseAuthHandler::sign_in_user_with_email_and_password(const std::string
 	}
 	//認証が成功していた場合は、UIDが格納される。失敗の場合は空文字が格納される。
 	*client_id = c_con.id;
+	*error_msg = c_con.error_msg;
 
 }
 
@@ -104,7 +120,7 @@ void FirebaseAuthHandler::sign_out(const std::string& client_id, const std::stri
 	//LogHandler::logging(LogHandler::LogType::SIGN_OUT, std::cout, StringFormat("Sign out succeeded for email : %s(UID : %s).", client_mail_addr, client_id));
 }
 
-void FirebaseAuthHandler::on_auth_callback(const firebase::Future<firebase::auth::AuthResult>& result, std::string* client_id, const std::string& mail_addr, const std::string& ip)
+void FirebaseAuthHandler::on_auth_callback(const firebase::Future<firebase::auth::AuthResult>& result, std::string* client_id, std::string* error_msg, const std::string& mail_addr, const std::string& ip)
 {
 	assert(result.status() == firebase::kFutureStatusComplete);
 	if (result.error() == firebase::auth::kAuthErrorNone) {
@@ -116,6 +132,7 @@ void FirebaseAuthHandler::on_auth_callback(const firebase::Future<firebase::auth
 	}
 	else {
 		LOG_ERROR("Sign in failed with error : {:s}.", result.error_message());
+		*error_msg = result.error_message();
 	}
 }
 

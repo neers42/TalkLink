@@ -67,9 +67,12 @@ public:
 
 	void message_handle_process(const SOCKET socket);
 
-	void mt000_process(std::string& receive_data, int monitor_result);
-	void mt001_process(const std::unique_ptr<MessageType001>& mt001, int detection_num);
-	void mt003_process(const std::unique_ptr<MessageType003>& mt003, int& receive_result);
+	void mt000_process(const std::unique_ptr<MessageType000>& mt000, ClientHandler::Client& client);
+	void mt001_process(const std::unique_ptr<MessageType001>& mt001, ClientHandler::Client& client, std::string* error_msg_text, bool* login_resul);
+	void mt003_process(const std::unique_ptr<MessageType003>& mt003);
+	void mt101_process(const ClientHandler::Client& client, const std::string& error_msg, const bool login_result);
+
+	
 	void heart_beat_check_process();
 	void heart_beat_response_process(const ClientHandler::Client& client);
 	void setting_select_process();
@@ -77,8 +80,8 @@ public:
 
 	
 private:
-	std::string sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip);
-	std::string sign_in_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id);
+	std::tuple<std::string, std::string> sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip);
+	std::tuple<std::string, std::string> sign_in_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id, std::string* error_msg);
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 	bool insert_client_info_to_db(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password_hash);
 

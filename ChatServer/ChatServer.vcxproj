@@ -154,6 +154,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\modules\Network\MessageType002.cpp" />
     <ClCompile Include="src\modules\Network\MessageType102.cpp" />
     <ClCompile Include="src\modules\Network\MessageType103A.cpp" />
     <ClCompile Include="src\modules\Chat\MessageIDGenerator.cpp" />
@@ -729,6 +730,7 @@
     <ClInclude Include="include\Chat\MessageIDGenerator.h" />
     <ClInclude Include="include\Network\MessageType103A.h" />
     <ClInclude Include="include\Network\MessageType102.h" />
+    <ClInclude Include="include\Network\MessageType002.h" />
     <ClInclude Include="src\ServerControlleFacade.h" />
     <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\StringFormat.h" />

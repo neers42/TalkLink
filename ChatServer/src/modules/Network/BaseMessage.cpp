@@ -53,6 +53,9 @@ void BaseMessage::set_content_type(int type_num)
 	case 3:
 		this->_content_type = ContentType::NOTIFICATION;
 		break;
+	case 4:
+		this->_content_type = ContentType::HEARTBEAT;
+		break;
 	default:
 		break;
 	}
@@ -107,6 +110,9 @@ BaseMessage::ContentType BaseMessage::exchange_content_type_from_int(int value)
 		break;
 	case 3:
 		return ContentType::NOTIFICATION;
+		break;
+	case 4:
+		return ContentType::HEARTBEAT;
 		break;
 	default:
 		return ContentType::TEXT;

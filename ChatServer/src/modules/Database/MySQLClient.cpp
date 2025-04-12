@@ -357,7 +357,7 @@ json MySQLClient::get_unread_message_fromDB(const std::string& cid, int limit)
 		}
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement(
-				"SELECT unread_messages.mid, unread_messages.cid, unread_messages.room_id "
+				"SELECT unread_messages.mid, unread_messages.cid, unread_messages.room_id, chat_messages.message "
 				"FROM " + _mysql_table_name_unread_messages + " "
 				"JOIN chat_messages ON unread_messages.mid = chat_messages.mid "
 				"WHERE unread_messages.cid = ? AND chat_messages.send_time > ?"
@@ -374,6 +374,7 @@ json MySQLClient::get_unread_message_fromDB(const std::string& cid, int limit)
 			message["mid"] = res->getInt64("mid");
 			message["cid"] = res->getString("cid");
 			message["room_id"] = res->getString("room_id");
+			message["message"] = res->getString("message");
 			unread_messages_json.push_back(message);
 
 		}

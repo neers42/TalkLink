@@ -8,12 +8,6 @@
 #include "spdlog/spdlog.h"
 #include "DataBaseInterface.h"
 
-//struct UnreadMessage
-//{
-//	uint64_t mid;
-//	std::string cid;
-//	std::string room_id;
-//};
 
 class MySQLClient : public DataBaseInterface
 {

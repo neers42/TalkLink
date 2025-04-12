@@ -31,15 +31,20 @@ void MessageType103B::set_status(const int status)
 std::string& MessageType103B::get_recever_id() const
 {
 	// TODO: return ステートメントをここに挿入します
+	std::string a = "";
+	return a;
 }
 
 void MessageType103B::set_recever_id(const std::string& recever_id)
 {
+
 }
 
 std::string& MessageType103B::get_room_id() const
 {
 	// TODO: return ステートメントをここに挿入します
+	std::string a = "";
+	return a;
 }
 
 void MessageType103B::set_room_id(const std::string& room_id)
