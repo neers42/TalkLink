@@ -506,6 +506,15 @@ void ServerControlleFacade::mt101_process(const ClientHandler::Client& client, c
 	auto mt101 = std::make_unique<MessageType101>(client.id, login_result);
 	json mt101_json = MessageType101::desirialize_message(mt101, unread_messages_json, error_msg);
 	spdlog::debug("mt101_json : {}", mt101_json.dump(4));
+
+	//TODO　ここでmt101を送信する処理を記載する
+	bool send_result = this->_protocol_handler->send_message_tls(client.ssl, mt101_json);
+	if (send_result == true) {
+		spdlog::info("The MT101 message was successfully sent to the client(ip:{}, id:{}).", client.ipv4_address, client.id);
+	}
+	else {
+		spdlog::error("The MT101 message was not sent to the client.");
+	}
 }
 
 
