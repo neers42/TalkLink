@@ -50,6 +50,7 @@ public:
 	bool insert_unread_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
 	std::string get_client_last_login_fromDB(const std::string& cid);
 	json get_unread_message_fromDB(const std::string& cid, int limit);
+	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
 private:
 	bool create_table_clients();
 	bool create_table_chatrooms();

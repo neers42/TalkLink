@@ -427,7 +427,7 @@ void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_nu
 	this->connected_clients[list_num].ipv4_address = ipv4_addr;
 }
 
-int ClientHandler::search_client_id_from_con_list(const std::string& search_client_id)
+int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 {
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 
@@ -439,7 +439,7 @@ int ClientHandler::search_client_id_from_con_list(const std::string& search_clie
 	return NOT_EXIST_CLIENT_ID;
 }
 
-int ClientHandler::find_socket_from_client_list(const SOCKET& search_socket)
+int ClientHandler::search_socket_from_clients(const SOCKET& search_socket)
 {
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 		if (this->connected_clients[search_result].socket == search_socket) {
@@ -449,12 +449,33 @@ int ClientHandler::find_socket_from_client_list(const SOCKET& search_socket)
 	return -1;
 }
 
+WOLFSSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
+{
+	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
+		if (this->connected_clients[search_result].id == cid) {
+			return this->connected_clients[search_result].ssl;
+		}
+	}
+	return nullptr;
+}
+
 void ClientHandler::show_client_info(const Client& client)
 {
 	spdlog::debug("Client  ID : {:s}", client.id);
 	spdlog::debug("Client  Name : {:s}", client.name);
 	spdlog::debug("Client  Mail : {:s}", client.mail_address);
 	spdlog::debug("Client  Password : {:s}", client.password);
+}
+
+std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<Client> clients)
+{
+	std::vector<WOLFSSL*> client_ssl_list;
+	for (const auto& client : clients) {
+		if (client.ssl != nullptr) {
+			client_ssl_list.push_back(client.ssl);
+		}
+	}
+	return client_ssl_list;
 }
 
 

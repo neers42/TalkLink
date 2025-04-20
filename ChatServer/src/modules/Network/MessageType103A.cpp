@@ -1,19 +1,26 @@
 ﻿#include "MessageType103A.h"
 
 
-MessageType103A::MessageType103A(int c_type,
+MessageType103A::MessageType103A(
+	int c_type,
 	const std::string& mt,
-	const uint64_t message_id,
 	const std::string& room_id,
 	const std::string& sender_id,
+	const uint64_t send_message_id,
 	const std::string& send_time,
 	const std::string& content)
-	:BaseMessage(exchange_content_type_from_int(c_type), mt, message_id),
+	:BaseMessage(exchange_content_type_from_int(c_type), mt),
 	_room_id(room_id),
 	_sender_id(sender_id),
+	_send_message_id(send_message_id),
 	_content(content),
 	_send_time(send_time)
 {
+	if (room_id.empty() || sender_id.empty() || content.empty() || send_time.empty()) {
+		throw std::invalid_argument("Invalid argument: room_id, sender_id, content, and send_time cannot be empty");
+	}
+	
+
 }
 
 MessageType103A::~MessageType103A()

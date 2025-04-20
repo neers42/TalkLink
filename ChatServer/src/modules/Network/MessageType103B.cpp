@@ -1,10 +1,5 @@
 ﻿#include "MessageType103B.h"
 
-MessageType103B::MessageType103B()
-	:BaseMessage(), _send_status{ 0 }, 
-	_room_id{ "" }
-{
-}
 
 MessageType103B::MessageType103B(int c_type,
 	const std::string& mt,

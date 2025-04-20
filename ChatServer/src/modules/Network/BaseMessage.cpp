@@ -9,6 +9,13 @@ BaseMessage::BaseMessage()
 BaseMessage::BaseMessage(ContentType c_type, const std::string& mt)
 	:_content_type{c_type}, _message_type{mt}, _created_at{ServerTime::get_current_time()}, _message_id{0}
 {
+	if (mt.empty()) {
+		throw std::invalid_argument("Message Type is empty.");
+	}
+
+	if (mt.size() != 3) {
+		throw std::invalid_argument("Message Type is not 3 byte.");
+	}
 }
 
 BaseMessage::BaseMessage(int c_type, const std::string& mt)

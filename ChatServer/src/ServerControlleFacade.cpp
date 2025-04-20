@@ -181,7 +181,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 #ifdef TLS_PROTOCOL
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-		detection_num = this->_client_handler->find_socket_from_client_list(socket);
+		detection_num = this->_client_handler->search_socket_from_clients(socket);
 		auto& client = _client_handler->connected_clients[detection_num];
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client.ssl);
@@ -428,7 +428,7 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 			// メッセージ処理
 			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT002 were invalid.");
 		}
-		send_socket_num = _client_handler->search_client_id_from_con_list(mt003->get_receiver_id());
+		send_socket_num = _client_handler->search_cid_from_clients(mt003->get_receiver_id());
 		spdlog::debug("send_socket_num:{:d}", send_socket_num);
 
 		//データベースにクライアントIDが存在するか確認する
@@ -447,43 +447,6 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 			LOG_ERROR("The message was not saved in the database.");
 		}
 
-
-
-		//=========================================================================================
-		//ここにメッセージの送信処理を記載する
-		//=========================================================================================
-
-		//switch (mt002->get_trans_type_int())
-		//{
-		//	//TCPユニキャスト
-		//case 0:
-		//	_sender->tcp_unicast_data(_client_handler->connected_client_list[send_socket_num].get_client_socket(),
-		//		receive_json, receive_result, mt002->get_dst_client_id(), mt002->get_src_client_id());
-		//	break;
-
-		//	//TCPでマルチキャスト
-		//case 1:
-		//	//TODO　以下を実装する
-		//	//mt002のパケットの中身がTCPマルチキャストの場合(グループ内でのチャットの時)、グループチャットから
-		//	chatroom_list_num = this->_chat_room_handler->search_chatroom_id_from_list(mt002->get_dst_chatroom_id());
-		//	for (auto&& client : _chat_room_handler->get_client_list(chatroom_list_num)) {
-		//		send_sockets.push_back(client.get_client_socket());
-		//	}
-		//	for (auto&& client : _chat_room_handler->get_client_list(chatroom_list_num)) {
-		//		dst_clients.push_back(client.get_client_id());
-		//	}
-		//	_sender->tcp_multicast_data(send_sockets, receive_json, receive_result);
-		//	break;
-
-		//	//UDPブロードキャスト
-		//case 2:
-		//	//TODO　UDPのブロードキャストを実装する
-		//	break;
-
-		//default:
-		//	break;
-		//}
-	
 	}
 	catch (const exception::ExceptionBase& ex)
 	{
@@ -519,6 +482,8 @@ void ServerControlleFacade::mt101_process(const ClientHandler::Client& client, c
 
 void ServerControlleFacade::mt103_process(const std::unique_ptr<MessageType003>& mt003)
 {
+	this->mt103A_process(mt003);
+	this->mt103B_process(mt003);
 }
 
 
@@ -663,6 +628,84 @@ bool ServerControlleFacade::insert_client_info_to_db(const std::string& id, cons
 		LOG_ERROR("Client information was not registered in the database.");
 		return false;
 	}
+}
+
+void ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>& mt003)
+{
+	//mt103Aを生成
+	std::string message_type = "103A";
+	auto mt103A = std::make_unique<MessageType103A>(
+		0,
+		message_type,
+		mt003->get_room_id(),
+		mt003->get_sender_id(),
+		mt003->get_message_id(),
+		mt003->get_send_time(),
+		mt003->get_content());
+
+	//mt103Aをデシリアライズする
+	json mt103A_json = MessageType103A::desirialize_message(mt103A);
+	auto& sender = _client_handler->connected_clients[_client_handler->search_cid_from_clients(mt003->get_sender_id())];
+	//送り先のclientの情報を取得する
+	std::vector<ClientHandler::Client> receivers = this->_chat_room_handler->get_client_list(mt003->get_room_id());
+
+	//ChatroomHandlerが保持しているクライアントリストからチャットルームが検出できない場合
+	if (receivers.size() == 0) {
+		std::vector<std::string> send_cids = this->_mysql_client->get_client_list_from_chatroom(mt003->get_room_id());
+		//データベースにもチャットルームIDが存在しない場合
+		if (send_cids.size() == 0) {
+			LOG_ERROR("The client ID was not found in the database.");
+			//THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
+			return;
+		}
+		for (const auto& cid : send_cids) {
+			int receiver_list_num = this->_client_handler->search_cid_from_clients(cid);
+			if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
+				continue;
+			}
+			else {
+				//クライアントの情報を取得する
+				auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
+				//MT103Aを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
+				if (receiver.ssl != nullptr && receiver.ssl != sender.ssl) {
+					this->_protocol_handler->send_message_tls(receiver.ssl, mt103A_json);
+				}
+				else if (receiver.ssl == sender.ssl) {
+					//送信先と送信元のsslが一致する場合
+					continue;
+				}
+				else if (receiver.ssl == nullptr) {
+					//クライアントの情報が見つからない場合、unreadメッセージをデータベースに保存する
+					this->_mysql_client->insert_unread_message(mt003->get_message_id(), cid, mt003->get_room_id());
+					continue;
+				}
+				else {
+					LOG_ERROR("Failed to send MT103A(mid:{}.", mt003->get_message_id());
+				}
+			}
+		}
+	}
+	else {
+		//ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できた場合
+		for (const auto& receiver : receivers) {
+			if (receiver.ssl != nullptr && receiver.ssl != sender.ssl) {
+				this->_protocol_handler->send_message_tls(receiver.ssl, mt103A_json);
+			}
+			else if (receiver.ssl == sender.ssl) {
+				//送信先と送信元のsslが一致する場合
+				continue;
+			}
+			else if (receiver.ssl == nullptr) {
+				//クライアントの情報が見つからない場合、unreadメッセージをデータベースに保存する
+				this->_mysql_client->insert_unread_message(mt003->get_message_id(), receiver.id, mt003->get_room_id());
+				continue;
+			}
+		}
+	}
+}
+
+void ServerControlleFacade::mt103B_process(const std::unique_ptr<MessageType003>& mt003)
+{
 }
 
 

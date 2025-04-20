@@ -61,8 +61,10 @@ public:
 	bool add_chatroom(const ChatRoom& chatroom);
 	bool delete_chatroom(const ChatRoom& chatroom);
 	std::vector<ClientHandler::Client>& get_client_list(int list_num);
+	std::vector<ClientHandler::Client> get_client_list(const std::string& chatroom_id);
 	std::vector<ChatRoom> get_chatroom_list();
 	int search_chatroom_id_from_list(const std::string& chatroom_id);
+	std::vector<ClientHandler::Client> get_client_list_from_chatroom(const std::string& chatroom_id);
 
 	
 	//private変数

@@ -114,9 +114,11 @@ public:
 	void delete_client(std::vector<Client>::iterator it);
 	void delete_client_hbsock_from_hb_list(const std::uint32_t delete_num);
 	int check_next_invalid_socket();
-	int search_client_id_from_con_list(const std::string& search_client_id);
-	int find_socket_from_client_list(const SOCKET& search_socket);
+	int search_cid_from_clients(const std::string& search_client_id);
+	int search_socket_from_clients(const SOCKET& search_socket);
+	WOLFSSL* search_client_ssl_from_clients(const std::string& cid);
 	void show_client_info(const Client& client);
+	std::vector<WOLFSSL*> get_client_ssl_list(const std::vector<Client> clients);
 	
 };
 

@@ -111,6 +111,19 @@ std::vector<ClientHandler::Client>& ChatroomHandler::get_client_list(int list_nu
 	return this->chatroom_list[list_num].get_client_list();
 }
 
+std::vector<ClientHandler::Client> ChatroomHandler::get_client_list(const std::string& chatroom_id) 
+{
+	int chatroom_list_num = this->search_chatroom_id_from_list(chatroom_id);
+	if (chatroom_list_num != -1) {
+		return this->chatroom_list[chatroom_list_num].get_client_list();
+	}
+	else {
+		LOG_ERROR("Chatroom id is not found.");
+		return std::vector<ClientHandler::Client>();
+	}
+
+}
+
 std::vector<ChatroomHandler::ChatRoom> ChatroomHandler::get_chatroom_list()
 {
 	return this->chatroom_list;
@@ -124,6 +137,18 @@ int ChatroomHandler::search_chatroom_id_from_list(const std::string& chatroom_id
 		}
 	}
 	return -1;
+}
+
+std::vector<ClientHandler::Client> ChatroomHandler::get_client_list_from_chatroom(const std::string& chatroom_id)
+{
+	int chatroom_list_num = this->search_chatroom_id_from_list(chatroom_id);
+	if (chatroom_list_num != -1) {
+		return this->chatroom_list[chatroom_list_num].get_client_list();
+	}
+	else {
+		LOG_ERROR("Chatroom id is not found.");
+		return std::vector<ClientHandler::Client>();
+	}
 }
 
 

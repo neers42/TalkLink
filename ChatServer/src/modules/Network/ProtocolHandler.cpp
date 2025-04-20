@@ -186,6 +186,7 @@ bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 	int total_sent = 0;
 	int chunk_size = 16384;  // 最大TLSレコードサイズ
 	int ret;
+	std::string message_type = message["message_type"];
 	while (total_sent < message_size) {
 		int to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
 		ret = wolfSSL_write(client_ssl, message_buffer.data() + total_sent, to_send);
@@ -210,6 +211,7 @@ bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 			return false;
 		}
 	}
+	spdlog::info("MT{} send success.", message_type);
 	return true;
 }
 

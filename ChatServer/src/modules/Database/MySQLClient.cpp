@@ -300,7 +300,7 @@ bool MySQLClient::insert_unread_message(const uint64_t mid, const std::string& c
 		pre_stmt->setString(2, cid);
 		pre_stmt->setString(3, room_id);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:insert unread message success.");
+		spdlog::debug("MySQL:insert unread message(message id:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
 		return true;
 	}
 	catch (const sql::SQLException& e)
@@ -394,6 +394,39 @@ json MySQLClient::get_unread_message_fromDB(const std::string& cid, int limit)
 	catch (const std::runtime_error& e) {
 		LOG_ERROR("MySQL: Failed to fetch unread messages. Error: {}", e.what());
 		return json();
+	}
+}
+
+std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::string& room_id)
+{
+	try
+	{
+		std::vector<std::string> client_list;
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("SELECT cid FROM " + _mysql_table_name_chat_members + " WHERE room_id = ?;")
+		);
+		pre_stmt->setString(1, room_id);
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+
+		while (res->next())
+		{
+			std::string cid = res->getString("cid");
+			client_list.push_back(cid);
+		}
+		return client_list;
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("MySQL: Failed to fetch client list from chatroom. Error: {}", e.what());
+		return std::vector<std::string>();
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("MySQL: Failed to fetch client list from chatroom. Error: {}", e.what());
+		return std::vector<std::string>();
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("MySQL: Failed to fetch client list from chatroom. Error: {}", e.what());
+		return std::vector<std::string>();
 	}
 }
 
