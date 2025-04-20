@@ -5,19 +5,17 @@ class MessageType103B :
     public BaseMessage
 {
 private:
-	int _status;
-	std::string _recever_id;
+	bool _send_status;
 	std::string _room_id;
 
 
 public:
     //コンストラクタ
-    MessageType103B();
+    MessageType103B() = delete;
 	MessageType103B(int c_type,
 		const std::string& mt,
-		const uint64_t id,
-		const int status,
-		const std::string& recever_id,
+		const uint64_t message_id,
+		const bool status,
 		const std::string& room_id);
 
     //デストラクタ
@@ -25,11 +23,10 @@ public:
 
 	//各種アクセッサ(getter/setter)
 	int get_status() const;
-	void set_status(const int status);
-	std::string& get_recever_id() const;
-	void set_recever_id(const std::string& recever_id);
-	std::string& get_room_id() const;
+	void set_status(const bool status);
+	std::string get_room_id() const;
 	void set_room_id(const std::string& room_id);
+	static json desirialize_message(const std::unique_ptr<MessageType103B>& mt103B);
 
 };
 #endif // !MESSAGETYPE103_H_

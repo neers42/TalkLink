@@ -1,9 +1,5 @@
 ﻿#include "MessageType001.h"
 
-MessageType001::MessageType001() 
-    :_sign_type{SignType::SIGNUP}, _auth_type{AuthType::NORMAL}, _client_name{""}, _client_mail_addr{""}, _client_password{""}
-{
-}
 MessageType001::MessageType001(SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
     :_sign_type{s_type},
     _auth_type{a_type},

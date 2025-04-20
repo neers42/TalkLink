@@ -31,7 +31,7 @@ private:
 
 public:
     //コンストラクタ
-    MessageType001();
+    MessageType001() = delete;
     MessageType001(SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password);
     MessageType001(int s_type, int a_type, const std::string& name, const std::string& mail_addr, const std::string& password);
     MessageType001(ContentType c_type, const std::string& mt, SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password);

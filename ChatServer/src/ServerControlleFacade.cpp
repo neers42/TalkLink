@@ -517,6 +517,11 @@ void ServerControlleFacade::mt101_process(const ClientHandler::Client& client, c
 	}
 }
 
+void ServerControlleFacade::mt103_process(const std::unique_ptr<MessageType003>& mt003)
+{
+}
+
+
 
 void ServerControlleFacade::heart_beat_check_process()
 {
@@ -596,9 +601,6 @@ std::tuple<std::string, std::string>  ServerControlleFacade::sign_up_process(con
 {
 	std::string user_id = "";
 	std::string error_msg = "";
-	/*std::tie(user_id, error_msg) = this->_firebase_auth_handler->create_user_with_email_and_password(mail_addr, password, ip
-		, &FirebaseAuthHandler::on_auth_callback);
-	return user_id;*/
 	return this->_firebase_auth_handler->create_user_with_email_and_password(mail_addr, password, ip
 		, &FirebaseAuthHandler::on_auth_callback);
 }
@@ -611,12 +613,8 @@ std::tuple<std::string, std::string> ServerControlleFacade::sign_in_process(
 	std::string* error_msg
 )
 {
-	std::string client_id = "";
-	std::string error_message_text = "";
 	this->_firebase_auth_handler->sign_in_user_with_email_and_password(mail_addr, password, ip, id, error_msg);
-	client_id = *id;
-	error_message_text = *error_msg;
-	return std::make_tuple(client_id, error_message_text);
+	return std::make_tuple(*id, *error_msg);
 }
 
 std::string ServerControlleFacade::sign_in_process(int& auth_type, const char* token, const char* secret)

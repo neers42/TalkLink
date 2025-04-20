@@ -21,7 +21,7 @@ private:
 
 public:
 	//コンストラクタ
-    MessageType003();
+    MessageType003() = delete;
 	MessageType003(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id, ChatType tt,
 		const std::string& room_id, const std::string& receiver_id, const std::string& sender_id, 
 		const std::string& send_time, const std::string& content);

@@ -10,7 +10,7 @@ private:
 
 public:
 	//コンストラクタ
-	MessageType101();
+	MessageType101() = delete;
 	MessageType101(const std::string& client_id, bool login_result);
 		//デストラクタ
 	~MessageType101();

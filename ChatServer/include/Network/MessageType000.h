@@ -11,7 +11,7 @@ private:
 
 public:
 	//コンストラクタ
-	explicit MessageType000();
+	explicit MessageType000() = delete;
 	explicit MessageType000(const std::string& client_id);
 	//デストラクタ
 	~MessageType000();

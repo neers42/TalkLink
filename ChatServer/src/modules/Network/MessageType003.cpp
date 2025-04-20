@@ -1,9 +1,5 @@
 ﻿#include "MessageType003.h"
 
-MessageType003::MessageType003()
-	:BaseMessage(), _chat_type{ChatType::Group}, _room_id{""}
-{
-}
 
 MessageType003::MessageType003(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id, ChatType tt,
 	const std::string& room_id, const std::string& receiver_id, const std::string& sender_id, 

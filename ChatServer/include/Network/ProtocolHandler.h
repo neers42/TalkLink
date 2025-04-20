@@ -44,10 +44,6 @@ public:
 	WOLFSSL_CTX* get_wolfssl_ctx();
 
 
-	template <typename T>
-	std::unique_ptr<T> serialize_message(const json& json_message) {
-		return serialize_message_impl<T>(json_message);
-	}
 
 	//メッセージIDの生成
 	const std::string generate_message_id();
@@ -127,78 +123,6 @@ private:
 
 	//サーバの秘密鍵をロード
 	void load_private_key();
-
-
-	template <typename T>
-	std::unique_ptr<T> serialize_message_impl(const json& recv_json)
-	{
-		// json_messageからMessageTypeを取得
-		//MT000の場合
-		if constexpr (std::is_same<T, MessageType000>::value) {
-			int content_type = recv_json["content_type"];
-			std::string message_type = recv_json["message_type"];
-			std::string message_id = "";
-			std::string client_id = recv_json["client_id"];
-			//MT000を返す
-			return std::make_unique<T>(content_type, message_type, message_id, client_id);
-		}
-		//MT001の場合
-		else if constexpr (std::is_same<T, MessageType001>::value) {
-			int content_type = recv_json["content_type"];
-			std::string message_type = recv_json["message_type"];
-			int sign_type = recv_json["sign_type"];
-			int auth_type = recv_json["auth_type"];
-			std::string client_name = recv_json["name"];
-			std::string client_mail_addr = recv_json["mail_address"];
-			std::string client_password = recv_json["password"];
-
-			//MT001を返す
-			return std::make_unique<T>(
-				content_type, 
-				message_type, 
-				sign_type, 
-				auth_type, 
-				client_name, 
-				client_mail_addr, 
-				client_password);
-
-		}
-		//MT003の場合
-		else if constexpr (std::is_same<T, MessageType003>::value) {
-			int content_type = recv_json["content_type"].get<int>();  // int型
-			std::string message_type = recv_json["message_type"];      // std::string型
-			std::string receiver_id = recv_json["receiver_id"];    // std::string型
-			std::string sender_id = recv_json["sender_id"];    // std::string型
-			std::string send_time = recv_json["send_time"];    // std::string型
-			std::string content = recv_json["content"];                // std::string型
-			uint64_t message_id = MessageIDGenerator::generate_message_id();  // 空の文字列
-			int chat_type = recv_json["chat_type"].get<int>();  // int型
-			std::string room_id = recv_json["room_id"];  // std::string型
-
-			//MT002を返す
-			return std::make_unique<T>(
-				static_cast<int>(content_type), 
-				message_type, 
-				message_id, 
-				static_cast<int>(chat_type), 
-				room_id, 
-				receiver_id,
-				sender_id, 
-				send_time,
-				content);
-		}
-		else {
-			LOG_ERROR("Unsupported message type");
-			return nullptr;
-		}
-	}
-
-	template<typename T>
-	json deserialize_message(const T message) {
-		if constexpr (std::is_same<T, MessageType001>::value) {
-
-		}
-	}
 	
 };
 

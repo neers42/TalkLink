@@ -1,9 +1,5 @@
 ﻿#include "MessageType000.h"
 
-MessageType000::MessageType000()
-	:BaseMessage(BaseMessage::ContentType::HEARTBEAT, "000"), _client_id{""}
-{
-}
 
 MessageType000::MessageType000(const std::string& client_id)
 	:BaseMessage(BaseMessage::ContentType::HEARTBEAT, "000"), _client_id{client_id}

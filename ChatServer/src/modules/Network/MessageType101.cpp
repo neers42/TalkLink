@@ -1,11 +1,5 @@
 ﻿#include "MessageType101.h"
 
-MessageType101::MessageType101()
-	:BaseMessage(ContentType::NOTIFICATION, "101"), 
-	_client_id{ "" },
-	_login_result{ false }
-{
-}
 
 MessageType101::MessageType101(const std::string& client_id, bool login_result)
 	:BaseMessage(ContentType::NOTIFICATION, "101"),

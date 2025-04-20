@@ -71,6 +71,7 @@ public:
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, ClientHandler::Client& client, std::string* error_msg_text, bool* login_resul);
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003);
 	void mt101_process(const ClientHandler::Client& client, const std::string& error_msg, const bool login_result);
+	void mt103_process(const std::unique_ptr<MessageType003>& mt003);
 
 	
 	void heart_beat_check_process();
