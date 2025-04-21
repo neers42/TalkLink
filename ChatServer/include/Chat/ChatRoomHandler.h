@@ -7,8 +7,9 @@
 #include "AppException.h"
 #include "StringFormat.h"
 #include "ServerTime.h"
+#define MAX_ACTIVE_CHATROOM_NUM 1000	//activeなチャットルームの最大数
+#define MAX_CLIENT_NUM_IN_CHATROOM 1000	//チャットルームに加入できるクライアントの最大数
 
-//#define DEBUG
 
 class ChatroomHandler
 {
@@ -19,10 +20,15 @@ private:
 	public:
 		
 		//コンストラクタ
-		template<typename...Args>
+		/*template<typename...Args>
 		ChatRoom(const std::string& chatroom_name, Args... args) : _chatroom_name{chatroom_name} {
-			this->_chatroom_id = issue_chatroom_id();
+			this->_chatroom_id = ChatroomHandler::issue_chatroom_id();
 			_client_list.push_back(args...);
+		}*/
+
+		ChatRoom(const std::string& chatroom_name, const std::vector<ClientHandler::Client>& clients)
+			: _chatroom_name{ chatroom_name }, _client_list(clients) {
+			this->_chatroom_id = ChatroomHandler::issue_chatroom_id();
 		}
 
 		//デストラクタ
@@ -65,6 +71,8 @@ public:
 	std::vector<ChatRoom> get_chatroom_list();
 	int search_chatroom_id_from_list(const std::string& chatroom_id);
 	std::vector<ClientHandler::Client> get_client_list_from_chatroom(const std::string& chatroom_id);
+	// チャットルームを生成する関数
+	bool create_chatroom(const std::string& chatroom_name, const std::vector<ClientHandler::Client>& initial_clients);
 
 	
 	//private変数
@@ -74,7 +82,7 @@ public:
 	//private関数
 private:
 	//chatroomIDを発行する
-	std::string issue_chatroom_id();
+	static std::string issue_chatroom_id();
 };
 #endif // !CHATROOMHANDLER_H_
 

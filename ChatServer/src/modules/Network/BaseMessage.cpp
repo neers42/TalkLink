@@ -13,9 +13,9 @@ BaseMessage::BaseMessage(ContentType c_type, const std::string& mt)
 		throw std::invalid_argument("Message Type is empty.");
 	}
 
-	if (mt.size() != 3) {
-		throw std::invalid_argument("Message Type is not 3 byte.");
-	}
+	//if (mt.size() != 3 || mt.size() != 4) {
+	//	throw std::invalid_argument("Message Type is not 3 byte.");
+	//}
 }
 
 BaseMessage::BaseMessage(int c_type, const std::string& mt)

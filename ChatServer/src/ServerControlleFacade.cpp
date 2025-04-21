@@ -240,6 +240,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 			this->_protocol_handler->print_received_message_info(mt003, mt003->get_message_id(), mt003->get_sender_id(), mt003->get_receiver_id(), client.ipv4_address, client.socket);
 			this->_protocol_handler->print_json_message(receive_json);
 			this->mt003_process(mt003);
+			this->mt103_process(mt003);
 		}
 
 		else {
@@ -658,6 +659,7 @@ void ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>
 			//THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
 			return;
 		}
+		
 		for (const auto& cid : send_cids) {
 			int receiver_list_num = this->_client_handler->search_cid_from_clients(cid);
 			if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
@@ -672,6 +674,12 @@ void ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>
 				}
 				else if (receiver.ssl == sender.ssl) {
 					//送信先と送信元のsslが一致する場合
+#define DEBUG
+#ifdef DEBUG
+					this->_protocol_handler->send_message_tls(sender.ssl, mt103A_json);
+#endif // DEBUG
+//#undef DEBUG
+
 					continue;
 				}
 				else if (receiver.ssl == nullptr) {
@@ -684,6 +692,7 @@ void ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>
 				}
 			}
 		}
+
 	}
 	else {
 		//ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できた場合

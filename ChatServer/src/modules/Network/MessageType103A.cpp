@@ -33,9 +33,9 @@ json MessageType103A::desirialize_message(const std::unique_ptr<MessageType103A>
 	try
 	{
 		if (mt103A != nullptr) {
-			mt103A_json["content_type"] = mt103A->_content_type;
+			mt103A_json["content_type"] = "TEXT";
 			mt103A_json["message_type"] = mt103A->_message_type;
-			mt103A_json["message_id"] = mt103A->get_message_id();
+			mt103A_json["message_id"] = mt103A->_send_message_id;
 			mt103A_json["room_id"] = mt103A->_room_id;
 			mt103A_json["sender_id"] = mt103A->_sender_id;
 			mt103A_json["content"] = mt103A->_content;

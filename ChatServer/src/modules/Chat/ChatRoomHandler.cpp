@@ -118,7 +118,6 @@ std::vector<ClientHandler::Client> ChatroomHandler::get_client_list(const std::s
 		return this->chatroom_list[chatroom_list_num].get_client_list();
 	}
 	else {
-		LOG_ERROR("Chatroom id is not found.");
 		return std::vector<ClientHandler::Client>();
 	}
 
@@ -149,6 +148,36 @@ std::vector<ClientHandler::Client> ChatroomHandler::get_client_list_from_chatroo
 		LOG_ERROR("Chatroom id is not found.");
 		return std::vector<ClientHandler::Client>();
 	}
+}
+
+bool ChatroomHandler::create_chatroom(const std::string& chatroom_name, const std::vector<ClientHandler::Client>& initial_clients)
+{
+	// チャットルームの最大数を超えていないか確認
+	if (chatroom_list.size() >= MAX_ACTIVE_CHATROOM_NUM) {
+		LOG_ERROR("Cannot create chatroom. Maximum number of active chatrooms ({}) reached.", MAX_ACTIVE_CHATROOM_NUM);
+		return false;
+	}
+
+	// チャットルーム名が空でないか確認
+	if (chatroom_name.empty()) {
+		LOG_ERROR("Chatroom name cannot be empty.");
+		return false;
+	}
+
+	// 初期クライアント数が制限を超えていないか確認
+	if (initial_clients.size() > MAX_CLIENT_NUM_IN_CHATROOM) {
+		LOG_ERROR("Cannot create chatroom. Initial client count ({}) exceeds the maximum allowed ({}) in a chatroom.",
+			initial_clients.size(), MAX_CLIENT_NUM_IN_CHATROOM);
+		return false;
+	}
+
+	// 新しいチャットルームを作成
+	ChatRoom new_chatroom(chatroom_name, initial_clients);
+
+	// チャットルームをリストに追加
+	chatroom_list.push_back(std::move(new_chatroom));
+	spdlog::info("Chatroom '{}' created successfully with {} initial clients.", chatroom_name, initial_clients.size());
+	return true;
 }
 
 
