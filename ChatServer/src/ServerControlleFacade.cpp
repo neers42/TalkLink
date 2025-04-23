@@ -646,19 +646,20 @@ void ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>
 
 	//mt103Aをデシリアライズする
 	json mt103A_json = MessageType103A::desirialize_message(mt103A);
-	auto& sender = _client_handler->connected_clients[_client_handler->search_cid_from_clients(mt003->get_sender_id())];
+	auto& sender = _client_handler->connected_clients[_client_handler->search_cid_from_clients(mt103A->get_sender_id())];
 	//送り先のclientの情報を取得する
-	std::vector<ClientHandler::Client> receivers = this->_chat_room_handler->get_client_list(mt003->get_room_id());
+	//std::vector<ClientHandler::Client> receivers = this->_chat_room_handler->get_client_list(mt003->get_room_id());
+	auto receivers_infos = this->_chat_room_handler->get_client_list(mt103A->get_room_id());
 
 	//ChatroomHandlerが保持しているクライアントリストからチャットルームが検出できない場合
-	if (receivers.size() == 0) {
-		std::vector<std::string> send_cids = this->_mysql_client->get_client_list_from_chatroom(mt003->get_room_id());
+	if (receivers_infos.size() == 0) {
+		std::vector<std::string> send_cids = this->_mysql_client->get_client_list_from_chatroom(mt103A->get_room_id());
 		//データベースにもチャットルームIDが存在しない場合
 		if (send_cids.size() == 0) {
-			LOG_ERROR("The client ID was not found in the database.");
-			//THROW_APP_EXCEPTION("The reception process was interrupted because the destination client ID was not found.");
+			LOG_ERROR("The Chatroom ID was not found in the database.");
 			return;
 		}
+
 		
 		for (const auto& cid : send_cids) {
 			int receiver_list_num = this->_client_handler->search_cid_from_clients(cid);
@@ -684,11 +685,11 @@ void ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>
 				}
 				else if (receiver.ssl == nullptr) {
 					//クライアントの情報が見つからない場合、unreadメッセージをデータベースに保存する
-					this->_mysql_client->insert_unread_message(mt003->get_message_id(), cid, mt003->get_room_id());
+					this->_mysql_client->insert_unread_message(mt103A->get_message_id(), cid, mt103A->get_room_id());
 					continue;
 				}
 				else {
-					LOG_ERROR("Failed to send MT103A(mid:{}.", mt003->get_message_id());
+					LOG_ERROR("Failed to send MT103A(mid:{}.", mt103A->get_message_id());
 				}
 			}
 		}
@@ -696,25 +697,53 @@ void ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>
 	}
 	else {
 		//ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できた場合
-		for (const auto& receiver : receivers) {
-			if (receiver.ssl != nullptr && receiver.ssl != sender.ssl) {
-				this->_protocol_handler->send_message_tls(receiver.ssl, mt103A_json);
-			}
-			else if (receiver.ssl == sender.ssl) {
-				//送信先と送信元のsslが一致する場合
+		for (const auto& receiver_info : receivers_infos) {
+			int receiver_list_num = this->_client_handler->search_cid_from_clients(receiver_info.cid);
+			if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
+				// データベースにcidが存在するか確認
+				if (!this->_mysql_client->is_client_id_exist(receiver_info.cid)) {
+					LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unread message insertion.", receiver_info.cid);
+					continue;
+				}
+
+				// クライアントの情報が見つからない場合、unreadメッセージをデータベースに保存する
+				if (!this->_mysql_client->insert_unread_message(mt103A->get_message_id(), receiver_info.cid, mt103A->get_room_id())) {
+					LOG_ERROR("Failed to insert unread message for client ID '{}'.", receiver_info.cid);
+				}
 				continue;
 			}
-			else if (receiver.ssl == nullptr) {
-				//クライアントの情報が見つからない場合、unreadメッセージをデータベースに保存する
-				this->_mysql_client->insert_unread_message(mt003->get_message_id(), receiver.id, mt003->get_room_id());
-				continue;
+			else {
+				//クライアントの情報を取得する
+				auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
+				//MT103Aを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
+				if (receiver.ssl != nullptr && receiver.ssl != sender.ssl) {
+					this->_protocol_handler->send_message_tls(receiver.ssl, mt103A_json);
+				}
+				else if (receiver.ssl == sender.ssl) {
+					//送信先と送信元のsslが一致する場合
+					continue;
+				}
+				else if (receiver.ssl == nullptr) {
+					// データベースにcidが存在するか確認
+					if (!this->_mysql_client->is_client_id_exist(receiver_info.cid)) {
+						LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unread message insertion.", receiver_info.cid);
+						continue;
+					}
+					//クライアントの情報が見つからない場合、unreadメッセージをデータベースに保存する
+					if (!this->_mysql_client->insert_unread_message(mt103A->get_message_id(), receiver.id, mt103A->get_room_id())) {
+						LOG_ERROR("Failed to insert unread message for client ID '{}'.", receiver.id);
+					}
+					continue;
+				}
 			}
+			
 		}
 	}
 }
 
 void ServerControlleFacade::mt103B_process(const std::unique_ptr<MessageType003>& mt003)
 {
+
 }
 
 

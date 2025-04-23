@@ -430,6 +430,40 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 	}
 }
 
+std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
+{
+	try
+	{
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("SELECT room_name FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?;")
+		);
+		pre_stmt->setString(1, room_id);
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+		if (res != nullptr && res->next()) {
+			std::string room_name = res->getString("room_name");
+			spdlog::debug("MySQL:chatroom name:{:s}", room_name);
+			return room_name;
+		}
+		else {
+			LOG_ERROR("MySQL: no data found for room_id: {}", room_id);
+			return std::string();
+		}
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("MySQL:select chatroom name failed. Error: {}", e.what());
+		return std::string();
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("MySQL:select chatroom name failed. Error: {}", e.what());
+		return std::string();
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("MySQL:select chatroom name failed. Error: {}", e.what());
+		return std::string();
+	}
+}
+
 bool MySQLClient::create_table_clients()
 {
 	try

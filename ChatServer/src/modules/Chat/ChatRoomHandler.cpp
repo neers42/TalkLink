@@ -6,11 +6,11 @@ ChatroomHandler::ChatRoom::~ChatRoom()
 
 }
 
-bool ChatroomHandler::ChatRoom::add_client_chatroom(const ClientHandler::Client& client)
+bool ChatroomHandler::ChatRoom::add_client_chatroom(const ChatroomHandler::ChatRoom::ClientInfo& client_info)
 {
 	try
 	{
-		this->_client_list.push_back(client);
+		this->_client_list.push_back(client_info);
 	}
 	catch (const std::bad_alloc&)
 	{
@@ -24,12 +24,13 @@ bool ChatroomHandler::ChatRoom::add_client_chatroom(const ClientHandler::Client&
 	return true;
 }
 
-bool ChatroomHandler::ChatRoom::delete_client_chatroom(const ClientHandler::Client& client)
+bool ChatroomHandler::ChatRoom::delete_client_chatroom(const ChatroomHandler::ChatRoom::ClientInfo& client_info)
 {
-	auto element_to_remove = search_client_form_chatroom(client);
+	auto element_to_remove = search_client_form_chatroom(client_info);
 	this->_client_list.erase(element_to_remove);
 	return true;
 }
+
 
 std::string& ChatroomHandler::ChatRoom::get_chatroom_id()
 {
@@ -51,21 +52,21 @@ const std::string& ChatroomHandler::ChatRoom::get_chatroom_name() const
 	return this->_chatroom_name;
 }
 
-std::vector<ClientHandler::Client>& ChatroomHandler::ChatRoom::get_client_list()
+std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::ChatRoom::get_client_list()
 {
 	return this->_client_list;
 }
 
-const std::vector<ClientHandler::Client>& ChatroomHandler::ChatRoom::get_client_list() const
+const std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::ChatRoom::get_client_list() const
 {
 	return this->_client_list;
 }
 
- std::vector<ClientHandler::Client>::iterator ChatroomHandler::ChatRoom::search_client_form_chatroom(const ClientHandler::Client& client)
+ std::vector<ChatroomHandler::ChatRoom::ClientInfo>::iterator ChatroomHandler::ChatRoom::search_client_form_chatroom(const ChatroomHandler::ChatRoom::ClientInfo& client_info)
 {
 	 try
 	 {
-		auto iterator = std::find(this->_client_list.begin(), this->_client_list.end(), client);
+		auto iterator = std::find(this->_client_list.begin(), this->_client_list.end(), client_info);
 		if (iterator == this->_client_list.end()) {
 			THROW_APP_EXCEPTION("We couldn't find the client we were looking for!");
 		}
@@ -106,19 +107,19 @@ bool ChatroomHandler::delete_chatroom(const ChatRoom& chatroom)
 	return false;
 }
 
-std::vector<ClientHandler::Client>& ChatroomHandler::get_client_list(int list_num)
+std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::get_client_list(int list_num)
 {
 	return this->chatroom_list[list_num].get_client_list();
 }
 
-std::vector<ClientHandler::Client> ChatroomHandler::get_client_list(const std::string& chatroom_id) 
+std::vector<ChatroomHandler::ChatRoom::ClientInfo> ChatroomHandler::get_client_list(const std::string& chatroom_id) 
 {
 	int chatroom_list_num = this->search_chatroom_id_from_list(chatroom_id);
 	if (chatroom_list_num != -1) {
 		return this->chatroom_list[chatroom_list_num].get_client_list();
 	}
 	else {
-		return std::vector<ClientHandler::Client>();
+		return std::vector<ChatroomHandler::ChatRoom::ClientInfo>();
 	}
 
 }
@@ -138,7 +139,7 @@ int ChatroomHandler::search_chatroom_id_from_list(const std::string& chatroom_id
 	return -1;
 }
 
-std::vector<ClientHandler::Client> ChatroomHandler::get_client_list_from_chatroom(const std::string& chatroom_id)
+std::vector<ChatroomHandler::ChatRoom::ClientInfo> ChatroomHandler::get_client_list_from_chatroom(const std::string& chatroom_id)
 {
 	int chatroom_list_num = this->search_chatroom_id_from_list(chatroom_id);
 	if (chatroom_list_num != -1) {
@@ -146,11 +147,11 @@ std::vector<ClientHandler::Client> ChatroomHandler::get_client_list_from_chatroo
 	}
 	else {
 		LOG_ERROR("Chatroom id is not found.");
-		return std::vector<ClientHandler::Client>();
+		return std::vector<ChatRoom::ClientInfo>();
 	}
 }
 
-bool ChatroomHandler::create_chatroom(const std::string& chatroom_name, const std::vector<ClientHandler::Client>& initial_clients)
+bool ChatroomHandler::create_chatroom(const std::string& chatroom_name, const std::vector<ChatroomHandler::ChatRoom::ClientInfo>& initial_clients)
 {
 	// チャットルームの最大数を超えていないか確認
 	if (chatroom_list.size() >= MAX_ACTIVE_CHATROOM_NUM) {

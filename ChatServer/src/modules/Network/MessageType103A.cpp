@@ -27,6 +27,56 @@ MessageType103A::~MessageType103A()
 {
 }
 
+std::string MessageType103A::get_room_id() const
+{
+	return this->_room_id;
+}
+
+std::string MessageType103A::get_sender_id() const
+{
+	return this->_sender_id;
+}
+
+uint64_t MessageType103A::get_send_message_id() const
+{
+	return this->_send_message_id;
+}
+
+std::string MessageType103A::get_send_time() const
+{
+	return this->_send_time;
+}
+
+std::string MessageType103A::get_content() const
+{
+	return this->_content;
+}
+
+void MessageType103A::set_room_id(const std::string& room_id)
+{
+	this->_room_id = room_id;
+}
+
+void MessageType103A::set_sender_id(const std::string& sender_id)
+{
+	this->_sender_id = sender_id;
+}
+
+void MessageType103A::set_send_message_id(const uint64_t send_message_id)
+{
+	this->_send_message_id = send_message_id;
+}
+
+void MessageType103A::set_send_time(const std::string& send_time)
+{
+	this->_send_time = send_time;
+}
+
+void MessageType103A::content(const std::string& content)
+{
+	this->_content = content;
+}
+
 json MessageType103A::desirialize_message(const std::unique_ptr<MessageType103A>& mt103A)
 {
 	json mt103A_json;
