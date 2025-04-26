@@ -86,8 +86,8 @@ private:
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003);
 	void mt101_process(const ClientHandler::Client& client, const std::string& error_msg, const bool login_result);
 	void mt103_process(const std::unique_ptr<MessageType003>& mt003);
-	void mt103A_process(const std::unique_ptr<MessageType003>& mt003);
-	void mt103B_process(const std::unique_ptr<MessageType003>& mt003);
+	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003>& mt003);
+	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids);
 
 	
 };

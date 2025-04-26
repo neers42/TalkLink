@@ -75,8 +75,8 @@ public:
 	~ChatroomHandler();
 	bool add_chatroom(const ChatRoom& chatroom);
 	bool delete_chatroom(const ChatRoom& chatroom);
-	std::vector<ChatRoom::ClientInfo>& get_client_list(int list_num);
-	std::vector<ChatRoom::ClientInfo> get_client_list(const std::string& chatroom_id);
+	std::vector<ChatRoom::ClientInfo>& get_client_infos_by_chatroom_id(int list_num);
+	std::vector<ChatRoom::ClientInfo> get_client_infos_by_chatroom_id(const std::string& chatroom_id);
 	std::vector<ChatRoom> get_chatroom_list();
 	int search_chatroom_id_from_list(const std::string& chatroom_id);
 	std::vector<ChatroomHandler::ChatRoom::ClientInfo> get_client_list_from_chatroom(const std::string& chatroom_id);

@@ -107,12 +107,12 @@ bool ChatroomHandler::delete_chatroom(const ChatRoom& chatroom)
 	return false;
 }
 
-std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::get_client_list(int list_num)
+std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::get_client_infos_by_chatroom_id(int list_num)
 {
 	return this->chatroom_list[list_num].get_client_list();
 }
 
-std::vector<ChatroomHandler::ChatRoom::ClientInfo> ChatroomHandler::get_client_list(const std::string& chatroom_id) 
+std::vector<ChatroomHandler::ChatRoom::ClientInfo> ChatroomHandler::get_client_infos_by_chatroom_id(const std::string& chatroom_id) 
 {
 	int chatroom_list_num = this->search_chatroom_id_from_list(chatroom_id);
 	if (chatroom_list_num != -1) {

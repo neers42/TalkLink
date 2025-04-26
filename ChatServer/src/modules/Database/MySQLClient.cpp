@@ -194,6 +194,10 @@ bool MySQLClient::update_last_login(const std::string& cid, const std::string& l
 {
 	try
 	{
+		if (cid == "") {
+			LOG_ERROR("MySQL:client id is empty.Skip updating client last login time.");
+			return false;
+		}
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_clients +
 				" SET last_login = ? WHERE cid = ?;")

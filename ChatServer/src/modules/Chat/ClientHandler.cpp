@@ -435,7 +435,7 @@ int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 			return search_result;
 		}
 	}
-	LOG_ERROR("search client id, failed, Not exits client id({:s})", search_client_id);
+	
 	return NOT_EXIST_CLIENT_ID;
 }
 

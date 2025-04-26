@@ -24,6 +24,13 @@ public:
 		const std::string& content);
 	~MessageType103A();
 
+	enum class MessageSendStatus
+	{
+		SEND_SUCCESS = 0,
+		SEND_PARTIAL_SUCCESS = 1,
+		SEND_FAILED = 2
+	};
+
 	//各種アクセッサ
 	std::string get_room_id() const;
 	std::string get_sender_id() const;
