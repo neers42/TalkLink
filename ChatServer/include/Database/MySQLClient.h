@@ -46,6 +46,7 @@ public:
 	std::tuple<std:: string, std::string, std::string> select_client_info(const std::string& cid);
 	bool update_last_login(const std::string& cid, const std::string& last_login);
 	bool is_client_id_exist(const std::string& cid);
+	bool is_room_id_exist(const std::string& room_id);
 	bool insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content);
 	bool insert_unread_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
 	std::string get_client_last_login_fromDB(const std::string& cid);

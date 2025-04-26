@@ -265,6 +265,38 @@ bool MySQLClient::is_client_id_exist(const std::string& cid)
 	}
 }
 
+bool MySQLClient::is_room_id_exist(const std::string& room_id)
+{
+	try
+	{
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?);")
+		);
+		pre_stmt->setString(1, room_id);
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+		if (res != nullptr && res->next()) {
+			int is_exist = res->getBoolean(1);
+			if (is_exist == 1) {
+				spdlog::debug("MySQL:room id({}) exists.", room_id);
+				return true;
+			}
+			else {
+				spdlog::debug("MySQL:room id({}) does not exist.", room_id);
+				return false;
+			}
+		}
+		else {
+			LOG_ERROR("MySQL: no data found for room_id(response is null): {}", room_id);
+			return false;
+		}
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("MySQL:select room id failed. Error: {}", e.what());
+		return false;
+	}
+}
+
 bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content)
 {
 	try

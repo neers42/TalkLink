@@ -442,12 +442,18 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 			}
 		}
 		//メッセージをデータベースに保存する
-		if (this->_mysql_client->insert_chat_message(mt003->get_message_id(), mt003->get_room_id(), mt003->get_sender_id(), mt003->get_send_time(), mt003->get_content())) {
-			spdlog::info("The message was successfully saved in the database.");
+		if (this->_mysql_client->is_room_id_exist(mt003->get_room_id())) {
+			if (this->_mysql_client->insert_chat_message(mt003->get_message_id(), mt003->get_room_id(), mt003->get_sender_id(), mt003->get_send_time(), mt003->get_content())) {
+				spdlog::info("The message was successfully saved in the database.");
+			}
+			else {
+				LOG_ERROR("The message was not saved in the database.");
+			}
 		}
 		else {
-			LOG_ERROR("The message was not saved in the database.");
+			THROW_APP_EXCEPTION("The reception process was interrupted because the room ID was not found.");
 		}
+		
 
 	}
 	catch (const exception::ExceptionBase& ex)
@@ -663,7 +669,7 @@ std::vector<std::string> ServerControlleFacade::mt103A_process(const std::unique
 			std::vector<std::string> send_cids = this->_mysql_client->get_client_list_from_chatroom(mt103A->get_room_id());
 			//データベースにもチャットルームIDが存在しない場合
 			if (send_cids.size() == 0) {
-				LOG_ERROR("The Chatroom ID was not found in the database.");
+				//LOG_ERROR("The Chatroom ID was not found in the database.");
 				return unsend_cids;
 			}
 
@@ -799,7 +805,7 @@ void ServerControlleFacade::mt103B_process(const std::unique_ptr<MessageType003>
 		//データベースからチャットルームに参加しているcidのリストを抽出
 		auto client_list = this->_mysql_client->get_client_list_from_chatroom(mt003->get_room_id());
 		if (client_list.size() == 0 && unsend_cids.size() == 0) {
-			LOG_ERROR("The Chatroom ID was not found in the database.");
+			//LOG_ERROR("The Chatroom ID was not found in the database.");
 			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
 
 		}
