@@ -60,10 +60,10 @@
     <ClCompile Include="src\modules\Network\MessageType001.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\Network\MessageType003.cpp">
+    <ClCompile Include="src\modules\Network\MessageType004.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\Network\MessageType004.cpp">
+    <ClCompile Include="src\modules\Network\MessageType005.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\modules\Network\MessageType000.cpp">
@@ -72,7 +72,7 @@
     <ClCompile Include="src\modules\Network\MessageType101.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\Network\MessageType103B.cpp">
+    <ClCompile Include="src\modules\Network\MessageType104B.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\modules\Database\RedisClient.cpp">
@@ -81,13 +81,19 @@
     <ClCompile Include="src\modules\Chat\MessageIDGenerator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\Network\MessageType103A.cpp">
+    <ClCompile Include="src\modules\Network\MessageType104A.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\Network\MessageType102.cpp">
+    <ClCompile Include="src\modules\Network\MessageType103.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\Network\MessageType003.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\modules\Network\MessageType002.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\Network\MessageType102.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -689,10 +695,10 @@
     <ClInclude Include="include\Network\MessageType001.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Network\MessageType003.h">
+    <ClInclude Include="include\Network\MessageType004.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Network\MessageType004.h">
+    <ClInclude Include="include\Network\MessageType005.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="include\Network\wolfssl\openssl\aes.h">
@@ -1382,7 +1388,7 @@
     <ClInclude Include="include\Network\MessageType101.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Network\MessageType103B.h">
+    <ClInclude Include="include\Network\MessageType104B.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="include\Utils\ulid\ulid.hh">
@@ -1751,13 +1757,19 @@
     <ClInclude Include="include\Chat\MessageIDGenerator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Network\MessageType103A.h">
+    <ClInclude Include="include\Network\MessageType104A.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Network\MessageType102.h">
+    <ClInclude Include="include\Network\MessageType103.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Network\MessageType003.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="include\Network\MessageType002.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Network\MessageType102.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

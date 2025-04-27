@@ -119,6 +119,7 @@ public:
 	WOLFSSL* search_client_ssl_from_clients(const std::string& cid);
 	void show_client_info(const Client& client);
 	std::vector<WOLFSSL*> get_client_ssl_list(const std::vector<Client> clients);
+	Client& get_client_by_cid(const std::string& cid);
 	
 };
 

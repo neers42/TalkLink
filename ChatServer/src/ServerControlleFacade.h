@@ -2,8 +2,8 @@
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
 #include "MessageType001.h"
-#include "MessageType003.h"
 #include "MessageType004.h"
+#include "MessageType005.h"
 #include "ServerTime.h"
 #include "ClientHandler.h"
 #include "ChatRoomHandler.h"
@@ -24,6 +24,7 @@
 #define DEBUG_MODE
 #define TLS_PROTOCOL
 #define LOAD_MESSAGE_NUM 20
+#define MAX_RESEND_COUNT 3
 
 class ServerControlleFacade
 {
@@ -62,14 +63,8 @@ public:
 
 	const std::string& get_server_ip();
 	void set_server_ip(const std::string& ip);
-
 	void handle_changed_socket_process(const SOCKET socket);
-
-	void message_handle_process(const SOCKET socket);
-
-	
-
-	
+	void message_handle_process(const SOCKET socket);	
 	void heart_beat_check_process();
 	void heart_beat_response_process(const ClientHandler::Client& client);
 	void setting_select_process();
@@ -83,12 +78,13 @@ private:
 	bool insert_client_info_to_db(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password_hash);
 	void mt000_process(const std::unique_ptr<MessageType000>& mt000, ClientHandler::Client& client);
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, ClientHandler::Client& client, std::string* error_msg_text, bool* login_resul);
-	void mt003_process(const std::unique_ptr<MessageType003>& mt003);
+	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
 	void mt101_process(const ClientHandler::Client& client, const std::string& error_msg, const bool login_result);
-	void mt103_process(const std::unique_ptr<MessageType003>& mt003);
-	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003>& mt003);
-	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids);
-
+	void mt104_process(const std::unique_ptr<MessageType004>& mt004);
+	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004>& mt004);
+	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids);
+	
+	void resend_message_process(const json& message, const std::string& cid);
 	
 };
 

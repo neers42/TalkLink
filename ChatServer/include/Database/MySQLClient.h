@@ -27,7 +27,7 @@ private:
 	std::string _mysql_table_name_chatrooms = "chatrooms";
 	std::string _mysql_table_name_chat_members = "chat_members";
 	std::string _mysql_table_name_chat_messages = "chat_messages";
-	std::string _mysql_table_name_unread_messages = "unread_messages";
+	std::string _mysql_table_name_unsend_messages = "unsend_messages";
 
 
 public:
@@ -48,9 +48,9 @@ public:
 	bool is_client_id_exist(const std::string& cid);
 	bool is_room_id_exist(const std::string& room_id);
 	bool insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content);
-	bool insert_unread_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
+	bool insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
 	std::string get_client_last_login_fromDB(const std::string& cid);
-	json get_unread_message_fromDB(const std::string& cid, int limit);
+	json get_unsend_message_fromDB(const std::string& cid, int limit);
 	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
 	std::string get_chatroom_name_fromDB(const std::string& room_id);
 private:
@@ -58,7 +58,7 @@ private:
 	bool create_table_chatrooms();
 	bool create_table_chat_members();
 	bool create_table_chat_messages();
-	bool create_table_unread_messages();
+	bool create_table_unsend_messages();
 	
 };
 

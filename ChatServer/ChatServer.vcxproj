@@ -154,16 +154,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\modules\Network\MessageType002.cpp" />
     <ClCompile Include="src\modules\Network\MessageType102.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType103A.cpp" />
+    <ClCompile Include="src\modules\Network\MessageType002.cpp" />
+    <ClCompile Include="src\modules\Network\MessageType003.cpp" />
+    <ClCompile Include="src\modules\Network\MessageType103.cpp" />
+    <ClCompile Include="src\modules\Network\MessageType104A.cpp" />
     <ClCompile Include="src\modules\Chat\MessageIDGenerator.cpp" />
     <ClCompile Include="src\modules\Database\RedisClient.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType103B.cpp" />
+    <ClCompile Include="src\modules\Network\MessageType104B.cpp" />
     <ClCompile Include="src\modules\Network\MessageType101.cpp" />
     <ClCompile Include="src\modules\Network\MessageType000.cpp" />
+    <ClCompile Include="src\modules\Network\MessageType005.cpp" />
     <ClCompile Include="src\modules\Network\MessageType004.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType003.cpp" />
     <ClCompile Include="src\modules\Network\MessageType001.cpp" />
     <ClCompile Include="src\modules\Network\BaseMessage.cpp" />
     <ClCompile Include="src\modules\Network\ProtocolHandler.cpp" />
@@ -196,8 +198,8 @@
     <ClInclude Include="include\Database\hiredis\win32.h" />
     <ClInclude Include="include\Database\RedisClient.h" />
     <ClInclude Include="include\Database\DataBaseInterface.h" />
+    <ClInclude Include="include\Network\MessageType005.h" />
     <ClInclude Include="include\Network\MessageType004.h" />
-    <ClInclude Include="include\Network\MessageType003.h" />
     <ClInclude Include="include\Network\MessageType001.h" />
     <ClInclude Include="include\Network\BaseMessage.h" />
     <ClInclude Include="include\Network\ProtocolHandler.h" />
@@ -620,7 +622,7 @@
     <ClInclude Include="include\Utils\nlohmann\thirdparty\hedley\hedley_undef.hpp" />
     <ClInclude Include="include\Network\MessageType000.h" />
     <ClInclude Include="include\Network\MessageType101.h" />
-    <ClInclude Include="include\Network\MessageType103B.h" />
+    <ClInclude Include="include\Network\MessageType104B.h" />
     <ClInclude Include="include\Utils\spdlog\async.h" />
     <ClInclude Include="include\Utils\spdlog\async_logger-inl.h" />
     <ClInclude Include="include\Utils\spdlog\async_logger.h" />
@@ -728,9 +730,11 @@
     <ClInclude Include="include\Utils\ulid\ulid.hh" />
     <ClInclude Include="include\Utils\ulid\ulid_struct.hh" />
     <ClInclude Include="include\Chat\MessageIDGenerator.h" />
-    <ClInclude Include="include\Network\MessageType103A.h" />
-    <ClInclude Include="include\Network\MessageType102.h" />
+    <ClInclude Include="include\Network\MessageType104A.h" />
+    <ClInclude Include="include\Network\MessageType103.h" />
+    <ClInclude Include="include\Network\MessageType003.h" />
     <ClInclude Include="include\Network\MessageType002.h" />
+    <ClInclude Include="include\Network\MessageType102.h" />
     <ClInclude Include="src\ServerControlleFacade.h" />
     <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\StringFormat.h" />

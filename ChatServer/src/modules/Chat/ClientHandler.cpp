@@ -478,6 +478,11 @@ std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<Clien
 	return client_ssl_list;
 }
 
+ClientHandler:: Client& ClientHandler::get_client_by_cid(const std::string& cid)
+{
+	return this->connected_clients.at(this->search_cid_from_clients(cid));
+}
+
 
 
 std::vector<ClientHandler::Client> ClientHandler::get_connected_client_list()

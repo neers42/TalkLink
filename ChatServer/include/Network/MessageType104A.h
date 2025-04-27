@@ -1,7 +1,7 @@
-﻿#ifndef MESSAGETYPE103A
-#define MESSAGETYPE103A
+﻿#ifndef MESSAGETYPE104A
+#define MESSAGETYPE104A
 #include "BaseMessage.h"
-class MessageType103A :
+class MessageType104A :
     public BaseMessage
 {
 private:
@@ -14,22 +14,15 @@ private:
 
 
 public:
-	MessageType103A() = delete;
-	MessageType103A(int c_type,
+	MessageType104A() = delete;
+	MessageType104A(int c_type,
 		const std::string& mt,
 		const std::string& room_id,
 		const std::string& sender_id,
 		const uint64_t send_message_id,
 		const std::string& send_time,
 		const std::string& content);
-	~MessageType103A();
-
-	enum class MessageSendStatus
-	{
-		SEND_SUCCESS = 0,
-		SEND_PARTIAL_SUCCESS = 1,
-		SEND_FAILED = 2
-	};
+	~MessageType104A();
 
 	//各種アクセッサ
 	std::string get_room_id() const;
@@ -45,10 +38,10 @@ public:
 	void content(const std::string& content);
 
 
-	static json desirialize_message(const std::unique_ptr<MessageType103A>& mt103A);
+	static json desirialize_message(const std::unique_ptr<MessageType104A>& mt104A);
 	
 };
-#endif // !MESSAGETYPE103A
+#endif // !MESSAGETYPE104A
 
 
 

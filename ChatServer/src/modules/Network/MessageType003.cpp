@@ -1,308 +1,89 @@
 ﻿#include "MessageType003.h"
 
 
-MessageType003::MessageType003(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id, ChatType tt,
-	const std::string& room_id, const std::string& receiver_id, const std::string& sender_id, 
-	const std::string& send_time, const std::string& content)
-	//BaseMessage::ContentType c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const uint64_t m_id, ChatType tt, const std::string& dst_chatroom_id)
-	:BaseMessage::BaseMessage(c_type, mt, m_id),
-	_room_id{room_id},
-	_receiver_id{receiver_id},
-	_sender_id{sender_id},
-	_send_time{send_time},
-	_content{ content },
-	_chat_type{tt}
+MessageType003::MessageType003(
+	const std::string& room_id_add_member,
+	const std::string& room_id_remove_member,
+	const std::vector<std::string>& add_member_list,
+	const std::vector<std::string>& remove_member_list,
+	const std::string& room_name,
+	const std::string& room_image,
+	const std::string& room_id,
+	const std::string& room_action,
+	const std::string& room_create_time
+):BaseMessage(BaseMessage::ContentType::NOTIFICATION, "003"),
+_room_id_add_member(room_id_add_member),
+_room_id_remove_member(room_id_remove_member),
+_add_member_list(add_member_list),
+_remove_member_list(remove_member_list),
+_room_name(room_name),
+_room_image_url(room_image),
+_room_id(room_id),
+_room_action(room_action),
+_room_create_time(room_create_time)
 {
 }
-
-MessageType003::MessageType003(int c_type, 
-	const std::string& mt,
-	const uint64_t m_id,
-	int chat_type,
-	const std::string& room_id, 
-	const std::string& receiver_id, const std::string& sender_id, 
-	const std::string& send_time, const std::string& content)	
-	//int c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const uint64_t m_id, int trans_type, const std::string& dst_chatroom_id)
-	:BaseMessage::BaseMessage(exchange_content_type_from_int(c_type), mt, m_id),
-	_chat_type{exchange_trans_type_from_int(chat_type)},
-	_receiver_id{receiver_id},
-	_sender_id{sender_id},
-	_send_time{send_time},
-	_content{content},
-	_room_id{room_id}
-{
-}
-
 
 MessageType003::~MessageType003()
 {
 }
 
-MessageType003::ChatType MessageType003::get_chat_type()
+std::string MessageType003::get_room_id_add_member() const
 {
-	return this->_chat_type;
+	return this->_room_id_add_member;
 }
 
-int MessageType003::convert_chat_type_to_int()
+std::string MessageType003::get_room_id_remove_member() const
 {
-	switch (this->get_chat_type())
-	{
-	case ChatType::Group:
-		return 0;
-		break;
-	case ChatType::P2P:
-		return 1;
-		break;
-	default:
-		return -1;
-		break;
-	}
-
+	return this->_room_id_remove_member;
 }
 
-void MessageType003::set_chat_type(ChatType tt)
+std::vector<std::string> MessageType003::get_add_member_list() const
 {
-	this->_chat_type = tt;
+	return this->_add_member_list;
 }
 
-void MessageType003::set_chat_type_from_int(const int value)
+std::vector<std::string> MessageType003::get_remove_member_list() const
 {
-	switch (value)
-	{
-	case 0:
-		this->_chat_type = ChatType::Group;
-		break;
-	case 1:
-		this->_chat_type = ChatType::P2P;
-		break;
-	default:
-		break;
-	}
+	return this->_remove_member_list;
 }
 
-std::string MessageType003::get_receiver_id() const
+std::string MessageType003::get_room_name() const
 {
-	return this->_receiver_id;
+	return this->_room_name;
 }
 
-void MessageType003::set_receiver_id(const std::string& dst_id)
+std::string MessageType003::get_room_image_url() const
 {
-	this->_receiver_id = dst_id;
+	return this->_room_image_url;
 }
 
-std::string MessageType003::get_sender_id() const
-{
-	return this->_sender_id;
-}
-
-void MessageType003::set_sender_id(const std::string& src_id)
-{
-	this->_sender_id = src_id;
-}
-
-std::string MessageType003::get_send_time() const
-{
-	return this->_send_time;
-}
-
-std::string MessageType003::get_content() const
-{
-	return this->_content;
-}
-
-void MessageType003::set_content(const std::string& content)
-{
-	this->_content = content;
-}
-
-std::string MessageType003::get_room_id()
+std::string MessageType003::get_room_id() const
 {
 	return this->_room_id;
 }
 
-void MessageType003::set_room_id(const std::string& id)
+std::string MessageType003::get_room_action() const
 {
-	this->_room_id = id;
+	return this->_room_action;
 }
 
-MessageType003::ChatType MessageType003::exchange_trans_type_from_int(int value)
+std::string MessageType003::get_room_create_time() const
 {
-	switch (value)
-	{
-	case 0:
-		return ChatType::Group;
-		break;
-	case 1:
-		return ChatType::P2P;
-		break;
-	default:
-		break;
-	}
+	return this->_room_create_time;
 }
 
-bool MessageType003::is_valid()
+std::unique_ptr<MessageType003> MessageType003::serialize_message(const json& recv_json)
 {
-	//グループチャットの場合
-	if (this->get_chat_type() == MessageType003::ChatType::Group) {
-		if (is_valid_mesasge_type(this->_message_type) == true &&
-			is_valid_message_id(this->_message_id) == true &&
-			is_valid_room_id(this->_room_id) == true &&
-			is_valid_sender_id(this->_sender_id) == true &&
-			is_valid_conent(this->_content) == true)
-		{
-			return true;
-		}
-	//P2Pの場合
-	}else if (this->get_chat_type() == MessageType003::ChatType::P2P) {
-		if (is_valid_mesasge_type(this->_message_type) == true &&
-			is_valid_message_id(this->_message_id) == true &&
-			is_valid_room_id(this->_room_id) == true &&
-			is_valid_receiver_id(this->_receiver_id) == true &&
-			is_valid_sender_id(this->_sender_id) == true &&
-			is_valid_conent(this->_content) == true)
-		{
-			return true;
-		}
-	}
-	return false;	
-	
-}
-
-std::unique_ptr<MessageType003> MessageType003::serialize_message(const json& json_message)
-{
-	try
-	{
-		// 1. 必須キーがすべて存在するかチェック
-		static const std::vector<std::string> required_keys = {
-			"content_type", "message_type", "chat_type","room_id","receiver_id",
-			"sender_id", "send_time", "content"
-		};
-		for(const auto& key : required_keys)
-		{
-			if (!json_message.contains(key)) {
-				throw std::runtime_error("Missing key: " + key);
-			}
-		}
-		// 2. 各フィールドの型をチェック
-		if (!json_message["content_type"].is_string()) {
-			throw std::runtime_error("Invalid type for 'content_type'");
-		}
-		if (!json_message["message_type"].is_string()) {
-			throw std::runtime_error("Invalid type for 'message_type'");
-		}
-		if (!json_message["chat_type"].is_string()) {
-			throw std::runtime_error("Invalid type for 'chat_type'");
-		}
-		if (!json_message["room_id"].is_string()) {
-			throw std::runtime_error("Invalid type for 'room_id'");
-		}
-		if (!json_message["receiver_id"].is_string()) {
-			throw std::runtime_error("Invalid type for 'receiver_id'");
-		}
-		if (!json_message["sender_id"].is_string()) {
-			throw std::runtime_error("Invalid type for 'sender_id'");
-		}
-		if (!json_message["send_time"].is_string()) {
-			throw std::runtime_error("Invalid type for 'send_time'");
-		}
-		if (!json_message["content"].is_string()) {
-			throw std::runtime_error("Invalid type for 'content'");
-		}
-		// 3. 各フィールドを読み取る
-		std::string content_type_str = json_message["content_type"];
-		int content_type;
-		if (content_type_str == "TEXT") {
-			content_type = 0;
-		}
-		else if (content_type_str == "IMAGE") {
-			content_type = 1;
-		}
-		else if (content_type_str == "VIDEO") {
-			content_type = 2;
-		}
-		else if (content_type_str == "NOTIFICATION") {
-			content_type = 3;
-		}
-		else {
-			throw std::runtime_error("Invalid content type");
-		}
-		std::string message_type = json_message["message_type"];
-		std::string chat_type_str = json_message["chat_type"];
-		int chat_type;
-		if (chat_type_str == "Group") {
-			chat_type = 0;
-		}
-		else if (chat_type_str == "P2P") {
-			chat_type = 1;
-		}
-		else {
-			throw std::runtime_error("Invalid chat type");
-		}
-		std::string room_id = json_message["room_id"];
-		std::string receiver_id = json_message["receiver_id"];
-		std::string sender_id = json_message["sender_id"];
-		std::string send_time = json_message["send_time"];
-		std::string content = json_message["content"];
-		uint64_t message_id = MessageIDGenerator::generate_message_id();
-
-		return std::make_unique<MessageType003>(
-			static_cast<int>(content_type),
-			message_type,
-			message_id,
-			static_cast<int>(chat_type),
-			room_id,
-			receiver_id,
-			sender_id,
-			send_time,
-			content
+	return std::make_unique<MessageType003>	(
+		recv_json["room_id_add_member"].get<std::string>(),
+		recv_json["room_id_remove_member"].get<std::string>(),
+		recv_json["add_member_list"].get<std::vector<std::string>>(),
+		recv_json["remove_member_list"].get<std::vector<std::string>>(),
+		recv_json["room_name"].get<std::string>(),
+		recv_json["room_image_url"].get<std::string>(),
+		recv_json["room_id"].get<std::string>(),
+		recv_json["room_action"].get<std::string>(),
+		recv_json["room_create_time"].get<std::string>()
 		);
-			
-
-	}
-	catch (const std::exception& e)
-	{
-		LOG_ERROR("Error deserializing MessageType003: {}", e.what());
-		return nullptr;
-	}
 }
-
-bool MessageType003::is_valid_room_id(const std::string& room_id)
-{
-	//dst_idが28byteではない場合
-	if (room_id.size() != 26) {
-		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {:d}", room_id.size());
-		return false;
-	}
-	return true;
-}
-
-bool MessageType003::is_valid_receiver_id(const std::string& receiver)
-{
-	//dst_idが28byteではない場合
-	if (receiver.size() != 28) {
-		LOG_ERROR("receiver id is invalid. dst client id byte size : {:d}", receiver.size());
-		return false;
-	}
-	return true;
-}
-
-bool MessageType003::is_valid_sender_id(const std::string& sender_id)
-{
-	//dst_idが28byteではない場合
-	if (sender_id.size() != 28) {
-		LOG_ERROR("sender id is invalid. src client id byte size : {:d}", sender_id.size());
-		return false;
-	}
-	return true;
-}
-
-bool MessageType003::is_valid_conent(const std::string& content)
-{
-	//dst_idが28byteではない場合
-	if (content.size() <= 0) {
-		LOG_ERROR("content is invalid. content byte size : {:d}", content.size());
-		return false;
-	}
-	return true;
-}
-

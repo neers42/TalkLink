@@ -124,7 +124,7 @@ bool MySQLClient::create_table()
 	else if (this->create_table_chat_messages() == false) {
 		return false;
 	}
-	else if (this->create_table_unread_messages() == false) {
+	else if (this->create_table_unsend_messages() == false) {
 		return false;
 	}
 	return true;
@@ -323,12 +323,12 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 	}
 }
 
-bool MySQLClient::insert_unread_message(const uint64_t mid, const std::string& cid, const std::string& room_id)
+bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id)
 {
 	try
 	{
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_unread_messages +
+			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_unsend_messages +
 				"(mid, cid, room_id) "
 				"VALUES(?, ?, ?);")
 		);
@@ -381,7 +381,7 @@ std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
 	return last_login_time;
 }
 
-json MySQLClient::get_unread_message_fromDB(const std::string& cid, int limit)
+json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 {
 	try
 	{
@@ -394,7 +394,7 @@ json MySQLClient::get_unread_message_fromDB(const std::string& cid, int limit)
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement(
 				"SELECT unread_messages.mid, unread_messages.cid, unread_messages.room_id, chat_messages.message "
-				"FROM " + _mysql_table_name_unread_messages + " "
+				"FROM " + _mysql_table_name_unsend_messages + " "
 				"JOIN chat_messages ON unread_messages.mid = chat_messages.mid "
 				"WHERE unread_messages.cid = ? AND chat_messages.send_time > ?"
 			)
@@ -598,12 +598,12 @@ bool MySQLClient::create_table_chat_messages()
 	}
 }
 
-bool MySQLClient::create_table_unread_messages()
+bool MySQLClient::create_table_unsend_messages()
 {
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
-			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unread_messages +
+			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unsend_messages +
 				"(mid BIGINT NOT NULL,"
 				"cid VARCHAR(28) NOT NULL,"
 				"room_id VARCHAR(26) NOT NULL,"
@@ -613,11 +613,11 @@ bool MySQLClient::create_table_unread_messages()
 				"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE);")
 		);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_unread_messages);
+		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_unsend_messages);
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_unread_messages, e.what());
+		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_unsend_messages, e.what());
 		return false;
 	}
 }

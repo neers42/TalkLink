@@ -1,77 +1,67 @@
-﻿#ifndef MESSAGETYPE003_H_
-#define MESSAGETYPE003_H_
+﻿#ifndef MESSAGE_TYPE003_H
+#define MESSAGE_TYPE003_H
+#include "common.h"
 #include "BaseMessage.h"
-#include "MessageIDGenerator.h"
+#include "LogHandler.h"
+
 class MessageType003 :
     public BaseMessage
 {
 public:
-	enum class ChatType
+	enum class RoomAction
 	{
-		Group,
-		P2P
+		SEARCH_CLIENT_ID,
+		CREATE_ROOM,
+		DELETE_ROOM,
+		ADD_MEMBER,
+		REMOVE_MEMBER,
+		ROOM_NAME_CHANGE,
+		ROOM_ICON_CHANGE
 	};
+	
+
 private:
-	ChatType _chat_type;
-	std::string _room_id;
-	std::string _receiver_id;
-	std::string _sender_id;
-	std::string _send_time;
-	std::string _content;
+	std::string _room_id_add_member;	//メンバーを追加するチャットルームID
+	std::string _room_id_remove_member;	//メンバーを削除するチャットルームID
+	std::vector<std::string> _add_member_list;	//追加メンバーリスト
+	std::vector<std::string> _remove_member_list;	//削除メンバーリスト
+	std::string _room_name;	//チャットルーム名
+	std::string _room_image_url;	//チャットルームの画像
+	std::string _room_id;	//チャットルームID
+	std::string _room_action;	//チャットルームのアクション
+	std::string _room_create_time;	//チャットルームの作成時間
+
+
 
 public:
 	//コンストラクタ
-    MessageType003() = delete;
-	MessageType003(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id, ChatType tt,
-		const std::string& room_id, const std::string& receiver_id, const std::string& sender_id, 
-		const std::string& send_time, const std::string& content);
-	MessageType003(int c_type, const std::string& mt, const uint64_t m_id, int chat_type,
-		const std::string& room_id,const std::string& receiver_id, const std::string& sender_id,
-		const std::string& send_time ,const std::string& content);
-	
+	MessageType003() = delete;
+	MessageType003(const std::string& room_id_add_member,
+		const std::string& room_id_remove_member,
+		const std::vector<std::string>& add_member_list,
+		const std::vector<std::string>& remove_member_list,
+		const std::string& room_name,
+		const std::string& room_image,
+		const std::string& room_id,
+		const std::string& room_action,
+		const std::string& room_create_time);
 	//デストラクタ
 	~MessageType003();
-	
-	//各種アクセッサ(getter/setter)
-	//_trans_type
-	ChatType get_chat_type();
-	int convert_chat_type_to_int();
-	void set_chat_type(ChatType tt);
-	void set_chat_type_from_int(const int value);
 
-	std::string get_receiver_id() const;
-	void set_receiver_id(const std::string& dst_id);
+	//各種アクセッサ
+	std::string get_room_id_add_member() const;
+	std::string get_room_id_remove_member() const;
+	std::vector<std::string> get_add_member_list() const;
+	std::vector<std::string> get_remove_member_list() const;
+	std::string get_room_name() const;
+	std::string get_room_image_url() const;
+	std::string get_room_id() const;
+	std::string get_room_action() const;
+	std::string get_room_create_time() const;
 
-	std::string get_sender_id() const;
-	void set_sender_id(const std::string& src_id);
+	//メッセージシリアライズ
+	static std::unique_ptr<MessageType003> serialize_message(const json& recv_json);
 
-	std::string get_send_time() const;
-
-	std::string get_content() const;
-	void set_content(const std::string& content);
-
-	//_dst_chatroom_id
-	std::string get_room_id();
-	void set_room_id(const std::string& id);
-
-
-	ChatType exchange_trans_type_from_int(int value);
-
-	//メッセージ検証
-	bool is_valid() override;
-	static std::unique_ptr<MessageType003> serialize_message(const json& json_message);
-
-
-private:
-	bool is_valid_room_id(const std::string& room_id);
-	bool is_valid_receiver_id(const std::string& receiver_id);
-	bool is_valid_sender_id(const std::string& sender_id);
-	bool is_valid_conent(const std::string& content);
-	
-
-	
 };
-#endif // !MESSAGETYPE003_H_
-
-
+#endif // MESSAGE_TYPE003_H
 

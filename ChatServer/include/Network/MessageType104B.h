@@ -1,7 +1,7 @@
-﻿#ifndef MESSAGETYPE103_H_
-#define MESSAGETYPE103_H_
+﻿#ifndef MESSAGETYPE104_H_
+#define MESSAGETYPE104_H_
 #include "BaseMessage.h"
-class MessageType103B :
+class MessageType104B :
     public BaseMessage
 {
 public:
@@ -21,8 +21,8 @@ private:
 
 public:
     //コンストラクタ
-    MessageType103B() = delete;
-	MessageType103B(int c_type,
+    MessageType104B() = delete;
+	MessageType104B(int c_type,
 		const std::string& mt,
 		const MessageSendStatus status,
 		const std::string& room_id,
@@ -30,7 +30,7 @@ public:
 		const std::vector<std::string>& _unsend_cid_list);
 
     //デストラクタ
-	~MessageType103B();
+	~MessageType104B();
 
 	//各種アクセッサ(getter/setter)
 	int get_status() const;
@@ -39,8 +39,8 @@ public:
 	void set_room_id(const std::string& room_id);
 	uint64_t get_send_message_id() const;
 	void set_send_message_id(const uint64_t send_mid);
-	static json desirialize_message(const std::unique_ptr<MessageType103B>& mt103B);
+	static json desirialize_message(const std::unique_ptr<MessageType104B>& mt104B);
 
 };
-#endif // !MESSAGETYPE103_H_
+#endif // !MESSAGETYPE104_H_
 
