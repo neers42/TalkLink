@@ -1,16 +1,38 @@
 ﻿#include "ChatRoomHandler.h"
 
 
+ChatroomHandler::ChatRoom::ChatRoom()
+	:_chatroom_id{ "" },
+	_chatroom_name{ "" },
+	_chatroom_icon_url{""}
+{
+}
+
+ChatroomHandler::ChatRoom::ChatRoom(
+	const std::string& chatroom_name,
+	const std::string& icon_url,
+	const std::vector<std::string>& cids
+	
+)
+	: 
+	_chatroom_id{ChatroomHandler::issue_chatroom_id()},
+	_chatroom_name{ chatroom_name },
+	_chatroom_icon_url{ icon_url },
+	_cid_list{ cids }
+{
+}
+
+
 ChatroomHandler::ChatRoom::~ChatRoom()
 {
 
 }
 
-bool ChatroomHandler::ChatRoom::add_client_chatroom(const ChatroomHandler::ChatRoom::ClientInfo& client_info)
+bool ChatroomHandler::ChatRoom::add_client_chatroom(const std::string& cid)
 {
 	try
 	{
-		this->_client_list.push_back(client_info);
+		this->_cid_list.push_back(cid);
 	}
 	catch (const std::bad_alloc&)
 	{
@@ -24,10 +46,10 @@ bool ChatroomHandler::ChatRoom::add_client_chatroom(const ChatroomHandler::ChatR
 	return true;
 }
 
-bool ChatroomHandler::ChatRoom::delete_client_chatroom(const ChatroomHandler::ChatRoom::ClientInfo& client_info)
+bool ChatroomHandler::ChatRoom::delete_client_chatroom(const std::string& cid)
 {
-	auto element_to_remove = search_client_form_chatroom(client_info);
-	this->_client_list.erase(element_to_remove);
+	auto element_to_remove = search_client_form_chatroom(cid);
+	this->_cid_list.erase(element_to_remove);
 	return true;
 }
 
@@ -52,22 +74,32 @@ const std::string& ChatroomHandler::ChatRoom::get_chatroom_name() const
 	return this->_chatroom_name;
 }
 
-std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::ChatRoom::get_client_list()
+std::string& ChatroomHandler::ChatRoom::get_chatroom_icon()
 {
-	return this->_client_list;
+	return this->_chatroom_icon_url;
 }
 
-const std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::ChatRoom::get_client_list() const
+const std::string& ChatroomHandler::ChatRoom::get_chatroom_icon() const
 {
-	return this->_client_list;
+	return this->_chatroom_icon_url;
 }
 
- std::vector<ChatroomHandler::ChatRoom::ClientInfo>::iterator ChatroomHandler::ChatRoom::search_client_form_chatroom(const ChatroomHandler::ChatRoom::ClientInfo& client_info)
+std::vector<std::string>& ChatroomHandler::ChatRoom::get_client_list()
+{
+	return this->_cid_list;
+}
+
+const std::vector<std::string>& ChatroomHandler::ChatRoom::get_client_list() const
+{
+	return this->_cid_list;
+}
+
+ std::vector<std::string>::iterator ChatroomHandler::ChatRoom::search_client_form_chatroom(const std::string& cid)
 {
 	 try
 	 {
-		auto iterator = std::find(this->_client_list.begin(), this->_client_list.end(), client_info);
-		if (iterator == this->_client_list.end()) {
+		auto iterator = std::find(this->_cid_list.begin(), this->_cid_list.end(), cid);
+		if (iterator == this->_cid_list.end()) {
 			THROW_APP_EXCEPTION("We couldn't find the client we were looking for!");
 		}
 		else {
@@ -81,7 +113,7 @@ const std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::ChatR
 	 catch (const exception::ExceptionBase& ex)
 	 {
 		 LOG_ERROR(ex.what_for_str());
-		return this->_client_list.end();
+		return this->_cid_list.end();
 	 }
 }
 
@@ -97,29 +129,40 @@ ChatroomHandler::~ChatroomHandler()
 {
 }
 
-bool ChatroomHandler::add_chatroom(const ChatRoom& chatroom)
+
+void ChatroomHandler::add_chatroom(const ChatRoom& chatroom)
 {
-	return false;
+	if (chatroom.get_chatroom_name() == "" || chatroom.get_client_list().size() == 0) {
+		LOG_ERROR("Chatroom name or client list is empty.");
+		return;
+	}
+	this->chatroom_list.push_back(chatroom);
 }
 
-bool ChatroomHandler::delete_chatroom(const ChatRoom& chatroom)
+void ChatroomHandler::delete_chatroom(const ChatRoom& chatroom, const std::string& room_id)
 {
-	return false;
+	auto it = find_chatroom_id_from_list(room_id);
+	if (it == this->chatroom_list.end()) {
+		LOG_ERROR("The chatroom ID({}) you tried to delete could not be found.", room_id);
+		return;
+	}
+	this->chatroom_list.erase(it);
+	spdlog::info("Chatroom '{}' deleted successfully.", room_id);
 }
 
-std::vector<ChatroomHandler::ChatRoom::ClientInfo>& ChatroomHandler::get_client_infos_by_chatroom_id(int list_num)
+std::vector<std::string> ChatroomHandler::get_client_infos_by_chatroom_id(int list_num)
 {
 	return this->chatroom_list[list_num].get_client_list();
 }
 
-std::vector<ChatroomHandler::ChatRoom::ClientInfo> ChatroomHandler::get_client_infos_by_chatroom_id(const std::string& chatroom_id) 
+std::vector<std::string> ChatroomHandler::get_client_infos_by_chatroom_id(const std::string& room_id) 
 {
-	int chatroom_list_num = this->search_chatroom_id_from_list(chatroom_id);
+	int chatroom_list_num = this->search_chatroom_id_from_list(room_id);
 	if (chatroom_list_num != -1) {
 		return this->chatroom_list[chatroom_list_num].get_client_list();
 	}
 	else {
-		return std::vector<ChatroomHandler::ChatRoom::ClientInfo>();
+		return std::vector<std::string>();
 	}
 
 }
@@ -129,17 +172,27 @@ std::vector<ChatroomHandler::ChatRoom> ChatroomHandler::get_chatroom_list()
 	return this->chatroom_list;
 }
 
-int ChatroomHandler::search_chatroom_id_from_list(const std::string& chatroom_id)
+int ChatroomHandler::search_chatroom_id_from_list(const std::string& room_id)
 {
 	for (int i = 0; i < this->chatroom_list.size(); i++) {
-		if (this->chatroom_list[i].get_chatroom_id() == chatroom_id) {
+		if (this->chatroom_list[i].get_chatroom_id() == room_id) {
 			return i;
 		}
 	}
 	return -1;
 }
 
-std::vector<ChatroomHandler::ChatRoom::ClientInfo> ChatroomHandler::get_client_list_from_chatroom(const std::string& chatroom_id)
+std::vector<ChatroomHandler::ChatRoom>::iterator ChatroomHandler::find_chatroom_id_from_list(const std::string& room_id)
+{
+	return std::find_if(chatroom_list.begin(), chatroom_list.end(),
+		[&room_id](const ChatRoom& room) {
+			return room.get_chatroom_id() == room_id;
+		});
+		
+		//std::find(chatroom_list.begin(), chatroom_list.end(), chatroom_id);
+}
+
+std::vector<std::string> ChatroomHandler::get_client_list_from_chatroom(const std::string& chatroom_id)
 {
 	int chatroom_list_num = this->search_chatroom_id_from_list(chatroom_id);
 	if (chatroom_list_num != -1) {
@@ -147,38 +200,45 @@ std::vector<ChatroomHandler::ChatRoom::ClientInfo> ChatroomHandler::get_client_l
 	}
 	else {
 		LOG_ERROR("Chatroom id is not found.");
-		return std::vector<ChatRoom::ClientInfo>();
+		return std::vector<std::string>();
 	}
 }
 
-bool ChatroomHandler::create_chatroom(const std::string& chatroom_name, const std::vector<ChatroomHandler::ChatRoom::ClientInfo>& initial_clients)
+ChatroomHandler::ChatRoom ChatroomHandler::create_chatroom(
+	const std::string& chatroom_name, 
+	const std::string& icon_url,
+	const std::vector<std::string>& room_menber
+)
 {
+	std::vector<std::string> cids;
 	// チャットルームの最大数を超えていないか確認
 	if (chatroom_list.size() >= MAX_ACTIVE_CHATROOM_NUM) {
 		LOG_ERROR("Cannot create chatroom. Maximum number of active chatrooms ({}) reached.", MAX_ACTIVE_CHATROOM_NUM);
-		return false;
+		return ChatRoom();
 	}
 
 	// チャットルーム名が空でないか確認
 	if (chatroom_name.empty()) {
 		LOG_ERROR("Chatroom name cannot be empty.");
-		return false;
+		return ChatRoom();
 	}
 
 	// 初期クライアント数が制限を超えていないか確認
-	if (initial_clients.size() > MAX_CLIENT_NUM_IN_CHATROOM) {
+	if (room_menber.size() > MAX_CLIENT_NUM_IN_CHATROOM) {
 		LOG_ERROR("Cannot create chatroom. Initial client count ({}) exceeds the maximum allowed ({}) in a chatroom.",
-			initial_clients.size(), MAX_CLIENT_NUM_IN_CHATROOM);
-		return false;
+			room_menber.size(), MAX_CLIENT_NUM_IN_CHATROOM);
+		return ChatRoom();
 	}
-
+	for (const auto& member : room_menber) {
+		cids.push_back(member);
+	}
 	// 新しいチャットルームを作成
-	ChatRoom new_chatroom(chatroom_name, initial_clients);
+	ChatRoom new_chatroom(chatroom_name, icon_url, cids);
 
 	// チャットルームをリストに追加
-	chatroom_list.push_back(std::move(new_chatroom));
-	spdlog::info("Chatroom '{}' created successfully with {} initial clients.", chatroom_name, initial_clients.size());
-	return true;
+	//chatroom_list.push_back(std::move(new_chatroom));
+	spdlog::info("Chatroom '{}' created successfully with {} initial clients.", chatroom_name, room_menber.size());
+	return new_chatroom;
 }
 
 

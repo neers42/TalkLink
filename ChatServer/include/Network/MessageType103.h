@@ -12,7 +12,7 @@ public:
 	};
 private:
 	std::string _client_id;	//クライアントID
-	std::vector<ClientInfo> _client_list;	//クライアントリスト
+	std::vector<ClientInfo> _cid_list;	//クライアントリスト
 	std::string _error_message;	//エラーメッセージ
 
 public:

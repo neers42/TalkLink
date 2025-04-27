@@ -23,7 +23,7 @@ public:
 		this->_client_id = client_id;
 	}
 
-	static json desirialize_message(const std::unique_ptr<MessageType101>& mt101, const json& unread_messages, const std::string& error_message);
+	static json desirialize_message(const std::unique_ptr<MessageType101>& mt101, const json& unsend_messages, const std::string& error_message);
 
 };
 #endif // !__MESSAGETYPE101_H__

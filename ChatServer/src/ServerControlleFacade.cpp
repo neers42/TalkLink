@@ -231,6 +231,16 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		else if (mt == "002") {
 
 		}
+		else if (mt == "003") {
+			auto mt003 = MessageType003::serialize_message(receive_json);
+			if (mt003 == nullptr) {
+				return;
+			}
+			this->_protocol_handler->print_received_message_info(mt003, mt003->get_message_id(), mt003->get_sender_id(), "", client.ipv4_address, client.socket);
+			this->_protocol_handler->print_json_message(receive_json);
+			this->mt003_process(mt003);
+			
+		}
 		//MT004 = 通常メッセージの場合
 		else if (mt == "004") {
 			auto mt004 = MessageType004::serialize_message(receive_json);
@@ -411,6 +421,34 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 	}
 	delete client_id_ptr;
 
+}
+
+void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>& mt003)
+{
+	switch (mt003->get_room_action())
+	{
+	case MessageType003::RoomAction::CREATE_ROOM:
+		//ルームの作成
+		//this->_chat_room_handler->create_chatroom(mt003);
+		this->_chat_room_handler->create_chatroom(mt003->get_room_name(), mt003->get_room_image_url(), mt003->get_add_member_list());
+		
+		break;
+	case MessageType003::RoomAction::DELETE_ROOM:
+		//ルームの削除
+		//this->_chat_room_handler->delete_chatroom(mt003);
+		break;
+	case MessageType003::RoomAction::ADD_MEMBER:
+		break;
+	case MessageType003::RoomAction::REMOVE_MEMBER:
+		break;
+	case MessageType003::RoomAction::ROOM_NAME_CHANGE:
+		break;
+	case MessageType003::RoomAction::ROOM_ICON_CHANGE:
+		break;
+
+	default:
+		break;
+	}
 }
 
 
@@ -661,10 +699,10 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 		json mt104A_json = MessageType104A::desirialize_message(mt104A);
 		auto& sender = _client_handler->connected_clients.at(_client_handler->search_cid_from_clients(mt104A->get_sender_id()));
 		//送り先のclientの情報を取得する
-		auto receivers_infos = this->_chat_room_handler->get_client_infos_by_chatroom_id(mt104A->get_room_id());
+		auto receivers_cids = this->_chat_room_handler->get_client_infos_by_chatroom_id(mt104A->get_room_id());
 
 		//ChatroomHandlerが保持しているクライアントリストからチャットルームが検出できない場合
-		if (receivers_infos.size() == 0) {
+		if (receivers_cids.size() == 0) {
 			std::vector<std::string> send_cids = this->_mysql_client->get_client_list_from_chatroom(mt104A->get_room_id());
 			//データベースにもチャットルームIDが存在しない場合
 			if (send_cids.size() == 0) {
@@ -719,18 +757,18 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 		}
 		else {
 			//ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できた場合
-			for (const auto& receiver_info : receivers_infos) {
-				int receiver_list_num = this->_client_handler->search_cid_from_clients(receiver_info.cid);
+			for (const auto& receiver_cid : receivers_cids) {
+				int receiver_list_num = this->_client_handler->search_cid_from_clients(receiver_cid);
 				if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
 					// データベースにcidが存在するか確認
-					if (!this->_mysql_client->is_client_id_exist(receiver_info.cid)) {	//cidがデータベースに存在しない場合
-						LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_info.cid);
+					if (!this->_mysql_client->is_client_id_exist(receiver_cid)) {	//cidがデータベースに存在しない場合
+						LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
 						continue;
 					}
 
 					// クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-					if (!this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), receiver_info.cid, mt104A->get_room_id())) {
-						LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver_info.cid);
+					if (!this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), receiver_cid, mt104A->get_room_id())) {
+						LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver_cid);
 					}
 					continue;
 				}
@@ -758,8 +796,8 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 					}
 					else if (receiver.ssl == nullptr) {
 						// データベースにcidが存在するか確認
-						if (!this->_mysql_client->is_client_id_exist(receiver_info.cid)) {
-							LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_info.cid);
+						if (!this->_mysql_client->is_client_id_exist(receiver_cid)) {
+							LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
 							continue;
 						}
 						//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する

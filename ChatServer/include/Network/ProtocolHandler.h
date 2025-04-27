@@ -8,6 +8,8 @@
 #include "wolfssl/wolfcrypt/asn_public.h"
 #include "MessageType000.h"
 #include "MessageType001.h"
+#include "MessageType002.h"
+#include "MessageType003.h"
 #include "MessageType004.h"
 #include "MessageType005.h"
 #include "MessageType101.h"
@@ -92,6 +94,9 @@ public:
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType001>) {
 			spdlog::info("server received \033[33mMessage Type 001\033[m from sender(ip:{:s}, socket:{:d})", ipv4, socket_num);
+		}
+		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType003>) {
+			spdlog::info("server received \033[33mMessage Type 003\033[m from sender(id:{:s}ip:{:s}, socket:{:d})", dst_id, ipv4, socket_num);
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType004>) {
 			spdlog::info("server received \033[33mMessage Type 003\033[m(message id:{:d}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"

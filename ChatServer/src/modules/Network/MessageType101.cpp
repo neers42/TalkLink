@@ -13,7 +13,7 @@ MessageType101::~MessageType101()
 {
 }
 
-json MessageType101::desirialize_message(const std::unique_ptr<MessageType101>& mt101, const json& unread_messages, const std::string& error_message)
+json MessageType101::desirialize_message(const std::unique_ptr<MessageType101>& mt101, const json& unsend_messages, const std::string& error_message)
 {
 	json mt101_json;
 
@@ -30,7 +30,7 @@ json MessageType101::desirialize_message(const std::unique_ptr<MessageType101>& 
 		mt101_json["client_id"] = "";
 		mt101_json["login_result"] = false;
 	}
-	mt101_json["unread_messages"] = unread_messages;
+	mt101_json["unsend_messages"] = unsend_messages;
 
 	// login_result によってエラーメッセージを決定
 	if (mt101 != nullptr && mt101->_login_result == true) {

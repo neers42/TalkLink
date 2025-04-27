@@ -336,14 +336,24 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 		pre_stmt->setString(2, cid);
 		pre_stmt->setString(3, room_id);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:insert unread message(message id:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
+		spdlog::debug("MySQL:insert unsend message(message id:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
 		return true;
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:insert unread message failed. Error: {}", e.what());
+		LOG_ERROR("MySQL:insert unsend message failed. Error: {}", e.what());
 		return false;
 	}
+}
+
+bool MySQLClient::insert_chatroom(const std::string& room_id, const std::string& room_name)
+{
+	return false;
+}
+
+bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::string& cid)
+{
+	return false;
 }
 
 std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
@@ -393,17 +403,17 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 		}
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement(
-				"SELECT unread_messages.mid, unread_messages.cid, unread_messages.room_id, chat_messages.message "
+				"SELECT unsend_messages.mid, unsend_messages.cid, unsend_messages.room_id, chat_messages.message "
 				"FROM " + _mysql_table_name_unsend_messages + " "
-				"JOIN chat_messages ON unread_messages.mid = chat_messages.mid "
-				"WHERE unread_messages.cid = ? AND chat_messages.send_time > ?"
+				"JOIN chat_messages ON unsend_messages.mid = chat_messages.mid "
+				"WHERE unsend_messages.cid = ? AND chat_messages.send_time > ?"
 			)
 		);
 		pre_stmt->setString(1, cid);
 		pre_stmt->setString(2, last_login_time);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 		//未読メッセージの配列を作成
-		json unread_messages_json = json::array();
+		json unsend_messages_json = json::array();
 		while (res -> next())
 		{
 			json message;
@@ -411,24 +421,24 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 			message["cid"] = res->getString("cid");
 			message["room_id"] = res->getString("room_id");
 			message["message"] = res->getString("message");
-			unread_messages_json.push_back(message);
+			unsend_messages_json.push_back(message);
 
 		}
-		spdlog::debug("MySQL: Unread messages fetched successfully for client {}", cid);
-		return unread_messages_json;
+		spdlog::debug("MySQL: Unsend messages fetched successfully for client {}", cid);
+		return unsend_messages_json;
 	}
 	catch (const std::exception&)
 	{
-		LOG_ERROR("MySQL: Failed to fetch unread messages.");
+		LOG_ERROR("MySQL: Failed to fetch unsend messages.");
 		return json();
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL: Failed to fetch unread messages. Error: {}", e.what());
+		LOG_ERROR("MySQL: Failed to fetch unsend messages. Error: {}", e.what());
 		return json();
 	}
 	catch (const std::runtime_error& e) {
-		LOG_ERROR("MySQL: Failed to fetch unread messages. Error: {}", e.what());
+		LOG_ERROR("MySQL: Failed to fetch unsend messages. Error: {}", e.what());
 		return json();
 	}
 }

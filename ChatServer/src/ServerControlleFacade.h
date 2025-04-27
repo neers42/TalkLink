@@ -2,6 +2,8 @@
 #define SERVERCONTROLLFACADE_H_
 #include "SocketHandler.h"
 #include "MessageType001.h"
+#include "MessageType002.h"
+#include "MessageType003.h"
 #include "MessageType004.h"
 #include "MessageType005.h"
 #include "ServerTime.h"
@@ -77,7 +79,8 @@ private:
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 	bool insert_client_info_to_db(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password_hash);
 	void mt000_process(const std::unique_ptr<MessageType000>& mt000, ClientHandler::Client& client);
-	void mt001_process(const std::unique_ptr<MessageType001>& mt001, ClientHandler::Client& client, std::string* error_msg_text, bool* login_resul);
+	void mt001_process(const std::unique_ptr<MessageType001>& mt001, ClientHandler::Client& client, std::string* error_msg_text, bool* login_result);
+	void mt003_process(const std::unique_ptr<MessageType003>& mt003);
 	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
 	void mt101_process(const ClientHandler::Client& client, const std::string& error_msg, const bool login_result);
 	void mt104_process(const std::unique_ptr<MessageType004>& mt004);
