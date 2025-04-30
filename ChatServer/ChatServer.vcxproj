@@ -481,6 +481,7 @@
     <ClInclude Include="include\Network\wolfssl\wolfcrypt\wolfmath.h" />
     <ClInclude Include="include\Network\wolfssl\wolfcrypt\xmss.h" />
     <ClInclude Include="include\Network\wolfssl\wolfio.h" />
+    <ClInclude Include="include\Utils\base64.h" />
     <ClInclude Include="include\Utils\common.h" />
     <ClInclude Include="include\Authentication\FirebaseAuthHandler.h" />
     <ClInclude Include="include\Chat\ChatRoomHandler.h" />

@@ -194,7 +194,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		if (disconnect_flag == true) {
 
 			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.ipv4_address, client.id);
-			this->_mysql_client->update_last_login(client.id, this->_server_time->get_current_time());
+			this->_mysql_client->update_last_login(client.id, this->_server_time->get_current_time_to_milliseconds());
 			this->_protocol_handler->shutdown_wolfssl(client.ssl);
 			_socket_handler->disconnect_socket(client.socket);
 			_client_handler->delete_client(detection_num);
@@ -357,13 +357,19 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 				client.mail_address = mt001->get_client_mail_addr();
 				client.password = mt001->get_client_password();
 
-				//データベースにユーザ情報を登録する
-				if (insert_client_info_to_db(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password()) == true) {
+				if (this->_mysql_client->insert_client_data(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password(), ServerTime::get_current_time_to_seconds(), "") == true) {
 					spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client.ipv4_address, client.socket, client_id);
 				}
 				else {
 					LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client.ipv4_address, client.socket, client_id);
 				}
+				////データベースにユーザ情報を登録する
+				//if (insert_client_info_to_db(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password()) == true) {
+				//	spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client.ipv4_address, client.socket, client_id);
+				//}
+				//else {
+				//	LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client.ipv4_address, client.socket, client_id);
+				//}
 
 				//Auth statusを変更する
 				this->_client_handler->change_client_auth_status(client);
@@ -588,7 +594,7 @@ void ServerControlleFacade::heart_beat_response_process(const ClientHandler::Cli
 
 	}
 
-	this->_mysql_client->update_last_login(it->id, ServerTime::get_current_time());
+	this->_mysql_client->update_last_login(it->id, ServerTime::get_current_time_to_milliseconds());
 	// クライアント切断処理
 	_socket_handler->disconnect_socket(it->socket);
 
@@ -654,28 +660,6 @@ std::string ServerControlleFacade::sign_in_process(int& auth_type, const char* t
 	return std::string();
 }
 
-bool ServerControlleFacade::insert_client_info_to_db(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password_hash)
-{
-	// 現在時刻を取得してDATETIME形式に変換
-	auto now = std::chrono::system_clock::now();
-	std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-	std::tm tm;
-	localtime_s(&tm, &now_c);  // 安全な関数 localtime_s を使用
-
-	std::ostringstream datetime_ss;
-	datetime_ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-	std::string datetime_create_at_str = datetime_ss.str();
-	std::string datetime_last_login = "";
-
-	//データベースにユーザ情報を登録する。
-	if (this->_mysql_client->insert_client_data(id, name, mail_addr, password_hash, datetime_create_at_str, datetime_last_login) == true) {
-		return true;
-	}
-	else {
-		LOG_ERROR("Client information was not registered in the database.");
-		return false;
-	}
-}
 
 std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique_ptr<MessageType004>& mt004)
 {

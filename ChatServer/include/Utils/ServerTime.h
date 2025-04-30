@@ -23,7 +23,8 @@ public:
 	~ServerTime();
 
 	//現在のサーバの時刻を表示
-	static std::string get_current_time();
+	static std::string get_current_time_to_milliseconds();
+	static std::string get_current_time_to_seconds();
 
 	
 	

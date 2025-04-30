@@ -130,7 +130,14 @@ bool MySQLClient::create_table()
 	return true;
 }
 
-bool MySQLClient::insert_client_data(const std::string& cid,const std::string& name,  const std::string& mail_address, const std::string& password_hash, const std::string& created_at, const std::string& last_login)
+bool MySQLClient::insert_client_data(
+	const std::string& cid,
+	const std::string& name, 
+	const std::string& mail_address,
+	const std::string& password_hash, 
+	const std::string& created_at, 
+	const std::string& last_login
+)
 {
 	try
 	{
@@ -269,10 +276,23 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 {
 	try
 	{
+		std::vector<uint8_t> decode = base64::decode(room_id);
+		if (decode.size() != 16) {
+			throw std::runtime_error("Invalid room_id size");
+		}
+		ChatRoomID decoded_room_id;
+		std::copy(decode.begin(), decode.end(), decoded_room_id.begin());
+
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?);")
 		);
-		pre_stmt->setString(1, room_id);
+		//std::string binary_str(reinterpret_cast<const char*>(room_id.data()), room_id.size());
+		//std::istringstream binary_stream(binary_str);
+		//pre_stmt->setBlob(1, reinterpret_cast<const char*>(room_id.data()), room_id.size());
+		//pre_stmt->setString(1, &binary_stream);
+		std::string binary_str(reinterpret_cast<const char*>(room_id.data()), room_id.size());
+		std::unique_ptr<std::istringstream> binary_stream = std::make_unique<std::istringstream>(binary_str);
+		pre_stmt->setBlob(1, binary_stream.get());
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 		if (res != nullptr && res->next()) {
 			int is_exist = res->getBoolean(1);
@@ -289,6 +309,11 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 			LOG_ERROR("MySQL: no data found for room_id(response is null): {}", room_id);
 			return false;
 		}
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		return false;
 	}
 	catch (const sql::SQLException& e)
 	{
@@ -356,6 +381,8 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::
 	return false;
 }
 
+
+
 std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
 {
 	std::string last_login_time = "";
@@ -383,9 +410,6 @@ std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
 	}
 	catch (const sql::SQLException& e) {
 		LOG_ERROR("MySQL: Failed to fetch last login time. Error: {}", e.what());
-	}
-	catch (const std::exception& e) {
-		LOG_ERROR("Error while fetching last login time: {}", e.what());
 	}
 
 	return last_login_time;
@@ -427,17 +451,8 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 		spdlog::debug("MySQL: Unsend messages fetched successfully for client {}", cid);
 		return unsend_messages_json;
 	}
-	catch (const std::exception&)
-	{
-		LOG_ERROR("MySQL: Failed to fetch unsend messages.");
-		return json();
-	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL: Failed to fetch unsend messages. Error: {}", e.what());
-		return json();
-	}
-	catch (const std::runtime_error& e) {
 		LOG_ERROR("MySQL: Failed to fetch unsend messages. Error: {}", e.what());
 		return json();
 	}
@@ -463,14 +478,6 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL: Failed to fetch client list from chatroom. Error: {}", e.what());
-		return std::vector<std::string>();
-	}
-	catch (const std::runtime_error& e) {
-		LOG_ERROR("MySQL: Failed to fetch client list from chatroom. Error: {}", e.what());
-		return std::vector<std::string>();
-	}
-	catch (const std::exception& e) {
 		LOG_ERROR("MySQL: Failed to fetch client list from chatroom. Error: {}", e.what());
 		return std::vector<std::string>();
 	}
@@ -500,14 +507,6 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
 		LOG_ERROR("MySQL:select chatroom name failed. Error: {}", e.what());
 		return std::string();
 	}
-	catch (const std::exception& e) {
-		LOG_ERROR("MySQL:select chatroom name failed. Error: {}", e.what());
-		return std::string();
-	}
-	catch (const std::runtime_error& e) {
-		LOG_ERROR("MySQL:select chatroom name failed. Error: {}", e.what());
-		return std::string();
-	}
 }
 
 bool MySQLClient::create_table_clients()
@@ -531,10 +530,6 @@ bool MySQLClient::create_table_clients()
 		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_clients, e.what());
 		return false;
 	}
-	catch (const std::exception& e) {
-		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_clients, e.what());
-		return false;
-	}
 }
 
 bool MySQLClient::create_table_chatrooms()
@@ -543,9 +538,10 @@ bool MySQLClient::create_table_chatrooms()
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
 			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chatrooms +
-				"(room_id VARCHAR(26) NOT NULL PRIMARY KEY,"
+				"(room_id BINARY(16) NOT NULL,"
 				"room_name VARCHAR(50) NOT NULL,"
-				"created_at DATETIME);")
+				"created_at DATETIME,"
+				"PRIMARY KEY (room_id));")
 		);
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_chatrooms);
@@ -563,7 +559,7 @@ bool MySQLClient::create_table_chat_members()
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
 			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_members +
-				"(room_id VARCHAR(26) NOT NULL,"
+				"(room_id BINARY(16) NOT NULL,"
 				"cid VARCHAR(28) NOT NULL,"
 				"joined_at DATETIME,"
 				"PRIMARY KEY(room_id, cid),"
@@ -587,7 +583,7 @@ bool MySQLClient::create_table_chat_messages()
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
 			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_messages +
 				"(mid BIGINT PRIMARY KEY,"
-				"room_id VARCHAR(26) NOT NULL,"
+				"room_id BINARY(16) NOT NULL,"
 				"sender_id VARCHAR(28) NOT NULL,"
 				"send_time DATETIME NOT NULL,"
 				"message TEXT NOT NULL,"
@@ -602,10 +598,6 @@ bool MySQLClient::create_table_chat_messages()
 		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_chat_messages, e.what());
 		return false;
 	}
-	catch (const std::exception& e) {
-		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_chat_messages, e.what());
-		return false;
-	}
 }
 
 bool MySQLClient::create_table_unsend_messages()
@@ -616,7 +608,7 @@ bool MySQLClient::create_table_unsend_messages()
 			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unsend_messages +
 				"(mid BIGINT NOT NULL,"
 				"cid VARCHAR(28) NOT NULL,"
-				"room_id VARCHAR(26) NOT NULL,"
+				"room_id BINARY(16) NOT NULL,"
 				"PRIMARY KEY(mid, cid, room_id),"
 				"FOREIGN KEY (mid) REFERENCES chat_messages(mid) ON DELETE CASCADE ON UPDATE CASCADE,"
 				"FOREIGN KEY (cid) REFERENCES clients(cid) ON DELETE CASCADE,"

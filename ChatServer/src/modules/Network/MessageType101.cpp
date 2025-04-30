@@ -19,7 +19,7 @@ json MessageType101::desirialize_message(const std::unique_ptr<MessageType101>& 
 
 	mt101_json["content_type"] = "NOTIFICATION";
 	mt101_json["message_type"] = "101";
-	mt101_json["notification_time"] = ServerTime::get_current_time();
+	mt101_json["notification_time"] = ServerTime::get_current_time_to_milliseconds();
 	// nullptr チェックを追加
 	if (mt101 != nullptr) {
 		mt101_json["client_id"] = mt101->_client_id;

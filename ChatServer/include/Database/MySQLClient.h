@@ -8,7 +8,7 @@
 #include "spdlog/spdlog.h"
 #include "DataBaseInterface.h"
 
-
+using ChatRoomID = std::array<uint8_t, 16>;
 class MySQLClient : public DataBaseInterface
 {
 private:

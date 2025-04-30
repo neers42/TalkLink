@@ -1,13 +1,13 @@
 ﻿#include "BaseMessage.h"
 
 BaseMessage::BaseMessage()
-	:_content_type{ ContentType::TEXT }, _message_type{""}, _created_at{ServerTime::get_current_time()}, _message_id{0}
+	:_content_type{ ContentType::TEXT }, _message_type{""}, _created_at{ServerTime::get_current_time_to_milliseconds()}, _message_id{0}
 {
 
 }
 
 BaseMessage::BaseMessage(ContentType c_type, const std::string& mt)
-	:_content_type{c_type}, _message_type{mt}, _created_at{ServerTime::get_current_time()}, _message_id{0}
+	:_content_type{c_type}, _message_type{mt}, _created_at{ServerTime::get_current_time_to_milliseconds()}, _message_id{0}
 {
 	if (mt.empty()) {
 		throw std::invalid_argument("Message Type is empty.");
@@ -19,13 +19,13 @@ BaseMessage::BaseMessage(ContentType c_type, const std::string& mt)
 }
 
 BaseMessage::BaseMessage(int c_type, const std::string& mt)
-	:_content_type{ this->exchange_content_type_from_int(c_type)}, _message_type{mt}, _created_at{ServerTime::get_current_time()}, _message_id{0}
+	:_content_type{ this->exchange_content_type_from_int(c_type)}, _message_type{mt}, _created_at{ServerTime::get_current_time_to_milliseconds()}, _message_id{0}
 {
 }
 
 
 BaseMessage::BaseMessage(ContentType c_type, const std::string& m_type, const uint64_t id)
-	:_content_type{ c_type }, _message_type{m_type}, _created_at{ ServerTime::get_current_time()}, _message_id{id}
+	:_content_type{ c_type }, _message_type{m_type}, _created_at{ ServerTime::get_current_time_to_milliseconds()}, _message_id{id}
 {
 
 }

@@ -244,6 +244,25 @@ ChatroomHandler::ChatRoom ChatroomHandler::create_chatroom(
 
 std::string ChatroomHandler::issue_chatroom_id()
 {
-	return std::string();
+	// ランダムバイトジェネレータを作成
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<int> dist(0, 255);
+
+	// ミリ秒単位の現在時刻
+	auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::system_clock::now().time_since_epoch()
+	).count();
+
+	// ランダムバイト生成関数
+	auto random_func = [&]() -> uint8_t {
+		return static_cast<uint8_t>(dist(gen));
+		};
+
+	// ULIDを作成
+	ulid::ULID ulid = ulid::Create(now, random_func);
+
+	// 文字列に変換して返す
+	return ulid::Marshal(ulid);
 }
 

@@ -74,10 +74,12 @@ public:
 
 	
 private:
+	//ログイン関連
 	std::tuple<std::string, std::string> sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip);
 	std::tuple<std::string, std::string> sign_in_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id, std::string* error_msg);
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
-	bool insert_client_info_to_db(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password_hash);
+
+	//メッセージ処理関連
 	void mt000_process(const std::unique_ptr<MessageType000>& mt000, ClientHandler::Client& client);
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, ClientHandler::Client& client, std::string* error_msg_text, bool* login_result);
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003);
@@ -86,7 +88,6 @@ private:
 	void mt104_process(const std::unique_ptr<MessageType004>& mt004);
 	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004>& mt004);
 	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids);
-	
 	void resend_message_process(const json& message, const std::string& cid);
 	
 };
