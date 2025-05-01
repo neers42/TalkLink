@@ -233,11 +233,6 @@ bool MySQLClient::update_last_login(const std::string& cid, const std::string& l
 		return true;
 
 	}
-	catch (const std::exception&)
-	{
-		LOG_ERROR("MySQL:update last login failed.");
-		return false;
-	}
 	catch (const sql::SQLException& e)
 	{
 		LOG_ERROR("MySQL:update last login failed. Error: {}", e.what());
@@ -279,14 +274,11 @@ bool MySQLClient::is_client_id_exist(const std::string& cid)
 		LOG_ERROR("MySQL:select client data failed. Error: {}", e.what());
 		return false;
 	}
-	catch (const std::exception& e){
+	catch (const std::runtime_error& e) {
 		LOG_ERROR("MySQL:select client data failed. Error: {}", e.what());
 		return false;
 	}
-	catch (const std::runtime_error& e){
-		LOG_ERROR("MySQL:select client data failed. Error: {}", e.what());
-		return false;
-	}
+	
 }
 
 bool MySQLClient::is_room_id_exist(const std::string& room_id)
@@ -329,14 +321,15 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 			return false;
 		}
 	}
-	catch (const std::runtime_error& e)
-	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
-		return false;
-	}
+	
 	catch (const sql::SQLException& e)
 	{
 		LOG_ERROR("MySQL:select room id failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
 		return false;
 	}
 }
@@ -369,9 +362,15 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 		spdlog::debug("MySQL:insert chat message success.");
 		return true;
 	}
+
 	catch (const sql::SQLException& e)
 	{
 		LOG_ERROR("MySQL:insert chat message failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
 		return false;
 	}
 }
@@ -400,9 +399,15 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 		spdlog::debug("MySQL:insert unsend message(message id:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
 		return true;
 	}
+
 	catch (const sql::SQLException& e)
 	{
 		LOG_ERROR("MySQL:insert unsend message failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
 		return false;
 	}
 }
@@ -575,9 +580,15 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
 			return std::string();
 		}
 	}
+
 	catch (const sql::SQLException& e)
 	{
 		LOG_ERROR("MySQL:select chatroom name failed. Error: {}", e.what());
+		return std::string();
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
 		return std::string();
 	}
 }
