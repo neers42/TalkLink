@@ -141,18 +141,35 @@ bool MySQLClient::insert_client_data(
 {
 	try
 	{
-		std::unique_ptr < sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
-				"(cid, name, mail_address, password_hash, created_at, last_login) "
-				"VALUES(?, ?, ?, ?, ?, ?);")
-		);
-		pre_stmt->setString(1, cid);
-		pre_stmt->setString(2, name);
-		pre_stmt->setString(3, mail_address);
-		pre_stmt->setString(4, password_hash);
-		pre_stmt->setString(5, created_at);
-		pre_stmt->setString(6, last_login);
-		pre_stmt->executeUpdate();
+		if (last_login == "") {
+			std::unique_ptr < sql::PreparedStatement> pre_stmt(
+				this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
+					"(cid, name, mail_address, password_hash, created_at, last_login) "
+					"VALUES(?, ?, ?, ?, ?, NULL);")
+			);
+			pre_stmt->setString(1, cid);
+			pre_stmt->setString(2, name);
+			pre_stmt->setString(3, mail_address);
+			pre_stmt->setString(4, password_hash);
+			pre_stmt->setString(5, created_at);
+			pre_stmt->executeUpdate();
+		}
+		else {
+
+			std::unique_ptr < sql::PreparedStatement> pre_stmt(
+				this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
+					"(cid, name, mail_address, password_hash, created_at, last_login) "
+					"VALUES(?, ?, ?, ?, ?, ?);")
+			);
+			pre_stmt->setString(1, cid);
+			pre_stmt->setString(2, name);
+			pre_stmt->setString(3, mail_address);
+			pre_stmt->setString(4, password_hash);
+			pre_stmt->setString(5, created_at);
+			pre_stmt->setString(6, last_login);
+			pre_stmt->executeUpdate();
+		}
+		
 		spdlog::debug("MySQL:insert client data success.");
 		return true;
 	}
@@ -276,23 +293,25 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 {
 	try
 	{
-		std::vector<uint8_t> decode = base64::decode(room_id);
-		if (decode.size() != 16) {
-			throw std::runtime_error("Invalid room_id size");
-		}
-		ChatRoomID decoded_room_id;
-		std::copy(decode.begin(), decode.end(), decoded_room_id.begin());
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
 
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+
+		for (uint8_t byte : vec) {
+			std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)byte;
+		}
+		std::cout << std::dec << std::endl;  // 出力後に10進数へ戻す
+		
+	
+	
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?);")
 		);
-		//std::string binary_str(reinterpret_cast<const char*>(room_id.data()), room_id.size());
-		//std::istringstream binary_stream(binary_str);
-		//pre_stmt->setBlob(1, reinterpret_cast<const char*>(room_id.data()), room_id.size());
-		//pre_stmt->setString(1, &binary_stream);
-		std::string binary_str(reinterpret_cast<const char*>(room_id.data()), room_id.size());
-		std::unique_ptr<std::istringstream> binary_stream = std::make_unique<std::istringstream>(binary_str);
-		pre_stmt->setBlob(1, binary_stream.get());
+		pre_stmt->setBlob(1, &blob_stream);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 		if (res != nullptr && res->next()) {
 			int is_exist = res->getBoolean(1);
@@ -326,13 +345,22 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 {
 	try
 	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+
+		//SQL文のセット
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chat_messages +
 				"(mid, room_id, sender_id, send_time, `message`) "
 				"VALUES(?, ?, ?, ?, ?);")
 		);
 		pre_stmt->setInt64(1, mid);
-		pre_stmt->setString(2, room_id);
+		pre_stmt->setBlob(2, &blob_stream);
 		pre_stmt->setString(3, sender_id);
 		pre_stmt->setString(4, send_time);
 		pre_stmt->setString(5, content);
@@ -352,6 +380,14 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 {
 	try
 	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_unsend_messages +
 				"(mid, cid, room_id) "
@@ -359,7 +395,7 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 		);
 		pre_stmt->setInt64(1, mid);
 		pre_stmt->setString(2, cid);
-		pre_stmt->setString(3, room_id);
+		pre_stmt->setBlob(3, &blob_stream);
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:insert unsend message(message id:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
 		return true;
@@ -373,11 +409,27 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 
 bool MySQLClient::insert_chatroom(const std::string& room_id, const std::string& room_name)
 {
+	try
+	{
+
+	}
+	catch (const std::exception&)
+	{
+
+	}
 	return false;
 }
 
 bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::string& cid)
 {
+	try
+	{
+
+	}
+	catch (const std::exception&)
+	{
+
+	}
 	return false;
 }
 
@@ -462,11 +514,19 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 {
 	try
 	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
 		std::vector<std::string> client_list;
+
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("SELECT cid FROM " + _mysql_table_name_chat_members + " WHERE room_id = ?;")
 		);
-		pre_stmt->setString(1, room_id);
+		pre_stmt->setBlob(1, &blob_stream);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 
 		while (res->next())
@@ -481,16 +541,29 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 		LOG_ERROR("MySQL: Failed to fetch client list from chatroom. Error: {}", e.what());
 		return std::vector<std::string>();
 	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("MySQL: Failed to fetch client list from chatrrom. Error: {}", e.what());
+		return std::vector<std::string>();
+	}
 }
 
 std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
 {
 	try
 	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+		std::vector<std::string> client_list;
+
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("SELECT room_name FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?;")
 		);
-		pre_stmt->setString(1, room_id);
+		pre_stmt->setBlob(1, &blob_stream);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 		if (res != nullptr && res->next()) {
 			std::string room_name = res->getString("room_name");

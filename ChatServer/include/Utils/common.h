@@ -15,6 +15,7 @@
 #include <sstream>
 #include "ulid/ulid.hh"
 #include "base64.h"
+#include "base32.h"
 //#include "spdlog/spdlog.h"
 
 

@@ -363,14 +363,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 				else {
 					LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client.ipv4_address, client.socket, client_id);
 				}
-				////データベースにユーザ情報を登録する
-				//if (insert_client_info_to_db(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password()) == true) {
-				//	spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client.ipv4_address, client.socket, client_id);
-				//}
-				//else {
-				//	LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client.ipv4_address, client.socket, client_id);
-				//}
-
+				
 				//Auth statusを変更する
 				this->_client_handler->change_client_auth_status(client);
 				//ハートビートのカウント回数をインクリメントする
@@ -391,7 +384,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 			if (client_id != "" && _client_handler->connected_clients.size() != 0) {
 				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client.ipv4_address, client.socket, client_id);
 				*login_result = true;
-
+				
 				//データベースからユーザ情報を読み取る。			
 				std::string client_name, client_mail_addr, client_password;
 				std::tie(client_name, client_mail_addr, client_password) = this->_mysql_client->select_client_info(client_id);
