@@ -36,25 +36,40 @@ public:
 
 	~MySQLClient();
 
+
+	//データベース接続及び初期化
 	void connect() override;
 	void close() override;
 	bool execute_query(const std::string& query) override;
 	void print_sql_error(sql::SQLException& e);
 	void create_database();
 	bool create_table();
+
+
+	//テーブル：chat_members操作
+	bool insert_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids, const std::string& joined_at);
+	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
+
+	//テーブル：chat_messages操作
+	bool insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content);
+
+	//テーブル：chatrooms操作
+	bool is_room_id_exist(const std::string& room_id);
+	bool insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& created_at);
+	std::string get_chatroom_name_fromDB(const std::string& room_id);
+
+	//テーブル：clients操作
 	bool insert_client_data(const std::string& cid, const std::string& name, const std::string& mail_address, const std::string& password_hash, const std::string& created_at, const std::string& last_login);
 	std::tuple<std:: string, std::string, std::string> select_client_info(const std::string& cid);
 	bool update_last_login(const std::string& cid, const std::string& last_login);
 	bool is_client_id_exist(const std::string& cid);
-	bool is_room_id_exist(const std::string& room_id);
-	bool insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content);
-	bool insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
-	bool insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& created_at);
-	bool insert_chatroom_member(const std::string& room_id, const std::string& cid, const std::string& joined_at);
 	std::string get_client_last_login_fromDB(const std::string& cid);
+
+	//テーブル：unsend_messages操作
+	bool insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
 	json get_unsend_message_fromDB(const std::string& cid, int limit);
-	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
-	std::string get_chatroom_name_fromDB(const std::string& room_id);
+	
+	
 private:
 	bool create_table_clients();
 	bool create_table_chatrooms();

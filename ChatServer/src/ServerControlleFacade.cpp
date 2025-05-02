@@ -80,8 +80,8 @@ void ServerControlleFacade::setting_select_info()
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 		for (auto& client : this->_client_handler->connected_clients) {
 			//有効なソケットにFDSETを実行する
-			if (client.socket != INVALID_SOCKET) {
-				FD_SET(client.socket, &_socket_handler->get_fd_read());
+			if (client->socket != INVALID_SOCKET) {
+				FD_SET(client->socket, &_socket_handler->get_fd_read());
 			}
 		}
 
@@ -133,16 +133,18 @@ bool ServerControlleFacade::accept_client_socket_process()
 	}
 
 	//新規クライアントのインスタンスを生成
-	ClientHandler::Client new_client = ClientHandler::Client(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, new_client_ipv4_addr, new_client_ssl);
-
+	auto new_client = std::make_unique<ClientHandler::Client>(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, new_client_ipv4_addr, new_client_ssl);
+	spdlog::info("client ip : {:s} , success, server accept client(socket:{:d}).", new_client->ipv4_address, new_client->socket);
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-		if (_client_handler->add_client(new_client) == false) {
+		if (_client_handler->add_client(std::move(new_client)) == true) {
+			return ACCEPT_SUCCEEDED;
+		}
+		else{
 			return ACCEPT_FAILED;
 		}
 	}
-	spdlog::info("client ip : {:s} , success, server accept client(socket:{:d}).", new_client.ipv4_address, new_client.socket);
-	return ACCEPT_SUCCEEDED;
+	
 }
 
 const std::string& ServerControlleFacade::get_server_ip()
@@ -176,7 +178,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 	bool disconnect_flag = false;
 	int detection_num = -1;
 	std::string* error_msg = new std::string();
-	bool* login_result = new bool();
+	bool* result = new bool();
 
 #ifdef TLS_PROTOCOL
 	{
@@ -184,7 +186,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		detection_num = this->_client_handler->search_socket_from_clients(socket);
 		auto& client = _client_handler->connected_clients[detection_num];
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
-			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client.ssl);
+			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client->ssl);
 		}
 		else {
 			return;
@@ -193,10 +195,10 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 		//クライアントの切断を検知した場合
 		if (disconnect_flag == true) {
 
-			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.ipv4_address, client.id);
-			this->_mysql_client->update_last_login(client.id, this->_server_time->get_current_time_to_milliseconds());
-			this->_protocol_handler->shutdown_wolfssl(client.ssl);
-			_socket_handler->disconnect_socket(client.socket);
+			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client->ipv4_address, client->id);
+			this->_mysql_client->update_last_login(client->id, this->_server_time->get_current_time_to_milliseconds());
+			this->_protocol_handler->shutdown_wolfssl(client->ssl);
+			_socket_handler->disconnect_socket(client->socket);
 			_client_handler->delete_client(detection_num);
 
 			return;
@@ -221,10 +223,10 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 			if (mt001 == nullptr) {
 				return;
 			}
-			this->_protocol_handler->print_received_message_info(mt001, 0, "", "", client.ipv4_address, client.socket);
+			this->_protocol_handler->print_received_message_info(mt001, 0, "", "", client->ipv4_address, client->socket);
 			this->_protocol_handler->print_json_message(receive_json);
-			this->mt001_process(mt001, client, error_msg, login_result);
-			this->mt101_process(client, *error_msg, *login_result);
+			this->mt001_process(mt001, client, error_msg, result);
+			this->mt101_process(client, *error_msg, *result);
 
 		}
 		//MT002 = Group or Friend追加のメッセージの場合
@@ -236,9 +238,9 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 			if (mt003 == nullptr) {
 				return;
 			}
-			this->_protocol_handler->print_received_message_info(mt003, mt003->get_message_id(), mt003->get_sender_id(), "", client.ipv4_address, client.socket);
+			this->_protocol_handler->print_received_message_info(mt003, mt003->get_message_id(), mt003->get_sender_id(), "", client->ipv4_address, client->socket);
 			this->_protocol_handler->print_json_message(receive_json);
-			this->mt003_process(mt003);
+			this->mt003_process(mt003, error_msg, result);
 			
 		}
 		//MT004 = 通常メッセージの場合
@@ -247,7 +249,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 			if (mt004 == nullptr) {
 				return;
 			}
-			this->_protocol_handler->print_received_message_info(mt004, mt004->get_message_id(), mt004->get_sender_id(), mt004->get_receiver_id(), client.ipv4_address, client.socket);
+			this->_protocol_handler->print_received_message_info(mt004, mt004->get_message_id(), mt004->get_sender_id(), mt004->get_receiver_id(), client->ipv4_address, client->socket);
 			this->_protocol_handler->print_json_message(receive_json);
 			this->mt004_process(mt004);
 			this->mt104_process(mt004);
@@ -306,15 +308,15 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 
 }
 
-void ServerControlleFacade::mt000_process(const std::unique_ptr<MessageType000>& mt000, ClientHandler::Client& client)
+void ServerControlleFacade::mt000_process(const std::unique_ptr<MessageType000>& mt000, std::unique_ptr<ClientHandler::Client>& client)
 {
 	try
 	{
 		if (mt000 == nullptr || mt000->is_valid() == false) {
 			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT000 were invalid.");
 		}
-		if (mt000->get_client_id() == client.id) {
-			spdlog::info("client(ip:{:s}, client id:{:s}) send HeartBeat.", client.ipv4_address, client.id);
+		if (mt000->get_client_id() == client->id) {
+			spdlog::info("client(ip:{:s}, client id:{:s}) send HeartBeat.", client->ipv4_address, client->id);
 			this->_client_handler->incliment_heart_beat_count(client);
 		}
 		else {
@@ -330,7 +332,7 @@ void ServerControlleFacade::mt000_process(const std::unique_ptr<MessageType000>&
 	
 }
 
-void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, ClientHandler::Client& client, std::string* error_msg_text, bool* login_result)
+void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, std::unique_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result)
 {
 	std::string client_id = "";
 	std::string* client_id_ptr = new std::string();
@@ -346,22 +348,22 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		case 0:			//sign up
 			//メッセージがsign_upの場合の処理を追記
 			//auto & client = this->_client_handler->connected_clients[detection_num];
-			std::tie(client_id, *error_msg_text) = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.ipv4_address);
+			std::tie(client_id, *error_msg_text) = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client->ipv4_address);
 			spdlog::debug("client id : {} error_code : {}", client_id, *error_msg_text);
 			if (client_id != "" &&  _client_handler->connected_clients.size() != 0) {
-				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client.ipv4_address, client.socket, client_id);
+				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client->ipv4_address, client->socket, client_id);
 				*login_result = true;
 				//SIGN UPが成功した場合に、クライアント情報を登録する
-				client.id = client_id;
-				client.name = mt001->get_client_name();
-				client.mail_address = mt001->get_client_mail_addr();
-				client.password = mt001->get_client_password();
+				client->id = client_id;
+				client->name = mt001->get_client_name();
+				client->mail_address = mt001->get_client_mail_addr();
+				client->password = mt001->get_client_password();
 
 				if (this->_mysql_client->insert_client_data(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password(), ServerTime::get_current_time_to_seconds(), "") == true) {
-					spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client.ipv4_address, client.socket, client_id);
+					spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client->ipv4_address, client->socket, client_id);
 				}
 				else {
-					LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client.ipv4_address, client.socket, client_id);
+					LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client->ipv4_address, client->socket, client_id);
 				}
 				
 				//Auth statusを変更する
@@ -379,19 +381,19 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 
 		case 1:			//sign in
 			//auto & client = this->_client_handler->connected_clients[detection_num];
-			std::tie(client_id, *error_msg_text) = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client.ipv4_address, client_id_ptr, error_msg_ptr);
+			std::tie(client_id, *error_msg_text) = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client->ipv4_address, client_id_ptr, error_msg_ptr);
 			spdlog::debug("client id : {} error_code : {}", client_id, *error_msg_text);
 			if (client_id != "" && _client_handler->connected_clients.size() != 0) {
-				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client.ipv4_address, client.socket, client_id);
+				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client->ipv4_address, client->socket, client_id);
 				*login_result = true;
 				
 				//データベースからユーザ情報を読み取る。			
 				std::string client_name, client_mail_addr, client_password;
 				std::tie(client_name, client_mail_addr, client_password) = this->_mysql_client->select_client_info(client_id);
-				client.id = client_id;
-				client.name = client_name;
-				client.mail_address = client_mail_addr;
-				client.password = client_password;
+				client->id = client_id;
+				client->name = client_name;
+				client->mail_address = client_mail_addr;
+				client->password = client_password;
 				spdlog::debug("client name:{:s}, mail address:{:s}, password:{:s}", client_name, client_mail_addr, client_password);
 
 				//Auth statusを変更する
@@ -406,7 +408,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 			break;
 
 		case 2:			//sign out
-			_firebase_auth_handler->sign_out(client.id, client.mail_address);
+			_firebase_auth_handler->sign_out(client->id, client->mail_address);
 			break;
 
 		default:
@@ -422,7 +424,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 
 }
 
-void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>& mt003)
+void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result)
 {
 	switch (mt003->get_room_action())
 	{
@@ -434,17 +436,26 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 				auto new_room = this->_chat_room_handler->create_chatroom(mt003->get_room_name(), mt003->get_room_image_url(), mt003->get_add_member_list());
 				if (new_room == nullptr) {
 					LOG_ERROR("The chat room was not created.");
+					*error_msg = "The chat room was not created.";
+					*action_result = false;
 					return;
 				};
 				this->_chat_room_handler->add_chatroom(std::move(new_room));
 
 
 				//チャットルームのDB保存
-				this->_mysql_client->insert_chatroom(mt003->get_room_id(), mt003->get_room_name(), ServerTime::get_current_time_to_seconds());
-				for (const auto& cid : mt003->get_add_member_list()) {
-
+				*action_result = this->_mysql_client->insert_chatroom(mt003->get_room_id(), mt003->get_room_name(), ServerTime::get_current_time_to_seconds());
+				if (*action_result == false) {
+					LOG_ERROR("The chat room was not saved in the database.");
+					*error_msg = "The chat room was not saved in the database.";
+					return;
 				}
-
+				*action_result = this->_mysql_client->insert_chatroom_member(mt003->get_room_id(), mt003->get_add_member_list(), ServerTime::get_current_time_to_seconds());
+				if (*action_result == false) {
+					LOG_ERROR("The chat room member was not saved in the database.");
+					*error_msg = "The chat room member was not saved in the database.";
+					return;
+				}
 				break;
 	
 		}
@@ -518,23 +529,23 @@ void ServerControlleFacade::mt004_process(const std::unique_ptr<MessageType004>&
 
 }
 
-void ServerControlleFacade::mt101_process(const ClientHandler::Client& client, const std::string& error_msg, const bool login_result)
+void ServerControlleFacade::mt101_process(const std::unique_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result)
 {
 	//TODO　ここでcidに関するメッセージをデータベースから取得する。
 	json unsend_messages_json;
-	unsend_messages_json = this->_mysql_client->get_unsend_message_fromDB(client.id, 20);
+	unsend_messages_json = this->_mysql_client->get_unsend_message_fromDB(client->id, 20);
 	
 
 	//TODO
 	//MT101を送信する処理を記載する
-	auto mt101 = std::make_unique<MessageType101>(client.id, login_result);
+	auto mt101 = std::make_unique<MessageType101>(client->id, login_result);
 	json mt101_json = MessageType101::desirialize_message(mt101, unsend_messages_json, error_msg);
 	
 
 	//TODO　ここでmt101を送信する処理を記載する
-	bool send_result = this->_protocol_handler->send_message_tls(client.ssl, mt101_json);
+	bool send_result = this->_protocol_handler->send_message_tls(client->ssl, mt101_json);
 	if (send_result == true) {
-		spdlog::info("The MT101 message was successfully sent to the client(ip:{}, id:{}).", client.ipv4_address, client.id);
+		spdlog::info("The MT101 message was successfully sent to the client(ip:{}, id:{}).", client->ipv4_address, client->id);
 	}
 	else {
 		spdlog::error("The MT101 message was not sent to the client.");
@@ -556,17 +567,21 @@ void ServerControlleFacade::heart_beat_check_process()
 		
 
 		//現在接続しているクライアントリストを抽出
-		std::vector<ClientHandler::Client> current_connect_clients;
+		std::vector<std::unique_ptr<ClientHandler::Client>> current_connect_clients;
 		{
+			/*std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+			current_connect_clients = this->_client_handler->connected_clients;*/
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			current_connect_clients = this->_client_handler->connected_clients;
+			for (auto& client : this->_client_handler->connected_clients) {
+				current_connect_clients.push_back(std::move(client)); // ムーブ操作
+			}
 		}
 
 		//30秒wait
 		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30秒間隔
 
 		for (const auto& client : current_connect_clients) {
-			if (client.heart_beat_count == 0) {
+			if (client->heart_beat_count == 0) {
 				this->heart_beat_response_process(client);
 			}
 		}
@@ -581,31 +596,35 @@ void ServerControlleFacade::heart_beat_check_process()
 }
 
 
-void ServerControlleFacade::heart_beat_response_process(const ClientHandler::Client& client)
+void ServerControlleFacade::heart_beat_response_process(const std::unique_ptr<ClientHandler::Client>& client)
 {
 	std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 
 	// クライアントが still connected か確認
 	auto& clients = _client_handler->connected_clients;
-	auto it = std::find(clients.begin(), clients.end(), client);
+	//auto it = std::find(clients.begin(), clients.end(), client);
+	auto it = std::find_if(clients.begin(), clients.end(),
+		[&client](const std::unique_ptr<ClientHandler::Client>& c) {
+			return c.get() == client.get();  // 所有している生ポインタで比較
+		});
 
-	if (it == clients.end() || it->heart_beat_count > 0) {
+	if (it == clients.end() || (*it)->heart_beat_count > 0) {
 		return;  // 既に削除されている or ハートビートがリセットされた場合
 	}
 
 	// ログ出力
-	if (it->auth_status == true) {
-		spdlog::info("Client (Socket : {:d} ID: {:s}), disconnect.(Not response)", it->socket, it->id);
+	if ((*it)->auth_status == true) {
+		spdlog::info("Client (Socket : {:d} ID: {:s}), disconnect.(Not response)", (*it)->socket, (*it)->id);
 	
 	}
 	else {
-		spdlog::info("Client (Socket : {:d} ID: None), disconnect.(Not response)", it->socket);
+		spdlog::info("Client (Socket : {:d} ID: None), disconnect.(Not response)", (*it)->socket);
 
 	}
 
-	this->_mysql_client->update_last_login(it->id, ServerTime::get_current_time_to_milliseconds());
+	this->_mysql_client->update_last_login((*it)->id, ServerTime::get_current_time_to_milliseconds());
 	// クライアント切断処理
-	_socket_handler->disconnect_socket(it->socket);
+	_socket_handler->disconnect_socket((*it)->socket);
 
 	// クライアントを接続リストから削除
 	this->_client_handler->delete_client(it);
@@ -715,30 +734,30 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 					//クライアントの情報を取得する
 					auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
 					//MT104Aを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
-					if (receiver.ssl != nullptr && receiver.ssl != sender.ssl) {
-						if (this->_protocol_handler->send_message_tls(receiver.ssl, mt104A_json)) {
-							spdlog::debug("The MT104A message was successfully sent to the client(ip:{}, id:{}).", sender.ipv4_address, sender.id);
+					if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
+						if (this->_protocol_handler->send_message_tls(receiver->ssl, mt104A_json)) {
+							spdlog::debug("The MT104A message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 						}
 						else {
-							LOG_ERROR("The MT104A message was not sent to the client(ip:{}, id:{}).", sender.ipv4_address, sender.id);
+							LOG_ERROR("The MT104A message was not sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 							this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), cid, mt104A->get_room_id());
-							unsend_cids.push_back(receiver.id);
+							unsend_cids.push_back(receiver->id);
 
 						}
 					}
-					else if (receiver.ssl == sender.ssl) {
+					else if (receiver->ssl == sender->ssl) {
 						//送信先と送信元のsslが一致する場合
 #define DEBUG
 #ifdef DEBUG
-						this->_protocol_handler->send_message_tls(sender.ssl, mt104A_json);
+						this->_protocol_handler->send_message_tls(sender->ssl, mt104A_json);
 #endif // DEBUG
 #undef DEBUG
 						continue;
 					}
-					else if (receiver.ssl == nullptr) {
+					else if (receiver->ssl == nullptr) {
 						//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
 						this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), cid, mt104A->get_room_id());
-						unsend_cids.push_back(receiver.id);
+						unsend_cids.push_back(receiver->id);
 						continue;
 					}
 					else {
@@ -769,33 +788,33 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 					//クライアントの情報を取得する
 					auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
 					//MT104Aを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
-					if (receiver.ssl != nullptr && receiver.ssl != sender.ssl) {
-						if (this->_protocol_handler->send_message_tls(receiver.ssl, mt104A_json)) {
-							spdlog::debug("The MT104A message was successfully sent to the client(ip:{}, id:{}).", sender.ipv4_address, sender.id);
+					if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
+						if (this->_protocol_handler->send_message_tls(receiver->ssl, mt104A_json)) {
+							spdlog::debug("The MT104A message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 						}
 						else {
-							LOG_ERROR("The MT104A message was not sent to the client(ip:{}, id:{}).", sender.ipv4_address, sender.id);
-							unsend_cids.push_back(receiver.id);
+							LOG_ERROR("The MT104A message was not sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
+							unsend_cids.push_back(receiver->id);
 						}
 					}
-					else if (receiver.ssl == sender.ssl) {
+					else if (receiver->ssl == sender->ssl) {
 						//送信先と送信元のsslが一致する場合
 #define DEBUG
 #ifdef DEBUG
-						this->_protocol_handler->send_message_tls(sender.ssl, mt104A_json);
+						this->_protocol_handler->send_message_tls(sender->ssl, mt104A_json);
 #endif // DEBUG
 #undef DEBUG
 						continue;
 					}
-					else if (receiver.ssl == nullptr) {
+					else if (receiver->ssl == nullptr) {
 						// データベースにcidが存在するか確認
 						if (!this->_mysql_client->is_client_id_exist(receiver_cid)) {
 							LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
 							continue;
 						}
 						//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-						if (!this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), receiver.id, mt104A->get_room_id())) {
-							LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver.id);
+						if (!this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), receiver->id, mt104A->get_room_id())) {
+							LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver->id);
 						}
 						continue;
 					}
@@ -887,16 +906,16 @@ void ServerControlleFacade::mt104B_process(const std::unique_ptr<MessageType004>
 			auto& sender = _client_handler->connected_clients.at(_client_handler->search_cid_from_clients(mt004->get_sender_id()));
 
 			//jsonをsenderに送信する
-			if (sender.socket != INVALID_SOCKET || sender.ssl != nullptr) {
-				if (this->_protocol_handler->send_message_tls(sender.ssl, mt104B_json)) {
-					spdlog::info("The MT104B message was successfully sent to the client(ip:{}, id:{}).", sender.ipv4_address, sender.id);
+			if (sender->socket != INVALID_SOCKET || sender->ssl != nullptr) {
+				if (this->_protocol_handler->send_message_tls(sender->ssl, mt104B_json)) {
+					spdlog::info("The MT104B message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 				}
 				else {
-					LOG_ERROR("The MT104B message was not sent to the client(ip:{}, id:{}).", sender.ipv4_address, sender.id);
+					LOG_ERROR("The MT104B message was not sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 				}
 			}
 			else {
-				LOG_ERROR("Failed to send MT104B because sender's ssl is nullptr(ip:{}, id : {}).", sender.ipv4_address, sender.id);
+				LOG_ERROR("Failed to send MT104B because sender's ssl is nullptr(ip:{}, id : {}).", sender->ipv4_address, sender->id);
 			}
 		}
 		catch (const std::out_of_range& e)
@@ -921,9 +940,9 @@ void ServerControlleFacade::resend_message_process(const json& message, const st
 		if (resend_count == 3) {
 			std::this_thread::sleep_for(std::chrono::seconds(5));
 		}
-		if (client.socket != INVALID_SOCKET || client.ssl != nullptr) {
+		if (client->socket != INVALID_SOCKET || client->ssl != nullptr) {
 			// メッセージを送信する
-			if (this->_protocol_handler->send_message_tls(client.ssl, message)) {
+			if (this->_protocol_handler->send_message_tls(client->ssl, message)) {
 				spdlog::info("Resend message(mid: {}) to client with cid: {}", mid, cid);
 				return;
 			}

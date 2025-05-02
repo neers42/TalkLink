@@ -449,7 +449,7 @@ bool MySQLClient::insert_chatroom(const std::string& room_id, const std::string&
 	}
 }
 
-bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::string& cid, const std::string& joined_at)
+bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids, const std::string& joined_at)
 {
 	try
 	{
@@ -464,11 +464,14 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::
 				"(room_id, cid, joined_at) "
 				"VALUES(?, ?, ?);")
 		);
-		pre_stmt->setBlob(1, &blob_stream);
-		pre_stmt->setString(2, cid);
-		pre_stmt->setString(3, joined_at);
-		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:insert chatroom member(room_id:{}, cid:{}, joined_at:{}) success.", room_id, cid, joined_at);
+		for (const auto& cid : cids) {
+			pre_stmt->setBlob(1, &blob_stream);
+			pre_stmt->setString(2, cid);
+			pre_stmt->setString(3, joined_at);
+			pre_stmt->executeUpdate();
+			spdlog::debug("MySQL:insert chatroom member(room_id:{}, cid:{}, joined_at:{}) success.", room_id, cid, joined_at);
+		}	
+		spdlog::info("MySQL:insert chatroom member(room id : {})", room_id);
 		return true;
 	}
 	catch (const sql::SQLException& e)
