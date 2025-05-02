@@ -426,12 +426,28 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 {
 	switch (mt003->get_room_action())
 	{
-	case MessageType003::RoomAction::CREATE_ROOM:
-		//ルームの作成
-		//this->_chat_room_handler->create_chatroom(mt003);
-		this->_chat_room_handler->create_chatroom(mt003->get_room_name(), mt003->get_room_image_url(), mt003->get_add_member_list());
 		
-		break;
+		{
+			case MessageType003::RoomAction::CREATE_ROOM:
+				//ルームの作成
+				//this->_chat_room_handler->create_chatroom(mt003);
+				auto new_room = this->_chat_room_handler->create_chatroom(mt003->get_room_name(), mt003->get_room_image_url(), mt003->get_add_member_list());
+				if (new_room == nullptr) {
+					LOG_ERROR("The chat room was not created.");
+					return;
+				};
+				this->_chat_room_handler->add_chatroom(std::move(new_room));
+
+
+				//チャットルームのDB保存
+				this->_mysql_client->insert_chatroom(mt003->get_room_id(), mt003->get_room_name(), ServerTime::get_current_time_to_seconds());
+				for (const auto& cid : mt003->get_add_member_list()) {
+
+				}
+
+				break;
+	
+		}
 	case MessageType003::RoomAction::DELETE_ROOM:
 		//ルームの削除
 		//this->_chat_room_handler->delete_chatroom(mt003);

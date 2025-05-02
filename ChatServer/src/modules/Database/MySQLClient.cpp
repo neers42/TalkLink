@@ -412,30 +412,75 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 	}
 }
 
-bool MySQLClient::insert_chatroom(const std::string& room_id, const std::string& room_name)
+bool MySQLClient::insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& created_at)
 {
 	try
 	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+
+		std::unique_ptr <sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chatrooms +
+				"(room_id, room_name, created_at) "
+				"VALUES(?, ?, ?);")
+		);
+
+		pre_stmt->setBlob(1, &blob_stream);
+		pre_stmt->setString(2, room_name);
+		pre_stmt->setString(3, created_at);
+		spdlog::debug("MySQL:insert chatroom(room_id:{}, room_name:{}, created_at:{}) success.", room_id, room_name, created_at);
+		return true;
 
 	}
-	catch (const std::exception&)
+	catch (const sql::SQLException& e)
 	{
-
+		LOG_ERROR("MySQL:insert unsend message failed. Error: {}", e.what());
+		return false;
 	}
-	return false;
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
 }
 
-bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::string& cid)
+bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::string& cid, const std::string& joined_at)
 {
 	try
 	{
-
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+		std::unique_ptr <sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chat_members +
+				"(room_id, cid, joined_at) "
+				"VALUES(?, ?, ?);")
+		);
+		pre_stmt->setBlob(1, &blob_stream);
+		pre_stmt->setString(2, cid);
+		pre_stmt->setString(3, joined_at);
+		pre_stmt->executeUpdate();
+		spdlog::debug("MySQL:insert chatroom member(room_id:{}, cid:{}, joined_at:{}) success.", room_id, cid, joined_at);
+		return true;
 	}
-	catch (const std::exception&)
+	catch (const sql::SQLException& e)
 	{
-
+		LOG_ERROR("MySQL:insert chatroom member failed. Error: {}", e.what());
+		return false;
 	}
-	return false;
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
 }
 
 

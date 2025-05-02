@@ -49,8 +49,8 @@ public:
 	bool is_room_id_exist(const std::string& room_id);
 	bool insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content);
 	bool insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
-	bool insert_chatroom(const std::string& room_id, const std::string& room_name);
-	bool insert_chatroom_member(const std::string& room_id, const std::string& cid);
+	bool insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& created_at);
+	bool insert_chatroom_member(const std::string& room_id, const std::string& cid, const std::string& joined_at);
 	std::string get_client_last_login_fromDB(const std::string& cid);
 	json get_unsend_message_fromDB(const std::string& cid, int limit);
 	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
