@@ -80,7 +80,7 @@ void ServerControlleFacade::setting_select_info()
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 		for (auto& client : this->_client_handler->connected_clients) {
 			//有効なソケットにFDSETを実行する
-			if (client->socket != INVALID_SOCKET) {
+			if (client != nullptr && client->socket != INVALID_SOCKET) {
 				FD_SET(client->socket, &_socket_handler->get_fd_read());
 			}
 		}
@@ -348,7 +348,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 		case 0:			//sign up
 			//メッセージがsign_upの場合の処理を追記
 			//auto & client = this->_client_handler->connected_clients[detection_num];
-			std::tie(client_id, *error_msg_text) = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client->ipv4_address);
+			std::tie(client_id, *error_msg_text) = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client->ipv4_address, client_id_ptr, error_msg_ptr);
 			spdlog::debug("client id : {} error_code : {}", client_id, *error_msg_text);
 			if (client_id != "" &&  _client_handler->connected_clients.size() != 0) {
 				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client->ipv4_address, client->socket, client_id);
@@ -702,12 +702,11 @@ void ServerControlleFacade::setting_select_process()
 	}
 }
 
-std::tuple<std::string, std::string>  ServerControlleFacade::sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip)
+
+std::tuple<std::string, std::string> ServerControlleFacade::sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id, std::string* error_msg)
 {
-	std::string user_id = "";
-	std::string error_msg = "";
-	return this->_firebase_auth_handler->create_user_with_email_and_password(mail_addr, password, ip
-		, &FirebaseAuthHandler::on_auth_callback);
+	this->_firebase_auth_handler->create_user_with_email_and_password(mail_addr, password, ip, id, error_msg);
+	return std::tuple<std::string, std::string>(*id, *error_msg);
 }
 
 std::tuple<std::string, std::string> ServerControlleFacade::sign_in_process(
@@ -793,7 +792,7 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 					//クライアントの情報を取得する
 					auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
 					//MT104Aを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
-					if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
+					if (receiver == nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
 						if (this->_protocol_handler->send_message_tls(receiver->ssl, mt104A_json)) {
 							spdlog::debug("The MT104A message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 						}

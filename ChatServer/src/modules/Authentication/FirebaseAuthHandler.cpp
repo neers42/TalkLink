@@ -42,6 +42,68 @@ std::tuple<std::string, std::string>  FirebaseAuthHandler::create_user_with_emai
 	return std::make_tuple(user_id, error_msg) ;
 }
 
+void FirebaseAuthHandler::create_user_with_email_and_password(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* client_id, std::string* error_msg)
+{
+	ClientContext c_con;
+	c_con.client_id = new std::string();
+	c_con.mail_addr = mail_addr;
+	c_con.ip = ip;
+	c_con.error_msg = "None error.";
+	firebase::Future<firebase::auth::AuthResult> create_result = auth->CreateUserWithEmailAndPassword(mail_addr.c_str(), password.c_str());
+	//std::string user_id = "";
+	//std::string error_msg = "None error.";
+
+
+	// タイムアウトの設定（例: 10秒）
+	const auto start_time = std::chrono::steady_clock::now();
+	const std::chrono::seconds wait_duration(10);
+
+	create_result.OnCompletion([](const firebase::Future<firebase::auth::AuthResult>& auth_result_future, void* client_data) {
+		ClientContext* client_context = static_cast<ClientContext*>(client_data);
+
+
+		std::string* tem_id = new std::string();
+		client_context->client_id = tem_id;
+		client_context->id = "";
+
+
+
+		if (auth_result_future.status() == firebase::kFutureStatusComplete && auth_result_future.error() == firebase::auth::kAuthErrorNone) {
+			// 認証成功ならUIDを取得
+			const firebase::auth::AuthResult auth_result = *auth_result_future.result();
+			*(client_context->client_id) = auth_result.user.uid();
+
+		}
+		else {
+			// エラー処理（ログなど）
+			LOG_ERROR("Sign up failed with error : {:s}.", auth_result_future.error_message());
+			client_context->error_msg = auth_result_future.error_message();
+
+		}
+		client_context->id = *client_context->client_id;
+
+		// 動的に確保したメモリを解放する
+		delete client_context->client_id;
+		client_context->client_id = nullptr;
+		}, &c_con);
+
+	// 非同期操作の完了を待つためのポーリング
+	while (create_result.status() == firebase::kFutureStatusPending) {
+		// 状態を待機するために少しスリープ
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		// 経過時間をチェックしてタイムアウト処理
+		auto current_time = std::chrono::steady_clock::now();
+		if (std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time) > wait_duration) {
+			LOG_ERROR("Authentication interrupted due to timeout.(Client ip:{:s})", c_con.ip);
+			break;
+
+		}
+	}
+	//認証が成功していた場合は、UIDが格納される。失敗の場合は空文字が格納される。
+	*client_id = c_con.id;
+	*error_msg = c_con.error_msg;
+}
+
 
 
 

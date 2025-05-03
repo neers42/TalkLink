@@ -84,7 +84,7 @@
     <ClCompile Include="src\modules\Network\MessageType104A.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\modules\Network\MessageType103.cpp">
+    <ClCompile Include="src\modules\Network\MessageType103A.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\modules\Network\MessageType003.cpp">
@@ -1760,7 +1760,7 @@
     <ClInclude Include="include\Network\MessageType104A.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="include\Network\MessageType103.h">
+    <ClInclude Include="include\Network\MessageType103A.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="include\Network\MessageType003.h">

@@ -75,7 +75,7 @@ public:
 	
 private:
 	//ログイン関連
-	std::tuple<std::string, std::string> sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip);
+	std::tuple<std::string, std::string> sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id, std::string* error_msg);
 	std::tuple<std::string, std::string> sign_in_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id, std::string* error_msg);
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 

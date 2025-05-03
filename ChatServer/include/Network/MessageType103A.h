@@ -1,7 +1,7 @@
-﻿#ifndef MESSAGETYPE103_H
-#define MESSAGETYPE103_H
+﻿#ifndef MESSAGETYPE103A_H
+#define MESSAGETYPE103A_H
 #include "BaseMessage.h"
-class MessageType103 :
+class MessageType103A :
     public BaseMessage
 {
 public:
@@ -16,8 +16,8 @@ private:
 	std::string _error_message;	//エラーメッセージ
 
 public:
-	MessageType103();
-	~MessageType103();
+	MessageType103A();
+	~MessageType103A();
 };
-#endif // !MESSAGETYPE103_H
+#endif // !MESSAGETYPE103A_H
 

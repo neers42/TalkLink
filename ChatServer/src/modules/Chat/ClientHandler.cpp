@@ -279,7 +279,7 @@ int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 int ClientHandler::search_socket_from_clients(const SOCKET& search_socket)
 {
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
-		if (this->connected_clients[search_result]->socket == search_socket) {
+		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->socket == search_socket) {
 			return search_result;
 		}
 	}
@@ -289,7 +289,7 @@ int ClientHandler::search_socket_from_clients(const SOCKET& search_socket)
 WOLFSSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
 {
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
-		if (this->connected_clients[search_result]->id == cid) {
+		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->id == cid) {
 			return this->connected_clients[search_result]->ssl;
 		}
 	}
@@ -304,12 +304,12 @@ void ClientHandler::show_client_info(const std::unique_ptr<Client>& client)
 	spdlog::debug("Client  Password : {:s}", client->password);
 }
 
-std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<Client> clients)
+std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::unique_ptr<Client>> clients)
 {
 	std::vector<WOLFSSL*> client_ssl_list;
 	for (const auto& client : clients) {
-		if (client.ssl != nullptr) {
-			client_ssl_list.push_back(client.ssl);
+		if (client != nullptr && client->ssl != nullptr) {
+			client_ssl_list.push_back(client->ssl);
 		}
 	}
 	return client_ssl_list;
@@ -339,7 +339,7 @@ const std::vector<SOCKET> ClientHandler::get_all_connected_sockets() const
 		std::mutex mutex;
 		std::unique_lock<std::mutex> lock(mutex);
 		for (const auto& client : connected_clients) {
-			if (client->socket != INVALID_SOCKET) {
+			if (client != nullptr && client->socket != INVALID_SOCKET) {
 				socket_list.push_back(client->socket);
 			}
 		}
@@ -374,7 +374,9 @@ void ClientHandler::clear_heart_beat_count(uint32_t list_num)
 void ClientHandler::all_clear_heart_beat_count()
 {
 	for (auto& client : this->connected_clients) {
-		client->clear_heart_beat_count();
+		if (client != nullptr) {
+			client->clear_heart_beat_count();
+		}
 	}
 }
 

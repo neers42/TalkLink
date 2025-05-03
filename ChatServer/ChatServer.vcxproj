@@ -157,7 +157,7 @@
     <ClCompile Include="src\modules\Network\MessageType102.cpp" />
     <ClCompile Include="src\modules\Network\MessageType002.cpp" />
     <ClCompile Include="src\modules\Network\MessageType003.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType103.cpp" />
+    <ClCompile Include="src\modules\Network\MessageType103A.cpp" />
     <ClCompile Include="src\modules\Network\MessageType104A.cpp" />
     <ClCompile Include="src\modules\Chat\MessageIDGenerator.cpp" />
     <ClCompile Include="src\modules\Database\RedisClient.cpp" />
@@ -733,7 +733,7 @@
     <ClInclude Include="include\Utils\ulid\ulid_struct.hh" />
     <ClInclude Include="include\Chat\MessageIDGenerator.h" />
     <ClInclude Include="include\Network\MessageType104A.h" />
-    <ClInclude Include="include\Network\MessageType103.h" />
+    <ClInclude Include="include\Network\MessageType103A.h" />
     <ClInclude Include="include\Network\MessageType003.h" />
     <ClInclude Include="include\Network\MessageType002.h" />
     <ClInclude Include="include\Network\MessageType102.h" />

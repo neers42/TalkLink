@@ -42,6 +42,14 @@ public:
 		const std::string& password,
 		const std::string& ip,
 		void (FirebaseAuthHandler::*callback_func)(const firebase::Future<firebase::auth::AuthResult>&, std::string*, std::string*, const std::string&, const std::string&));
+
+	void create_user_with_email_and_password(
+		const std::string& mail_addr,
+		const std::string& password,
+		const std::string& ip,
+		std::string* client_id,
+		std::string* error_msg);
+
 	//std::string sign_in_user_with_email_and_password(const std::string& email, const std::string& password);
 	void sign_in_user_with_email_and_password(
 		const std::string& mail_addr,

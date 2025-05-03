@@ -118,7 +118,7 @@ public:
 	int search_socket_from_clients(const SOCKET& search_socket);
 	WOLFSSL* search_client_ssl_from_clients(const std::string& cid);
 	void show_client_info(const std::unique_ptr<Client>& client);
-	std::vector<WOLFSSL*> get_client_ssl_list(const std::vector<Client> clients);
+	std::vector<WOLFSSL*> get_client_ssl_list(const std::vector<std::unique_ptr<Client>> clients);
 	std::unique_ptr<Client>& get_client_by_cid(const std::string& cid);
 	
 };
