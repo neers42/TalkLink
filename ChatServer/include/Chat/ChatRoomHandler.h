@@ -56,6 +56,8 @@ private:
 		std::vector<std::string>& get_client_list();
 		const std::vector <std::string>& get_client_list() const;
 
+		void set_chatroom_name(const std::string& chatroom_name);
+		void set_chatroom_icon(const std::string& icon_url);
 
 	private:
 		std::string _chatroom_id = "";
@@ -75,6 +77,13 @@ public:
 	std::unique_ptr<ChatRoom> create_chatroom(const std::string& chatroom_name, const std::string& icon_url, const std::vector<std::string>& room_member);
 	void add_chatroom(std::unique_ptr<ChatRoom> chatroom);
 	void delete_chatroom(const std::string& room_id);
+
+	bool add_member_to_chatroom(const std::string& room_id, const std::vector<std::string>& cids);
+	bool delete_member_from_chatroom(const std::string& room_id, const std::vector<std::string>& cids);
+
+	bool change_room_name(const std::string& room_id, const std::string& room_name);
+	bool change_room_icon(const std::string& room_id, const std::string& icon_url);
+
 	std::vector<std::string> get_client_infos_by_chatroom_id(int list_num);
 	std::vector<std::string> get_client_infos_by_chatroom_id(const std::string& room_id);
 	std::vector<std::unique_ptr<ChatRoom>>& get_chatroom_list();

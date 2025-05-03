@@ -49,6 +49,10 @@ bool ChatroomHandler::ChatRoom::add_client_chatroom(const std::string& cid)
 bool ChatroomHandler::ChatRoom::delete_client_chatroom(const std::string& cid)
 {
 	auto element_to_remove = search_client_form_chatroom(cid);
+	if (element_to_remove == this->_cid_list.end()) {
+		LOG_ERROR("The client ID({}) you tried to delete could not be found.", cid);
+		return false;
+	}
 	this->_cid_list.erase(element_to_remove);
 	return true;
 }
@@ -92,6 +96,16 @@ std::vector<std::string>& ChatroomHandler::ChatRoom::get_client_list()
 const std::vector<std::string>& ChatroomHandler::ChatRoom::get_client_list() const
 {
 	return this->_cid_list;
+}
+
+void ChatroomHandler::ChatRoom::set_chatroom_name(const std::string& chatroom_name)
+{
+	this->_chatroom_name = chatroom_name;
+}
+
+void ChatroomHandler::ChatRoom::set_chatroom_icon(const std::string& icon_url)
+{
+	this->_chatroom_icon_url = icon_url;
 }
 
  std::vector<std::string>::iterator ChatroomHandler::ChatRoom::search_client_form_chatroom(const std::string& cid)
@@ -151,8 +165,80 @@ void ChatroomHandler::delete_chatroom(const std::string& room_id)
 		return;
 	}
 	this->chatroom_list.erase(it);
-	spdlog::info("Chatroom '{}' deleted successfully.", room_id);
+	spdlog::info("Chatroom ID:{} deleted from active room list successfully.", room_id);
 }
+
+bool ChatroomHandler::add_member_to_chatroom(const std::string& room_id, const std::vector<std::string>& cids)
+{
+	auto it = find_chatroom_id_from_list(room_id);
+	if (it == this->chatroom_list.end()) {
+		LOG_ERROR("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
+		return false;
+	}
+	for (const auto& cid : cids) {
+		if ((*it)->get_client_list().size() == MAX_CLIENT_NUM_IN_CHATROOM) {
+			LOG_ERROR("The chatroom ID({}) has reached the maximum number of clients.", room_id);
+			return false;
+		}
+		if (!(*it)->add_client_chatroom(cid)) {
+			LOG_ERROR("Failed to add client ID({}) to chatroom ID({}).", cid, room_id);
+			return false;
+		}
+	}
+	spdlog::info("{}Clients added to chatroom ID({}) successfully.", cids.size(), room_id);
+	return true;
+}
+
+bool ChatroomHandler::delete_member_from_chatroom(const std::string& room_id, const std::vector<std::string>& cids)
+{
+	auto it = find_chatroom_id_from_list(room_id);
+	if (it == this->chatroom_list.end()) {
+		LOG_ERROR("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
+		return false;
+	}
+	for (const auto& cid : cids) {
+		if ((*it)->get_client_list().size() == 0) {
+			LOG_ERROR("The chatroom ID({}) has no clients.", room_id);
+			return false;
+		}
+		if (!(*it)->delete_client_chatroom(cid)) {
+			LOG_ERROR("Failed to delete client ID({}) from chatroom ID({}).", cid, room_id);
+			return false;
+		}
+	}
+	return true;
+}
+
+bool ChatroomHandler::change_room_name(const std::string& room_id, const std::string& room_name)
+{
+	auto it = find_chatroom_id_from_list(room_id);
+	if (it == this->chatroom_list.end()) {
+		LOG_ERROR("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
+		return false;
+	}
+	if (room_name.empty()) {
+		LOG_ERROR("The room name cannot be empty.");
+		return false;
+	}
+	(*it)->set_chatroom_name(room_name);
+	return true;
+}
+
+bool ChatroomHandler::change_room_icon(const std::string& room_id, const std::string& icon_url)
+{
+	auto it = find_chatroom_id_from_list(room_id);
+	if (it == this->chatroom_list.end()) {
+		LOG_ERROR("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
+		return false;
+	}
+	if (icon_url.empty()) {
+		LOG_ERROR("The room icon URL cannot be empty.");
+		return false;
+	}
+	(*it)->set_chatroom_icon(icon_url);
+	return true;
+}
+
 
 std::vector<std::string> ChatroomHandler::get_client_infos_by_chatroom_id(int list_num)
 {

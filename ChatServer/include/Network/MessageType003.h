@@ -11,7 +11,7 @@ public:
 	enum class RoomAction
 	{
 		CREATE_ROOM,
-		DELETE_ROOM,
+		LEAVE_ROOM,
 		ADD_MEMBER,
 		REMOVE_MEMBER,
 		ROOM_NAME_CHANGE,

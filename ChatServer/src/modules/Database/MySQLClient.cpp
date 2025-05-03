@@ -38,7 +38,7 @@ void MySQLClient::connect()
 	}
 	catch (sql::SQLException& e)
 	{	
-		spdlog::critical("SQL Exception Content : %s, SQL Error Code : %d, SQL State : %s", e.what(), e.getErrorCode(), e.getSQLState());
+		spdlog::critical("SQL Exception Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
 		exit(1);
 	}
 }
@@ -78,7 +78,7 @@ bool MySQLClient::execute_query(const std::string& query)
 		return false;
 	}
 	catch (const sql::SQLException e) {
-		LOG_ERROR("MySQL:SQL Exception Content : %s, SQL Error Code : %d, SQL State : %s", e.what(), e.getErrorCode(), e.getSQLState());
+		LOG_ERROR("MySQL:SQL Exception Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
 		return false;
 	}
 	catch (const std::exception e) {
@@ -91,7 +91,7 @@ bool MySQLClient::execute_query(const std::string& query)
 
 void MySQLClient::print_sql_error(sql::SQLException& e)
 {
-	spdlog::error("MySQL:SQL Exception Content : %s, SQL Error Code : %d, SQL State : %s", e.what(), e.getErrorCode(), e.getSQLState());
+	spdlog::error("MySQL:SQL Exception Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
 }
 
 void MySQLClient::create_database()
@@ -198,7 +198,7 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::select_client_in
 			std::string name = res->getString("name");
 			std::string mail_address = res->getString("mail_address");
 			std::string password_hash = res->getString("password_hash");
-			spdlog::debug("MySQL:client name:{:s}, mail_address:{:s}, password_hash:{:s}", name, mail_address, password_hash);
+			spdlog::debug("MySQL:client name:{}, mail_address:{}, password_hash:{}", name, mail_address, password_hash);
 			return std::make_tuple(name, mail_address, password_hash);
 		}
 		else {
@@ -486,6 +486,41 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::
 	}
 }
 
+bool MySQLClient::delete_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids)
+{
+	try
+	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+		std::unique_ptr <sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_chat_members +
+				" WHERE room_id = ? AND cid = ?;")
+		);
+		for (const auto& cid : cids){
+			pre_stmt->setBlob(1, &blob_stream);
+			pre_stmt->setString(2, cid);
+			pre_stmt->executeUpdate();
+			spdlog::debug("MySQL:delete chatroom member(room_id:{}, cid:{}) success.", room_id, cid);
+		}
+		spdlog::info("MySQL:delete chatroom member(room id : {})", room_id);
+		return true;
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("MySQL:delete chatroom member failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+}
+
 
 
 std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
@@ -620,7 +655,7 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 		if (res != nullptr && res->next()) {
 			std::string room_name = res->getString("room_name");
-			spdlog::debug("MySQL:chatroom name:{:s}", room_name);
+			spdlog::debug("MySQL:chatroom name:{}", room_name);
 			return room_name;
 		}
 		else {
@@ -641,6 +676,100 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
 	}
 }
 
+bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id)
+{
+	try
+	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?;")
+		);
+		pre_stmt->setBlob(1, &blob_stream);
+		pre_stmt->executeUpdate();
+		spdlog::debug("MySQL:delete chatroom(room id : {}) success.", room_id);
+		return true;
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("MySQL:delete chatroom failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+}
+
+bool MySQLClient::update_chatroom_name(const std::string& room_id, const std::string& room_name)
+{
+	try
+	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
+				" SET room_name = ? WHERE room_id = ?;")
+		);
+		pre_stmt->setString(1, room_name);
+		pre_stmt->setBlob(2, &blob_stream);
+		pre_stmt->executeUpdate();
+		spdlog::debug("MySQL:update chatroom name(room id : {}) success.", room_id);
+		return true;
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("MySQL:delete chatroom failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+}
+
+bool MySQLClient::update_chatroom_icon(const std::string& room_id, const std::string& icon_url)
+{
+	try
+	{
+		//room_idをBinary(16)に変換
+		auto arr = base32::decode(room_id);
+		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// blob に設定
+		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		std::istringstream blob_stream(binary_str);
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
+				" SET room_icon = ? WHERE room_id = ?;")
+		);
+		pre_stmt->setString(1, icon_url);
+		pre_stmt->setBlob(2, &blob_stream);
+		pre_stmt->executeUpdate();
+		spdlog::debug("MySQL:update chatroom icon(room id : {}) success.", room_id);
+		return true;
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("MySQL:update chatroom icon failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+}
+
 bool MySQLClient::create_table_clients()
 {
 	try
@@ -655,11 +784,11 @@ bool MySQLClient::create_table_clients()
 				"last_login DATETIME);")
 		);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_clients);
+		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_clients);
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_clients, e.what());
+		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_clients, e.what());
 		return false;
 	}
 }
@@ -676,11 +805,11 @@ bool MySQLClient::create_table_chatrooms()
 				"PRIMARY KEY (room_id));")
 		);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_chatrooms);
+		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_chatrooms);
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_chatrooms, e.what());
+		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_chatrooms, e.what());
 		return false;
 	}
 }
@@ -699,11 +828,11 @@ bool MySQLClient::create_table_chat_members()
 				"FOREIGN KEY (cid) REFERENCES clients(cid) ON DELETE CASCADE);")
 		);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_chat_members);
+		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_chat_members);
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_chat_members, e.what());
+		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_chat_members, e.what());
 		return false;
 	}
 }
@@ -723,11 +852,11 @@ bool MySQLClient::create_table_chat_messages()
 				"FOREIGN KEY (sender_id) REFERENCES clients(cid) ON DELETE CASCADE);")
 		);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_chat_messages);
+		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_chat_messages);
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_chat_messages, e.what());
+		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_chat_messages, e.what());
 		return false;
 	}
 }
@@ -747,11 +876,11 @@ bool MySQLClient::create_table_unsend_messages()
 				"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE);")
 		);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:create table(table name:{:s}) success.", _mysql_table_name_unsend_messages);
+		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_unsend_messages);
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{:s}) failed. Error: {}", _mysql_table_name_unsend_messages, e.what());
+		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_unsend_messages, e.what());
 		return false;
 	}
 }

@@ -48,6 +48,7 @@ public:
 
 	//テーブル：chat_members操作
 	bool insert_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids, const std::string& joined_at);
+	bool delete_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids);
 	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
 
 	//テーブル：chat_messages操作
@@ -57,6 +58,9 @@ public:
 	bool is_room_id_exist(const std::string& room_id);
 	bool insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& created_at);
 	std::string get_chatroom_name_fromDB(const std::string& room_id);
+	bool delete_chatroom_fromDB(const std::string& room_id);
+	bool update_chatroom_name(const std::string& room_id, const std::string& room_name);
+	bool update_chatroom_icon(const std::string& room_id, const std::string& icon_url);
 
 	//テーブル：clients操作
 	bool insert_client_data(const std::string& cid, const std::string& name, const std::string& mail_address, const std::string& password_hash, const std::string& created_at, const std::string& last_login);

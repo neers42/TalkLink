@@ -428,48 +428,107 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 {
 	switch (mt003->get_room_action())
 	{
-		
-		{
-			case MessageType003::RoomAction::CREATE_ROOM:
-				//ルームの作成
-				//this->_chat_room_handler->create_chatroom(mt003);
-				auto new_room = this->_chat_room_handler->create_chatroom(mt003->get_room_name(), mt003->get_room_image_url(), mt003->get_add_member_list());
-				if (new_room == nullptr) {
-					LOG_ERROR("The chat room was not created.");
-					*error_msg = "The chat room was not created.";
-					*action_result = false;
-					return;
-				};
-				this->_chat_room_handler->add_chatroom(std::move(new_room));
 
+	case MessageType003::RoomAction::CREATE_ROOM:
+		//ルームの作成
+		//this->_chat_room_handler->create_chatroom(mt003);
+	{
+		auto new_room = this->_chat_room_handler->create_chatroom(mt003->get_room_name(), mt003->get_room_image_url(), mt003->get_add_member_list());
+		if (new_room == nullptr) {
+			LOG_ERROR("The chat room was not created.");
+			*action_result = false;
+			*error_msg = "The chat room was not created.";
+			return;
+		};
+		this->_chat_room_handler->add_chatroom(std::move(new_room));
+	}
 
-				//チャットルームのDB保存
-				*action_result = this->_mysql_client->insert_chatroom(mt003->get_room_id(), mt003->get_room_name(), ServerTime::get_current_time_to_seconds());
-				if (*action_result == false) {
-					LOG_ERROR("The chat room was not saved in the database.");
-					*error_msg = "The chat room was not saved in the database.";
-					return;
-				}
-				*action_result = this->_mysql_client->insert_chatroom_member(mt003->get_room_id(), mt003->get_add_member_list(), ServerTime::get_current_time_to_seconds());
-				if (*action_result == false) {
-					LOG_ERROR("The chat room member was not saved in the database.");
-					*error_msg = "The chat room member was not saved in the database.";
-					return;
-				}
-				break;
-	
+		//チャットルームのDB保存
+		*action_result = this->_mysql_client->insert_chatroom(mt003->get_room_id(), mt003->get_room_name(), ServerTime::get_current_time_to_seconds());
+		if (*action_result == false) {
+			LOG_ERROR("The chat room was not saved in the database.");
+			*error_msg = "The chat room was not saved in the database.";
+			return;
 		}
-	case MessageType003::RoomAction::DELETE_ROOM:
-		//ルームの削除
-		//this->_chat_room_handler->delete_chatroom(mt003);
+		*action_result = this->_mysql_client->insert_chatroom_member(mt003->get_room_id(), mt003->get_add_member_list(), ServerTime::get_current_time_to_seconds());
+		if (*action_result == false) {
+			LOG_ERROR("The chat room member was not saved in the database.");
+			*error_msg = "The chat room member was not saved in the database.";
+			return;
+		}
+		if (*action_result == true) {
+			spdlog::info("The chat room(ID:{}) was successfully created and saved in the database.", mt003->get_room_id());
+			*error_msg = "No Error.";
+		}
+		else {
+			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			return;
+		}
 		break;
+		
+
 	case MessageType003::RoomAction::ADD_MEMBER:
+		//ルームのメンバー追加
+		*action_result = this->_chat_room_handler->add_member_to_chatroom(mt003->get_room_id(), mt003->get_add_member_list());
+
+		//データベースにメンバーを追加
+		*action_result = this->_mysql_client->insert_chatroom_member(mt003->get_room_id(), mt003->get_add_member_list(), ServerTime::get_current_time_to_seconds());
+	
+		if (*action_result == true) {
+			spdlog::info("The chat room(ID:{}) was successfully added and saved in the database.", mt003->get_room_id());
+			*error_msg = "No Error.";
+		}
+		else {
+			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			return;
+		}
+
 		break;
+
 	case MessageType003::RoomAction::REMOVE_MEMBER:
+		//ルームのメンバー削除
+		*action_result = this->_chat_room_handler->delete_member_from_chatroom(mt003->get_room_id(), mt003->get_remove_member_list());
+
+		//データベースからメンバーを削除
+		*action_result = this->_mysql_client->delete_chatroom_member(mt003->get_room_id(), mt003->get_remove_member_list());
+
+		if (*action_result == true) {
+			spdlog::info("The chat room(ID:{}) was successfully removed and saved in the database.", mt003->get_room_id());
+			*error_msg = "No Error.";
+		}
+		else {
+			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			return;
+		}
 		break;
+
+
 	case MessageType003::RoomAction::ROOM_NAME_CHANGE:
+		//ルーム名の変更
+		*action_result = this->_chat_room_handler->change_room_name(mt003->get_room_id(), mt003->get_room_name());
+		*action_result = this->_mysql_client->update_chatroom_name(mt003->get_room_id(), mt003->get_room_name());
+		if (*action_result == true) {
+			spdlog::info("The chat room(ID:{}) was successfully changed and saved in the database.", mt003->get_room_id());
+			*error_msg = "No Error.";
+		}
+		else {
+			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			return;
+		}
 		break;
+
 	case MessageType003::RoomAction::ROOM_ICON_CHANGE:
+		//ルームアイコンの変更
+		*action_result = this->_chat_room_handler->change_room_icon(mt003->get_room_id(), mt003->get_room_image_url());
+		*action_result = this->_mysql_client->update_chatroom_icon(mt003->get_room_id(), mt003->get_room_image_url());
+		if (*action_result == true) {
+			spdlog::info("The chat room(ID:{}) was successfully changed and saved in the database.", mt003->get_room_id());
+			*error_msg = "No Error.";
+		}
+		else {
+			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			return;
+		}
 		break;
 
 	default:
