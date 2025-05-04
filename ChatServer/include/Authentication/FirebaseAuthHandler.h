@@ -36,13 +36,6 @@ public:
 		std::string error_msg;
 	};
 	
-	//std::string create_user_with_email_and_password(const std::string& email, const std::string& password);
-	std::tuple<std::string, std::string> create_user_with_email_and_password(
-		const std::string& mail_addr,
-		const std::string& password,
-		const std::string& ip,
-		void (FirebaseAuthHandler::*callback_func)(const firebase::Future<firebase::auth::AuthResult>&, std::string*, std::string*, const std::string&, const std::string&));
-
 	void create_user_with_email_and_password(
 		const std::string& mail_addr,
 		const std::string& password,

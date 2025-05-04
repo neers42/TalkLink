@@ -38,6 +38,7 @@ public:
 	ContentType get_content_type() const;
 	void set_content_type(ContentType type);
 	void set_content_type(int type_num);
+	std::string get_created_at() const;
 
 	uint64_t get_message_id() const;
 	void set_message_id(const std::uint64_t m_id);

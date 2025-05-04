@@ -14,12 +14,15 @@
 #include "MessageType005.h"
 #include "MessageType101.h"
 #include "MessageType102.h"
+#include "MessageType103A.h"
+#include "MessageType103B.h"
 #include "MessageType104A.h"
 #include "MessageType104B.h"
 #include "ulid/ulid.hh"
 #include "ulid/ulid_struct.hh"
 #include "spdlog/spdlog.h"
 #include "MessageIDGenerator.h"
+
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
 //#define SERVER_METHOD_TLS_1_3	//TLS1.3で接続
@@ -99,7 +102,7 @@ public:
 			spdlog::info("server received \033[33mMessage Type 003\033[m from sender(id:{:s}ip:{:s}, socket:{:d})", dst_id, ipv4, socket_num);
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType004>) {
-			spdlog::info("server received \033[33mMessage Type 003\033[m(message id:{:d}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"
+			spdlog::info("server received \033[33mMessage Type 004\033[m(message id:{:d}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"
 				, message_id, src_id, ipv4, socket_num, dst_id);
 		}
 

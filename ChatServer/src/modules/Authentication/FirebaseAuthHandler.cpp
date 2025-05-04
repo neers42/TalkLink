@@ -20,27 +20,6 @@ void FirebaseAuthHandler::load_initialize_info()
 
 
 
-std::tuple<std::string, std::string>  FirebaseAuthHandler::create_user_with_email_and_password(
-	const std::string& mail_addr,
-	const std::string& password,
-	const std::string& ip,
-	void (FirebaseAuthHandler::*callback_func)(const firebase::Future<firebase::auth::AuthResult>&, std::string*, std::string*, const std::string&, const std::string&)
-)
-{
-	firebase::Future<firebase::auth::AuthResult> create_result = this->auth->CreateUserWithEmailAndPassword(mail_addr.c_str(), password.c_str());
-	firebase::Future<firebase::auth::AuthResult> result;
-	std::string user_id = "";
-	std::string error_msg = "None error.";
-
-	while (result.status() != firebase::kFutureStatusComplete) {
-		result = auth->CreateUserWithEmailAndPasswordLastResult();
-		if (result.status() == firebase::kFutureStatusComplete) {
-			(this->*callback_func)(result, &user_id, &error_msg, mail_addr, ip);
-		}
-	}
-
-	return std::make_tuple(user_id, error_msg) ;
-}
 
 void FirebaseAuthHandler::create_user_with_email_and_password(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* client_id, std::string* error_msg)
 {
@@ -50,8 +29,6 @@ void FirebaseAuthHandler::create_user_with_email_and_password(const std::string&
 	c_con.ip = ip;
 	c_con.error_msg = "None error.";
 	firebase::Future<firebase::auth::AuthResult> create_result = auth->CreateUserWithEmailAndPassword(mail_addr.c_str(), password.c_str());
-	//std::string user_id = "";
-	//std::string error_msg = "None error.";
 
 
 	// タイムアウトの設定（例: 10秒）
@@ -121,8 +98,6 @@ void FirebaseAuthHandler::sign_in_user_with_email_and_password(
 	c_con.ip = ip;
 	c_con.error_msg = "None error.";
 	firebase::Future<firebase::auth::AuthResult> sign_in_result = auth->SignInWithEmailAndPassword(mail_addr.c_str(), password.c_str());
-	//std::string user_id = "";
-	//std::string error_msg = "None error.";
 
 
 	// タイムアウトの設定（例: 10秒）

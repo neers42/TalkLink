@@ -68,6 +68,11 @@ void BaseMessage::set_content_type(int type_num)
 	}
 }
 
+std::string BaseMessage::get_created_at() const
+{
+	return this->_created_at;
+}
+
 
 uint64_t BaseMessage::get_message_id() const
 {
