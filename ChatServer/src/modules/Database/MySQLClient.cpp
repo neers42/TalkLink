@@ -515,6 +515,7 @@ bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::str
 		pre_stmt->setBlob(1, &blob_stream);
 		pre_stmt->setString(2, room_name);
 		pre_stmt->setString(3, created_at);
+		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:insert chatroom(room_id:{}, room_name:{}, created_at:{}) success.", room_id_hex, room_name, created_at);
 		return true;
 

@@ -15,7 +15,7 @@ ChatroomHandler::ChatRoom::ChatRoom(
 	
 )
 	: 
-	_chatroom_id{ChatroomHandler::issue_chatroom_id()},
+	_chatroom_id{ChatroomHandler::issue_chatroom_id_unhex()},
 	_chatroom_name{ chatroom_name },
 	_chatroom_icon_url{ icon_url },
 	_cid_list{ cids }
@@ -372,6 +372,7 @@ std::string ChatroomHandler::issue_chatroom_id_unhex()
 	for (auto b : decode_ulid) {
 		oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(b);
 	}
+	spdlog::debug("Create Chatroom ID: {}", oss.str());
 	return oss.str();
 }
 

@@ -85,6 +85,8 @@ private:
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result);
 	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
 	void mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result);
+	void mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<ClientHandler::Client>& client);
+
 	void mt104_process(const std::unique_ptr<MessageType004>& mt004);
 	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004>& mt004);
 	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids);

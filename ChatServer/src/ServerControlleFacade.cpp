@@ -440,31 +440,36 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 			*error_msg = "The chat room was not created.";
 			return;
 		};
-		this->_chat_room_handler->add_chatroom(std::move(new_room));
-	}
 
 		//チャットルームのDB保存
-		*action_result = this->_mysql_client->insert_chatroom(mt003->get_room_id(), mt003->get_room_name(), ServerTime::get_current_time_to_seconds());
+		*action_result = this->_mysql_client->insert_chatroom(new_room->get_chatroom_id(), new_room->get_chatroom_name(), ServerTime::get_current_time_to_seconds());
 		if (*action_result == false) {
 			LOG_ERROR("The chat room was not saved in the database.");
 			*error_msg = "The chat room was not saved in the database.";
 			return;
 		}
-		*action_result = this->_mysql_client->insert_chatroom_member(mt003->get_room_id(), mt003->get_add_member_list(), ServerTime::get_current_time_to_seconds());
+		*action_result = this->_mysql_client->insert_chatroom_member(new_room->get_chatroom_id(), mt003->get_add_member_list(), ServerTime::get_current_time_to_seconds());
 		if (*action_result == false) {
 			LOG_ERROR("The chat room member was not saved in the database.");
 			*error_msg = "The chat room member was not saved in the database.";
 			return;
 		}
 		if (*action_result == true) {
-			spdlog::info("The chat room(ID:{}) was successfully created and saved in the database.", mt003->get_room_id());
+			spdlog::info("The chat room(ID:{}) was successfully created and saved in the database.", new_room->get_chatroom_id());
 			*error_msg = "No Error.";
 		}
 		else {
-			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			*error_msg = "The chat room(ID:{}) was not created.", new_room->get_chatroom_id();
 			return;
 		}
 		break;
+		this->_chat_room_handler->add_chatroom(std::move(new_room));
+		for (const auto& room : this->_chat_room_handler->chatroom_list) {
+			spdlog::debug("room id : {:s}", room->get_chatroom_id());
+		}
+	}
+
+		
 		
 
 	case MessageType003::RoomAction::ADD_MEMBER:
@@ -609,6 +614,10 @@ void ServerControlleFacade::mt101_process(const std::shared_ptr<ClientHandler::C
 	else {
 		spdlog::error("The MT101 message was not sent to the client.");
 	}
+}
+
+void ServerControlleFacade::mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<ClientHandler::Client>& client)
+{
 }
 
 void ServerControlleFacade::mt104_process(const std::unique_ptr<MessageType004>& mt004)
