@@ -268,8 +268,8 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 
 bool MessageType004::is_valid_room_id(const std::string& room_id)
 {
-	//dst_idが28byteではない場合
-	if (room_id.size() != 26) {
+	//dst_idが32byteではない場合
+	if (room_id.size() != 32) {
 		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {:d}", room_id.size());
 		return false;
 	}

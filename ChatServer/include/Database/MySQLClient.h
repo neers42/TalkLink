@@ -28,6 +28,7 @@ private:
 	std::string _mysql_table_name_chat_members = "chat_members";
 	std::string _mysql_table_name_chat_messages = "chat_messages";
 	std::string _mysql_table_name_unsend_messages = "unsend_messages";
+	std::string _mysql_table_name_unsend_control_messages = "unsend_control_messages";
 
 
 public:
@@ -56,6 +57,7 @@ public:
 
 	//テーブル：chatrooms操作
 	bool is_room_id_exist(const std::string& room_id);
+	bool is_room_id_hex_exist(const std::string& room_id_hex);
 	bool insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& created_at);
 	std::string get_chatroom_name_fromDB(const std::string& room_id);
 	bool delete_chatroom_fromDB(const std::string& room_id);
@@ -80,6 +82,8 @@ private:
 	bool create_table_chat_members();
 	bool create_table_chat_messages();
 	bool create_table_unsend_messages();
+	bool create_table_unsend_control_messages();
+	std::vector<uint8_t> hex_to_binary(const std::string& hex_str);
 	
 };
 

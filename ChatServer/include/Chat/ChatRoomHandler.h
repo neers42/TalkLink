@@ -100,6 +100,7 @@ public:
 private:
 	//chatroomIDを発行する
 	static std::string issue_chatroom_id();
+	static std::string issue_chatroom_id_unhex();
 };
 #endif // !CHATROOMHANDLER_H_
 

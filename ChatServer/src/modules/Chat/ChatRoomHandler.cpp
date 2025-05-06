@@ -345,3 +345,33 @@ std::string ChatroomHandler::issue_chatroom_id()
 	return ulid::Marshal(ulid);
 }
 
+std::string ChatroomHandler::issue_chatroom_id_unhex()
+{
+	// ランダムバイトジェネレータを作成
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<int> dist(0, 255);
+
+	// ミリ秒単位の現在時刻
+	auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::system_clock::now().time_since_epoch()
+	).count();
+
+	// ランダムバイト生成関数
+	auto random_func = [&]() -> uint8_t {
+		return static_cast<uint8_t>(dist(gen));
+		};
+
+	// ULIDを作成
+	ulid::ULID ulid = ulid::Create(now, random_func);
+
+	// 文字列に変換して返す
+	auto ulid_str =  ulid::Marshal(ulid);
+	auto decode_ulid = base32::decode(ulid_str);
+	std::ostringstream oss;
+	for (auto b : decode_ulid) {
+		oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(b);
+	}
+	return oss.str();
+}
+

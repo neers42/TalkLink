@@ -51,13 +51,15 @@ void MySQLClient::close()
 			throw std::runtime_error("MySQL:database is not connected.");
 		}
 	}
-	catch (const std::runtime_error e)
+	catch (const std::runtime_error& e)
 	{
+
 		spdlog::error(e.what());
+		LOG_ERROR("Runtime Error:{}", e.what());
 		return;
 	}
-	catch (const std::exception e){
-		spdlog::error(e.what());
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return;
 	}
 	_connection->close();
@@ -78,11 +80,11 @@ bool MySQLClient::execute_query(const std::string& query)
 		return false;
 	}
 	catch (const sql::SQLException e) {
-		LOG_ERROR("MySQL:SQL Exception Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
+		LOG_ERROR("SQLException Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
 		return false;
 	}
-	catch (const std::exception e) {
-		LOG_ERROR(e.what());
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 	return true;
@@ -91,7 +93,7 @@ bool MySQLClient::execute_query(const std::string& query)
 
 void MySQLClient::print_sql_error(sql::SQLException& e)
 {
-	spdlog::error("MySQL:SQL Exception Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
+	spdlog::error("SQLException Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
 }
 
 void MySQLClient::create_database()
@@ -105,9 +107,13 @@ void MySQLClient::create_database()
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:database creation failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:database creation failed. Error: {}", e.what());
 		return;
 	}	
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return ;
+	}
 }
 
 bool MySQLClient::create_table()
@@ -127,7 +133,12 @@ bool MySQLClient::create_table()
 	else if (this->create_table_unsend_messages() == false) {
 		return false;
 	}
-	return true;
+	else if (this->create_table_unsend_control_messages() == false) {
+		return false;
+	}
+	else {
+		return true;
+	}
 }
 
 bool MySQLClient::insert_client_data(
@@ -175,9 +186,13 @@ bool MySQLClient::insert_client_data(
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:insert client data failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:insert client data failed. Error: {}", e.what());
 		return false;
 
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return false;
 	}
 	
 
@@ -208,9 +223,13 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::select_client_in
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:select client data failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:select client data failed. Error: {}", e.what());
 		return std::make_tuple("", "", "");
 
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return std::make_tuple("", "", "");
 	}
 }
 
@@ -239,7 +258,11 @@ bool MySQLClient::update_last_login(const std::string& cid, const std::string& l
 		return false;
 	}
 	catch (const std::runtime_error& e) {
-		LOG_ERROR("MySQL:update last login failed. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:update last login failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
@@ -275,7 +298,11 @@ bool MySQLClient::is_client_id_exist(const std::string& cid)
 		return false;
 	}
 	catch (const std::runtime_error& e) {
-		LOG_ERROR("MySQL:select client data failed. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:select client data failed. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 	
@@ -329,21 +356,69 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
 
-bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content)
+bool MySQLClient::is_room_id_hex_exist(const std::string& room_id_hex)
+{
+	try {
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?);")
+		);
+
+		std::istringstream blob_stream(binary_str);  // バイナリストリームに変換
+		pre_stmt->setBlob(1, &blob_stream);  // 16バイトのバイナリデータをセット
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+
+		if (res != nullptr && res->next()) {
+			int is_exist = res->getBoolean(1);
+			if (is_exist == 1) {
+				spdlog::debug("MySQL:room id({}) exists.", room_id_hex);
+				return true;
+			}
+			else {
+				spdlog::debug("MySQL:room id({}) does not exist.", room_id_hex);
+				return false;
+			}
+		}
+		else {
+			LOG_ERROR("MySQL: no data found for room_id(response is null): {}", room_id_hex);
+			return false;
+		}
+
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Error: " << e.what() << std::endl;
+		return false;
+	}
+	return false;
+}
+
+bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& room_id_hex, const std::string& sender_id, const std::string& send_time, const std::string& content)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
+	
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
 
 		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		//std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
 		std::istringstream blob_stream(binary_str);
 
 		//SQL文のセット
@@ -370,21 +445,24 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
 
-bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id)
+bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id_hex)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
 
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
 		std::istringstream blob_stream(binary_str);
 
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
@@ -396,7 +474,7 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 		pre_stmt->setString(2, cid);
 		pre_stmt->setBlob(3, &blob_stream);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:insert unsend message(message id:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
+		spdlog::debug("MySQL:insert unsend message(message id:{}, cid:{}, room_id:{}) success.", mid, cid, room_id_hex);
 		return true;
 	}
 
@@ -407,21 +485,25 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
 
-bool MySQLClient::insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& created_at)
+bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::string& room_name, const std::string& created_at)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
 
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+	
 		std::istringstream blob_stream(binary_str);
 
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
@@ -433,7 +515,7 @@ bool MySQLClient::insert_chatroom(const std::string& room_id, const std::string&
 		pre_stmt->setBlob(1, &blob_stream);
 		pre_stmt->setString(2, room_name);
 		pre_stmt->setString(3, created_at);
-		spdlog::debug("MySQL:insert chatroom(room_id:{}, room_name:{}, created_at:{}) success.", room_id, room_name, created_at);
+		spdlog::debug("MySQL:insert chatroom(room_id:{}, room_name:{}, created_at:{}) success.", room_id_hex, room_name, created_at);
 		return true;
 
 	}
@@ -444,20 +526,25 @@ bool MySQLClient::insert_chatroom(const std::string& room_id, const std::string&
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
 
-bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids, const std::string& joined_at)
+bool MySQLClient::insert_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& cids, const std::string& joined_at)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+	
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chat_members +
@@ -469,9 +556,9 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::
 			pre_stmt->setString(2, cid);
 			pre_stmt->setString(3, joined_at);
 			pre_stmt->executeUpdate();
-			spdlog::debug("MySQL:insert chatroom member(room_id:{}, cid:{}, joined_at:{}) success.", room_id, cid, joined_at);
+			spdlog::debug("MySQL:insert chatroom member(room_id:{}, cid:{}, joined_at:{}) success.", room_id_hex, cid, joined_at);
 		}	
-		spdlog::info("MySQL:insert chatroom member(room id : {})", room_id);
+		spdlog::info("MySQL:insert chatroom member(room id : {})", room_id_hex);
 		return true;
 	}
 	catch (const sql::SQLException& e)
@@ -481,20 +568,24 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id, const std::
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
 
-bool MySQLClient::delete_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids)
+bool MySQLClient::delete_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& cids)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_chat_members +
@@ -504,19 +595,23 @@ bool MySQLClient::delete_chatroom_member(const std::string& room_id, const std::
 			pre_stmt->setBlob(1, &blob_stream);
 			pre_stmt->setString(2, cid);
 			pre_stmt->executeUpdate();
-			spdlog::debug("MySQL:delete chatroom member(room_id:{}, cid:{}) success.", room_id, cid);
+			spdlog::debug("MySQL:delete chatroom member(room_id:{}, cid:{}) success.", room_id_hex, cid);
 		}
-		spdlog::info("MySQL:delete chatroom member(room id : {})", room_id);
+		spdlog::info("MySQL:delete chatroom member(room id : {})", room_id_hex);
 		return true;
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:delete chatroom member failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:delete chatroom member failed. Error: {}", e.what());
 		return false;
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
@@ -549,7 +644,10 @@ std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
 
 	}
 	catch (const sql::SQLException& e) {
-		LOG_ERROR("MySQL: Failed to fetch last login time. Error: {}", e.what());
+		LOG_ERROR("SQLException: Failed to fetch last login time. Error: {}", e.what());
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 	}
 
 	return last_login_time;
@@ -582,10 +680,24 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 		{
 			json message;
 			message["mid"] = res->getInt64("mid");
-			message["cid"] = res->getString("cid");
-			message["room_id"] = res->getString("room_id");
+			message["sender_cid"] = res->getString("cid");
+
+			// BINARY(16)のroom_idをバイト列として取得し、ULID文字列に変換
+			std::string room_id_bin = res->getString("room_id");
+			if (room_id_bin.size() == 16) {
+				std::ostringstream oss;
+				for (unsigned char c : room_id_bin) {
+					oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(c);
+				}
+				message["send_room_id"] = oss.str(); // ULID を HEX 文字列で返す
+			}
+			else {
+				message["send_room_id"] = "";
+			}
+			
 			message["message"] = res->getString("message");
 			unsend_messages_json.push_back(message);
+
 
 		}
 		spdlog::debug("MySQL: Unsend messages fetched successfully for client {}", cid);
@@ -593,21 +705,24 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL: Failed to fetch unsend messages. Error: {}", e.what());
+		LOG_ERROR("SQLException: Failed to fetch unsend messages. Error: {}", e.what());
+		return json();
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return json();
 	}
 }
 
-std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::string& room_id)
+std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::string& room_id_hex)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
 
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
 		std::istringstream blob_stream(binary_str);
 		std::vector<std::string> client_list;
 
@@ -630,21 +745,25 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 		return std::vector<std::string>();
 	}
 	catch (const std::runtime_error& e) {
-		LOG_ERROR("MySQL: Failed to fetch client list from chatrrom. Error: {}", e.what());
+		LOG_ERROR("Runtime Error : Failed to fetch client list from chatrrom. Error: {}", e.what());
+		return std::vector<std::string>();
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return std::vector<std::string>();
 	}
 }
 
-std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
+std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id_hex)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
 
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+
 		std::istringstream blob_stream(binary_str);
 		std::vector<std::string> client_list;
 
@@ -659,7 +778,7 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
 			return room_name;
 		}
 		else {
-			LOG_ERROR("MySQL: no data found for room_id: {}", room_id);
+			LOG_ERROR("MySQL: no data found for room_id: {}", room_id_hex);
 			return std::string();
 		}
 	}
@@ -671,27 +790,32 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id)
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return std::string();
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return std::string();
 	}
 }
 
-bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id)
+bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id_hex)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?;")
 		);
 		pre_stmt->setBlob(1, &blob_stream);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:delete chatroom(room id : {}) success.", room_id);
+		spdlog::debug("MySQL:delete chatroom(room id : {}) success.", room_id_hex);
 		return true;
 	}
 	catch (const sql::SQLException& e)
@@ -701,20 +825,25 @@ bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id)
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
 
-bool MySQLClient::update_chatroom_name(const std::string& room_id, const std::string& room_name)
+bool MySQLClient::update_chatroom_name(const std::string& room_id_hex, const std::string& room_name)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
@@ -723,7 +852,7 @@ bool MySQLClient::update_chatroom_name(const std::string& room_id, const std::st
 		pre_stmt->setString(1, room_name);
 		pre_stmt->setBlob(2, &blob_stream);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:update chatroom name(room id : {}) success.", room_id);
+		spdlog::debug("MySQL:update chatroom name(room id : {}) success.", room_id_hex);
 		return true;
 	}
 	catch (const sql::SQLException& e)
@@ -733,20 +862,26 @@ bool MySQLClient::update_chatroom_name(const std::string& room_id, const std::st
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
 
-bool MySQLClient::update_chatroom_icon(const std::string& room_id, const std::string& icon_url)
+bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std::string& icon_url)
 {
 	try
 	{
-		//room_idをBinary(16)に変換
-		auto arr = base32::decode(room_id);
-		std::vector<uint8_t> vec(arr.begin(), arr.end());
-		// blob に設定
-		std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
+
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+	
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
@@ -755,7 +890,7 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id, const std::st
 		pre_stmt->setString(1, icon_url);
 		pre_stmt->setBlob(2, &blob_stream);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:update chatroom icon(room id : {}) success.", room_id);
+		spdlog::debug("MySQL:update chatroom icon(room id : {}) success.", room_id_hex);
 		return true;
 	}
 	catch (const sql::SQLException& e)
@@ -765,7 +900,11 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id, const std::st
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("MySQL:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
@@ -785,10 +924,15 @@ bool MySQLClient::create_table_clients()
 		);
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_clients);
+		return true;
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_clients, e.what());
+		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_clients, e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
@@ -806,13 +950,19 @@ bool MySQLClient::create_table_chatrooms()
 		);
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_chatrooms);
+		return true;
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_chatrooms, e.what());
+		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_chatrooms, e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
+
 
 bool MySQLClient::create_table_chat_members()
 {
@@ -829,10 +979,15 @@ bool MySQLClient::create_table_chat_members()
 		);
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_chat_members);
+		return true;
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_chat_members, e.what());
+		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_chat_members, e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
@@ -853,10 +1008,15 @@ bool MySQLClient::create_table_chat_messages()
 		);
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_chat_messages);
+		return true;
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_chat_messages, e.what());
+		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_chat_messages, e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
 		return false;
 	}
 }
@@ -877,11 +1037,61 @@ bool MySQLClient::create_table_unsend_messages()
 		);
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_unsend_messages);
+		return true;
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:create table(table name:{}) failed. Error: {}", _mysql_table_name_unsend_messages, e.what());
+		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_unsend_messages, e.what());
 		return false;
 	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return false;
+	}
+}
+
+bool MySQLClient::create_table_unsend_control_messages()
+{
+	try
+	{
+		std::unique_ptr<sql::PreparedStatement > pre_stmt(
+			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unsend_control_messages +
+				"(mid BIGINT NOT NULL,"
+				"cid VARCHAR(28) NOT NULL,"
+				"room_id BINARY(16) NOT NULL,"
+				"json_payload JSON NOT NULL,"
+				"created_at DATETIME NOT NULL,"
+				"PRIMARY KEY(mid, cid, room_id),"
+				"FOREIGN KEY (mid) REFERENCES chat_messages(mid) ON DELETE CASCADE ON UPDATE CASCADE,"
+				"FOREIGN KEY (cid) REFERENCES clients(cid) ON DELETE CASCADE,"
+				"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE);")
+		);
+		pre_stmt->executeUpdate();
+		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_unsend_control_messages);
+		return true;
+	}
+	catch (const sql::SQLException& e)
+	{
+		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_unsend_control_messages, e.what());
+		return false;
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("Exception:{}.", e.what());
+		return false;
+	}
+}
+
+std::vector<uint8_t> MySQLClient::hex_to_binary(const std::string& hex_str)
+{
+	std::vector<uint8_t> binary_data;
+
+	for (size_t i = 0; i < hex_str.length(); i += 2) {
+		std::string byte_str = hex_str.substr(i, 2);
+		uint8_t byte = static_cast<uint8_t>(std::stoi(byte_str, nullptr, 16));
+		binary_data.push_back(byte);
+	}
+
+	return binary_data;
 }
 

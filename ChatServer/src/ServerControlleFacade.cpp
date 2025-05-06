@@ -432,7 +432,6 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 
 	case MessageType003::RoomAction::CREATE_ROOM:
 		//ルームの作成
-		//this->_chat_room_handler->create_chatroom(mt003);
 	{
 		auto new_room = this->_chat_room_handler->create_chatroom(mt003->get_room_name(), mt003->get_room_image_url(), mt003->get_add_member_list());
 		if (new_room == nullptr) {
@@ -566,7 +565,7 @@ void ServerControlleFacade::mt004_process(const std::unique_ptr<MessageType004>&
 			}
 		}
 		//メッセージをデータベースに保存する
-		if (this->_mysql_client->is_room_id_exist(mt004->get_room_id())) {
+		if (this->_mysql_client->is_room_id_hex_exist(mt004->get_room_id())) {
 			if (this->_mysql_client->insert_chat_message(mt004->get_message_id(), mt004->get_room_id(), mt004->get_sender_id(), mt004->get_send_time(), mt004->get_content())) {
 				spdlog::info("The message was successfully saved in the database.");
 			}
@@ -625,17 +624,10 @@ void ServerControlleFacade::heart_beat_check_process()
 {
 	while (true) {
 	
-			
-
 		//現在接続しているクライアントリストを抽出
 		std::vector<std::shared_ptr<ClientHandler::Client>> current_connect_clients;
 		{
-			/*std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			current_connect_clients = this->_client_handler->connected_clients;*/
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			//for (auto& client : this->_client_handler->connected_clients) {
-			//	current_connect_clients.push_back(std::move(client)); // ムーブ操作
-			//}
 			current_connect_clients = this->_client_handler->connected_clients;
 		}
 
@@ -795,7 +787,7 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 					//クライアントの情報を取得する
 					auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
 					//MT104Aを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
-					if (receiver == nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
+					if (receiver != nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
 						if (this->_protocol_handler->send_message_tls(receiver->ssl, mt104A_json)) {
 							spdlog::debug("The MT104A message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 						}
@@ -810,7 +802,7 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 						//送信先と送信元のsslが一致する場合
 #define DEBUG
 #ifdef DEBUG
-						this->_protocol_handler->send_message_tls(sender->ssl, mt104A_json);
+						//this->_protocol_handler->send_message_tls(sender->ssl, mt104A_json);
 #endif // DEBUG
 #undef DEBUG
 						continue;
