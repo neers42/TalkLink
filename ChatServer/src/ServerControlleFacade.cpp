@@ -259,6 +259,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 			LOG_ERROR("The receive process was interrupted due to a bad message.");
 		}
 		
+		
 
 
 #endif // TLS_PROTOCOL
@@ -308,7 +309,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 
 }
 
-void ServerControlleFacade::mt000_process(const std::unique_ptr<MessageType000>& mt000, std::unique_ptr<ClientHandler::Client>& client)
+void ServerControlleFacade::mt000_process(const std::unique_ptr<MessageType000>& mt000, std::shared_ptr<ClientHandler::Client>& client)
 {
 	try
 	{
@@ -332,7 +333,7 @@ void ServerControlleFacade::mt000_process(const std::unique_ptr<MessageType000>&
 	
 }
 
-void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, std::unique_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result)
+void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result)
 {
 	std::string client_id = "";
 	std::string* client_id_ptr = new std::string();
@@ -588,7 +589,7 @@ void ServerControlleFacade::mt004_process(const std::unique_ptr<MessageType004>&
 
 }
 
-void ServerControlleFacade::mt101_process(const std::unique_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result)
+void ServerControlleFacade::mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result)
 {
 	//TODO　ここでcidに関するメッセージをデータベースから取得する。
 	json unsend_messages_json;
@@ -623,24 +624,26 @@ void ServerControlleFacade::mt104_process(const std::unique_ptr<MessageType004>&
 void ServerControlleFacade::heart_beat_check_process()
 {
 	while (true) {
-		
+	
+			
 
 		//現在接続しているクライアントリストを抽出
-		std::vector<std::unique_ptr<ClientHandler::Client>> current_connect_clients;
+		std::vector<std::shared_ptr<ClientHandler::Client>> current_connect_clients;
 		{
 			/*std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 			current_connect_clients = this->_client_handler->connected_clients;*/
 			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			for (auto& client : this->_client_handler->connected_clients) {
-				current_connect_clients.push_back(std::move(client)); // ムーブ操作
-			}
+			//for (auto& client : this->_client_handler->connected_clients) {
+			//	current_connect_clients.push_back(std::move(client)); // ムーブ操作
+			//}
+			current_connect_clients = this->_client_handler->connected_clients;
 		}
 
 		//30秒wait
 		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30秒間隔
 
 		for (const auto& client : current_connect_clients) {
-			if (client->heart_beat_count == 0) {
+			if (client != nullptr && client->heart_beat_count == 0) {
 				this->heart_beat_response_process(client);
 			}
 		}
@@ -655,7 +658,7 @@ void ServerControlleFacade::heart_beat_check_process()
 }
 
 
-void ServerControlleFacade::heart_beat_response_process(const std::unique_ptr<ClientHandler::Client>& client)
+void ServerControlleFacade::heart_beat_response_process(const std::shared_ptr<ClientHandler::Client>& client)
 {
 	std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 
@@ -663,7 +666,7 @@ void ServerControlleFacade::heart_beat_response_process(const std::unique_ptr<Cl
 	auto& clients = _client_handler->connected_clients;
 	//auto it = std::find(clients.begin(), clients.end(), client);
 	auto it = std::find_if(clients.begin(), clients.end(),
-		[&client](const std::unique_ptr<ClientHandler::Client>& c) {
+		[&client](const std::shared_ptr<ClientHandler::Client>& c) {
 			return c.get() == client.get();  // 所有している生ポインタで比較
 		});
 
@@ -784,7 +787,7 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 				int receiver_list_num = this->_client_handler->search_cid_from_clients(cid);
 				//接続しているクライアントリストに送信先のクライアントが存在しない場合
 				if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
-					this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), cid, mt104A->get_room_id());
+					this->_mysql_client->insert_unsend_message(mt104A->get_send_message_id(), cid, mt104A->get_room_id());
 					unsend_cids.push_back(cid);
 					continue;
 				}
@@ -814,7 +817,7 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 					}
 					else if (receiver->ssl == nullptr) {
 						//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-						this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), cid, mt104A->get_room_id());
+						this->_mysql_client->insert_unsend_message(mt104A->get_send_message_id(), cid, mt104A->get_room_id());
 						unsend_cids.push_back(receiver->id);
 						continue;
 					}
@@ -885,7 +888,7 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 			spdlog::info("The MT104A message was successfully sent to all clients.");
 		}
 		else if (unsend_cids.size() > 0) {
-			LOG_ERROR("The MT104A message was not sent to all clients.");
+			spdlog::warn("The MT104A message was not sent to all clients.");
 		}
 
 	}

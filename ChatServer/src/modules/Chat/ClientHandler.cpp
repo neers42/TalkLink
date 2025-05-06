@@ -159,7 +159,7 @@ ClientHandler::~ClientHandler()
 
 }
 
-bool ClientHandler::add_client(std::unique_ptr<Client> client)
+bool ClientHandler::add_client(std::shared_ptr<Client> client)
 {
 	try
 	{
@@ -191,7 +191,7 @@ void ClientHandler::delete_client(const uint32_t delete_num)
 	this->connect_client_num--;
 }
 
-void ClientHandler::delete_client(std::vector<std::unique_ptr<Client>>::iterator it)
+void ClientHandler::delete_client(std::vector<std::shared_ptr<Client>>::iterator it)
 {
 	if (this->connected_clients.empty() == true) {
 		LOG_ERROR("Client list is empty.");
@@ -224,7 +224,7 @@ bool ClientHandler::get_client_auth_status(const int client_num)
 }
 
 
-void ClientHandler::change_client_auth_status(std::unique_ptr<Client>& client)
+void ClientHandler::change_client_auth_status(std::shared_ptr<Client>& client)
 {
 	client->change_auth_status();
 }
@@ -296,7 +296,7 @@ WOLFSSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
 	return nullptr;
 }
 
-void ClientHandler::show_client_info(const std::unique_ptr<Client>& client)
+void ClientHandler::show_client_info(const std::shared_ptr<Client>& client)
 {
 	spdlog::debug("Client  ID : {:s}", client->id);
 	spdlog::debug("Client  Name : {:s}", client->name);
@@ -304,7 +304,7 @@ void ClientHandler::show_client_info(const std::unique_ptr<Client>& client)
 	spdlog::debug("Client  Password : {:s}", client->password);
 }
 
-std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::unique_ptr<Client>> clients)
+std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients)
 {
 	std::vector<WOLFSSL*> client_ssl_list;
 	for (const auto& client : clients) {
@@ -315,19 +315,19 @@ std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::
 	return client_ssl_list;
 }
 
-std::unique_ptr<ClientHandler:: Client>& ClientHandler::get_client_by_cid(const std::string& cid)
+std::shared_ptr<ClientHandler:: Client>& ClientHandler::get_client_by_cid(const std::string& cid)
 {
 	return this->connected_clients.at(this->search_cid_from_clients(cid));
 }
 
 
 
-std::vector<std::unique_ptr<ClientHandler::Client>>& ClientHandler::get_connected_client_list()
+std::vector<std::shared_ptr<ClientHandler::Client>>& ClientHandler::get_connected_client_list()
 {
 	return this->connected_clients;
 }
 
-const std::vector<std::unique_ptr<ClientHandler::Client>>& ClientHandler::get_connected_client_list() const
+const std::vector<std::shared_ptr<ClientHandler::Client>>& ClientHandler::get_connected_client_list() const
 {
 	return this->connected_clients;
 }
@@ -361,7 +361,7 @@ const ClientHandler::Client ClientHandler::get_init_client() const
 
 
 
-void ClientHandler::incliment_heart_beat_count(std::unique_ptr<Client>& client)
+void ClientHandler::incliment_heart_beat_count(std::shared_ptr<Client>& client)
 {
 	client->incliment_heart_beat_count();
 }

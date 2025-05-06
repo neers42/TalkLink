@@ -68,7 +68,7 @@ public:
 	void handle_changed_socket_process(const SOCKET socket);
 	void message_handle_process(const SOCKET socket);	
 	void heart_beat_check_process();
-	void heart_beat_response_process(const std::unique_ptr<ClientHandler::Client>& client);
+	void heart_beat_response_process(const std::shared_ptr<ClientHandler::Client>& client);
 	void setting_select_process();
 
 
@@ -80,11 +80,11 @@ private:
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 
 	//メッセージ処理関連
-	void mt000_process(const std::unique_ptr<MessageType000>& mt000, std::unique_ptr<ClientHandler::Client>& client);
-	void mt001_process(const std::unique_ptr<MessageType001>& mt001, std::unique_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result);
+	void mt000_process(const std::unique_ptr<MessageType000>& mt000, std::shared_ptr<ClientHandler::Client>& client);
+	void mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result);
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result);
 	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
-	void mt101_process(const std::unique_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result);
+	void mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result);
 	void mt104_process(const std::unique_ptr<MessageType004>& mt004);
 	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004>& mt004);
 	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids);

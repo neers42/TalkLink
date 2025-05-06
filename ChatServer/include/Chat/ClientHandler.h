@@ -64,7 +64,7 @@ private:
 	friend class ServerControlleFacade;
 
 	//接続中のクライアントリスト
-	std::vector<std::unique_ptr<Client>> connected_clients;
+	std::vector<std::shared_ptr<Client>> connected_clients;
 
 	unsigned short connect_client_num;
 
@@ -86,13 +86,13 @@ public:
 	~ClientHandler();
 
 	//getter
-	std::vector<std::unique_ptr<Client>>& get_connected_client_list();
-	const std::vector<std::unique_ptr<Client>>& get_connected_client_list() const;
+	std::vector<std::shared_ptr<Client>>& get_connected_client_list();
+	const std::vector<std::shared_ptr<Client>>& get_connected_client_list() const;
 	const std::vector<SOCKET> get_all_connected_sockets() const;
 	Client get_init_client();
 	const Client get_init_client() const;
 	bool get_client_auth_status(const int client_num);
-	void change_client_auth_status(std::unique_ptr<Client>& client);
+	void change_client_auth_status(std::shared_ptr<Client>& client);
 
 	
 	//setter
@@ -103,23 +103,23 @@ public:
 	void set_client_sockaddr_in(struct sockaddr_in sock_in, uint32_t list_num);
 	void set_socket_addr_in_length(socklen_t length, uint32_t list_num);
 	void set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num);
-	void incliment_heart_beat_count(std::unique_ptr<Client>& client);
+	void incliment_heart_beat_count(std::shared_ptr<Client>& client);
 	void clear_heart_beat_count(uint32_t list_num);
 	void all_clear_heart_beat_count();
 	
 
 	//other
-	bool add_client(std::unique_ptr<Client> client);
+	bool add_client(std::shared_ptr<Client> client);
 	void delete_client(const std::uint32_t delete_num);
-	void delete_client(std::vector<std::unique_ptr<Client>>::iterator it);
+	void delete_client(std::vector<std::shared_ptr<Client>>::iterator it);
 	void delete_client_hbsock_from_hb_list(const std::uint32_t delete_num);
 	int check_next_invalid_socket();
 	int search_cid_from_clients(const std::string& search_client_id);
 	int search_socket_from_clients(const SOCKET& search_socket);
 	WOLFSSL* search_client_ssl_from_clients(const std::string& cid);
-	void show_client_info(const std::unique_ptr<Client>& client);
-	std::vector<WOLFSSL*> get_client_ssl_list(const std::vector<std::unique_ptr<Client>> clients);
-	std::unique_ptr<Client>& get_client_by_cid(const std::string& cid);
+	void show_client_info(const std::shared_ptr<Client>& client);
+	std::vector<WOLFSSL*> get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients);
+	std::shared_ptr<Client>& get_client_by_cid(const std::string& cid);
 	
 };
 
