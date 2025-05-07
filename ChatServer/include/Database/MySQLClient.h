@@ -58,7 +58,7 @@ public:
 	//テーブル：chatrooms操作
 	bool is_room_id_exist(const std::string& room_id);
 	bool is_room_id_hex_exist(const std::string& room_id_hex);
-	bool insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& created_at);
+	bool insert_chatroom(const std::string& room_id, const std::string& room_name, const std::string& icon_url, const std::string& created_at);
 	std::string get_chatroom_name_fromDB(const std::string& room_id);
 	bool delete_chatroom_fromDB(const std::string& room_id);
 	bool update_chatroom_name(const std::string& room_id, const std::string& room_name);

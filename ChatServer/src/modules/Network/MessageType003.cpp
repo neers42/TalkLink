@@ -72,22 +72,22 @@ std::unique_ptr<MessageType003> MessageType003::serialize_message(const json& re
 {
 	RoomAction room_action = RoomAction::CREATE_ROOM;
 	if (recv_json["room_action"] == "CREATE_ROOM") {
-		RoomAction room_action = RoomAction::CREATE_ROOM;
+		room_action = RoomAction::CREATE_ROOM;
 	}
 	else if (recv_json["room_action"] == "LEAVE_ROOM") {
-		RoomAction room_action = RoomAction::LEAVE_ROOM;
+		room_action = RoomAction::LEAVE_ROOM;
 	}
 	else if (recv_json["room_action"] == "ADD_MEMBER") {
-		RoomAction room_action = RoomAction::ADD_MEMBER;
+		room_action = RoomAction::ADD_MEMBER;
 	}
 	else if (recv_json["room_action"] == "REMOVE_MEMBER") {
-		RoomAction room_action = RoomAction::REMOVE_MEMBER;
+		room_action = RoomAction::REMOVE_MEMBER;
 	}
 	else if (recv_json["room_action"] == "ROOM_NAME_CHANGE") {
-		RoomAction room_action = RoomAction::ROOM_NAME_CHANGE;
+		room_action = RoomAction::ROOM_NAME_CHANGE;
 	}
 	else if (recv_json["room_action"] == "ROOM_ICON_CHANGE") {
-		RoomAction room_action = RoomAction::ROOM_ICON_CHANGE;
+		room_action = RoomAction::ROOM_ICON_CHANGE;
 	}
 	else {
 		LOG_ERROR("The room action is not found.");

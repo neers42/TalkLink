@@ -494,7 +494,7 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 	}
 }
 
-bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::string& room_name, const std::string& created_at)
+bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::string& room_name, const std::string& icon_url, const std::string& created_at)
 {
 	try
 	{
@@ -508,13 +508,14 @@ bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::str
 
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chatrooms +
-				"(room_id, room_name, created_at) "
-				"VALUES(?, ?, ?);")
+				"(room_id, room_name, room_icon_url, created_at) "
+				"VALUES(?, ?, ?, ?);")
 		);
 
 		pre_stmt->setBlob(1, &blob_stream);
 		pre_stmt->setString(2, room_name);
-		pre_stmt->setString(3, created_at);
+		pre_stmt->setString(3, icon_url);
+		pre_stmt->setString(4, created_at);
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:insert chatroom(room_id:{}, room_name:{}, created_at:{}) success.", room_id_hex, room_name, created_at);
 		return true;
@@ -522,7 +523,7 @@ bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::str
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:insert unsend message failed. Error: {}", e.what());
+		LOG_ERROR("SQLException: {}", e.what());
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -541,18 +542,17 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id_hex, const s
 	try
 	{
 	
-		// 16進数文字列をバイナリデータに変換
-		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
-
-		// バイナリデータを string に変換（MySQL 用）
-		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
-		std::istringstream blob_stream(binary_str);
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chat_members +
 				"(room_id, cid, joined_at) "
 				"VALUES(?, ?, ?);")
 		);
 		for (const auto& cid : cids) {
+			// 16進数文字列をバイナリデータに変換
+			std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+			// バイナリデータを string に変換（MySQL 用）
+			std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+			std::istringstream blob_stream(binary_str);
 			pre_stmt->setBlob(1, &blob_stream);
 			pre_stmt->setString(2, cid);
 			pre_stmt->setString(3, joined_at);
@@ -564,7 +564,7 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id_hex, const s
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:insert chatroom member failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:insert chatroom member failed. Error: {}", e.what());
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -582,17 +582,17 @@ bool MySQLClient::delete_chatroom_member(const std::string& room_id_hex, const s
 {
 	try
 	{
-		// 16進数文字列をバイナリデータに変換
-		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
-
-		// バイナリデータを string に変換（MySQL 用）
-		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
-		std::istringstream blob_stream(binary_str);
+		
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_chat_members +
 				" WHERE room_id = ? AND cid = ?;")
 		);
 		for (const auto& cid : cids){
+			// 16進数文字列をバイナリデータに変換
+			std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+			// バイナリデータを string に変換（MySQL 用）
+			std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+			std::istringstream blob_stream(binary_str);
 			pre_stmt->setBlob(1, &blob_stream);
 			pre_stmt->setString(2, cid);
 			pre_stmt->executeUpdate();
@@ -742,7 +742,7 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL: Failed to fetch client list from chatroom. Error: {}", e.what());
+		LOG_ERROR("SQLException: Failed to fetch client list from chatroom. Error: {}", e.what());
 		return std::vector<std::string>();
 	}
 	catch (const std::runtime_error& e) {
@@ -786,7 +786,7 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id_hex
 
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:select chatroom name failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:select chatroom name failed. Error: {}", e.what());
 		return std::string();
 	}
 	catch (const std::runtime_error& e)
@@ -821,7 +821,7 @@ bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id_hex)
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:delete chatroom failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:delete chatroom failed. Error: {}", e.what());
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -858,7 +858,7 @@ bool MySQLClient::update_chatroom_name(const std::string& room_id_hex, const std
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:delete chatroom failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:delete chatroom failed. Error: {}", e.what());
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -876,7 +876,6 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std
 {
 	try
 	{
-
 		// 16進数文字列をバイナリデータに変換
 		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
 
@@ -886,7 +885,7 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
-				" SET room_icon = ? WHERE room_id = ?;")
+				" SET room_icon_url = ? WHERE room_id = ?;")
 		);
 		pre_stmt->setString(1, icon_url);
 		pre_stmt->setBlob(2, &blob_stream);
@@ -896,7 +895,7 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:update chatroom icon failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:update chatroom icon failed. Error: {}", e.what());
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -946,6 +945,7 @@ bool MySQLClient::create_table_chatrooms()
 			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chatrooms +
 				"(room_id BINARY(16) NOT NULL,"
 				"room_name VARCHAR(50) NOT NULL,"
+				"room_icon_url VARCHAR(255),"
 				"created_at DATETIME,"
 				"PRIMARY KEY (room_id));")
 		);

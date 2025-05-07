@@ -442,7 +442,7 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 		};
 
 		//チャットルームのDB保存
-		*action_result = this->_mysql_client->insert_chatroom(new_room->get_chatroom_id(), new_room->get_chatroom_name(), ServerTime::get_current_time_to_seconds());
+		*action_result = this->_mysql_client->insert_chatroom(new_room->get_chatroom_id(), new_room->get_chatroom_name(), new_room->get_chatroom_icon(), ServerTime::get_current_time_to_seconds());
 		if (*action_result == false) {
 			LOG_ERROR("The chat room was not saved in the database.");
 			*error_msg = "The chat room was not saved in the database.";
