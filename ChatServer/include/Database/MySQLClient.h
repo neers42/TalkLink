@@ -42,7 +42,7 @@ public:
 	void connect() override;
 	void close() override;
 	bool execute_query(const std::string& query) override;
-	void print_sql_error(sql::SQLException& e);
+	void print_sql_exception(const sql::SQLException& e);
 	void create_database();
 	bool create_table();
 

@@ -80,7 +80,7 @@ bool MySQLClient::execute_query(const std::string& query)
 		return false;
 	}
 	catch (const sql::SQLException e) {
-		LOG_ERROR("SQLException Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
+		LOG_ERROR("SQLException: {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -91,9 +91,9 @@ bool MySQLClient::execute_query(const std::string& query)
 	
 }
 
-void MySQLClient::print_sql_error(sql::SQLException& e)
+void MySQLClient::print_sql_exception(const sql::SQLException& e)
 {
-	spdlog::error("SQLException Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
+	LOG_ERROR("SQLException Content:{}, SQL Error Code:{}, SQL State:{}", e.what(), e.getErrorCode(), e.getSQLState());
 }
 
 void MySQLClient::create_database()
@@ -107,9 +107,13 @@ void MySQLClient::create_database()
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:database creation failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return;
 	}	
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("Runtime Error:{}", e.what());
+		return;
+	}
 	catch (const std::exception& e) {
 		LOG_ERROR("Exception:{}.", e.what());
 		return ;
@@ -186,9 +190,13 @@ bool MySQLClient::insert_client_data(
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:insert client data failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("Runtime Error:{}", e.what());
+		return false;
 	}
 	catch (const std::exception& e) {
 		LOG_ERROR("Exception:{}.", e.what());
@@ -223,9 +231,14 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::select_client_in
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:select client data failed. Error: {}", e.what());
+		this->print_sql_exception(e);
+		LOG_ERROR("SQLException:{}", e.what());
 		return std::make_tuple("", "", "");
 
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("Runtime Error:{}", e.what());
+		return std::make_tuple("", "", "");
 	}
 	catch (const std::exception& e) {
 		LOG_ERROR("Exception:{}.", e.what());
@@ -254,11 +267,11 @@ bool MySQLClient::update_last_login(const std::string& cid, const std::string& l
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:update last login failed. Error: {}", e.what());
+		LOG_ERROR("SQLException:{}", e.what());
 		return false;
 	}
 	catch (const std::runtime_error& e) {
-		LOG_ERROR("Runtime Error:update last login failed. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:{}", e.what());
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -294,11 +307,11 @@ bool MySQLClient::is_client_id_exist(const std::string& cid)
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:select client data failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e) {
-		LOG_ERROR("Runtime Error:select client data failed. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:{}", e.what());
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -351,12 +364,12 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 	
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:select room id failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:{}", e.what());
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -399,6 +412,15 @@ bool MySQLClient::is_room_id_hex_exist(const std::string& room_id_hex)
 		}
 
 	}
+	catch (const sql::SQLException& e) {
+		this->print_sql_exception(e);
+		return false;
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("Runtime Error:{}", e.what());
+		return false;
+	}
 	catch (const std::exception& e) {
 		std::cerr << "Error: " << e.what() << std::endl;
 		return false;
@@ -440,12 +462,12 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:insert chat message failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:{}", e.what());
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -480,12 +502,12 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("MySQL:insert unsend message failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:{}", e.what());
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -523,12 +545,12 @@ bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::str
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:{}", e.what());
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -564,12 +586,12 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id_hex, const s
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:insert chatroom member failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR("Runtime Error:Failed to decode room id. Error: {}", e.what());
+		LOG_ERROR("Runtime Error:{}", e.what());
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -603,7 +625,7 @@ bool MySQLClient::delete_chatroom_member(const std::string& room_id_hex, const s
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:delete chatroom member failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -645,7 +667,7 @@ std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
 
 	}
 	catch (const sql::SQLException& e) {
-		LOG_ERROR("SQLException: Failed to fetch last login time. Error: {}", e.what());
+		this->print_sql_exception(e);
 	}
 	catch (const std::exception& e) {
 		LOG_ERROR("Exception:{}.", e.what());
@@ -706,7 +728,7 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException: Failed to fetch unsend messages. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return json();
 	}
 	catch (const std::exception& e) {
@@ -742,7 +764,7 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException: Failed to fetch client list from chatroom. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return std::vector<std::string>();
 	}
 	catch (const std::runtime_error& e) {
@@ -786,7 +808,7 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id_hex
 
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:select chatroom name failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return std::string();
 	}
 	catch (const std::runtime_error& e)
@@ -821,7 +843,7 @@ bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id_hex)
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:delete chatroom failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -858,7 +880,7 @@ bool MySQLClient::update_chatroom_name(const std::string& room_id_hex, const std
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:delete chatroom failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -895,7 +917,7 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:update chatroom icon failed. Error: {}", e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -928,7 +950,7 @@ bool MySQLClient::create_table_clients()
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_clients, e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -955,7 +977,7 @@ bool MySQLClient::create_table_chatrooms()
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_chatrooms, e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -984,7 +1006,7 @@ bool MySQLClient::create_table_chat_members()
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_chat_members, e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -1013,7 +1035,7 @@ bool MySQLClient::create_table_chat_messages()
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_chat_messages, e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -1042,7 +1064,7 @@ bool MySQLClient::create_table_unsend_messages()
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_unsend_messages, e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -1073,7 +1095,7 @@ bool MySQLClient::create_table_unsend_control_messages()
 	}
 	catch (const sql::SQLException& e)
 	{
-		LOG_ERROR("SQLException:create table(table name:{}) failed. Error: {}", _mysql_table_name_unsend_control_messages, e.what());
+		this->print_sql_exception(e);
 		return false;
 	}
 	catch (const std::exception& e)
