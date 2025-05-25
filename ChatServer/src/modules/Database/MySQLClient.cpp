@@ -149,39 +149,55 @@ bool MySQLClient::insert_client_data(
 	const std::string& cid,
 	const std::string& name, 
 	const std::string& mail_address,
-	const std::string& password_hash, 
+	const std::string& password_hash,
+	const std::string& icon_url,
 	const std::string& created_at, 
 	const std::string& last_login
 )
 {
 	try
 	{
-		if (last_login == "") {
+		if (last_login == "" && icon_url == "") {
 			std::unique_ptr < sql::PreparedStatement> pre_stmt(
 				this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
-					"(cid, name, mail_address, password_hash, created_at, last_login) "
-					"VALUES(?, ?, ?, ?, ?, NULL);")
+					"(cid, name, mail_address, password_hash, icon_url, created_at, last_login) "
+					"VALUES(?, ?, ?, ?, NULL, ?, NULL);")
 			);
 			pre_stmt->setString(1, cid);
 			pre_stmt->setString(2, name);
 			pre_stmt->setString(3, mail_address);
 			pre_stmt->setString(4, password_hash);
-			pre_stmt->setString(5, created_at);
+			pre_stmt->setString(6, created_at);
+			pre_stmt->executeUpdate();
+		}
+		else if (icon_url != "") {
+			std::unique_ptr < sql::PreparedStatement> pre_stmt(
+				this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
+					"(cid, name, mail_address, password_hash, icon_url, created_at, last_login) "
+					"VALUES(?, ?, ?, ?, ?, ?, NULL);")
+			);
+			pre_stmt->setString(1, cid);
+			pre_stmt->setString(2, name);
+			pre_stmt->setString(3, mail_address);
+			pre_stmt->setString(4, password_hash);
+			pre_stmt->setString(5, icon_url);
+			pre_stmt->setString(6, created_at);
 			pre_stmt->executeUpdate();
 		}
 		else {
 
 			std::unique_ptr < sql::PreparedStatement> pre_stmt(
 				this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
-					"(cid, name, mail_address, password_hash, created_at, last_login) "
-					"VALUES(?, ?, ?, ?, ?, ?);")
+					"(cid, name, mail_address, password_hash, icon_url, created_at, last_login) "
+					"VALUES(?, ?, ?, ?, ?, ?, ?);")
 			);
 			pre_stmt->setString(1, cid);
 			pre_stmt->setString(2, name);
 			pre_stmt->setString(3, mail_address);
 			pre_stmt->setString(4, password_hash);
-			pre_stmt->setString(5, created_at);
-			pre_stmt->setString(6, last_login);
+			pre_stmt->setString(5, icon_url);
+			pre_stmt->setString(6, created_at);
+			pre_stmt->setString(7, last_login);
 			pre_stmt->executeUpdate();
 		}
 		
@@ -207,7 +223,7 @@ bool MySQLClient::insert_client_data(
 	
 }
 
-std::tuple<std::string, std::string, std::string>  MySQLClient::select_client_info(const std::string& cid)
+std::tuple<std::string, std::string, std::string>  MySQLClient::get_client_info_fromDB(const std::string& cid)
 {
 	try
 	{
@@ -220,9 +236,15 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::select_client_in
 		if (res != nullptr && res->next()) {
 			std::string name = res->getString("name");
 			std::string mail_address = res->getString("mail_address");
-			std::string password_hash = res->getString("password_hash");
-			spdlog::debug("MySQL:client name:{}, mail_address:{}, password_hash:{}", name, mail_address, password_hash);
-			return std::make_tuple(name, mail_address, password_hash);
+			std::string icon_url;
+			if (res->isNull("icon_url") == true) {
+				icon_url = "";
+			}
+			else {
+				icon_url = res->getString("icon_url");
+			}
+			spdlog::debug("MySQL:client name:{}, mail_address:{}, icon_url:{}", name, mail_address, icon_url);
+			return std::make_tuple(name, mail_address, icon_url);
 		}
 		else {
 			LOG_ERROR("MySQL: no data found for cid: {}", cid);
@@ -676,6 +698,52 @@ std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
 	return last_login_time;
 }
 
+bool MySQLClient::insert_unsend_control_message(
+	const uint64_t mid, 
+	const std::string& cid, 
+	const std::string& room_id, 
+	const std::string& json_payload, 
+	const std::string& created_at
+)
+{
+	try
+	{
+		std::string query = "INSERT INTO " + _mysql_table_name_unsend_control_messages +
+			"(mid, cid, room_id, json_payload, created_at) VALUES(?, ?, ?, ?, ?);";
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement(query)
+		);
+		// room_idを16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id);
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+		std::istringstream blob_stream(binary_str);
+
+
+		//パラメータを設定
+		pre_stmt->setInt64(1, mid); // メッセージID
+		pre_stmt->setString(2, cid); // クライアントID
+		pre_stmt->setBlob(3, &blob_stream);	//ルームID
+		pre_stmt->setString(4, json_payload); // JSONペイロード
+		pre_stmt->setString(5, created_at); // 作成日時
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+		spdlog::debug("MySQL:insert unsend control message(mid:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
+	}
+	catch (const sql::SQLException& e) {
+		this->print_sql_exception(e);
+		return false;
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("Runtime Error:{}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return false;
+	}
+	return true;
+}
+
 json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 {
 	try
@@ -941,6 +1009,7 @@ bool MySQLClient::create_table_clients()
 				"name VARCHAR(28) NOT NULL,"
 				"mail_address VARCHAR(256) NOT NULL,"
 				"password_hash VARCHAR(255) NOT NULL,"
+				"icon_url VARCHAR(255),"
 				"created_at DATETIME NOT NULL,"
 				"last_login DATETIME);")
 		);

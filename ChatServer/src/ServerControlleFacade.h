@@ -86,11 +86,168 @@ private:
 	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
 	void mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result);
 	void mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<ClientHandler::Client>& client);
-
+	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003>& mt003);
+	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids);
+	std::vector<MessageType103A::ClientInfo> generate_client_infos(const std::vector < std::string >& cids);
 	void mt104_process(const std::unique_ptr<MessageType004>& mt004);
 	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004>& mt004);
 	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids);
 	void resend_message_process(const json& message, const std::string& cid);
+
+	template <typename T>
+	void send_message_to_room(const std::unique_ptr<T>& message, std::vector<std::string>* unsend_cids)
+	{
+		try
+		{
+			//メッセージをデシリアライズする
+			json json_message = T::deserialize_message(message);
+			auto& sender = _client_handler->connected_clients.at(_client_handler->search_cid_from_clients(message->get_sender_id()));
+			//送り先のclientの情報を取得する
+			auto receivers_cids = this->_chat_room_handler->get_client_infos_by_chatroom_id(message->get_room_id());
+
+			//ChatroomHandlerが保持しているクライアントリストからチャットルームが検出できない場合
+			if (receivers_cids.size() == 0) {
+				std::vector<std::string> send_cids = this->_mysql_client->get_client_list_from_chatroom(message->get_room_id());
+				//データベースにもチャットルームIDが存在しない場合
+				if (send_cids.size() == 0) {
+					return;
+				}
+
+
+				for (const auto& cid : send_cids) {
+					int receiver_list_num = this->_client_handler->search_cid_from_clients(cid);
+					//接続しているクライアントリストに送信先のクライアントが存在しない場合
+					if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
+						if constexpr (std::is_same<T, MessageType103A>::value) {
+							this->_mysql_client->insert_unsend_control_message(message->get_message_id(), cid, message->get_room_id(), json_message, message->get_created_at());
+						}else if constexpr (std::is_same<T, MessageType104A>::value) {
+							this->_mysql_client->insert_unsend_message(message->get_send_message_id(), cid, message->get_room_id());
+						}
+						else {
+							LOG_ERROR("Unsupported message type for unsend message insertion.");
+							return;
+						}
+						unsend_cids->push_back(cid);
+						continue;
+					}
+					else {
+						//クライアントの情報を取得する
+						auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
+						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
+						if (receiver != nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
+							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
+								spdlog::debug("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+							}
+							else {
+								LOG_ERROR("The MT{} message was not sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+								this->_mysql_client->insert_unsend_message(message->get_message_id(), cid, message->get_room_id());
+								unsend_cids->push_back(receiver->id);
+
+							}
+						}
+						else if (receiver->ssl == sender->ssl) {
+							//送信先と送信元のsslが一致する場合
+#define DEBUG
+#ifdef DEBUG
+						//this->_protocol_handler->send_message_tls(sender->ssl, json_message);
+#endif // DEBUG
+#undef DEBUG
+							continue;
+						}
+						else if (receiver->ssl == nullptr) {
+							//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
+							if constexpr (std::is_same<T, MessageType103A>::value) {
+								this->_mysql_client->insert_unsend_control_message(message->get_message_id(), cid, message->get_room_id(), json_message, message->get_created_at());
+							}
+							else if constexpr (std::is_same<T, MessageType104A>::value) {
+								this->_mysql_client->insert_unsend_message(message->get_send_message_id(), cid, message->get_room_id());
+							}
+							unsend_cids->push_back(receiver->id);
+							continue;
+						}
+						else {
+							LOG_ERROR("Failed to send MT{}(mid:{}).", message->get_message_type(), message->get_message_id());
+						}
+					}
+				}
+
+			}
+			else {
+				//ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できた場合
+				for (const auto& receiver_cid : receivers_cids) {
+					int receiver_list_num = this->_client_handler->search_cid_from_clients(receiver_cid);
+					if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
+						// データベースにcidが存在するか確認
+						if (!this->_mysql_client->is_client_id_exist(receiver_cid)) {	//cidがデータベースに存在しない場合
+							LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
+							continue;
+						}
+
+						// クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
+						if constexpr (std::is_same<T, MessageType103A>::value) {
+							this->_mysql_client->insert_unsend_control_message(message->get_message_id(), receiver_cid, message->get_room_id(), json_message, message->get_created_at());
+							
+						}
+						else if constexpr (std::is_same<T, MessageType104A>::value) {
+							this->_mysql_client->insert_unsend_message(message->get_send_message_id(), receiver_cid, message->get_room_id());
+						}
+						continue;
+					}
+					else {
+						//クライアントの情報を取得する
+						auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
+						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
+						if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
+							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
+								spdlog::debug("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+							}
+							else {
+								LOG_ERROR("The MT{} message was not sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+								unsend_cids->push_back(receiver->id);
+							}
+						}
+						else if (receiver->ssl == sender->ssl) {
+							//送信先と送信元のsslが一致する場合
+#define DEBUG
+#ifdef DEBUG
+							this->_protocol_handler->send_message_tls(sender->ssl, json_message);
+#endif // DEBUG
+#undef DEBUG
+							continue;
+						}
+						else if (receiver->ssl == nullptr) {
+							// データベースにcidが存在するか確認
+							if (!this->_mysql_client->is_client_id_exist(receiver_cid)) {
+								LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
+								continue;
+							}
+							//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
+							if (!this->_mysql_client->insert_unsend_message(message->get_message_id(), receiver->id, message->get_room_id())) {
+								LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver->id);
+							}
+							continue;
+						}
+					}
+
+				}
+			}
+
+			if (unsend_cids->size() == 0) {
+				spdlog::info("The MT{} message was successfully sent to all clients.", message->get_message_type());
+			}
+			else if (unsend_cids->size() > 0) {
+				spdlog::warn("The MT{} message was not sent to all clients.", message->get_message_type());
+			}
+
+		}
+		catch (const std::out_of_range& e)
+		{
+			// エラーハンドリング
+			LOG_ERROR("Sender ID not found. exception content: {}", e.what());
+			return ;
+
+		}
+	}
 	
 };
 

@@ -360,7 +360,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 				client->mail_address = mt001->get_client_mail_addr();
 				client->password = mt001->get_client_password();
 
-				if (this->_mysql_client->insert_client_data(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password(), ServerTime::get_current_time_to_seconds(), "") == true) {
+				if (this->_mysql_client->insert_client_data(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password(), "", ServerTime::get_current_time_to_seconds(), "") == true) {
 					spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client->ipv4_address, client->socket, client_id);
 				}
 				else {
@@ -390,7 +390,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 				
 				//データベースからユーザ情報を読み取る。			
 				std::string client_name, client_mail_addr, client_password;
-				std::tie(client_name, client_mail_addr, client_password) = this->_mysql_client->select_client_info(client_id);
+				std::tie(client_name, client_mail_addr, client_password) = this->_mysql_client->get_client_info_fromDB(client_id);
 				client->id = client_id;
 				client->name = client_name;
 				client->mail_address = client_mail_addr;
@@ -618,6 +618,57 @@ void ServerControlleFacade::mt101_process(const std::shared_ptr<ClientHandler::C
 
 void ServerControlleFacade::mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<ClientHandler::Client>& client)
 {
+	std::vector<std::string> unsend_cids;
+	unsend_cids = this->mt103A_process(mt003);
+
+}
+
+std::vector<std::string> ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>& mt003)
+{
+	std::vector<std::string> unsend_cids;
+	std::vector<MessageType103A::ClientInfo> client_infos;
+
+	//MT103Aを生成する
+	switch (mt003->get_room_action())
+	{
+	case MessageType003::RoomAction::CREATE_ROOM:
+	case MessageType003::RoomAction::ADD_MEMBER:
+	case MessageType003::RoomAction::REMOVE_MEMBER:
+		client_infos = this->generate_client_infos(mt003->get_add_member_list());
+		break;
+	default:
+		break;
+	}
+	auto mt103A = std::make_unique<MessageType103A>(
+		mt003->get_sender_id(),
+		mt003->get_room_id(),
+		mt003->get_room_name(),
+		mt003->get_room_image_url(),
+		client_infos,
+		mt003->get_room_action()
+		);
+	this->send_message_to_room<MessageType103A>(mt103A, &unsend_cids);
+
+	return unsend_cids;
+}
+
+void ServerControlleFacade::mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids)
+{
+}
+
+std::vector<MessageType103A::ClientInfo> ServerControlleFacade::generate_client_infos(const std::vector<std::string>& cids)
+{
+	std::vector<MessageType103A::ClientInfo> client_infos;
+	if (cids.size() == 0) {
+		return std::vector<MessageType103A::ClientInfo>();
+	}
+	for (const auto& cid : cids) {
+		std::string client_name, client_mail_addr, client_icon_url;
+		std::make_tuple(client_name, client_mail_addr, client_icon_url) = this->_mysql_client->get_client_info_fromDB(cid);
+		MessageType103A::ClientInfo add_client_info(cid, client_name, client_mail_addr, client_icon_url);
+		client_infos.push_back(add_client_info);
+	}
+	return client_infos;
 }
 
 void ServerControlleFacade::mt104_process(const std::unique_ptr<MessageType004>& mt004)
@@ -767,139 +818,8 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 		mt004->get_send_time(),
 		mt004->get_content()
 	);
-	try
-	{
-		//mt104Aをデシリアライズする
-		json mt104A_json = MessageType104A::desirialize_message(mt104A);
-		auto& sender = _client_handler->connected_clients.at(_client_handler->search_cid_from_clients(mt104A->get_sender_id()));
-		//送り先のclientの情報を取得する
-		auto receivers_cids = this->_chat_room_handler->get_client_infos_by_chatroom_id(mt104A->get_room_id());
+	this->send_message_to_room<MessageType104A>(mt104A, &unsend_cids);
 
-		//ChatroomHandlerが保持しているクライアントリストからチャットルームが検出できない場合
-		if (receivers_cids.size() == 0) {
-			std::vector<std::string> send_cids = this->_mysql_client->get_client_list_from_chatroom(mt104A->get_room_id());
-			//データベースにもチャットルームIDが存在しない場合
-			if (send_cids.size() == 0) {
-				return unsend_cids;
-			}
-
-
-			for (const auto& cid : send_cids) {
-				int receiver_list_num = this->_client_handler->search_cid_from_clients(cid);
-				//接続しているクライアントリストに送信先のクライアントが存在しない場合
-				if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
-					this->_mysql_client->insert_unsend_message(mt104A->get_send_message_id(), cid, mt104A->get_room_id());
-					unsend_cids.push_back(cid);
-					continue;
-				}
-				else {
-					//クライアントの情報を取得する
-					auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
-					//MT104Aを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
-					if (receiver != nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
-						if (this->_protocol_handler->send_message_tls(receiver->ssl, mt104A_json)) {
-							spdlog::debug("The MT104A message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
-						}
-						else {
-							LOG_ERROR("The MT104A message was not sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
-							this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), cid, mt104A->get_room_id());
-							unsend_cids.push_back(receiver->id);
-
-						}
-					}
-					else if (receiver->ssl == sender->ssl) {
-						//送信先と送信元のsslが一致する場合
-#define DEBUG
-#ifdef DEBUG
-						//this->_protocol_handler->send_message_tls(sender->ssl, mt104A_json);
-#endif // DEBUG
-#undef DEBUG
-						continue;
-					}
-					else if (receiver->ssl == nullptr) {
-						//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-						this->_mysql_client->insert_unsend_message(mt104A->get_send_message_id(), cid, mt104A->get_room_id());
-						unsend_cids.push_back(receiver->id);
-						continue;
-					}
-					else {
-						LOG_ERROR("Failed to send MT104A(mid:{}).", mt104A->get_message_id());
-					}
-				}
-			}
-			
-		}
-		else {
-			//ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できた場合
-			for (const auto& receiver_cid : receivers_cids) {
-				int receiver_list_num = this->_client_handler->search_cid_from_clients(receiver_cid);
-				if (receiver_list_num == NOT_EXIST_CLIENT_ID) {
-					// データベースにcidが存在するか確認
-					if (!this->_mysql_client->is_client_id_exist(receiver_cid)) {	//cidがデータベースに存在しない場合
-						LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
-						continue;
-					}
-
-					// クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-					if (!this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), receiver_cid, mt104A->get_room_id())) {
-						LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver_cid);
-					}
-					continue;
-				}
-				else {
-					//クライアントの情報を取得する
-					auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
-					//MT104Aを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
-					if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
-						if (this->_protocol_handler->send_message_tls(receiver->ssl, mt104A_json)) {
-							spdlog::debug("The MT104A message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
-						}
-						else {
-							LOG_ERROR("The MT104A message was not sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
-							unsend_cids.push_back(receiver->id);
-						}
-					}
-					else if (receiver->ssl == sender->ssl) {
-						//送信先と送信元のsslが一致する場合
-#define DEBUG
-#ifdef DEBUG
-						this->_protocol_handler->send_message_tls(sender->ssl, mt104A_json);
-#endif // DEBUG
-#undef DEBUG
-						continue;
-					}
-					else if (receiver->ssl == nullptr) {
-						// データベースにcidが存在するか確認
-						if (!this->_mysql_client->is_client_id_exist(receiver_cid)) {
-							LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
-							continue;
-						}
-						//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-						if (!this->_mysql_client->insert_unsend_message(mt104A->get_message_id(), receiver->id, mt104A->get_room_id())) {
-							LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver->id);
-						}
-						continue;
-					}
-				}
-
-			}
-		}
-
-		if (unsend_cids.size() == 0) {
-			spdlog::info("The MT104A message was successfully sent to all clients.");
-		}
-		else if (unsend_cids.size() > 0) {
-			spdlog::warn("The MT104A message was not sent to all clients.");
-		}
-
-	}
-	catch (const std::out_of_range& e)
-	{
-		// エラーハンドリング
-		LOG_ERROR("Sender ID not found. exception content: {}", e.what());
-		return unsend_cids;
-
-	}
 	
 	return unsend_cids;
 }
@@ -987,6 +907,9 @@ void ServerControlleFacade::mt104B_process(const std::unique_ptr<MessageType004>
 		}
 
 }
+
+
+
 
 void ServerControlleFacade::resend_message_process(const json& message, const std::string& cid)
 {

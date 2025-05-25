@@ -2,21 +2,19 @@
 
 
 MessageType103A::MessageType103A(
+	const std::string& sender_id,
 	const std::string& room_id, 
 	const std::string& room_name, 
 	const std::string& room_icon_url, 
 	const std::vector<ClientInfo>& client_info_list, 
-	const MessageType003::RoomAction& room_action,
-	bool action_result, 
-	const std::string& error_message
+	const MessageType003::RoomAction& room_action
 ):BaseMessage(MessageType103A::ContentType::NOTIFICATION, "103A", MessageIDGenerator::generate_message_id()),
+_sender_id{ sender_id },
 _room_id{ room_id },
 _room_name{ room_name },
 _room_icon_url{ room_icon_url },
 _client_info_list{ client_info_list },
-_room_action{ room_action },
-_action_result{ action_result },
-_error_message{ error_message }
+_room_action{ room_action }
 {
 }
 
@@ -24,6 +22,10 @@ MessageType103A::~MessageType103A()
 {
 }
 
+std::string MessageType103A::get_sender_id() const
+{
+	return this->_sender_id;
+}
 std::string MessageType103A::get_room_id() const
 {
     return this->_room_id;
@@ -69,22 +71,8 @@ MessageType003::RoomAction MessageType103A::get_room_action() const
 	return this->_room_action;
 }
 
-bool MessageType103A::get_action_result() const
-{
-    return this->_action_result;
-}
 
-void MessageType103A::set_action_result(bool action_result)
-{
-	this->_action_result = action_result;
-}
-
-std::string MessageType103A::get_error_message() const
-{
-    return this->_error_message;
-}
-
-json MessageType103A::deserialize_message(const std::unique_ptr<MessageType103A>& mt103A, const std::string& error_message)
+json MessageType103A::deserialize_message(const std::unique_ptr<MessageType103A>& mt103A)
 {
 	json mt103A_json, room_info = json::array(), member = json::array();
 	switch (mt103A->get_content_type())
@@ -150,10 +138,6 @@ json MessageType103A::deserialize_message(const std::unique_ptr<MessageType103A>
 		
 	}
 	
-	// エラーメッセージ（オプション）
-	if (!error_message.empty()) {
-		mt103A_json["error_message"] = error_message;
-	}
 
 	return mt103A_json;
 

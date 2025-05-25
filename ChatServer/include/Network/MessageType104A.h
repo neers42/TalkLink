@@ -38,7 +38,7 @@ public:
 	void content(const std::string& content);
 
 
-	static json desirialize_message(const std::unique_ptr<MessageType104A>& mt104A);
+	static json deserialize_message(const std::unique_ptr<MessageType104A>& mt104A);
 	
 };
 #endif // !MESSAGETYPE104A

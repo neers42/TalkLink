@@ -65,11 +65,24 @@ public:
 	bool update_chatroom_icon(const std::string& room_id, const std::string& icon_url);
 
 	//テーブル：clients操作
-	bool insert_client_data(const std::string& cid, const std::string& name, const std::string& mail_address, const std::string& password_hash, const std::string& created_at, const std::string& last_login);
-	std::tuple<std:: string, std::string, std::string> select_client_info(const std::string& cid);
+	bool insert_client_data(
+		const std::string& cid,
+		const std::string& name,
+		const std::string& mail_address,
+		const std::string& password_hash,
+		const std::string& icon_url,
+		const std::string& created_at,
+		const std::string& last_login);
+	std::tuple<std:: string, std::string, std::string> get_client_info_fromDB(const std::string& cid);
 	bool update_last_login(const std::string& cid, const std::string& last_login);
 	bool is_client_id_exist(const std::string& cid);
 	std::string get_client_last_login_fromDB(const std::string& cid);
+
+	//テーブル：unsend_control_messages操作
+	bool insert_unsend_control_message(const uint64_t mid, const std::string& cid, const std::string& room_id, const std::string& json_payload, const std::string& created_at);
+	json get_unsend_control_message_fromDB(const std::string& cid);
+	bool delete_unsend_control_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
+
 
 	//テーブル：unsend_messages操作
 	bool insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
