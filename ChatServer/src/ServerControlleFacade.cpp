@@ -596,23 +596,42 @@ void ServerControlleFacade::mt004_process(const std::unique_ptr<MessageType004>&
 void ServerControlleFacade::mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result)
 {
 	//TODO　ここでcidに関するメッセージをデータベースから取得する。
-	json unsend_messages_json;
+	json unsend_messages_json, unsend_control_messages_json;
+	//未送信チャットメッセージを取得する
 	unsend_messages_json = this->_mysql_client->get_unsend_message_fromDB(client->id, 20);
+	//未送信コントロールメッセージを取得する
+	unsend_control_messages_json = this->_mysql_client->get_unsend_control_message_fromDB(client->id);
 	
-
-	//TODO
 	//MT101を送信する処理を記載する
 	auto mt101 = std::make_unique<MessageType101>(client->id, login_result);
 	json mt101_json = MessageType101::desirialize_message(mt101, unsend_messages_json, error_msg);
-	
-
-	//TODO　ここでmt101を送信する処理を記載する
 	bool send_result = this->_protocol_handler->send_message_tls(client->ssl, mt101_json);
 	if (send_result == true) {
 		spdlog::info("The MT101 message was successfully sent to the client(ip:{}, id:{}).", client->ipv4_address, client->id);
+
+		for (const auto& unsend_control_message_json : unsend_control_messages_json) {
+			//データベースから未送信コントロールメッセージを削除する
+			const auto mid = unsend_control_message_json["mid"].get<uint64_t>();
+			const auto cid = unsend_control_message_json["cid"].get<std::string>();
+			const auto rid = unsend_control_message_json["room_id"].get<std::string>();
+			this->_mysql_client->delete_unsend_control_message(mid, cid, rid);
+		}
+
+
+		//unsend_messageを削除する
+		for(const auto& unsend_message : unsend_messages_json) {
+			//データベースから未送信メッセージを削除する
+			const auto mid = unsend_message["mid"].get<uint64_t>();
+			const auto cid = unsend_message["sender_cid"].get<std::string>();
+			const auto rid = unsend_message["send_room_id"].get<std::string>();
+			this->_mysql_client->delete_unsend_message(mid, cid, rid);
+		}
+
+
 	}
 	else {
 		spdlog::error("The MT101 message was not sent to the client.");
+		//TODO MT101の送信に失敗した場合の処理を記載する⇒再送処理する
 	}
 }
 

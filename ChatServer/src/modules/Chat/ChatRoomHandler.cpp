@@ -172,7 +172,7 @@ bool ChatroomHandler::add_member_to_chatroom(const std::string& room_id, const s
 {
 	auto it = find_chatroom_id_from_list(room_id);
 	if (it == this->chatroom_list.end()) {
-		LOG_ERROR("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
+		spdlog::warn("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
 		return false;
 	}
 	for (const auto& cid : cids) {
@@ -193,12 +193,12 @@ bool ChatroomHandler::delete_member_from_chatroom(const std::string& room_id, co
 {
 	auto it = find_chatroom_id_from_list(room_id);
 	if (it == this->chatroom_list.end()) {
-		LOG_ERROR("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
+		spdlog::warn("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
 		return false;
 	}
 	for (const auto& cid : cids) {
 		if ((*it)->get_client_list().size() == 0) {
-			LOG_ERROR("The chatroom ID({}) has no clients.", room_id);
+			spdlog::warn("The chatroom ID({}) has no clients.", room_id);
 			return false;
 		}
 		if (!(*it)->delete_client_chatroom(cid)) {

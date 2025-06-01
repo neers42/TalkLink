@@ -703,13 +703,13 @@ bool MySQLClient::insert_unsend_control_message(
 	const std::string& cid, 
 	const std::string& room_id, 
 	const std::string& json_payload, 
-	const std::string& created_at
+	const std::string& request_time
 )
 {
 	try
 	{
 		std::string query = "INSERT INTO " + _mysql_table_name_unsend_control_messages +
-			"(mid, cid, room_id, json_payload, created_at) VALUES(?, ?, ?, ?, ?);";
+			"(mid, cid, room_id, json_payload, request_time) VALUES(?, ?, ?, ?, ?);";
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement(query)
 		);
@@ -725,7 +725,7 @@ bool MySQLClient::insert_unsend_control_message(
 		pre_stmt->setString(2, cid); // クライアントID
 		pre_stmt->setBlob(3, &blob_stream);	//ルームID
 		pre_stmt->setString(4, json_payload); // JSONペイロード
-		pre_stmt->setString(5, created_at); // 作成日時
+		pre_stmt->setString(5, request_time); // 作成日時
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 		spdlog::debug("MySQL:insert unsend control message(mid:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
 	}
@@ -744,6 +744,104 @@ bool MySQLClient::insert_unsend_control_message(
 	return true;
 }
 
+json MySQLClient::get_unsend_control_message_fromDB(const std::string& cid)
+{
+	try
+	{
+		/*std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement(
+				"SELECT " + _mysql_table_name_unsend_control_messages + ".mid, " + _mysql_table_name_unsend_control_messages + ".cid, " +
+				  _mysql_table_name_unsend_control_messages + ".room_id, " + _mysql_table_name_unsend_control_messages + ".json_payload, " +
+				  _mysql_table_name_unsend_control_messages + ".created_at "
+				"FROM " + _mysql_table_name_unsend_control_messages + " "
+				"WHERE " + _mysql_table_name_unsend_control_messages + ".cid = ?;"
+			)
+		);*/
+
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement(
+				"SELECT " + _mysql_table_name_unsend_control_messages + ".mid, " +
+				_mysql_table_name_unsend_control_messages + ".cid, " +
+				_mysql_table_name_unsend_control_messages + ".room_id, " +
+				_mysql_table_name_unsend_control_messages + ".json_payload, " +
+				_mysql_table_name_unsend_control_messages + ".request_time " +
+				"FROM " + _mysql_table_name_unsend_control_messages + " " +
+				"WHERE " + _mysql_table_name_unsend_control_messages + ".cid = ?;"
+			)
+		);
+		pre_stmt->setString(1, cid);
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+		json unsend_control_messages_json = json::array();
+		while (res->next())
+		{
+			json message;
+			message["mid"] = res->getInt64("mid");
+			message["cid"] = res->getString("cid");
+			// BINARY(16)のroom_idをバイト列として取得し、ULID文字列に変換
+			std::string room_id_bin = res->getString("room_id");
+			if (room_id_bin.size() == 16) {
+				std::ostringstream oss;
+				for (unsigned char c : room_id_bin) {
+					oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(c);
+				}
+				message["room_id"] = oss.str(); // ULID を HEX 文字列で返す
+			}
+			else {
+				message["room_id"] = "";
+			}
+			message["json_payload"] = res->getString("json_payload");
+			message["request_time"] = res->getString("request_time");
+			unsend_control_messages_json.push_back(message);
+		}
+		return unsend_control_messages_json;
+	}
+	catch (const sql::SQLException& e)
+	{
+		this->print_sql_exception(e);
+		return json();
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return json();
+	}
+}
+
+bool MySQLClient::delete_unsend_control_message(const uint64_t mid, const std::string& cid, const std::string& room_id)
+{
+	try
+	{
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_unsend_control_messages +
+				" WHERE mid = ? AND cid = ? AND room_id = ?;")
+		);
+		// room_idを16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id);
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+		std::istringstream blob_stream(binary_str);
+
+		pre_stmt->setInt64(1, mid);
+		pre_stmt->setString(2, cid);
+		pre_stmt->setBlob(3, &blob_stream);	//ルームID
+		pre_stmt->executeUpdate();
+		spdlog::debug("MySQL:delete unsend control message(mid:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
+		return true;
+	}
+	catch (const sql::SQLException& e)
+	{
+		this->print_sql_exception(e);
+		return false;
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("Runtime Error:{}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return false;
+	}
+}
+
 json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 {
 	try
@@ -754,12 +852,27 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 			LOG_ERROR("MySQL: No last login time found for client {}", cid);
 			return json();
 		}
+	/*	std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement(
+				"SELECT " + _mysql_table_name_unsend_messages + ".mid, " + _mysql_table_name_unsend_messages + ".cid, "
+				+_mysql_table_name_unsend_messages + ".room_id, " + _mysql_table_name_chat_messages + ".message "
+				"FROM " + _mysql_table_name_unsend_messages + " "
+				"JOIN " + _mysql_table_name_chat_messages + " ON " + _mysql_table_name_unsend_messages + ".mid = " + _mysql_table_name_chat_messages + ".mid "
+				"WHERE "_mysql_table_name_unsend_messages + ".cid = ? AND " + _mysql_table_name_chat_messages + ".send_time > ? "
+			)
+		);*/
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement(
-				"SELECT unsend_messages.mid, unsend_messages.cid, unsend_messages.room_id, chat_messages.message "
-				"FROM " + _mysql_table_name_unsend_messages + " "
-				"JOIN chat_messages ON unsend_messages.mid = chat_messages.mid "
-				"WHERE unsend_messages.cid = ? AND chat_messages.send_time > ?"
+				"SELECT " + _mysql_table_name_unsend_messages + ".mid, " +
+				_mysql_table_name_unsend_messages + ".cid, " +
+				_mysql_table_name_unsend_messages + ".room_id, " +
+				_mysql_table_name_chat_messages + ".message " +
+				"FROM " + _mysql_table_name_unsend_messages + " " +
+				"JOIN " + _mysql_table_name_chat_messages + " ON " +
+				_mysql_table_name_unsend_messages + ".mid = " +
+				_mysql_table_name_chat_messages + ".mid " +
+				"WHERE " + _mysql_table_name_unsend_messages + ".cid = ? AND " +
+				_mysql_table_name_chat_messages + ".send_time > ?"
 			)
 		);
 		pre_stmt->setString(1, cid);
@@ -785,7 +898,7 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 			else {
 				message["send_room_id"] = "";
 			}
-			
+			message["send_time"] = res->getString("send_time");
 			message["message"] = res->getString("message");
 			unsend_messages_json.push_back(message);
 
@@ -802,6 +915,41 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 	catch (const std::exception& e) {
 		LOG_ERROR("Exception:{}.", e.what());
 		return json();
+	}
+}
+
+bool MySQLClient::delete_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id)
+{
+	try
+	{
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_unsend_messages +
+				" WHERE mid = ? AND cid = ? AND room_id = ?;")
+		);
+		// room_idを16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id);
+		// バイナリデータを string に変換（MySQL 用）
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+		std::istringstream blob_stream(binary_str);
+		pre_stmt->setInt64(1, mid);
+		pre_stmt->setString(2, cid);
+		pre_stmt->setBlob(3, &blob_stream);	//ルームID
+		pre_stmt->executeUpdate();
+		spdlog::debug("MySQL:delete unsend message(mid:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
+		return true;
+	}
+	catch (const sql::SQLException& e)
+	{
+		this->print_sql_exception(e);
+		return false;
+	}
+	catch (const std::runtime_error& e) {
+		LOG_ERROR("Runtime Error:{}", e.what());
+		return false;
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return false;
 	}
 }
 
@@ -1152,7 +1300,7 @@ bool MySQLClient::create_table_unsend_control_messages()
 				"cid VARCHAR(28) NOT NULL,"
 				"room_id BINARY(16) NOT NULL,"
 				"json_payload JSON NOT NULL,"
-				"created_at DATETIME NOT NULL,"
+				"request_time DATETIME NOT NULL,"
 				"PRIMARY KEY(mid, cid, room_id),"
 				"FOREIGN KEY (mid) REFERENCES chat_messages(mid) ON DELETE CASCADE ON UPDATE CASCADE,"
 				"FOREIGN KEY (cid) REFERENCES clients(cid) ON DELETE CASCADE,"

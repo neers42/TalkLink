@@ -98,7 +98,7 @@ private:
 	void send_message_to_room(const std::unique_ptr<T>& message, std::vector<std::string>* unsend_cids)
 	{
 		try
-		{
+	{
 			//メッセージをデシリアライズする
 			json json_message = T::deserialize_message(message);
 			auto& sender = _client_handler->connected_clients.at(_client_handler->search_cid_from_clients(message->get_sender_id()));

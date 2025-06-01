@@ -79,7 +79,7 @@ public:
 	std::string get_client_last_login_fromDB(const std::string& cid);
 
 	//テーブル：unsend_control_messages操作
-	bool insert_unsend_control_message(const uint64_t mid, const std::string& cid, const std::string& room_id, const std::string& json_payload, const std::string& created_at);
+	bool insert_unsend_control_message(const uint64_t mid, const std::string& cid, const std::string& room_id, const std::string& json_payload, const std::string& request_time);
 	json get_unsend_control_message_fromDB(const std::string& cid);
 	bool delete_unsend_control_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
 
@@ -87,6 +87,7 @@ public:
 	//テーブル：unsend_messages操作
 	bool insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
 	json get_unsend_message_fromDB(const std::string& cid, int limit);
+	bool delete_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
 	
 	
 private:
