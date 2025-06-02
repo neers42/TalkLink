@@ -866,7 +866,8 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 				"SELECT " + _mysql_table_name_unsend_messages + ".mid, " +
 				_mysql_table_name_unsend_messages + ".cid, " +
 				_mysql_table_name_unsend_messages + ".room_id, " +
-				_mysql_table_name_chat_messages + ".message " +
+				_mysql_table_name_chat_messages + ".message, " +
+				_mysql_table_name_chat_messages + ".send_time " +
 				"FROM " + _mysql_table_name_unsend_messages + " " +
 				"JOIN " + _mysql_table_name_chat_messages + " ON " +
 				_mysql_table_name_unsend_messages + ".mid = " +
