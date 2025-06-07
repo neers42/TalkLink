@@ -1,5 +1,5 @@
-﻿#ifndef SERVERCONTROLLFACADE_H_
-#define SERVERCONTROLLFACADE_H_
+﻿#ifndef CHATSERVERFACADE_H_
+#define CHATSERVERFACADE_H_
 #include "SocketHandler.h"
 #include "MessageType001.h"
 #include "MessageType002.h"
@@ -253,7 +253,7 @@ private:
 
 
 
-#endif // !SERVERCONTROLLFACADE_H
+#endif // !CHATSERVERFACADE_H
 
 
 
