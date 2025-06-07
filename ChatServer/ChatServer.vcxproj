@@ -362,7 +362,7 @@
     <ClInclude Include="include\Network\MessageType002.h" />
     <ClInclude Include="include\Network\MessageType102.h" />
     <ClInclude Include="include\Network\MessageType103B.h" />
-    <ClInclude Include="src\ChatServerFacade.h" />
+    <ClInclude Include="include\ChatServerFacade.h" />
     <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\StringFormat.h" />
     <ClInclude Include="include\Utils\LogHandler.h" />

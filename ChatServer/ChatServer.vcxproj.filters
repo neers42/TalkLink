@@ -383,7 +383,7 @@
     <ClInclude Include="include\Utils\inicpp.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\ChatServerFacade.h">
+    <ClInclude Include="include\ChatServerFacade.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="include\Network\SocketHandler.h">
