@@ -155,34 +155,34 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\modules\Network\MessageType103B.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType102.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType002.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType003.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType103A.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType104A.cpp" />
-    <ClCompile Include="src\modules\Chat\MessageIDGenerator.cpp" />
-    <ClCompile Include="src\modules\Database\RedisClient.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType104B.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType101.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType000.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType005.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType004.cpp" />
-    <ClCompile Include="src\modules\Network\MessageType001.cpp" />
-    <ClCompile Include="src\modules\Network\BaseMessage.cpp" />
-    <ClCompile Include="src\modules\Network\ProtocolHandler.cpp" />
-    <ClCompile Include="src\modules\Authentication\FirebaseAuthHandler.cpp" />
-    <ClCompile Include="src\modules\Chat\ChatRoomHandler.cpp" />
-    <ClCompile Include="src\modules\Chat\ClientHandler.cpp" />
-    <ClCompile Include="src\modules\Utils\ServerTime.cpp" />
-    <ClCompile Include="src\modules\Utils\LogHandler.cpp" />
-    <ClCompile Include="src\modules\Database\MySQLClient.cpp" />
-    <ClCompile Include="src\modules\Utils\AppException.cpp" />
-    <ClCompile Include="src\modules\Utils\ExceptionBase.cpp" />
+    <ClCompile Include="src\Network\MessageType103B.cpp" />
+    <ClCompile Include="src\Network\MessageType102.cpp" />
+    <ClCompile Include="src\Network\MessageType002.cpp" />
+    <ClCompile Include="src\Network\MessageType003.cpp" />
+    <ClCompile Include="src\Network\MessageType103A.cpp" />
+    <ClCompile Include="src\Network\MessageType104A.cpp" />
+    <ClCompile Include="src\Chat\MessageIDGenerator.cpp" />
+    <ClCompile Include="src\Database\RedisClient.cpp" />
+    <ClCompile Include="src\Network\MessageType104B.cpp" />
+    <ClCompile Include="src\Network\MessageType101.cpp" />
+    <ClCompile Include="src\Network\MessageType000.cpp" />
+    <ClCompile Include="src\Network\MessageType005.cpp" />
+    <ClCompile Include="src\Network\MessageType004.cpp" />
+    <ClCompile Include="src\Network\MessageType001.cpp" />
+    <ClCompile Include="src\Network\BaseMessage.cpp" />
+    <ClCompile Include="src\Network\ProtocolHandler.cpp" />
+    <ClCompile Include="src\Authentication\FirebaseAuthHandler.cpp" />
+    <ClCompile Include="src\Chat\ChatRoomHandler.cpp" />
+    <ClCompile Include="src\Chat\ClientHandler.cpp" />
+    <ClCompile Include="src\Utils\ServerTime.cpp" />
+    <ClCompile Include="src\Utils\LogHandler.cpp" />
+    <ClCompile Include="src\Database\MySQLClient.cpp" />
+    <ClCompile Include="src\Utils\AppException.cpp" />
+    <ClCompile Include="src\Utils\ExceptionBase.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ChatServerFacade.cpp" />
-    <ClCompile Include="src\modules\Network\SocketHandler.cpp" />
-    <ClCompile Include="src\modules\Utils\ThreadPoolHandler.cpp" />
+    <ClCompile Include="src\Network\SocketHandler.cpp" />
+    <ClCompile Include="src\Utils\ThreadPoolHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Database\hiredis\alloc.h" />
