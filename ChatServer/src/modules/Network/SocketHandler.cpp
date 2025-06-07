@@ -596,7 +596,7 @@ bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_settin
 	//ポートの設定
 	try
 	{
-		int temp_port = tcp_listen_socket_param_setting_ini["SocketSetting"]["message_port"].as<int>();
+		int temp_port = tcp_listen_socket_param_setting_ini["SocketSetting"]["port"].as<int>();
 
 		if (temp_port < 0 || temp_port > 65535) {
 

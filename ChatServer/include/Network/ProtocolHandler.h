@@ -90,7 +90,7 @@ public:
 		const std::string& src_id,
 		const std::string dst_id,
 		const std::string& ipv4,
-		const int socket_num)
+		const SOCKET socket_num)
 	{
 		if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType000>) {
 		

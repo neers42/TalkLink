@@ -872,12 +872,10 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 				"JOIN " + _mysql_table_name_chat_messages + " ON " +
 				_mysql_table_name_unsend_messages + ".mid = " +
 				_mysql_table_name_chat_messages + ".mid " +
-				"WHERE " + _mysql_table_name_unsend_messages + ".cid = ? AND " +
-				_mysql_table_name_chat_messages + ".send_time > ?"
+				"WHERE " + _mysql_table_name_unsend_messages + ".cid = ?"
 			)
 		);
 		pre_stmt->setString(1, cid);
-		pre_stmt->setString(2, last_login_time);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 		//未読メッセージの配列を作成
 		json unsend_messages_json = json::array();

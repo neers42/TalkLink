@@ -14,9 +14,23 @@
 #define ASCII_CODE 0
 #define UTF_8_CODE 1
 #define SHIFT_JIS_CODE 2
-#define LOG_ERROR(...) spdlog::error("{}({}:L.{} => function:{}())", \
-    fmt::format(__VA_ARGS__), (std::string(__FILE__).find_last_of("/\\") != std::string::npos ? \
-    std::string(__FILE__).substr(std::string(__FILE__).find_last_of("/\\") + 1) : std::string(__FILE__)), \
+//#define LOG_ERROR(...) spdlog::error("{}({}:L.{} => function:{}())", \
+//    fmt::format(fmt::runtime{__VA_ARGS__}), (std::string(__FILE__).find_last_of("/\\") != std::string::npos ? \
+//    std::string(__FILE__).substr(std::string(__FILE__).find_last_of("/\\") + 1) : std::string(__FILE__)), \
+//    __LINE__, __func__)
+
+//#define LOG_ERROR(fmt_str, ...) \
+//    spdlog::error("{}({}:L.{} => function:{}())", \
+//    fmt::format(FMT_STRING(fmt_str), ##__VA_ARGS__), \
+//    (std::string(__FILE__).find_last_of("/\\") != std::string::npos ? \
+//        std::string(__FILE__).substr(std::string(__FILE__).find_last_of("/\\") + 1) : std::string(__FILE__)), \
+//    __LINE__, __func__)
+
+#define LOG_ERROR(fmt_str, ...) \
+    spdlog::error("{}({}:L.{} => function:{}())", \
+    fmt::format(fmt::runtime(fmt_str), ##__VA_ARGS__), \
+    (std::string(__FILE__).find_last_of("/\\") != std::string::npos ? \
+        std::string(__FILE__).substr(std::string(__FILE__).find_last_of("/\\") + 1) : std::string(__FILE__)), \
     __LINE__, __func__)
 
 class LogHandler

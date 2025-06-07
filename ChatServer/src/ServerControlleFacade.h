@@ -136,7 +136,7 @@ private:
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
 						if (receiver != nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
 							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
-								spdlog::debug("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
 							}
 							else {
 								LOG_ERROR("The MT{} message was not sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
@@ -199,7 +199,7 @@ private:
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
 						if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
 							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
-								spdlog::debug("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
 							}
 							else {
 								LOG_ERROR("The MT{} message was not sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);

@@ -1829,4 +1829,7 @@
       <Filter>リソース ファイル</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="conf\db_config.ini" />
+  </ItemGroup>
 </Project>

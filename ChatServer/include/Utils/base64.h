@@ -16,7 +16,7 @@ namespace base64 {
     }
 
     static std::vector<uint8_t> decode(const std::string& encoded_string) {
-        int in_len = encoded_string.size();
+        int in_len = static_cast<int>(encoded_string.size());
         int i = 0;
         int j = 0;
         int in_ = 0;

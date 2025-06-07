@@ -71,7 +71,7 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 	else {
 		spdlog::info("new client ssl object creation success!!.");
 		//SSLオブジェクトとクライアントソケットを関連付けする。
-		wolfSSL_set_fd(new_client_ssl, client_socket);
+		wolfSSL_set_fd(new_client_ssl, static_cast<int>(client_socket));
 		return new_client_ssl;
 	}
 }
@@ -182,14 +182,14 @@ std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 {
 	std::vector<uint8_t> message_buffer = json::to_msgpack(message);
-	int message_size = message_buffer.size();
-	int total_sent = 0;
-	int chunk_size = 16384;  // 最大TLSレコードサイズ
-	int ret;
+	size_t message_size = message_buffer.size();
+	size_t total_sent = 0;
+	size_t chunk_size = 16384;  // 最大TLSレコードサイズ
+	int ret = 0;
 	std::string mt = message["message_type"];
 	while (total_sent < message_size) {
-		int to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
-		ret = wolfSSL_write(client_ssl, message_buffer.data() + total_sent, to_send);
+		size_t to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
+		ret = wolfSSL_write(client_ssl, message_buffer.data() + total_sent, static_cast<int>(to_send));
 		if (ret > 0) {
 			total_sent += ret;
 			continue;
