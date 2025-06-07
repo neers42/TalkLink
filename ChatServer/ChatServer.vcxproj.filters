@@ -18,7 +18,7 @@
     <ClCompile Include="src\main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="src\ServerControlleFacade.cpp">
+    <ClCompile Include="src\ChatServerFacade.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="src\modules\Authentication\FirebaseAuthHandler.cpp">
@@ -518,7 +518,7 @@
     <ClInclude Include="include\Utils\nlohmann\thirdparty\hedley\hedley_undef.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="src\ServerControlleFacade.h">
+    <ClInclude Include="src\ChatServerFacade.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="include\Network\SocketHandler.h">

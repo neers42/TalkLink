@@ -28,7 +28,7 @@
 #define LOAD_MESSAGE_NUM 20
 #define MAX_RESEND_COUNT 3
 
-class ServerControlleFacade
+class ChatServerFacade
 {
 private:
 	std::unique_ptr<FirebaseAuthHandler> _firebase_auth_handler;
@@ -48,10 +48,10 @@ private:
 
 public:
 	//コンストラクタ
-	ServerControlleFacade();
+	ChatServerFacade();
 
 	//デストラクタ
-	~ServerControlleFacade();
+	~ChatServerFacade();
 
 
 	//サーバプログラム実行

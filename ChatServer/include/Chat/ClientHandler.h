@@ -61,7 +61,7 @@ private:
 	};
 	friend class SocketHandler;
 	friend class ChatroomHandler;
-	friend class ServerControlleFacade;
+	friend class ChatServerFacade;
 
 	//接続中のクライアントリスト
 	std::vector<std::shared_ptr<Client>> connected_clients;

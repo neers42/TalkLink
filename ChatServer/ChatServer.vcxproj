@@ -180,7 +180,7 @@
     <ClCompile Include="src\modules\Utils\AppException.cpp" />
     <ClCompile Include="src\modules\Utils\ExceptionBase.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\ServerControlleFacade.cpp" />
+    <ClCompile Include="src\ChatServerFacade.cpp" />
     <ClCompile Include="src\modules\Network\SocketHandler.cpp" />
     <ClCompile Include="src\modules\Utils\ThreadPoolHandler.cpp" />
   </ItemGroup>
@@ -740,7 +740,7 @@
     <ClInclude Include="include\Network\MessageType002.h" />
     <ClInclude Include="include\Network\MessageType102.h" />
     <ClInclude Include="include\Network\MessageType103B.h" />
-    <ClInclude Include="src\ServerControlleFacade.h" />
+    <ClInclude Include="src\ChatServerFacade.h" />
     <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\StringFormat.h" />
     <ClInclude Include="include\Utils\LogHandler.h" />

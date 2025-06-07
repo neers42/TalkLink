@@ -1,9 +1,9 @@
-﻿#include "ServerControlleFacade.h"
+﻿#include "ChatServerFacade.h"
 
 std::time_t ServerTime::current_time;
 std::tm ServerTime::time_info;
 
-ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
+ChatServerFacade::ChatServerFacade() : _server_ip{ "" }
 {
 	//ログレベルの設定
 #ifdef DEBUG_MODE
@@ -30,13 +30,13 @@ ServerControlleFacade::ServerControlleFacade() : _server_ip{ "" }
 	
 }
 
-ServerControlleFacade::~ServerControlleFacade()
+ChatServerFacade::~ChatServerFacade()
 {
 	
 }
 
 //サーバプログラムの実行
-void ServerControlleFacade::run()
+void ChatServerFacade::run()
 {
 	//リッスンソケットの生成
 	if (!_socket_handler->open_tcp_listen_socket()) {
@@ -74,7 +74,7 @@ void ServerControlleFacade::run()
 	
 }
 
-void ServerControlleFacade::setting_select_info()
+void ChatServerFacade::setting_select_info()
 {
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
@@ -93,7 +93,7 @@ void ServerControlleFacade::setting_select_info()
 }
 
 
-void ServerControlleFacade::show_server_running_info()
+void ChatServerFacade::show_server_running_info()
 {
 	std::cout << " * TLS Version : " << this->_protocol_handler->get_tls_version(this->_protocol_handler->get_wolfssl_object()) << std::endl;
 	std::cout << " * Cipher suite : " << this->_protocol_handler->get_cipher_suite(this->_protocol_handler->get_wolfssl_object()) << std::endl;
@@ -102,7 +102,7 @@ void ServerControlleFacade::show_server_running_info()
 }
 
 
-bool ServerControlleFacade::accept_client_socket_process()
+bool ChatServerFacade::accept_client_socket_process()
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	SOCKET new_client_socket = INVALID_SOCKET;
@@ -147,18 +147,18 @@ bool ServerControlleFacade::accept_client_socket_process()
 	
 }
 
-const std::string& ServerControlleFacade::get_server_ip()
+const std::string& ChatServerFacade::get_server_ip()
 {
 	return this->_server_ip;
 }
 
-void ServerControlleFacade::set_server_ip(const std::string& ip)
+void ChatServerFacade::set_server_ip(const std::string& ip)
 {
 	this->_server_ip = ip;
 }
 
 //ソケットの変化を検知し、処理を振り分ける
-void ServerControlleFacade::handle_changed_socket_process(const SOCKET socket)
+void ChatServerFacade::handle_changed_socket_process(const SOCKET socket)
 {
 	if (socket == this->_socket_handler->get_listen_socket()) {
 		this->_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
@@ -170,7 +170,7 @@ void ServerControlleFacade::handle_changed_socket_process(const SOCKET socket)
 }
 
 //メッセージの処理を行う
-void ServerControlleFacade::message_handle_process(const SOCKET socket)
+void ChatServerFacade::message_handle_process(const SOCKET socket)
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	std::string receive_data, mt, data_time_stamp;
@@ -309,7 +309,7 @@ void ServerControlleFacade::message_handle_process(const SOCKET socket)
 
 }
 
-void ServerControlleFacade::mt000_process(const std::unique_ptr<MessageType000>& mt000, std::shared_ptr<ClientHandler::Client>& client)
+void ChatServerFacade::mt000_process(const std::unique_ptr<MessageType000>& mt000, std::shared_ptr<ClientHandler::Client>& client)
 {
 	try
 	{
@@ -333,7 +333,7 @@ void ServerControlleFacade::mt000_process(const std::unique_ptr<MessageType000>&
 	
 }
 
-void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result)
+void ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result)
 {
 	std::string client_id = "";
 	std::string* client_id_ptr = new std::string();
@@ -425,7 +425,7 @@ void ServerControlleFacade::mt001_process(const std::unique_ptr<MessageType001>&
 
 }
 
-void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result)
+void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result)
 {
 	switch (mt003->get_room_action())
 	{
@@ -544,7 +544,7 @@ void ServerControlleFacade::mt003_process(const std::unique_ptr<MessageType003>&
 
 
 
-void ServerControlleFacade::mt004_process(const std::unique_ptr<MessageType004>& mt004)
+void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt004)
 {
 	std::vector<SOCKET> send_sockets;
 	std::vector<std::string> receive_clients;
@@ -593,7 +593,7 @@ void ServerControlleFacade::mt004_process(const std::unique_ptr<MessageType004>&
 
 }
 
-void ServerControlleFacade::mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result)
+void ChatServerFacade::mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result)
 {
 	//TODO　ここでcidに関するメッセージをデータベースから取得する。
 	json unsend_messages_json, unsend_control_messages_json;
@@ -636,14 +636,14 @@ void ServerControlleFacade::mt101_process(const std::shared_ptr<ClientHandler::C
 	}
 }
 
-void ServerControlleFacade::mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<ClientHandler::Client>& client)
+void ChatServerFacade::mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<ClientHandler::Client>& client)
 {
 	std::vector<std::string> unsend_cids;
 	unsend_cids = this->mt103A_process(mt003);
 
 }
 
-std::vector<std::string> ServerControlleFacade::mt103A_process(const std::unique_ptr<MessageType003>& mt003)
+std::vector<std::string> ChatServerFacade::mt103A_process(const std::unique_ptr<MessageType003>& mt003)
 {
 	std::vector<std::string> unsend_cids;
 	std::vector<MessageType103A::ClientInfo> client_infos;
@@ -672,11 +672,11 @@ std::vector<std::string> ServerControlleFacade::mt103A_process(const std::unique
 	return unsend_cids;
 }
 
-void ServerControlleFacade::mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids)
+void ChatServerFacade::mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids)
 {
 }
 
-std::vector<MessageType103A::ClientInfo> ServerControlleFacade::generate_client_infos(const std::vector<std::string>& cids)
+std::vector<MessageType103A::ClientInfo> ChatServerFacade::generate_client_infos(const std::vector<std::string>& cids)
 {
 	std::vector<MessageType103A::ClientInfo> client_infos;
 	if (cids.size() == 0) {
@@ -691,7 +691,7 @@ std::vector<MessageType103A::ClientInfo> ServerControlleFacade::generate_client_
 	return client_infos;
 }
 
-void ServerControlleFacade::mt104_process(const std::unique_ptr<MessageType004>& mt004)
+void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004>& mt004)
 {
 	std::vector<std::string> unsend_cids;
 	unsend_cids = this->mt104A_process(mt004);
@@ -700,7 +700,7 @@ void ServerControlleFacade::mt104_process(const std::unique_ptr<MessageType004>&
 
 
 
-void ServerControlleFacade::heart_beat_check_process()
+void ChatServerFacade::heart_beat_check_process()
 {
 	while (true) {
 	
@@ -730,7 +730,7 @@ void ServerControlleFacade::heart_beat_check_process()
 }
 
 
-void ServerControlleFacade::heart_beat_response_process(const std::shared_ptr<ClientHandler::Client>& client)
+void ChatServerFacade::heart_beat_response_process(const std::shared_ptr<ClientHandler::Client>& client)
 {
 	std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 
@@ -765,7 +765,7 @@ void ServerControlleFacade::heart_beat_response_process(const std::shared_ptr<Cl
 }
 
 
-void ServerControlleFacade::setting_select_process()
+void ChatServerFacade::setting_select_process()
 {
 	while (true) {
 		{
@@ -778,13 +778,13 @@ void ServerControlleFacade::setting_select_process()
 }
 
 
-std::tuple<std::string, std::string> ServerControlleFacade::sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id, std::string* error_msg)
+std::tuple<std::string, std::string> ChatServerFacade::sign_up_process(const std::string& mail_addr, const std::string& password, const std::string& ip, std::string* id, std::string* error_msg)
 {
 	this->_firebase_auth_handler->create_user_with_email_and_password(mail_addr, password, ip, id, error_msg);
 	return std::tuple<std::string, std::string>(*id, *error_msg);
 }
 
-std::tuple<std::string, std::string> ServerControlleFacade::sign_in_process(
+std::tuple<std::string, std::string> ChatServerFacade::sign_in_process(
 	const std::string& mail_addr,
 	const std::string& password,
 	const std::string& ip,
@@ -796,7 +796,7 @@ std::tuple<std::string, std::string> ServerControlleFacade::sign_in_process(
 	return std::make_tuple(*id, *error_msg);
 }
 
-std::string ServerControlleFacade::sign_in_process(int& auth_type, const char* token, const char* secret)
+std::string ChatServerFacade::sign_in_process(int& auth_type, const char* token, const char* secret)
 {
 	firebase::auth::Credential credential;
 	switch (auth_type)
@@ -822,7 +822,7 @@ std::string ServerControlleFacade::sign_in_process(int& auth_type, const char* t
 }
 
 
-std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique_ptr<MessageType004>& mt004)
+std::vector<std::string> ChatServerFacade::mt104A_process(const std::unique_ptr<MessageType004>& mt004)
 {
 	//mt104Aを生成
 	std::string message_type = "104A";
@@ -844,7 +844,7 @@ std::vector<std::string> ServerControlleFacade::mt104A_process(const std::unique
 	return unsend_cids;
 }
 
-void ServerControlleFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids)
+void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids)
 {
 	//mt104Bを生成
 	std::string message_type = "104B";
@@ -931,7 +931,7 @@ void ServerControlleFacade::mt104B_process(const std::unique_ptr<MessageType004>
 
 
 
-void ServerControlleFacade::resend_message_process(const json& message, const std::string& cid)
+void ChatServerFacade::resend_message_process(const json& message, const std::string& cid)
 {
 	uint64_t mid = message["message_id"];
 		// 1秒スリープする
