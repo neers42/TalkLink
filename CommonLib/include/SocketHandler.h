@@ -11,14 +11,15 @@
 #include "ServerTime.h"
 #include <iphlpapi.h>
 #include "LogHandler.h"
-#include "ClientHandler.h"
-#include "common.h"
+//#include "ClientHandler.h"
+//#include "common.h"
 #include "spdlog/spdlog.h"
 #define INIT_FILE_PASS  ".//////conf/socket_setting.ini"
 //#define MAX_CONNECT_NUM 10000
 #define SELECT_TIME_OUT -2
 #define REQUEST_ACCEPT_CLIENT_DETECTION -3
 #define NOT_EXIST_IP_ADDRESS -1
+#define MAX_CONNECT_NUM 10000
 
 class SocketHandler
 {

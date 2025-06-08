@@ -150,7 +150,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)\lib\firebase\MD\x64\Release;$(SolutionDir)CommonLib\external_lib\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(SolutionDir)CommonLib\external_lib\lib\boost\x64\lib;$(SolutionDir)CommonLib\external_lib\lib\wolfssl\x64;$(SolutionDir)CommonLib\external_lib\lib\hiredis\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)\lib\firebase\MD\x64\Release;$(SolutionDir)CommonLib\external_lib\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(SolutionDir)CommonLib\external_lib\lib\boost\x64\lib;$(SolutionDir)CommonLib\external_lib\lib\wolfssl\x64;$(SolutionDir)CommonLib\external_lib\lib\hiredis\x64;$(SolutionDir)CommonLib\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;Rpcrt4.lib;firebase_auth.lib;firebase_app.lib;firebase_app_check.lib;firebase_firestore.lib;firebase_functions.lib;firebase_database.lib;firebase_remote_config.lib;firebase_storage.lib;firebase_analytics.lib;firebase_dynamic_links.lib;firebase_gma.lib;firebase_installations.lib;firebase_messaging.lib;crypt32.lib;rpcrt4.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;icu.lib;ws2_32.lib;Ws2_32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;wolfssl.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -174,7 +174,6 @@
     <ClCompile Include="src\Chat\ChatRoomHandler.cpp" />
     <ClCompile Include="src\Chat\ClientHandler.cpp" />
     <ClCompile Include="src\Network\ProtocolHandler.cpp" />
-    <ClCompile Include="src\Network\SocketHandler.cpp" />
     <ClCompile Include="src\Utils\LogHandler.cpp" />
     <ClCompile Include="src\Database\MySQLClient.cpp" />
     <ClCompile Include="src\Utils\AppException.cpp" />
@@ -255,7 +254,6 @@
     <ClInclude Include="include\Database\mysqlx\xdevapi.h" />
     <ClInclude Include="include\Database\mysql\jdbc.h" />
     <ClInclude Include="include\Network\ProtocolHandler.h" />
-    <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\base32.h" />
     <ClInclude Include="include\Utils\base64.h" />
     <ClInclude Include="include\Authentication\FirebaseAuthHandler.h" />
@@ -402,6 +400,11 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="conf\db_config.ini" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CommonLib\CommonLib.vcxproj">
+      <Project>{5a26112c-23e7-4d2d-99d3-4732917b34a6}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
