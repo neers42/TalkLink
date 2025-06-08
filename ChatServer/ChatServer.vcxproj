@@ -139,7 +139,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;OPENSSL_EXTRA_X509_SMALL;HIREDIS_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(ProjectDir)/src/modules/Utils/include;$(ProjectDir)/src/modules/Database/include;$(ProjectDir)/src/modules/Authentication/include;$(ProjectDir)/src/modules/Chat/include;$(ProjectDir)/src/modules/Network/include;$(SolutionDir)CommonLib/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(ProjectDir)/src/modules/Utils/include;$(ProjectDir)/src/modules/Database/include;$(ProjectDir)/src/modules/Authentication/include;$(ProjectDir)/src/modules/Chat/include;$(ProjectDir)/src/modules/Network/include;$(SolutionDir)CommonLib/include;$(SolutionDir)CommonLib/external_lib/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <Optimization>Full</Optimization>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -150,7 +150,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)\lib\firebase\MD\x64\Release;$(SolutionDir)CommonLib\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(SolutionDir)CommonLib\lib\boost\x64\lib;$(SolutionDir)CommonLib\lib\wolfssl\x64;$(SolutionDir)CommonLib\lib\hiredis\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)\lib\firebase\MD\x64\Release;$(SolutionDir)CommonLib\external_lib\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(SolutionDir)CommonLib\external_lib\lib\boost\x64\lib;$(SolutionDir)CommonLib\external_lib\lib\wolfssl\x64;$(SolutionDir)CommonLib\external_lib\lib\hiredis\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;Rpcrt4.lib;firebase_auth.lib;firebase_app.lib;firebase_app_check.lib;firebase_firestore.lib;firebase_functions.lib;firebase_database.lib;firebase_remote_config.lib;firebase_storage.lib;firebase_analytics.lib;firebase_dynamic_links.lib;firebase_gma.lib;firebase_installations.lib;firebase_messaging.lib;crypt32.lib;rpcrt4.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;icu.lib;ws2_32.lib;Ws2_32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;wolfssl.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -170,18 +170,17 @@
     <ClCompile Include="src\Network\MessageType004.cpp" />
     <ClCompile Include="src\Network\MessageType001.cpp" />
     <ClCompile Include="src\Network\BaseMessage.cpp" />
-    <ClCompile Include="src\Network\ProtocolHandler.cpp" />
     <ClCompile Include="src\Authentication\FirebaseAuthHandler.cpp" />
     <ClCompile Include="src\Chat\ChatRoomHandler.cpp" />
     <ClCompile Include="src\Chat\ClientHandler.cpp" />
-    <ClCompile Include="src\Utils\ServerTime.cpp" />
+    <ClCompile Include="src\Network\ProtocolHandler.cpp" />
+    <ClCompile Include="src\Network\SocketHandler.cpp" />
     <ClCompile Include="src\Utils\LogHandler.cpp" />
     <ClCompile Include="src\Database\MySQLClient.cpp" />
     <ClCompile Include="src\Utils\AppException.cpp" />
     <ClCompile Include="src\Utils\ExceptionBase.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ChatServerFacade.cpp" />
-    <ClCompile Include="src\Network\SocketHandler.cpp" />
     <ClCompile Include="src\Utils\ThreadPoolHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -204,7 +203,6 @@
     <ClInclude Include="include\Network\MessageType004.h" />
     <ClInclude Include="include\Network\MessageType001.h" />
     <ClInclude Include="include\Network\BaseMessage.h" />
-    <ClInclude Include="include\Network\ProtocolHandler.h" />
     <ClInclude Include="include\Database\jdbc\cppconn\build_config.h" />
     <ClInclude Include="include\Database\jdbc\cppconn\callback.h" />
     <ClInclude Include="include\Database\jdbc\cppconn\config.h" />
@@ -256,15 +254,14 @@
     <ClInclude Include="include\Database\mysqlx\xapi.h" />
     <ClInclude Include="include\Database\mysqlx\xdevapi.h" />
     <ClInclude Include="include\Database\mysql\jdbc.h" />
+    <ClInclude Include="include\Network\ProtocolHandler.h" />
+    <ClInclude Include="include\Network\SocketHandler.h" />
     <ClInclude Include="include\Utils\base32.h" />
     <ClInclude Include="include\Utils\base64.h" />
-    <ClInclude Include="include\Utils\common.h" />
     <ClInclude Include="include\Authentication\FirebaseAuthHandler.h" />
     <ClInclude Include="include\Chat\ChatRoomHandler.h" />
     <ClInclude Include="include\Chat\ClientHandler.h" />
     <ClInclude Include="include\Database\MySQLClient.h" />
-    <ClInclude Include="include\Utils\AppException.h" />
-    <ClInclude Include="include\Utils\ExceptionBase.h" />
     <ClInclude Include="include\Authentication\firebase\analytics.h" />
     <ClInclude Include="include\Authentication\firebase\analytics\event_names.h" />
     <ClInclude Include="include\Authentication\firebase\analytics\parameter_names.h" />
@@ -351,7 +348,6 @@
     <ClInclude Include="include\Authentication\firebase\util.h" />
     <ClInclude Include="include\Authentication\firebase\variant.h" />
     <ClInclude Include="include\Authentication\firebase\version.h" />
-    <ClInclude Include="include\Utils\inicpp.h" />
     <ClInclude Include="include\Network\MessageType000.h" />
     <ClInclude Include="include\Network\MessageType101.h" />
     <ClInclude Include="include\Network\MessageType104B.h" />
@@ -363,11 +359,8 @@
     <ClInclude Include="include\Network\MessageType102.h" />
     <ClInclude Include="include\Network\MessageType103B.h" />
     <ClInclude Include="include\ChatServerFacade.h" />
-    <ClInclude Include="include\Network\SocketHandler.h" />
-    <ClInclude Include="include\Utils\StringFormat.h" />
-    <ClInclude Include="include\Utils\LogHandler.h" />
-    <ClInclude Include="include\Utils\ServerTime.h" />
     <ClInclude Include="include\Utils\ThreadPoolHandler.h" />
+    <ClInclude Include="include\Utils\common.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\google-services.json" />

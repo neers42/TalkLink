@@ -28,31 +28,32 @@ SocketHandler::SocketHandler() :
 		if (!init_wsa_result) {
 			switch (init_wsa_result) {
 			case WSASYSNOTREADY:
-				THROW_APP_EXCEPTION("CASE:WSASYSNOTREADY(ネットワークサブシステムがネットワークへの接続を準備出来ていません)");
+				throw std::runtime_error("CASE:WSASYSNOTREADY(ネットワークサブシステムがネットワークへの接続を準備出来ていません)");
 				break;
 
 			case WSAVERNOTSUPPORTED:
-				THROW_APP_EXCEPTION("CASE:WSAVERNOTSUPPORTED:(要求された Windows ソケットのサポートのバージョンは、この特定の Windows ソケットの実装では提供されません)");
+				throw std::runtime_error("CASE:WSAVERNOTSUPPORTED:(要求された Windows ソケットのサポートのバージョンは、この特定の Windows ソケットの実装では提供されません)");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("CASE:WSAEINPROGRESS(Windows ソケット 1.1 のブロック操作が進行中です)");
+				throw std::runtime_error("CASE:WSAEINPROGRESS(Windows ソケット 1.1 のブロック操作が進行中です)");
 				break;
 
 			case WSAEPROCLIM:
-				THROW_APP_EXCEPTION("CASE:WSAEPROCLIM(Windows ソケットの実装でサポートされるタスクの数の制限に達しました)");
+				throw std::runtime_error("CASE:WSAEPROCLIM(Windows ソケットの実装でサポートされるタスクの数の制限に達しました)");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("CASE:WSAEFAULT(lpWSAData パラメーターが有効なポインターではありません)");
+				throw std::runtime_error("CASE:WSAEFAULT(lpWSAData パラメーターが有効なポインターではありません)");
 				break;
 			}
 		}
 
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		return;
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
@@ -100,30 +101,31 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 		if (!init_wsa_result) {
 			switch (init_wsa_result) {
 			case WSASYSNOTREADY:
-				THROW_APP_EXCEPTION("CASE:WSASYSNOTREADY(ネットワークサブシステムがネットワークへの接続を準備出来ていません)");
+				throw std::runtime_error("CASE:WSASYSNOTREADY(ネットワークサブシステムがネットワークへの接続を準備出来ていません)");
 				break;
 
 			case WSAVERNOTSUPPORTED:
-				THROW_APP_EXCEPTION("CASE:WSAVERNOTSUPPORTED:(要求された Windows ソケットのサポートのバージョンは、この特定の Windows ソケットの実装では提供されません)");
+				throw std::runtime_error("CASE:WSAVERNOTSUPPORTED:(要求された Windows ソケットのサポートのバージョンは、この特定の Windows ソケットの実装では提供されません)");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("CASE:WSAEINPROGRESS(Windows ソケット 1.1 のブロック操作が進行中です)");
+				throw std::runtime_error("CASE:WSAEINPROGRESS(Windows ソケット 1.1 のブロック操作が進行中です)");
 				break;
 
 			case WSAEPROCLIM:
-				THROW_APP_EXCEPTION("CASE:WSAEPROCLIM(Windows ソケットの実装でサポートされるタスクの数の制限に達しました)");
+				throw std::runtime_error("CASE:WSAEPROCLIM(Windows ソケットの実装でサポートされるタスクの数の制限に達しました)");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("CASE:WSAEFAULT(lpWSAData パラメーターが有効なポインターではありません)");
+				throw std::runtime_error("CASE:WSAEFAULT(lpWSAData パラメーターが有効なポインターではありません)");
 				break;
 			}
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		return;
 	}
 
 	//ファイルディスクリプタキャッチ用のfdsを初期化
@@ -162,14 +164,7 @@ bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass
 
 	//iniファイルの読み込み
 	ini::IniFile socket_param_setting_ini;
-	try
-	{
-		socket_param_setting_ini.load(file_pass);
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LOG_ERROR(ex.what_for_str());
-	}
+	socket_param_setting_ini.load(file_pass);
 	if (this->setting_tcp_flags(socket_param_setting_ini) == false) {
 		return false;
 	}
@@ -192,15 +187,8 @@ bool SocketHandler::setting_multicast_tx_socket_param(const std::string& file_pa
 {
 	//iniファイルの読み込み
 	ini::IniFile multicast_socket_setting_ini;
-	try
-	{
-		multicast_socket_setting_ini.load(file_pass);
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LOG_ERROR(ex.what_for_str());
-	}
-
+	multicast_socket_setting_ini.load(file_pass);
+	
 	if (this->setting_multicast_tx_sock_af(multicast_socket_setting_ini) == false) {
 		return false;
 	}
@@ -256,11 +244,11 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 			switch (WSAGetLastError())
 			{
 			case WSAEAFNOSUPPORT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEAFNOSUPPORT(Family パラメーターで指定されたアドレス ファミリ はサポートされていません。 このエラーは、指定された Family パラメーターが AF_INET または AF_INET6されていない場合に返されます。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEAFNOSUPPORT(Family パラメーターで指定されたアドレス ファミリ はサポートされていません。 このエラーは、指定された Family パラメーターが AF_INET または AF_INET6されていない場合に返されます。)");
 				break;
 
 			case ERROR_INVALID_PARAMETER:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:ERROR_INVALID_PARAMETER(無効なパラメーターが関数に渡されました。 このエラーは、pStringBuf で NULL ポインターが渡された場合、または StringBufSize パラメーターが 0 の場合に返されます。 このエラーは、 pStringBuf パラメーターが指すバッファーの長さが IP アドレスの文字列表現を受け取るのに十分な大きさでない場合にも返されます。)");
+				throw std::runtime_error("WSA ERROR CASE:ERROR_INVALID_PARAMETER(無効なパラメーターが関数に渡されました。 このエラーは、pStringBuf で NULL ポインターが渡された場合、または StringBufSize パラメーターが 0 の場合に返されます。 このエラーは、 pStringBuf パラメーターが指すバッファーの長さが IP アドレスの文字列表現を受け取るのに十分な大きさでない場合にも返されます。)");
 				break;
 
 			default:
@@ -270,9 +258,10 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 			return client_ip_addr_str;
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		return "";
 	}
 }
 
@@ -319,51 +308,51 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("A successful WSAStartup call must occur before using this function.");
+				throw std::runtime_error("A successful WSAStartup call must occur before using this function.");
 				break;
 
 			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("The network subsystem or the associated service provider has failed.");
+				throw std::runtime_error("The network subsystem has failed.");
 				break;
 
 			case WSAEAFNOSUPPORT:
-				THROW_APP_EXCEPTION("The specified address family is not supported. For example, an application tried to create a socket for the AF_IRDA address family but an infrared adapter and device driver is not installed on the local computer.");
+				throw std::runtime_error("The specified address family is not supported. For example, an application tried to create a socket for the AF_INET6 address family but IPv6 is not enabled on the local computer.");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
+				throw std::runtime_error("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
 				break;
 
 			case WSAEMFILE:
-				THROW_APP_EXCEPTION("No more socket descriptors are available.");
+				throw std::runtime_error("No more socket descriptors are available. The maximum number of sockets is already open in this process.");
 				break;
 
 			case WSAEINVAL:
-				THROW_APP_EXCEPTION("An invalid argument was supplied. This error is returned if the af parameter is set to AF_UNSPEC and the type and protocol parameter are unspecified.");
+				throw std::runtime_error("An invalid argument was supplied. This error is returned if the af parameter is set to AF_UNSPEC and the type and protocol parameter are unspecified.");
 				break;
 
 			case WSAEINVALIDPROVIDER:
-				THROW_APP_EXCEPTION("The service provider returned a version other than 2.2.");
+				throw std::runtime_error("The service provider returned a version other than 2.2.");
 				break;
 
 			case WSAENOBUFS:
-				THROW_APP_EXCEPTION("The service provider returned an invalid or incomplete procedure table to the WSPStartup.");
+				throw std::runtime_error("The service provider returned an invalid or incomplete procedure table to the WSPStartup.");
 				break;
 
 			case WSAEPROTONOSUPPORT:
-				THROW_APP_EXCEPTION("No buffer space is available. The socket cannot be created.");
+				throw std::runtime_error("The specified protocol is not supported within this address family. For example, an application tried to create a socket for the AF_INET address family with the IPX protocol.");
 				break;
 
 			case WSAEPROTOTYPE:
-				THROW_APP_EXCEPTION("The specified protocol is not supported.");
+				throw std::runtime_error("The specified protocol is the wrong type for this socket. This error is returned if the type parameter is set to SOCK_STREAM and the protocol parameter is set to IPPROTO_UDP, or if the type parameter is set to SOCK_DGRAM and the protocol parameter is set to IPPROTO_TCP.");
 				break;
 
 			case WSAEPROVIDERFAILEDINIT:
-				THROW_APP_EXCEPTION("The specified protocol is the wrong type for this socket.");
+				throw std::runtime_error("The service provider failed to initialize. This error is returned if the service provider fails to initialize or if the service provider is not a valid Windows Sockets DLL.");
 				break;
 
 			case WSAESOCKTNOSUPPORT:
-				THROW_APP_EXCEPTION("The specified socket type is not supported in this address family.");
+				throw std::runtime_error("The specified socket type is not supported in this address family. For example, an application tried to create a socket for the AF_INET address family with the SOCK_RAW socket type.");
 				break;
 
 
@@ -374,9 +363,9 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 		
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
 		return false;
 	}
 	
@@ -391,39 +380,39 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("A successful WSAStartup call must occur before using this function.");
+				throw std::runtime_error("A successful WSAStartup call must occur before using this function.");
 				break;
 
 			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("The network subsystem has failed.");
+				throw std::runtime_error("The network subsystem has failed.");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("The buffer pointed to by the optval parameter is not in a valid part of the process address space or the optlen parameter is too small.");
+				throw std::runtime_error("The buffer pointed to by the optval parameter is not in a valid part of the process address space or the optlen parameter is too small.");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
+				throw std::runtime_error("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
 				break;
 
 			case WSAEINVAL:
-				THROW_APP_EXCEPTION("The level parameter is not valid, or the information in the buffer pointed to by the optval parameter is not valid.");
+				throw std::runtime_error("The level parameter is not valid, or the information in the buffer pointed to by the optval parameter is not valid.");
 				break;
 
 			case WSAENETRESET:
-				THROW_APP_EXCEPTION("The connection has timed out when SO_KEEPALIVE is set.");
+				throw std::runtime_error("The connection has timed out when SO_KEEPALIVE is set.");
 				break;
 
 			case WSAENOPROTOOPT:
-				THROW_APP_EXCEPTION("The option is unknown or unsupported for the specified provider or socket (see SO_GROUP_PRIORITY limitations).");
+				throw std::runtime_error("The option is unknown or unsupported for the specified provider or socket (see SO_GROUP_PRIORITY limitations).");
 				break;
 
 			case WSAENOTCONN:
-				THROW_APP_EXCEPTION("The connection has been reset when SO_KEEPALIVE is set.");
+				throw std::runtime_error("The connection has been reset when SO_KEEPALIVE is set.");
 				break;
 
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("The descriptor is not a socket.");
+				throw std::runtime_error("The descriptor is not a socket.");
 				break;
 
 			default:
@@ -432,12 +421,10 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 		}
 
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
 		return false;
-		
-		//TODOネットワークインタフェースの数で戻り値を変えたい
 	}
 	
 	try
@@ -452,39 +439,39 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("A successful WSAStartup call must occur before using this function.");
+				throw std::runtime_error("A successful WSAStartup call must occur before using this function.");
 				break;
 
 			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("The network subsystem has failed.");
+				throw std::runtime_error("The network subsystem has failed.");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("The buffer pointed to by the optval parameter is not in a valid part of the process address space or the optlen parameter is too small.");
+				throw std::runtime_error("The buffer pointed to by the optval parameter is not in a valid part of the process address space or the optlen parameter is too small.");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
+				throw std::runtime_error("A blocking Windows Sockets 1.1 call is in progress, or the service provider is still processing a callback function.");
 				break;
 
 			case WSAEINVAL:
-				THROW_APP_EXCEPTION("The level parameter is not valid, or the information in the buffer pointed to by the optval parameter is not valid.");
+				throw std::runtime_error("The level parameter is not valid, or the information in the buffer pointed to by the optval parameter is not valid.");
 				break;
 
 			case WSAENETRESET:
-				THROW_APP_EXCEPTION("The connection has timed out when SO_KEEPALIVE is set.");
+				throw std::runtime_error("The connection has timed out when SO_KEEPALIVE is set.");
 				break;
 
 			case WSAENOPROTOOPT:
-				THROW_APP_EXCEPTION("The option is unknown or unsupported for the specified provider or socket (see SO_GROUP_PRIORITY limitations).");
+				throw std::runtime_error("The option is unknown or unsupported for the specified provider or socket (see SO_GROUP_PRIORITY limitations).");
 				break;
 
 			case WSAENOTCONN:
-				THROW_APP_EXCEPTION("The connection has been reset when SO_KEEPALIVE is set.");
+				throw std::runtime_error("The connection has been reset when SO_KEEPALIVE is set.");
 				break;
 
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("The descriptor is not a socket.");
+				throw std::runtime_error("The descriptor is not a socket.");
 				break;
 
 			default:
@@ -493,9 +480,9 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
 		return false;
 	}
 	spdlog::info("server generate udp muluticast tx socket:{:d}.", _udp_multicast_tx_socket);
@@ -512,12 +499,11 @@ bool SocketHandler::add_connect_socket(const SOCKET socket)
 	try
 	{
 		if (this->_connect_sockets.size() >= MAX_CONNECT_NUM) {
-			THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");
+			throw std::out_of_range("The maximum number of client connections has been reached. The connection will be abandoned.");
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LOG_ERROR(ex.what_for_str());
+	catch (const std::out_of_range& e) {
+		LOG_ERROR(e.what());
 		return false;
 	}
 
@@ -599,15 +585,13 @@ bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_settin
 		int temp_port = tcp_listen_socket_param_setting_ini["SocketSetting"]["port"].as<int>();
 
 		if (temp_port < 0 || temp_port > 65535) {
-
-			THROW_APP_EXCEPTION("The port number is set out of range. Reset to the range of 0~65535.");
+			throw std::out_of_range("The port number is set out of range. Reset to the range of 0 - 65535.");
 		}
 		_port = temp_port;
-}
-	catch (const exception::ExceptionBase& ex)
+	}
+	catch (const std::out_of_range& e)
 	{
-		LOG_ERROR(ex.what_for_str());
-
+		LOG_ERROR(e.what());
 		return false;
 	}
 	return true;
@@ -718,11 +702,11 @@ bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_sett
 		int temp_port = socket_param_setting_ini["MulticastTX_SocketSetting"]["sin_port"].as<int>();
 		if (temp_port < 0 || temp_port > 65535) {
 
-			THROW_APP_EXCEPTION("The port number is set out of range. Reset to the range of 0 - 65535.");
+			throw std::out_of_range("The port number is set out of range. Reset to the range of 0 - 65535.");
 		}
 
 		if (temp_port == _port) {
-			THROW_APP_EXCEPTION("There is a conflict between the application port used for TCP and the application port used for UDP multicast. Please reset the settings.");
+			throw std::invalid_argument("The port number for multicast transmission is the same as the port number for TCP transmission. Please change the settings.");
 		}
 		_multicast_tx_addr.sin_port = temp_port;
 #ifdef DEBUG
@@ -730,9 +714,14 @@ bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_sett
 #endif // DEBUG
 
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::out_of_range& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		return false;
+	}
+	catch (const std::invalid_argument& e)
+	{
+		LOG_ERROR(e.what());
 		return false;
 	}
 	return true;
@@ -750,11 +739,11 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 			switch (WSAGetLastError())
 			{
 			case WSAEAFNOSUPPORT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEAFNOSUPPORT(Family パラメーターで指定されたアドレス ファミリ はサポートされていません。 このエラーは、指定された Family パラメーターが AF_INET または AF_INET6されていない場合に返されます。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEAFNOSUPPORT(Family パラメーターで指定されたアドレス ファミリ はサポートされていません。 このエラーは、指定された Family パラメーターが AF_INET または AF_INET6されていない場合に返されます。)");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(pszAddrString パラメーターまたは pAddrBuf パラメーターが NULL であるか、ユーザー アドレス空間の一部ではありません。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEFAULT(pszAddrString パラメーターまたは pAddrBuf パラメーターが NULL であるか、ユーザー アドレス空間の一部ではありません。)");
 				break;
 
 			default:
@@ -762,7 +751,7 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 			}
 		}
 		else if (inet_pton_result == 0) {
-			THROW_APP_EXCEPTION("pAddrBuf パラメーターが有効な IPv4 ドット 10 進数文字列または有効な IPv6 アドレス文字列ではない文字列を指しています。");
+			throw std::invalid_argument("The pAddrBuf parameter points to a string that is not a valid IPv4 dotted decimal string or a valid IPv6 address string.");
 		}
 		//IPアドレスのバイナリ化が正常に終了した場合
 		else {
@@ -771,12 +760,22 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 #endif // DEBUG
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		return false;
 	}
-
-
+	catch (const std::invalid_argument& e)
+	{
+		LOG_ERROR(e.what());
+		return false;
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR(e.what());
+		return false;
+	}
+	
 	return true;
 }
 
@@ -795,32 +794,36 @@ std::string SocketHandler::obtain_local_ip_addr()
 		switch (get_ip_addr_table_result)
 		{
 		case ERROR_INSUFFICIENT_BUFFER:
-			THROW_APP_EXCEPTION("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
+			throw std::runtime_error("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
 			break;
 
 		case ERROR_INVALID_PARAMETER:
-			THROW_APP_EXCEPTION("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
+			throw std::runtime_error("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
 			break;
 
 		case ERROR_NOT_SUPPORTED:
-			THROW_APP_EXCEPTION("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
+			throw std::runtime_error("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
 			break;
 
 		case NO_ERROR:
 			break;
 		default:
-			THROW_APP_EXCEPTION("ERROR CASE:Other(Use FormatMessage to obtain the message string for the returned error.)");
+			throw std::runtime_error("ERROR CASE:Other(Use FormatMessage to obtain the message string for the returned error.)");
 			break;
 		}
 
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
-
+		LOG_ERROR(e.what());
+		return "";
 	}
-
-
+	catch (const std::exception& e)
+	{
+		LOG_ERROR(e.what());
+		return "";
+	}
+	
 	//IPアドレステーブルの結果を格納
 	try
 	{
@@ -828,15 +831,15 @@ std::string SocketHandler::obtain_local_ip_addr()
 		switch (dw_ret_val_result)
 		{
 		case ERROR_INSUFFICIENT_BUFFER:
-			THROW_APP_EXCEPTION("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
+			throw std::runtime_error("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
 			break;
 
 		case ERROR_INVALID_PARAMETER:
-			THROW_APP_EXCEPTION("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
+			throw std::runtime_error("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
 			break;
 
 		case ERROR_NOT_SUPPORTED:
-			THROW_APP_EXCEPTION("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
+			throw std::runtime_error("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
 			break;
 
 		case NO_ERROR:
@@ -847,10 +850,18 @@ std::string SocketHandler::obtain_local_ip_addr()
 			break;
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		return "";
 	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR(e.what());
+		return "";
+	}
+
+
 	if (_ip_addr_table->dwNumEntries > 0) {
 		char temp_local_ip_addr[100];
 		for (_i_count = 0; _i_count < _ip_addr_table->dwNumEntries; _i_count++) {
@@ -878,17 +889,20 @@ bool SocketHandler::bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinf
 		if (bind_result == SOCKET_ERROR) {
 			std::stringstream socket_error_msg;
 			socket_error_msg << "An error occurred while binding the TCP listening socket. WSAGetLastError Code : " << std::to_string(WSAGetLastError());
-			THROW_APP_EXCEPTION(socket_error_msg.str());
+			throw std::runtime_error(socket_error_msg.str());
 			
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
 		return false;
 	}
-
-	
+	catch (const std::exception& e)
+	{
+		LOG_ERROR(e.what());
+		return false;
+	}
 	return true;
 }
 
@@ -916,51 +930,51 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが正常に行われる必要があります。)");
+				throw std::runtime_error("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
 				break;
 
 			case WSAECONNRESET:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAECONNRESET(着信接続が示されましたが、その後、呼び出しを受け入れる前にリモート ピアによって終了されました。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAECONNRESET(着信接続が示されましたが、その後、呼び出しを受け入れる前にリモート ピアによって終了されました。)");
 				break;
 
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(addrlen パラメーターが小さすぎるか、addr がユーザー アドレス空間の有効な部分ではありません。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEFAULT(addrlen パラメーターが小さすぎるか、addr がユーザー アドレス空間の有効な部分ではありません。)");
 				break;
 
 			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、ブロックしている Windows ソケット 1.1 呼び出しが取り消されました。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEINTR(ブロッキング Windows Sockets 1.1 呼び出しは、WSACancelBlockingCall を介して取り消されました。)");
 				break;
 
 			case WSAEINVAL:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(リッスン関数は、受け入れる前に呼び出されませんでした。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEINVAL(リッスン関数は、受け入れる前に呼び出されませんでした。)");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
 				break;
 
 			case EMFILE:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:EMFILE(キューは、 受け入れる エントリに空きがなく、使用可能な記述子がありません。)");
+				throw std::runtime_error("WSA ERROR CASE:EMFILE(キューは、受け入れるエントリに空きがなく、使用可能な記述子がありません。)");
 				break;
 
 			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
 				break;
 
 			case WSAENOBUFS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOBUFS(バッファーに空き領域がありません。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAENOBUFS(バッファーに空き領域がありません。)");
 				break;
 
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子はソケットではありません。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAENOTSOCK(記述子はソケットではありません。)");
 				break;
 
 			case WSAEOPNOTSUPP:
-				THROW_APP_EXCEPTION("CASE:WSAEOPNOTSUPP(参照されるソケットは、接続指向サービスをサポートする型ではありません。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEOPNOTSUPP(参照されるソケットは、接続指向サービスをサポートする型ではありません。)");
 				break;
 
 			case WSAEWOULDBLOCK:
-				THROW_APP_EXCEPTION("CASE:WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、受け入れられる接続はありません。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、受け入れられる接続はありません。)");
 				break;
 
 			default:
@@ -973,9 +987,9 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 			return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result);
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
 		struct sockaddr_in error_addr_in = { 0 };
 		return std::make_tuple(INVALID_SOCKET, error_addr_in);
 	}
@@ -991,27 +1005,27 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
+				throw std::runtime_error("WSA ERROR CASE : WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
 				break;
 
 			case WSAENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
+				throw std::runtime_error("WSA ERROR CASE : WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
 				break;
 
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAENOTSOCK(記述子はソケットではありません。)");
+				throw std::runtime_error("WSA ERROR CASE : WSAENOTSOCK(記述子はソケットではありません。)");
 				break;
 
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+				throw std::runtime_error("WSA ERROR CASE : WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
 				break;
 
 			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEINTR((ブロッキング) Windows Socket 1.1 呼び出しは 、WSACancelBlockingCall を介して取り消されました。)");
+				throw std::runtime_error("WSA ERROR CASE : WSAEINTR(ブロッキング Windows Socket 1.1 呼び出しは、WSACancelBlockingCall を介して取り消されました。)");
 				break;
 
 			case WSAEWOULDBLOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE : WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされていますが、残留構造のl_onoff メンバーは 0 以外に設定され、残留構造のl_linger メンバーは 0 以外のタイムアウト値に設定されます。)");
+				throw std::runtime_error("WSA ERROR CASE : WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、残留構造のl_onoff メンバーは 0 以外に設定され、残留構造のl_linger メンバーは 0 以外のタイムアウト値に設定されます。)");
 				break;
 
 			default:
@@ -1023,11 +1037,11 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 		}
 
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
 	}
-
+	
 
 }
 
@@ -1048,39 +1062,39 @@ bool SocketHandler::generate_tcp_listen_socket()
 			switch (get_addr_result_msg)
 			{
 			case EAI_AGAIN:
-				THROW_APP_EXCEPTION("名前解決の一時的なエラーが発生しました。");
+				throw std::runtime_error("名前解決の一時的なエラーが発生しました。再試行してください。");
 				break;
 
 			case EAI_BADFLAGS:
-				THROW_APP_EXCEPTION("pHints パラメーターのai_flags メンバーに無効な値が指定されました。");
+				throw std::runtime_error("pHints パラメーターの ai_flags メンバーに無効な値が指定されました。");
 				break;
 			
 			case EAI_FAIL:
-				THROW_APP_EXCEPTION("名前解決で回復不可能なエラーが発生しました。");
+				throw std::runtime_error("名前解決で回復不可能なエラーが発生しました。ネットワーク接続を確認してください。");
 				break;
 
 			case EAI_FAMILY:
-				THROW_APP_EXCEPTION("pHints パラメーターのai_familyメンバーはサポートされていません。");
+				throw std::runtime_error("pHints パラメーターの ai_family メンバーに無効な値が指定されました。AF_INET または AF_INET6 を使用してください。");
 				break;
 
 			case EAI_MEMORY:
-				THROW_APP_EXCEPTION("メモリ割り当てエラーが発生しました。");
+				throw std::runtime_error("メモリ割り当てエラーが発生しました。システムのメモリを確認してください。");
 				break;
 
 			case EAI_NONAME:
-				THROW_APP_EXCEPTION("指定されたパラメーターの名前が解決されないか、 pNodeName パラメーターと pServiceName パラメーターが指定されませんでした。");
+				throw std::runtime_error("指定されたパラメーターの名前が解決されないか、pNodeName パラメーターと pServiceName パラメーターが指定されませんでした。");
 				break;
 
 			case EAI_SERVICE:
-				THROW_APP_EXCEPTION("pServiceName パラメーターは、pHints パラメーターの指定したai_socktype メンバーではサポートされていません。");
+				throw std::runtime_error("pServiceName パラメーターが指定されているが、pHints パラメーターの ai_socktype メンバーでサポートされていないサービス名が指定されました。");
 				break;
 
 			case EAI_SOCKTYPE:
-				THROW_APP_EXCEPTION("pHints パラメーターのai_socktype メンバーはサポートされていません。");
+				throw std::runtime_error("pHints パラメーターの ai_socktype メンバーに無効な値が指定されました。SOCK_STREAM または SOCK_DGRAM を使用してください。");
 				break;
 
 			default:
-				THROW_APP_EXCEPTION("何らかの原因でgetaddrinfoの結果が正常ではありません。");
+				throw std::runtime_error("何らかの原因でgetaddrinfoの結果が正常ではありません。エラーコード: " + std::to_string(get_addr_result_msg));
 				break;
 			}
 		}
@@ -1088,12 +1102,19 @@ bool SocketHandler::generate_tcp_listen_socket()
 		//リッスンソケットの生成
 		_tcp_listen_socket = socket(m_result_tcp -> ai_family, m_result_tcp -> ai_socktype, m_result_tcp->ai_protocol);
 		if (_tcp_listen_socket == INVALID_SOCKET) {
-			THROW_APP_EXCEPTION("The generated listening socket for message is not valid.");
+			throw std::runtime_error("ソケットの生成に失敗しました。WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		freeaddrinfo(m_result_tcp);
+		WSACleanup();
+		return false;
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR(e.what());
 		freeaddrinfo(m_result_tcp);
 		WSACleanup();
 		return false;
@@ -1406,25 +1427,25 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<SOCKET>& socket_
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に 、WSAStartup 呼び出しが成功する必要があります。)");
+				throw std::runtime_error("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
 				break;
 			case WSAEFAULT:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEFAULT(Windows ソケットの実装では、内部操作に必要なリソースを割り当てることができませんでした。または、 readfds、 writefds、 exceptfds、または timeval パラメーターがユーザー アドレス空間の一部ではありません。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEFAULT(Windows ソケットの実装では、内部操作に必要なリソースを割り当てることができませんでした。または、 readfds、 writefds、 exceptfds、または timeval パラメーターがユーザー アドレス空間の一部ではありません。)");
 				break;
 			case ENETDOWN:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:ENETDOWN(ネットワーク サブシステムが失敗しました。)");
+				throw std::runtime_error("WSA ERROR CASE:ENETDOWN(ネットワーク サブシステムが失敗しました。)");
 				break;
 			case WSAEINVAL:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINVAL(タイムアウト値が無効であるか、3 つの記述子パラメーターがすべて null でした。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEINVAL(タイムアウト値が無効であるか、3 つの記述子パラメーターがすべて null でした。)");
 				break;
 			case WSAEINTR:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、Windows ソケット 1.1 呼び出しのブロックが取り消されました。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、Windows ソケット 1.1 呼び出しのブロックが取り消されました。)");
 				break;
 			case WSAEINPROGRESS:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAEINPROGRESS(ブロック中の Windows ソケット 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAEINPROGRESS(ブロック中の Windows ソケット 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
 				break;
 			case WSAENOTSOCK:
-				THROW_APP_EXCEPTION("WSA ERROR CASE:WSAENOTSOCK(記述子セットの 1 つに、ソケットではないエントリが含まれています。)");
+				throw std::runtime_error("WSA ERROR CASE:WSAENOTSOCK(記述子セットの 1 つに、ソケットではないエントリが含まれています。)");
 				break;
 			default:
 				break;
@@ -1442,8 +1463,8 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<SOCKET>& socket_
 			break;
 		}
 	}
-	catch (const exception::ExceptionBase& ex) {
-		LOG_ERROR(ex.what_for_str());
+	catch (const std::runtime_error& e) {
+		LOG_ERROR(e.what());
 	}
 }
 
@@ -1454,15 +1475,21 @@ bool SocketHandler::open_tcp_listen_socket()
 	{
 		//tcp_listen_socketのオープンに失敗した場合
 		if (!generate_tcp_listen_socket()) {
-			THROW_APP_EXCEPTION("Failed to generate TCP listen socket for message.");
+			throw std::runtime_error("Failed to generate TCP listen socket for message.");
 			return false;
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		return false;
 	}
-
+	catch (const std::exception& e)
+	{
+		LOG_ERROR(e.what());
+		return false;
+	}
+	
 	try
 	{
 		if (listen(_tcp_listen_socket, SOMAXCONN) == SOCKET_ERROR) {
@@ -1470,7 +1497,7 @@ bool SocketHandler::open_tcp_listen_socket()
 			freeaddrinfo(m_result_tcp);
 			closesocket(_tcp_listen_socket);
 			WSACleanup();
-			THROW_APP_EXCEPTION("Tcp Listen socket has been SOCKET_ERROR for some reason.");
+			throw std::runtime_error("Tcp Listen socket has been SOCKET_ERROR for some reason. WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
 
 		}
 		else
@@ -1478,9 +1505,21 @@ bool SocketHandler::open_tcp_listen_socket()
 			spdlog::info("server open listen socket:{:d}.", _tcp_listen_socket);
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
+	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(ex.what_for_str());
+		LOG_ERROR(e.what());
+		freeaddrinfo(m_result_tcp);
+		closesocket(_tcp_listen_socket);
+		WSACleanup();
+		return false;
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR(e.what());
+		freeaddrinfo(m_result_tcp);
+		closesocket(_tcp_listen_socket);
+		WSACleanup();
+		return false;
 	}
 	return true;
 }

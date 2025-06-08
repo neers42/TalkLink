@@ -67,8 +67,8 @@ public:
 	void set_server_ip(const std::string& ip);
 	void handle_changed_socket_process(const SOCKET socket);
 	void message_handle_process(const SOCKET socket);	
-	void heart_beat_check_process();
-	void heart_beat_response_process(const std::shared_ptr<ClientHandler::Client>& client);
+	void heartbeat_check_process();
+	void heartbeat_nonresponse_process(const std::shared_ptr<ClientHandler::Client>& client);
 	void setting_select_process();
 
 

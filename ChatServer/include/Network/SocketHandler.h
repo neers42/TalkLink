@@ -7,7 +7,6 @@
 #include <exception>
 #include <ws2tcpip.h>
 #include "inicpp.h"
-#include "AppException.h"
 #include "StringFormat.h"
 #include "ServerTime.h"
 #include <iphlpapi.h>
@@ -152,9 +151,6 @@ public:
 	fd_set& get_fds(){
 		return m_fds;
 	}
-
-	
-	
 
 	std::string& get_server_ip_address() {
 		return _local_ip_addr;

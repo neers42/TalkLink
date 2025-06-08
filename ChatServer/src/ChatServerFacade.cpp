@@ -57,7 +57,7 @@ void ChatServerFacade::run()
 
 	spdlog::info("Start monitoring requests from clients.");
 	this->_thread_pool_handler->enqueue_task([this]() {_thread_pool_handler->monitor_worker(); });
-	this->_thread_pool_handler->enqueue_task([this]() {heart_beat_check_process(); });
+	this->_thread_pool_handler->enqueue_task([this]() {heartbeat_check_process(); });
 
 	//ディスクリプション監視スタート
 	while (1) {
@@ -700,7 +700,7 @@ void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004>& mt00
 
 
 
-void ChatServerFacade::heart_beat_check_process()
+void ChatServerFacade::heartbeat_check_process()
 {
 	while (true) {
 	
@@ -716,7 +716,7 @@ void ChatServerFacade::heart_beat_check_process()
 
 		for (const auto& client : current_connect_clients) {
 			if (client != nullptr && client->heart_beat_count == 0) {
-				this->heart_beat_response_process(client);
+				this->heartbeat_nonresponse_process(client);
 			}
 		}
 		
@@ -730,7 +730,7 @@ void ChatServerFacade::heart_beat_check_process()
 }
 
 
-void ChatServerFacade::heart_beat_response_process(const std::shared_ptr<ClientHandler::Client>& client)
+void ChatServerFacade::heartbeat_nonresponse_process(const std::shared_ptr<ClientHandler::Client>& client)
 {
 	std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 
