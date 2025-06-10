@@ -20,7 +20,7 @@ SocketHandler::SocketHandler() :
 	_udp_bloadcast_tx_socket{ INVALID_SOCKET },
 	_udp_multicast_tx_socket{INVALID_SOCKET}
 {
-	ZeroMemory(&m_param_tcp, sizeof(m_param_tcp));
+	ZeroMemory(&_param_tcp, sizeof(_param_tcp));
 
 	try
 	{
@@ -75,9 +75,9 @@ SocketHandler::SocketHandler() :
 	_udp_multicast_tx_socket = INVALID_SOCKET;
 
 	//ソケット初期化用の変数の初期化
-	_init_sockaddr_in.sin_family = AF_INET;
-	_init_sockaddr_in.sin_port = 0;
-	_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+	//_init_sockaddr_in.sin_family = AF_INET;
+	//_init_sockaddr_in.sin_port = 0;
+	//_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
 
 	
@@ -93,7 +93,7 @@ SocketHandler::SocketHandler() :
  **********************************************************************************/
 SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 {
-	ZeroMemory(&m_param_tcp, sizeof(m_param_tcp));
+	ZeroMemory(&_param_tcp, sizeof(_param_tcp));
 	//wsa_dataの初期化
 	try
 	{
@@ -141,16 +141,16 @@ SocketHandler::SocketHandler(int tv_sec, int tv_usec)
 	_tcp_listen_socket = INVALID_SOCKET;
 
 
-	_init_sockaddr_in.sin_family = AF_INET;
-	_init_sockaddr_in.sin_port = 50000;
-	_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+	//_init_sockaddr_in.sin_family = AF_INET;
+	//_init_sockaddr_in.sin_port = 50000;
+	//_init_sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 
 }
 
 //デストラクタ
 SocketHandler::~SocketHandler()
 {
-	freeaddrinfo(m_result_tcp);
+	freeaddrinfo(_result_tcp);
 	closesocket(get_listen_socket());
 	closesocket(get_udp_multicast_tx_socket());
 	WSACleanup();
@@ -302,8 +302,8 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 
 	try
 	{
-		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_multicast_tx_addr.sin_port).c_str(), &m_multicast_tx_param, &m_result_multicast);
-		this->_udp_multicast_tx_socket = socket(m_multicast_tx_param.ai_family, m_multicast_tx_param.ai_socktype, 0);
+		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_multicast_tx_addr.sin_port).c_str(), &_multicast_tx_param, &_result_multicast);
+		this->_udp_multicast_tx_socket = socket(_multicast_tx_param.ai_family, _multicast_tx_param.ai_socktype, 0);
 		if (this->_udp_multicast_tx_socket == INVALID_SOCKET) {
 			switch (WSAGetLastError())
 			{
@@ -528,7 +528,7 @@ bool SocketHandler::setting_tcp_flags(ini::IniFile tcp_listen_socket_param_setti
 {
 	//フラッグの設定
 	std::string temp_flag = tcp_listen_socket_param_setting_ini["SocketSetting"]["flags"].as<std::string>();
-	if (trans_flags(temp_flag, &m_param_tcp) == false) {
+	if (trans_flags(temp_flag, &_param_tcp) == false) {
 		return false;
 	}
 	else {
@@ -542,7 +542,7 @@ bool SocketHandler::setting_tcp_family(ini::IniFile tcp_listen_socket_param_sett
 	//iniファイルの各セクションからキーを読み込む
 	//アドレスファミリの設定(ipv4 or ipv6)
 	std::string temp_family = tcp_listen_socket_param_setting_ini["SocketSetting"]["family"].as<std::string>();
-	if (trans_family(temp_family, &m_param_tcp) == false) {
+	if (trans_family(temp_family, &_param_tcp) == false) {
 		return false;
 	}
 	else {
@@ -555,7 +555,7 @@ bool SocketHandler::setting_tcp_socktype(ini::IniFile tcp_listen_socket_param_se
 {
 	//ソケット型の設定
 	std::string temp_socket_type = tcp_listen_socket_param_setting_ini["SocketSetting"]["socktype"].as<std::string>();
-	if (trans_socktype(temp_socket_type, &m_param_tcp) == false) {
+	if (trans_socktype(temp_socket_type, &_param_tcp) == false) {
 		return false;
 }
 	else {
@@ -569,7 +569,7 @@ bool SocketHandler::setting_tcp_protocol(ini::IniFile tcp_listen_socket_param_se
 	std::string temp_protocol = tcp_listen_socket_param_setting_ini["SocketSetting"]["protocol"].as<std::string>();
 	//std::equal(temp_family.begin(), temp_family.end(), "AF_INET")
 	//プロトコルをtcpに設定する場合
-	if (trans_protocol(temp_protocol, &m_param_tcp) == false) {
+	if (trans_protocol(temp_protocol, &_param_tcp) == false) {
 		return false;
 	}
 	else {
@@ -600,7 +600,7 @@ bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_settin
 bool SocketHandler::setting_multicast_tx_sock_af(ini::IniFile socket_param_setting_ini)
 {
 	std::string temp_af = socket_param_setting_ini["MulticastTX_SocketSetting"]["family"].as<std::string>();
-	if (trans_family(temp_af, &m_multicast_tx_param) == false) {
+	if (trans_family(temp_af, &_multicast_tx_param) == false) {
 		return false;
 	}
 	return true;
@@ -611,7 +611,7 @@ bool SocketHandler::setting_multicast_tx_sock_type(ini::IniFile socket_param_set
 {
 	//ソケットタイプの設定
 	std::string temp_socktype = socket_param_setting_ini["MulticastTX_SocketSetting"]["type"].as<std::string>();
-	if (trans_socktype(temp_socktype, &m_multicast_tx_param) == false) {
+	if (trans_socktype(temp_socktype, &_multicast_tx_param) == false) {
 		return false;
 	}
 	else {
@@ -623,7 +623,7 @@ bool SocketHandler::setting_multicast_tx_sock_type(ini::IniFile socket_param_set
 bool SocketHandler::setting_multicast_tx_sock_protocol(ini::IniFile socket_param_setting_ini)
 {
 	int temp_protocol = socket_param_setting_ini["MulticastTX_SocketSetting"]["protocol"].as<int>();
-	if (trans_protocol(temp_protocol, &m_multicast_tx_param) == false) {
+	if (trans_protocol(temp_protocol, &_multicast_tx_param) == false) {
 		return false;
 	
 	}
@@ -734,7 +734,7 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 	//inet_addrの設定
 	try
 	{
-		int inet_pton_result = inet_pton(m_multicast_tx_param.ai_family, temp_multicast_addr.c_str(), &_multicast_tx_addr.sin_addr);
+		int inet_pton_result = inet_pton(_multicast_tx_param.ai_family, temp_multicast_addr.c_str(), &_multicast_tx_addr.sin_addr);
 		if (inet_pton_result == -1) {
 			switch (WSAGetLastError())
 			{
@@ -1057,7 +1057,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 	//名前解決
 	try
 	{
-		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_port).c_str(), &m_param_tcp, &m_result_tcp);
+		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_port).c_str(), &_param_tcp, &_result_tcp);
 		if (get_addr_result_msg != 0) {
 			switch (get_addr_result_msg)
 			{
@@ -1100,7 +1100,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 		}
 
 		//リッスンソケットの生成
-		_tcp_listen_socket = socket(m_result_tcp -> ai_family, m_result_tcp -> ai_socktype, m_result_tcp->ai_protocol);
+		_tcp_listen_socket = socket(_result_tcp -> ai_family, _result_tcp -> ai_socktype, _result_tcp->ai_protocol);
 		if (_tcp_listen_socket == INVALID_SOCKET) {
 			throw std::runtime_error("ソケットの生成に失敗しました。WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
 		}
@@ -1108,20 +1108,20 @@ bool SocketHandler::generate_tcp_listen_socket()
 	catch (const std::runtime_error& e)
 	{
 		LOG_ERROR(e.what());
-		freeaddrinfo(m_result_tcp);
+		freeaddrinfo(_result_tcp);
 		WSACleanup();
 		return false;
 	}
 	catch (const std::exception& e)
 	{
 		LOG_ERROR(e.what());
-		freeaddrinfo(m_result_tcp);
+		freeaddrinfo(_result_tcp);
 		WSACleanup();
 		return false;
 	}
 	spdlog::debug("server generated listen socket({:d}).", _tcp_listen_socket);
 
-	bool bind_result = bind_tcp_listen_socket(&_tcp_listen_socket, m_result_tcp);
+	bool bind_result = bind_tcp_listen_socket(&_tcp_listen_socket, _result_tcp);
 	if (bind_result == true) {
 		spdlog::debug("server bind setting on listen socket({:d}).", _tcp_listen_socket);
 	}
@@ -1494,7 +1494,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	{
 		if (listen(_tcp_listen_socket, SOMAXCONN) == SOCKET_ERROR) {
 
-			freeaddrinfo(m_result_tcp);
+			freeaddrinfo(_result_tcp);
 			closesocket(_tcp_listen_socket);
 			WSACleanup();
 			throw std::runtime_error("Tcp Listen socket has been SOCKET_ERROR for some reason. WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
@@ -1508,7 +1508,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	catch (const std::runtime_error& e)
 	{
 		LOG_ERROR(e.what());
-		freeaddrinfo(m_result_tcp);
+		freeaddrinfo(_result_tcp);
 		closesocket(_tcp_listen_socket);
 		WSACleanup();
 		return false;
@@ -1516,7 +1516,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	catch (const std::exception& e)
 	{
 		LOG_ERROR(e.what());
-		freeaddrinfo(m_result_tcp);
+		freeaddrinfo(_result_tcp);
 		closesocket(_tcp_listen_socket);
 		WSACleanup();
 		return false;

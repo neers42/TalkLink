@@ -31,7 +31,7 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	//リッスンソケット生成用のパラメータ
-	struct addrinfo *m_result_tcp = NULL, m_param_tcp, m_multicast_tx_param, m_bloadcast_tx_param, *m_result_multicast = NULL, *m_result_bloadcast = NULL;
+	struct addrinfo *_result_tcp = NULL, _param_tcp, _multicast_tx_param, _bloadcast_tx_param, *_result_multicast = NULL, *_result_bloadcast = NULL;
 
 	WSADATA m_wsa_data;
 
@@ -52,13 +52,13 @@ private:
 	int _port = 0;
 
 	//初期化用のsockaddr_in構造体
-	struct sockaddr_in _init_sockaddr_in;
+	//struct sockaddr_in _init_sockaddr_in;
 	
 	//マルチキャスト用のsockaddr_in構造体
 	struct sockaddr_in _multicast_tx_addr, _bloadcast_tx_addr;
 
 	//ローカルIPアドレス
-	DWORD _i_count;
+	DWORD _i_count = 0;
 	PMIB_IPADDRTABLE _ip_addr_table;
 	DWORD _dw_size = 0;
 	DWORD _dw_ret_val = 0;
