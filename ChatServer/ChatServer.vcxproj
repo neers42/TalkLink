@@ -174,13 +174,9 @@
     <ClCompile Include="src\Chat\ChatRoomHandler.cpp" />
     <ClCompile Include="src\Chat\ClientHandler.cpp" />
     <ClCompile Include="src\Network\ProtocolHandler.cpp" />
-    <ClCompile Include="src\Utils\LogHandler.cpp" />
     <ClCompile Include="src\Database\MySQLClient.cpp" />
-    <ClCompile Include="src\Utils\AppException.cpp" />
-    <ClCompile Include="src\Utils\ExceptionBase.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\ChatServerFacade.cpp" />
-    <ClCompile Include="src\Utils\ThreadPoolHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Database\hiredis\alloc.h" />
@@ -357,7 +353,6 @@
     <ClInclude Include="include\Network\MessageType102.h" />
     <ClInclude Include="include\Network\MessageType103B.h" />
     <ClInclude Include="include\ChatServerFacade.h" />
-    <ClInclude Include="include\Utils\ThreadPoolHandler.h" />
     <ClInclude Include="include\Utils\common.h" />
   </ItemGroup>
   <ItemGroup>

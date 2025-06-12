@@ -2,10 +2,15 @@
 //
 
 #include <iostream>
+#include "AunthenticationServerFacade.h"
+#include "spdlog/spdlog.h"
+
 
 int main()
 {
-    std::cout << "Hello World!\n";
+	std::unique_ptr<AunthenticationServerFacade> auth_server_facade;
+	auth_server_facade = std::make_unique<AunthenticationServerFacade>();
+	auth_server_facade->run();
     
 }
 

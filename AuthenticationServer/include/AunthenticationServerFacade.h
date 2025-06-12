@@ -11,6 +11,7 @@ class AunthenticationServerFacade
 {
 
 private:
+	std::unique_ptr<SocketHandler> _socket_handler;
 
 	public:
 		AunthenticationServerFacade();

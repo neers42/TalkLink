@@ -19,7 +19,7 @@
 #define SELECT_TIME_OUT -2
 #define REQUEST_ACCEPT_CLIENT_DETECTION -3
 #define NOT_EXIST_IP_ADDRESS -1
-#define MAX_CONNECT_NUM 10000
+#define MAX_CONNECT_NUM 50000
 
 class SocketHandler
 {
@@ -31,11 +31,14 @@ private:
 :::::::::::::::::::::::::::::::
 */
 	//リッスンソケット生成用のパラメータ
-	struct addrinfo *_result_tcp = NULL, _param_tcp, _multicast_tx_param, _bloadcast_tx_param, *_result_multicast = NULL, *_result_bloadcast = NULL;
+	struct addrinfo *_result_tcp , *_result_multicast , *_result_bloadcast;
+	struct addrinfo _tcp_socket_param;		//TCPソケット生成用のパラメータ
+	struct addrinfo _multicast_tx_param;	//UDPマルチキャスト送信用のソケット生成用のパラメータ
+	struct addrinfo _bloadcast_tx_param;	//UDPブロードキャスト送信用のソケット生成用のパラメータ
 
-	WSADATA m_wsa_data;
+	WSADATA _wsa_data;
 
-	fd_set m_fds, m_fd_read;
+	fd_set _fds, _fd_read;
 
 	timeval _timeout;
 
@@ -49,22 +52,16 @@ private:
 	SOCKET _udp_multicast_tx_socket;
 
 	//サーバのアプリケーションポート番号
-	int _port = 0;
-
-	//初期化用のsockaddr_in構造体
-	//struct sockaddr_in _init_sockaddr_in;
+	int _port;
 	
 	//マルチキャスト用のsockaddr_in構造体
 	struct sockaddr_in _multicast_tx_addr, _bloadcast_tx_addr;
 
-	//ローカルIPアドレス
-	DWORD _i_count = 0;
-	PMIB_IPADDRTABLE _ip_addr_table;
-	DWORD _dw_size = 0;
-	DWORD _dw_ret_val = 0;
-	std::string _local_ip_addr = "";
+	std::string _local_ip_addr;
 
-	int m_ttl = 0;
+	int _ttl;
+
+	std::string setting_file_pass;
 
 	std::vector<SOCKET> _connect_sockets;
 
@@ -80,12 +77,15 @@ private:
 	bool bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinfo* result);
 
 	//tcp listenソケットの設定を読み込む
+	bool setting_tcp_listen_socket_param();
 	bool setting_tcp_listen_socket_param(const std::string& file_pass);
 
 	//udpマルチキャスト送信用のソケット設定を読み込む
+	bool setting_multicast_tx_socket_param();
 	bool setting_multicast_tx_socket_param(const std::string& file_pass);
 
 	//udp ブロードキャスト送信用のソケット設定を読み込む
+	bool setting_bloadcast_tx_socket_param();
 	bool setting_bloadcast_tx_socket_param(const std::string& file_pass);
 
 
@@ -98,26 +98,20 @@ private:
 	bool trans_protocol(const std::string& protocol_str, struct addrinfo* param);
 	bool trans_protocol(const int protocol_int, struct addrinfo* param);
 
+
+	//tcp_paramの設定用関数
 	bool setting_tcp_flags(ini::IniFile socket_param_setting_ini);
-
 	bool setting_tcp_family(ini::IniFile socket_param_setting_ini);
-
 	bool setting_tcp_socktype(ini::IniFile socket_param_setting_ini);
-
 	bool setting_tcp_protocol(ini::IniFile socket_param_setting_ini);
-
 	bool setting_tcp_port(ini::IniFile socket_param_setting_ini);
 
+	//muticast_tx_paramの設定用関数
 	bool setting_multicast_tx_sock_af(ini::IniFile socket_param_setting_ini);
-
 	bool setting_multicast_tx_sock_type(ini::IniFile socket_param_setting_ini);
-
 	bool setting_multicast_tx_sock_protocol(ini::IniFile socket_param_setting_ini);
-
 	bool setting_multicast_tx_sin_family(ini::IniFile socket_param_setting_ini);
-
 	bool setting_multicast_tx_sin_port(ini::IniFile socket_param_setting_ini);
-
 	bool setting_multicast_tx_sin_address(ini::IniFile socket_param_setting_ini);
 
 public:
@@ -129,8 +123,7 @@ public:
 	//コンストラクタ
 	SocketHandler();
 
-	//コピーコンストラクタ
-	SocketHandler(int tv_sec, int tv_usec);
+	SocketHandler(const std::string& file_pass);
 
 	//デストラクタ
 	~SocketHandler();
@@ -145,12 +138,12 @@ public:
 	}
 
 	fd_set& get_fd_read() {
-		return m_fd_read;
+		return _fd_read;
 	}
 
 
 	fd_set& get_fds(){
-		return m_fds;
+		return _fds;
 	}
 
 	std::string& get_server_ip_address() {
@@ -165,10 +158,8 @@ public:
 	//ファイルディスクリプタに変化がないか監視する
 	void monitor_socket_descriptor(const std::vector<SOCKET>& socket_list, std::function<void(SOCKET)> callback);
 
-
 	//メッセージ用のリッスンソケットをアクティブにする
 	bool open_tcp_listen_socket();
-
 
 	//クライアントのIPアドレスを抽出する
 	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);

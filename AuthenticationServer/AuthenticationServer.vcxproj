@@ -141,6 +141,9 @@
       <Project>{5a26112c-23e7-4d2d-99d3-4732917b34a6}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="conf\socket_setting.ini" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -17,7 +17,7 @@ ChatServerFacade::ChatServerFacade() : _server_ip{ "" }
 	////ログのフォーマット設定
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
 	spdlog::info("Starting MyChat server version 1.0.0!!");
-	_socket_handler = std::make_unique<SocketHandler>();
+	_socket_handler = std::make_unique<SocketHandler>("conf/socket_setting.ini");
 	this->set_server_ip(this->_socket_handler->obtain_local_ip_addr());
 	_firebase_auth_handler = std::make_unique<FirebaseAuthHandler>();
 	_mysql_client = std::make_unique<MySQLClient>();
@@ -28,6 +28,17 @@ ChatServerFacade::ChatServerFacade() : _server_ip{ "" }
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
 	_chat_room_handler = std::make_unique<ChatroomHandler>();
 	
+	if (_socket_handler == nullptr ||
+		_mysql_client == nullptr ||
+		_redis_client == nullptr ||
+		_protocol_handler == nullptr ||
+		_server_time == nullptr ||
+		_client_handler == nullptr ||
+		_thread_pool_handler == nullptr ||
+		_chat_room_handler == nullptr) {
+		LOG_ERROR("Failed to initialize ChatServerFacade components. Please check the configuration and try again.");
+		exit(1);
+	}
 }
 
 ChatServerFacade::~ChatServerFacade()
@@ -39,12 +50,12 @@ ChatServerFacade::~ChatServerFacade()
 void ChatServerFacade::run()
 {
 	//リッスンソケットの生成
-	if (!_socket_handler->open_tcp_listen_socket()) {
+	if (_socket_handler->open_tcp_listen_socket() == false) {
 		LOG_ERROR("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again.");
 		exit(1);
 	}
 
-	if (!_socket_handler->generate_udp_multicast_tx_socket()) {
+	if (_socket_handler->generate_udp_multicast_tx_socket() == false) {
 		LOG_ERROR("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
