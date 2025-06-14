@@ -24,9 +24,6 @@ public:
 	ServerTime(){}
 	~ServerTime() {}
 
-	//現在のサーバの時刻を表示
-	//static std::string get_current_time_to_milliseconds();
-	//static std::string get_current_time_to_seconds();
 
     static std::string get_current_time_to_milliseconds()
     {
@@ -59,10 +56,6 @@ public:
         ss = std::string(time_str) + "." + milliseconds_str;
 
         return ss;
-
-
-        // 現在の日付と時刻を表示
-        //std::cout << "[" << timeStr << "." << millisecondsPart << "]" << std::endl;
 
     }
 

@@ -92,9 +92,11 @@ public:
 	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
 
 	
-	//private変数
+	//public変数
 public:
+	std::mutex chatroom_mutex;	//チャットルームの操作を保護するためのミューテックス
 	std::vector<std::unique_ptr<ChatRoom>> chatroom_list;
+
 
 	//private関数
 private:

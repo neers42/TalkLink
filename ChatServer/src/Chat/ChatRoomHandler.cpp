@@ -146,6 +146,7 @@ ChatroomHandler::~ChatroomHandler()
 
 void ChatroomHandler::add_chatroom(std::unique_ptr<ChatRoom> chatroom)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	if (chatroom->get_chatroom_name() == "" || chatroom->get_client_list().size() == 0) {
 		LOG_ERROR("Chatroom name or client list is empty.");
 		return;
@@ -159,6 +160,7 @@ void ChatroomHandler::add_chatroom(std::unique_ptr<ChatRoom> chatroom)
 
 void ChatroomHandler::delete_chatroom(const std::string& room_id)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	auto it = find_chatroom_id_from_list(room_id);
 	if (it == this->chatroom_list.end()) {
 		LOG_ERROR("The chatroom ID({}) you tried to delete could not be found.", room_id);
@@ -170,6 +172,7 @@ void ChatroomHandler::delete_chatroom(const std::string& room_id)
 
 bool ChatroomHandler::add_member_to_chatroom(const std::string& room_id, const std::vector<std::string>& cids)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	auto it = find_chatroom_id_from_list(room_id);
 	if (it == this->chatroom_list.end()) {
 		spdlog::warn("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
@@ -191,6 +194,7 @@ bool ChatroomHandler::add_member_to_chatroom(const std::string& room_id, const s
 
 bool ChatroomHandler::delete_member_from_chatroom(const std::string& room_id, const std::vector<std::string>& cids)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	auto it = find_chatroom_id_from_list(room_id);
 	if (it == this->chatroom_list.end()) {
 		spdlog::warn("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
@@ -211,6 +215,7 @@ bool ChatroomHandler::delete_member_from_chatroom(const std::string& room_id, co
 
 bool ChatroomHandler::change_room_name(const std::string& room_id, const std::string& room_name)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	auto it = find_chatroom_id_from_list(room_id);
 	if (it == this->chatroom_list.end()) {
 		LOG_ERROR("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
@@ -226,6 +231,7 @@ bool ChatroomHandler::change_room_name(const std::string& room_id, const std::st
 
 bool ChatroomHandler::change_room_icon(const std::string& room_id, const std::string& icon_url)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	auto it = find_chatroom_id_from_list(room_id);
 	if (it == this->chatroom_list.end()) {
 		LOG_ERROR("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
@@ -242,11 +248,13 @@ bool ChatroomHandler::change_room_icon(const std::string& room_id, const std::st
 
 std::vector<std::string> ChatroomHandler::get_client_infos_by_chatroom_id(int list_num)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	return this->chatroom_list[list_num]->get_client_list();
 }
 
 std::vector<std::string> ChatroomHandler::get_client_infos_by_chatroom_id(const std::string& room_id) 
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	int chatroom_list_num = this->search_chatroom_id_from_list(room_id);
 	if (chatroom_list_num != -1) {
 		return this->chatroom_list[chatroom_list_num]->get_client_list();
@@ -259,11 +267,13 @@ std::vector<std::string> ChatroomHandler::get_client_infos_by_chatroom_id(const 
 
 std::vector<std::unique_ptr<ChatroomHandler::ChatRoom>>& ChatroomHandler::get_chatroom_list()
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	return this->chatroom_list;
 }
 
 int ChatroomHandler::search_chatroom_id_from_list(const std::string& room_id)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	for (int i = 0; i < this->chatroom_list.size(); i++) {
 		if (this->chatroom_list[i]->get_chatroom_id() == room_id) {
 			return i;
@@ -274,6 +284,7 @@ int ChatroomHandler::search_chatroom_id_from_list(const std::string& room_id)
 
 std::vector<std::unique_ptr<ChatroomHandler::ChatRoom>>::iterator ChatroomHandler::find_chatroom_id_from_list(const std::string& room_id)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	return std::find_if(chatroom_list.begin(), chatroom_list.end(),
 		[&room_id](const std::unique_ptr<ChatRoom>& room) {
 			return room->get_chatroom_id() == room_id;
@@ -283,6 +294,7 @@ std::vector<std::unique_ptr<ChatroomHandler::ChatRoom>>::iterator ChatroomHandle
 
 std::vector<std::string> ChatroomHandler::get_client_list_from_chatroom(const std::string& chatroom_id)
 {
+	std::unique_lock<std::mutex> lock(this->chatroom_mutex);
 	int chatroom_list_num = this->search_chatroom_id_from_list(chatroom_id);
 	if (chatroom_list_num != -1) {
 		return this->chatroom_list[chatroom_list_num]->get_client_list();

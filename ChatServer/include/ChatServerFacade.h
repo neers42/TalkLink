@@ -40,7 +40,7 @@ private:
 	std::unique_ptr<ClientHandler> _client_handler;
 	std::unique_ptr<ThreadPoolHandler> _thread_pool_handler;
 	std::unique_ptr<ChatroomHandler> _chat_room_handler;
-	std::mutex _connect_client_list_mutex;
+	std::mutex _connect_client_list_mutex, _chatroom_list_mutex;
 	std::mutex _hb_connect_list_mutex;
 	std::mutex _cout_mutex;
 	std::mutex _mutex;
@@ -57,7 +57,7 @@ public:
 	//サーバプログラム実行
 	void run();
 	
-	void setting_select_info();
+	void prepare_client_fd_set();
 
 	void show_server_running_info();
 
@@ -84,7 +84,7 @@ private:
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result);
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result);
 	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
-	void mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result);
+	void mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result, const bool recv_flag);
 	void mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<ClientHandler::Client>& client);
 	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003>& mt003);
 	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids);

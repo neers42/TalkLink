@@ -77,9 +77,10 @@ private:
 
 	//private関数
 	std::string generate_client_id();
+	std::vector<std::shared_ptr<Client>>::iterator find_client(const std::shared_ptr<Client>& client);
 
 public:
-	std::mutex mtx;
+	mutable std::mutex mtx;
 
 public:
 	ClientHandler();
@@ -93,12 +94,18 @@ public:
 	const Client get_init_client() const;
 	bool get_client_auth_status(const int client_num);
 	void change_client_auth_status(std::shared_ptr<Client>& client);
+	std::shared_ptr<Client> get_client_by_index(const uint32_t index);
+	std::vector<std::shared_ptr<Client>> get_connected_clients_snapshot();
 
 	
 	//setter
 	void set_client_id(std::string id, uint32_t list_num);
+	void set_client_id(const std::shared_ptr<Client>& client, const std::string& id);
 	void set_client_name(std::string name, uint32_t list_num);
+	void set_client_name(const std::shared_ptr<Client>& client, const std::string& name);
 	void set_client_mail_addr(std::string mail_addr, uint32_t list_num);
+	void set_client_mail_addr(const std::shared_ptr<Client>& client, const std::string& mail_addr);
+	void set_client_password(const std::shared_ptr<Client>& client, const std::string& password);
 	void set_clietn_socket(SOCKET socket, uint32_t list_num);
 	void set_client_sockaddr_in(struct sockaddr_in sock_in, uint32_t list_num);
 	void set_socket_addr_in_length(socklen_t length, uint32_t list_num);

@@ -192,6 +192,7 @@ public:
 
 	bool add_connect_socket(const SOCKET socket);
 	bool delete_connect_socket(const SOCKET socket);
+	bool is_socket_closed(const SOCKET socket_fd);
 
 	
 

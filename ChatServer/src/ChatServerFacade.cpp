@@ -67,40 +67,32 @@ void ChatServerFacade::run()
 	this->_redis_client->connect();
 
 	spdlog::info("Start monitoring requests from clients.");
-	this->_thread_pool_handler->enqueue_task([this]() {_thread_pool_handler->monitor_worker(); });
 	this->_thread_pool_handler->enqueue_task([this]() {heartbeat_check_process(); });
 
 	//ディスクリプション監視スタート
 	while (1) {
-		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
+		//auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->_socket_handler->setting_select_info_to_listen_socket();
-		this->setting_select_info();
+		this->prepare_client_fd_set();
 		std::vector<SOCKET> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
 		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
 			[this](SOCKET changed_socket) {handle_changed_socket_process(changed_socket); });
-
-		std::this_thread::sleep_until(abs_time);
+		//std::this_thread::sleep_until(abs_time);
 
 	}
 	
 }
 
-void ChatServerFacade::setting_select_info()
+void ChatServerFacade::prepare_client_fd_set()
 {
-	{
-		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-		for (auto& client : this->_client_handler->connected_clients) {
-			//有効なソケットにFDSETを実行する
-			if (client != nullptr && client->socket != INVALID_SOCKET) {
-				FD_SET(client->socket, &_socket_handler->get_fd_read());
-			}
+	auto clients_snapshot = this->_client_handler->get_connected_clients_snapshot();
+	for (auto& client : this->_client_handler->connected_clients) {
+		//有効なソケットにFDSETを実行する
+		if (client != nullptr && client->socket != INVALID_SOCKET) {
+			FD_SET(client->socket, &_socket_handler->get_fd_read());
 		}
-
-			}
-
+	}
 	this->_socket_handler->copy_fd_read_to_fds(&(_socket_handler->get_fds()), &(_socket_handler->get_fd_read()));
-
-
 }
 
 
@@ -146,14 +138,11 @@ bool ChatServerFacade::accept_client_socket_process()
 	//新規クライアントのインスタンスを生成
 	auto new_client = std::make_unique<ClientHandler::Client>(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, new_client_ipv4_addr, new_client_ssl);
 	spdlog::info("client ip : {:s} , success, server accept client(socket:{:d}).", new_client->ipv4_address, new_client->socket);
-	{
-		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-		if (_client_handler->add_client(std::move(new_client)) == true) {
-			return ACCEPT_SUCCEEDED;
-		}
-		else{
-			return ACCEPT_FAILED;
-		}
+	if (_client_handler->add_client(std::move(new_client)) == true) {
+		return ACCEPT_SUCCEEDED;
+	}
+	else {
+		return ACCEPT_FAILED;
 	}
 	
 }
@@ -187,21 +176,48 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 	std::string receive_data, mt, data_time_stamp;
 	json receive_json;
 	bool disconnect_flag = false;
+	bool recv_flag = false;
 	int detection_num = -1;
 	std::string* error_msg = new std::string();
 	bool* result = new bool();
+	char buf[32];
+	std::shared_ptr<ClientHandler::Client> client;
 
 #ifdef TLS_PROTOCOL
+	try
 	{
-		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 		detection_num = this->_client_handler->search_socket_from_clients(socket);
-		auto& client = _client_handler->connected_clients[detection_num];
-		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
-			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client->ssl);
+		if (detection_num == -1) {
+			return;
+		}
+		client = _client_handler->get_client_by_index(detection_num);
+		if (client == nullptr) {
+			LOG_ERROR("Client not found for detection number: {:d}", detection_num);
+			return;
+		}
+		//auto& client = _client_handler->connected_clients[detection_num];
+		if ((_socket_handler->is_socket_closed(client->socket) == true)) {
+			LOG_ERROR("Client closed tcp connection.");
+			disconnect_flag = true;
+			this->_mysql_client->update_last_login(client->id, this->_server_time->get_current_time_to_milliseconds());
+			_socket_handler->disconnect_socket(client->socket);
+			_client_handler->delete_client(detection_num);
+			return;
+		}
+		if (client == nullptr || client->ssl == nullptr) {
+			LOG_ERROR("Client or client SSL is null. Skipping message handling.");
+			return;
+		}
+		if (detection_num <= this->_client_handler->connect_client_num - 1 && client->ssl != nullptr) {
+			if (wolfSSL_is_init_finished(client->ssl) == false) {
+				return;
+			}
+			std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client->ssl);
 		}
 		else {
 			return;
 		}
+
 
 		//クライアントの切断を検知した場合
 		if (disconnect_flag == true) {
@@ -211,7 +227,6 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			this->_protocol_handler->shutdown_wolfssl(client->ssl);
 			_socket_handler->disconnect_socket(client->socket);
 			_client_handler->delete_client(detection_num);
-
 			return;
 		}
 
@@ -237,7 +252,7 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			this->_protocol_handler->print_received_message_info(mt001, 0, "", "", client->ipv4_address, client->socket);
 			this->_protocol_handler->print_json_message(receive_json);
 			this->mt001_process(mt001, client, error_msg, result);
-			this->mt101_process(client, *error_msg, *result);
+			this->mt101_process(client, *error_msg, *result, recv_flag);
 
 		}
 		//MT002 = Group or Friend追加のメッセージの場合
@@ -252,7 +267,7 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			this->_protocol_handler->print_received_message_info(mt003, mt003->get_message_id(), mt003->get_sender_id(), "", client->ipv4_address, client->socket);
 			this->_protocol_handler->print_json_message(receive_json);
 			this->mt003_process(mt003, error_msg, result);
-			
+
 		}
 		//MT004 = 通常メッセージの場合
 		else if (mt == "004") {
@@ -269,8 +284,14 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 		else {
 			LOG_ERROR("The receive process was interrupted due to a bad message.");
 		}
-		
-		
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR(e.what());
+	}
+
+
+
 
 
 #endif // TLS_PROTOCOL
@@ -278,45 +299,44 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 
 
 #ifdef TCP_PROTOCOL
-		{
-			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			auto& client = _client_handler->connected_client_list[detection_num];
-			if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
-				std::tie(receive_data, disconnect_flag) = _socket_handler->receive_message(client.socket);
-			}
-			else {
-				return;
-			}
-			if (disconnect_flag == true) {
-				spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.get_client_ipv4_addr(), client.get_client_id());
-				_socket_handler->disconnect_socket(client.get_client_socket());
-				_client_handler->delete_client(detection_num);
-				return;
-			}
-		}
-		if (receive_data.empty() == true) {
-			return;
-		}
-		mt = _protocol_handler->data_extraction_mt(receive_data);
-		//mt000 = ハートビートを受信した際の処理
-		if (mt == "000") {
-			this->mt000_process(receive_data, detection_num);
-		}
-		//MT001 = Auth認証メッセージの場合
-		else if (mt == "001") {
-			auto mt001 = this->_mt001receiver->create_mt001_instance(receive_data);
-			this->mt001_process(mt001, detection_num);
-		}
-		//MT002 = 通常メッセージの場合
-		else if (mt == "002") {
-			auto mt002 = this->_mt002receiver->create_mt002_instance(receive_data);
-			this->mt002_process(mt002, detection_num);
+	{
+		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+		auto& client = _client_handler->connected_client_list[detection_num];
+		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_client_list.size() != 0) {
+			std::tie(receive_data, disconnect_flag) = _socket_handler->receive_message(client.socket);
 		}
 		else {
-			LOG_ERROR("The receive process was interrupted due to a bad message.");
+			return;
 		}
-#endif // TCP_PROTOCOL
+		if (disconnect_flag == true) {
+			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client.get_client_ipv4_addr(), client.get_client_id());
+			_socket_handler->disconnect_socket(client.get_client_socket());
+			_client_handler->delete_client(detection_num);
+			return;
+		}
 	}
+	if (receive_data.empty() == true) {
+		return;
+	}
+	mt = _protocol_handler->data_extraction_mt(receive_data);
+	//mt000 = ハートビートを受信した際の処理
+	if (mt == "000") {
+		this->mt000_process(receive_data, detection_num);
+	}
+	//MT001 = Auth認証メッセージの場合
+	else if (mt == "001") {
+		auto mt001 = this->_mt001receiver->create_mt001_instance(receive_data);
+		this->mt001_process(mt001, detection_num);
+	}
+	//MT002 = 通常メッセージの場合
+	else if (mt == "002") {
+		auto mt002 = this->_mt002receiver->create_mt002_instance(receive_data);
+		this->mt002_process(mt002, detection_num);
+	}
+	else {
+		LOG_ERROR("The receive process was interrupted due to a bad message.");
+	}
+#endif // TCP_PROTOCOL
 
 }
 
@@ -325,7 +345,7 @@ void ChatServerFacade::mt000_process(const std::unique_ptr<MessageType000>& mt00
 	try
 	{
 		if (mt000 == nullptr || mt000->is_valid() == false) {
-			THROW_APP_EXCEPTION("The reception process was interrupted because the contents of MT000 were invalid.");
+			throw std::invalid_argument("The reception process was interrupted because the contents of MT000 were invalid.");
 		}
 		if (mt000->get_client_id() == client->id) {
 			spdlog::info("client(ip:{:s}, client id:{:s}) send HeartBeat.", client->ipv4_address, client->id);
@@ -337,11 +357,10 @@ void ChatServerFacade::mt000_process(const std::unique_ptr<MessageType000>& mt00
 			
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		spdlog::error(ex.what_for_str());
+	catch (const std::invalid_argument& e) {
+		LOG_ERROR(e.what());
 	}
-	
+		
 }
 
 void ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result)
@@ -359,63 +378,81 @@ void ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001>& mt00
 		{
 		case 0:			//sign up
 			//メッセージがsign_upの場合の処理を追記
-			//auto & client = this->_client_handler->connected_clients[detection_num];
 			std::tie(client_id, *error_msg_text) = this->sign_up_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client->ipv4_address, client_id_ptr, error_msg_ptr);
 			spdlog::debug("client id : {} error_code : {}", client_id, *error_msg_text);
-			if (client_id != "" &&  _client_handler->connected_clients.size() != 0) {
-				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client->ipv4_address, client->socket, client_id);
-				*login_result = true;
-				//SIGN UPが成功した場合に、クライアント情報を登録する
-				client->id = client_id;
-				client->name = mt001->get_client_name();
-				client->mail_address = mt001->get_client_mail_addr();
-				client->password = mt001->get_client_password();
-
-				if (this->_mysql_client->insert_client_data(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password(), "", ServerTime::get_current_time_to_seconds(), "") == true) {
-					spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client->ipv4_address, client->socket, client_id);
-				}
-				else {
-					LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client->ipv4_address, client->socket, client_id);
-				}
-				
-				//Auth statusを変更する
-				this->_client_handler->change_client_auth_status(client);
-				//ハートビートのカウント回数をインクリメントする
-				this->_client_handler->incliment_heart_beat_count(client);
-			}
-			else
 			{
-				*login_result = false;
+				//std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+				if (client_id != "" && _client_handler->connected_clients.size() != 0) {
+					spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", client->ipv4_address, client->socket, client_id);
+					*login_result = true;
+					//SIGN UPが成功した場合に、クライアント情報を登録する
+					_client_handler->set_client_id(client, client_id);
+					_client_handler->set_client_name(client, mt001->get_client_name());
+					_client_handler->set_client_mail_addr(client, mt001->get_client_mail_addr());
+					_client_handler->set_client_password(client, mt001->get_client_password());
+
+					//client->id = client_id;
+					//client->name = mt001->get_client_name();
+					//client->mail_address = mt001->get_client_mail_addr();
+					//client->password = mt001->get_client_password();
+
+					if (this->_mysql_client->insert_client_data(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password(), "", ServerTime::get_current_time_to_seconds(), "") == true) {
+						spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client->ipv4_address, client->socket, client_id);
+					}
+					else {
+						LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", client->ipv4_address, client->socket, client_id);
+					}
+
+					//Auth statusを変更する
+					this->_client_handler->change_client_auth_status(client);
+					//ハートビートのカウント回数をインクリメントする
+					this->_client_handler->incliment_heart_beat_count(client);
+				}
+				else
+				{
+					*login_result = false;
+				}
+
 			}
+			
 			this->_client_handler->show_client_info(client);
 
 			break;
 
 		case 1:			//sign in
-			//auto & client = this->_client_handler->connected_clients[detection_num];
 			std::tie(client_id, *error_msg_text) = this->sign_in_process(mt001->get_client_mail_addr(), mt001->get_client_password(), client->ipv4_address, client_id_ptr, error_msg_ptr);
 			spdlog::debug("client id : {} error_code : {}", client_id, *error_msg_text);
-			if (client_id != "" && _client_handler->connected_clients.size() != 0) {
-				spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client->ipv4_address, client->socket, client_id);
-				*login_result = true;
-				
-				//データベースからユーザ情報を読み取る。			
-				std::string client_name, client_mail_addr, client_password;
-				std::tie(client_name, client_mail_addr, client_password) = this->_mysql_client->get_client_info_fromDB(client_id);
-				client->id = client_id;
-				client->name = client_name;
-				client->mail_address = client_mail_addr;
-				client->password = client_password;
-				spdlog::debug("client name:{:s}, mail address:{:s}, password:{:s}", client_name, client_mail_addr, client_password);
 
-				//Auth statusを変更する
-				this->_client_handler->change_client_auth_status(client);
-				//ハートビートのカウント回数をインクリメントする
-				this->_client_handler->incliment_heart_beat_count(client);
+			{
+				//std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+				if (client_id != "" && _client_handler->connected_clients.size() != 0) {
+					spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed in, Client id:{:s}", client->ipv4_address, client->socket, client_id);
+					*login_result = true;
+
+					//データベースからユーザ情報を読み取る。			
+					std::string client_name, client_mail_addr, client_password;
+					std::tie(client_name, client_mail_addr, client_password) = this->_mysql_client->get_client_info_fromDB(client_id);
+					_client_handler->set_client_id(client, client_id);
+					_client_handler->set_client_name(client, client_name);
+					_client_handler->set_client_mail_addr(client, client_mail_addr);
+					_client_handler->set_client_password(client, client_password);
+
+					/*client->id = client_id;
+					client->name = client_name;
+					client->mail_address = client_mail_addr;
+					client->password = client_password;*/
+					spdlog::debug("client name:{:s}, mail address:{:s}, password:{:s}", client_name, client_mail_addr, client_password);
+
+					//Auth statusを変更する
+					this->_client_handler->change_client_auth_status(client);
+					//ハートビートのカウント回数をインクリメントする
+					this->_client_handler->incliment_heart_beat_count(client);
+				}
+				else {
+					*login_result = false;
+				}
 			}
-			else {
-				*login_result = false;
-			}
+		
 	
 			break;
 
@@ -478,10 +515,8 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003>& mt00
 		for (const auto& room : this->_chat_room_handler->chatroom_list) {
 			spdlog::debug("room id : {:s}", room->get_chatroom_id());
 		}
-	}
-
-		
-		
+				
+	}	
 
 	case MessageType003::RoomAction::ADD_MEMBER:
 		//ルームのメンバー追加
@@ -604,8 +639,16 @@ void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt00
 
 }
 
-void ChatServerFacade::mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result)
+void ChatServerFacade::mt101_process(
+	const std::shared_ptr<ClientHandler::Client>& client, 
+	const std::string& error_msg, 
+	const bool login_result, 
+	const bool recv_flag)
 {
+	if (recv_flag == false) {
+		LOG_ERROR("The reception process was interrupted because the MT001 message was not received properly.");
+		return;
+	}
 	//TODO　ここでcidに関するメッセージをデータベースから取得する。
 	json unsend_messages_json, unsend_control_messages_json;
 	//未送信コントロールメッセージを取得する
@@ -782,7 +825,7 @@ void ChatServerFacade::setting_select_process()
 		{
 			std::unique_lock<std::mutex> lock(_mutex);
 			this->_socket_handler->setting_select_info_to_listen_socket();
-			this->setting_select_info();
+			this->prepare_client_fd_set();
 			
 		}
 	}

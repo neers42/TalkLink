@@ -63,7 +63,7 @@ public:
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
 	
 	//メッセージの受信
-	std::tuple<json, bool> receive_message_tls(WOLFSSL* client_ssl);
+	std::tuple<json, bool, bool> receive_message_tls(WOLFSSL* client_ssl);
 
 	//メッセージの送信
 	bool send_message_tls(WOLFSSL* client_ssl, json message);
