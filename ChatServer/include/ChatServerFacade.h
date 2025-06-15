@@ -139,7 +139,7 @@ private:
 						auto receiver = this->_client_handler->get_client_by_index(receiver_list_num);
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
 						if (receiver != nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
-							if (this->_protocol_handler->send_message_tls(receiver->ssl, receiver->client_mtx, json_message)) {
+							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
 								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
 							}
 							else {
@@ -206,7 +206,7 @@ private:
 						}
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
 						if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
-							if (this->_protocol_handler->send_message_tls(receiver->ssl, receiver->client_mtx, json_message)) {
+							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
 								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
 							}
 							else {
@@ -218,7 +218,7 @@ private:
 							//送信先と送信元のsslが一致する場合
 #define DEBUG
 #ifdef DEBUG
-							this->_protocol_handler->send_message_tls(sender->ssl, sender->client_mtx, json_message);
+							this->_protocol_handler->send_message_tls(sender->ssl, json_message);
 #endif // DEBUG
 #undef DEBUG
 							continue;

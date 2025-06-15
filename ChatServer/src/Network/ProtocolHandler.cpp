@@ -104,7 +104,7 @@ void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
 	wolfSSL_free(client_ssl);
 
 }
-std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl, std::mutex& mtx)
+std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
 {
 	json recv_msg_json;
 	char buffer[MESSAGE_SIZE];
@@ -112,23 +112,23 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(WOLFSSL* clien
 	std::vector<uint8_t> message_buffer;
 	bool disconnect_flag = false;	//接続断の判定フラグ
 	bool recv_flag = false;	//受信完了の判定フラグ
-	std::cout << "recevive suru." << std::endl;
-
-	if (mtx.try_lock()) {
-		spdlog::debug("ssl_mtx locked successfully");
-		// ... 処理 ...
-		mtx.unlock();
-	}
-	else {
-		spdlog::warn("ssl_mtx is already locked by another thread");
-	}
+	spdlog::debug("receive_message_tls called.");
+	int bytes_read = 0;
+	//if (mtx.try_lock()) {
+	//	spdlog::debug("ssl_mtx locked successfully");
+	//	// ... 処理 ...
+	//	mtx.unlock();
+	//}
+	//else {
+	//	spdlog::warn("ssl_mtx is already locked by another thread");
+	//}
 
 
 
 	//std::unique_lock<std::mutex> lock(this->ssl_mtx);
 	//auto start = std::chrono::steady_clock::now();
 	//const auto timeout = std::chrono::seconds(10); // 例: 10秒
-	std::unique_lock<std::mutex> lock(mtx);
+	//std::shared_lock<std::shared_mutex> lock(mtx);
 	while (true)
 	{
 		//// タイムアウト判定
@@ -139,7 +139,11 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(WOLFSSL* clien
 		if (wolfSSL_is_init_finished(client_ssl) == false) {
 			return std::make_tuple(json(), disconnect_flag, recv_flag);
 		}
-		int bytes_read = wolfSSL_read(client_ssl, buffer, sizeof(buffer));
+		{
+			std::unique_lock<std::shared_mutex> lock(ssl_shared_mtx);
+			bytes_read = wolfSSL_read(client_ssl, buffer, sizeof(buffer));
+		}
+		
 		message_size += bytes_read;
 		//受信したバイト数が0より大きい場合msgの解析を実施する。
 		if (bytes_read > 0) {
@@ -202,7 +206,7 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(WOLFSSL* clien
 
 }
 
-bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, std::mutex& mtx, json message)
+bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 {
 	std::vector<uint8_t> message_buffer = json::to_msgpack(message);
 	size_t message_size = message_buffer.size();
@@ -222,16 +226,21 @@ bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, std::mutex& mtx, jso
 
 
 	//std::unique_lock<std::mutex> lock(this->ssl_mtx);
-	std::unique_lock<std::mutex> lock(mtx);
+	//std::unique_lock<std::shared_mutex> lock(mtx);
 // ここでwolfSSL_read
 	std::string mt = message["message_type"];
+	
 	if (wolfSSL_is_init_finished(client_ssl) == false) {
 		LOG_ERROR("SSL is not initialized, cannot send message.");
 		return false;
 	}
+	spdlog::warn("Sending message called");
 	while (total_sent < message_size) {
 		size_t to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
-		ret = wolfSSL_write(client_ssl, message_buffer.data() + total_sent, static_cast<int>(to_send));
+		{
+			std::unique_lock<std::shared_mutex> lock(ssl_shared_mtx);
+			ret = wolfSSL_write(client_ssl, message_buffer.data() + total_sent, static_cast<int>(to_send));
+		}
 		if (ret > 0) {
 			total_sent += ret;
 			continue;

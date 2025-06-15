@@ -212,7 +212,7 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			if (wolfSSL_is_init_finished(client->ssl) == false) {
 				return;
 			}
-			std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client->ssl, client->client_mtx);
+			std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(_client_handler->get_client_ssl(detection_num));
 		}
 		else {
 			return;
@@ -659,7 +659,7 @@ void ChatServerFacade::mt101_process(
 	//MT101を送信する処理を記載する
 	auto mt101 = std::make_unique<MessageType101>(client->id, login_result);
 	json mt101_json = MessageType101::desirialize_message(mt101, unsend_messages_json, error_msg);
-	bool send_result = this->_protocol_handler->send_message_tls(client->ssl, client->client_mtx, mt101_json);
+	bool send_result = this->_protocol_handler->send_message_tls(_client_handler->search_client_ssl_from_clients(client->id), mt101_json);
 	if (send_result == true) {
 		spdlog::info("The MT101 message was successfully sent to the client(ip:{}, id:{}).", client->ipv4_address, client->id);
 		
@@ -956,7 +956,7 @@ void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt0
 
 			//jsonをsenderに送信する
 			if (sender->socket != INVALID_SOCKET || sender->ssl != nullptr) {
-				if (this->_protocol_handler->send_message_tls(sender->ssl, sender->client_mtx, mt104B_json)) {
+				if (this->_protocol_handler->send_message_tls(_client_handler->search_client_ssl_from_clients(sender->id), mt104B_json)) {
 					spdlog::info("The MT104B message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 				}
 				else {
@@ -984,7 +984,7 @@ void ChatServerFacade::resend_message_process(const json& message, const std::st
 		// 1秒スリープする
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	// クライアントのソケットを取得する
-	auto& client = this->_client_handler->get_client_by_cid(cid);
+	auto client = this->_client_handler->get_client_by_cid(cid);
 	for (int resend_count = 1; resend_count < MAX_RESEND_COUNT; resend_count++) {
 		if (resend_count == 2) {
 			std::this_thread::sleep_for(std::chrono::seconds(3));
@@ -994,7 +994,7 @@ void ChatServerFacade::resend_message_process(const json& message, const std::st
 		}
 		if (client->socket != INVALID_SOCKET || client->ssl != nullptr) {
 			// メッセージを送信する
-			if (this->_protocol_handler->send_message_tls(client->ssl, client->client_mtx, message)) {
+			if (this->_protocol_handler->send_message_tls(_client_handler->search_client_ssl_from_clients(client->id), message)) {
 				spdlog::info("Resend message(mid: {}) to client with cid: {}", mid, cid);
 				return;
 			}

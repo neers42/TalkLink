@@ -15,6 +15,7 @@
 #include "firebase/auth.h"
 #include "common.h"
 #include "wolfssl/ssl.h"
+#include <shared_mutex>
 #define MAX_CONNECT_NUM 50000
 #define NOT_EXIST_CLIENT_ID -1
 
@@ -82,6 +83,8 @@ private:
 
 public:
 	mutable std::mutex mtx;
+	mutable std::shared_mutex shared_mtx; // for read/write lock
+
 
 public:
 	ClientHandler();
@@ -97,6 +100,7 @@ public:
 	void change_client_auth_status(std::shared_ptr<Client>& client);
 	std::shared_ptr<Client> get_client_by_index(const uint32_t index);
 	std::vector<std::shared_ptr<Client>> get_connected_clients_snapshot();
+	WOLFSSL* get_client_ssl(const int index);
 
 	
 	//setter

@@ -151,6 +151,16 @@ std::string ClientHandler::generate_client_id()
 
 std::vector<std::shared_ptr<ClientHandler::Client>>::iterator ClientHandler::find_client(const std::shared_ptr<Client>& client)
 {
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	for (auto it = this->connected_clients.begin(); it != this->connected_clients.end(); ++it) {
 		if ((*it) == client) { // 修正: ポインタの中身を比較
 			return it; // クライアントが見つかった場合、そのイテレータを返す
@@ -168,30 +178,50 @@ ClientHandler::~ClientHandler()
 
 }
 
-bool ClientHandler::add_client(std::shared_ptr<Client> client)
-{
-	std::unique_lock<std::mutex> lock(this->mtx);
-	try
-	{
-		if (this->connected_clients.size() >= MAX_CONNECT_NUM) {
-			THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");
-		}
-	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LOG_ERROR(ex.what_for_str());
-		return false;
-	}
+bool ClientHandler::add_client(std::shared_ptr<Client> client)  
+{  
+	LOG_TRACE; // Ensure LOG_TRACE is a valid macro or function.  
+    if (shared_mtx.try_lock()) {  
+        spdlog::debug("ssl_mtx locked successfully");  
+        // ... 処理 ...  
+        shared_mtx.unlock();  
+    }  
+    else {  
+        LOG_ERROR("ssl_mtx is already locked by another thread");  
+    }  
+    std::unique_lock<std::shared_mutex> lock(shared_mtx);  
+    try  
+    {  
+        if (this->connected_clients.size() >= MAX_CONNECT_NUM) {  
+            THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");  
+        }  
+    }  
+    catch (const exception::ExceptionBase& ex)  
+    {  
+        LOG_ERROR(ex.what_for_str());  
+        return false;  
+    }  
 
-	this->connected_clients.push_back(std::move(client));
-	this->connect_client_num++;
-	return true;
+    this->connected_clients.push_back(std::move(client));  
+    this->connect_client_num++;  
+    return true;  
 }
 
 
 void ClientHandler::delete_client(const uint32_t delete_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	if (!this->connected_clients.empty() && delete_num >= 0 && delete_num < this->connected_clients.size()) {
 		auto it = this->connected_clients.begin() + delete_num;
 		this->connected_clients.erase(it);
@@ -204,7 +234,18 @@ void ClientHandler::delete_client(const uint32_t delete_num)
 
 void ClientHandler::delete_client(std::vector<std::shared_ptr<Client>>::iterator it)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	if (this->connected_clients.empty() == true) {
 		LOG_ERROR("Client list is empty.");
 		return;
@@ -217,7 +258,18 @@ void ClientHandler::delete_client(std::vector<std::shared_ptr<Client>>::iterator
 
 int ClientHandler::check_next_invalid_socket()
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	for (int n_invalid_socket = 0; n_invalid_socket < MAX_CONNECT_NUM; n_invalid_socket++) {
 
 		if (this->connected_clients[n_invalid_socket]->socket == INVALID_SOCKET)
@@ -228,25 +280,59 @@ int ClientHandler::check_next_invalid_socket()
 
 void ClientHandler::delete_client_hbsock_from_hb_list(const std::uint32_t delete_num)
 {
+	LOG_TRACE;
 	this->heart_beat_list.erase(this->heart_beat_list.begin() + delete_num);
 }
 
 bool ClientHandler::get_client_auth_status(const int client_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	return this->connected_clients[client_num]->auth_status;
 }
 
 
 void ClientHandler::change_client_auth_status(std::shared_ptr<Client>& client)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	client->change_auth_status();
 }
 
 std::shared_ptr < ClientHandler:: Client > ClientHandler::get_client_by_index(const uint32_t index)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	if (index < connected_clients.size()) {
 		return connected_clients[index];
 	}
@@ -255,101 +341,291 @@ std::shared_ptr < ClientHandler:: Client > ClientHandler::get_client_by_index(co
 
 std::vector<std::shared_ptr<ClientHandler::Client>> ClientHandler::get_connected_clients_snapshot()
 {
-	std::unique_lock<std::mutex> lock(mtx);
-	return connected_clients; // コピーを返す
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::vector<std::shared_ptr<ClientHandler::Client>> copy_connected_lists;
+	{
+		std::shared_lock<std::shared_mutex> lock(shared_mtx);
+		copy_connected_lists = connected_clients;
+	}
+	
+	return copy_connected_lists; // コピーを返す
+}
+
+WOLFSSL* ClientHandler::get_client_ssl(const int index)
+{
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	WOLFSSL* copy_ssl = nullptr;
+	{
+		std::shared_lock<std::shared_mutex> lock(shared_mtx);
+		copy_ssl = this->connected_clients[index]->ssl;
+
+	}
+	
+	return copy_ssl;
 }
 
 void ClientHandler::set_client_id(std::string id, uint32_t list_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->connected_clients[list_num]->id = id;
 }
 
 void ClientHandler::set_client_id(const std::shared_ptr<ClientHandler::Client>& client, const std::string& id)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
-	auto it = find_client(client);
-	if (it != connected_clients.end()) {
-		(*it)->id = id; // クライアントのIDを更新
-	} else {
-		LOG_ERROR("Failed set Client ID.Client not found in the list.");
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
 	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	auto it = find_client(client);
+	{
+		std::unique_lock<std::shared_mutex> lock(shared_mtx);
+		if (it != connected_clients.end()) {
+			(*it)->id = id; // クライアントのIDを更新
+		}
+		else {
+			LOG_ERROR("Failed set Client ID.Client not found in the list.");
+		}
+	}
+	
 }
 
 
 void ClientHandler::set_client_name(std::string name, uint32_t list_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->connected_clients[list_num]->name = name;
 }
 
 void ClientHandler::set_client_name(const std::shared_ptr<Client>& client, const std::string& name)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
-	auto it = find_client(client);
-	if (it != connected_clients.end()) {
-		(*it)->name = name; // クライアントの名前を更新
-	} else {
-		LOG_ERROR("Failed set Client name.Client not found in the list.");
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
 	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	auto it = find_client(client);
+	{
+		std::unique_lock<std::shared_mutex> lock(shared_mtx);
+		if (it != connected_clients.end()) {
+			(*it)->name = name; // クライアントの名前を更新
+		}
+		else {
+			LOG_ERROR("Failed set Client name.Client not found in the list.");
+		}
+	}
+	
 }
 
 void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->connected_clients[list_num]->mail_address = mail_addr;
 }
 
 void ClientHandler::set_client_mail_addr(const std::shared_ptr<Client>& client, const std::string& mail_addr)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
-	auto it = find_client(client);
-	if (it != connected_clients.end()) {
-		(*it)->mail_address = mail_addr; // クライアントのメールアドレスを更新
-	} else {
-		LOG_ERROR("Failed set Client mail address.Client not found in the list.");
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
 	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	auto it = find_client(client);
+	{
+		std::unique_lock<std::shared_mutex> lock(shared_mtx);
+		if (it != connected_clients.end()) {
+			(*it)->mail_address = mail_addr; // クライアントのメールアドレスを更新
+		}
+		else {
+			LOG_ERROR("Failed set Client mail address.Client not found in the list.");
+		}
+	}
+	
 }
 
 void ClientHandler::set_client_password(const std::shared_ptr<Client>& client, const std::string& password)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
-	auto it = find_client(client);
-	if (it != connected_clients.end()) {
-		(*it)->password = password; // クライアントのパスワードを更新
-	} else {
-		LOG_ERROR("Failed set Client password.Client not found in the list.");
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
 	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	auto it = find_client(client);
+	{
+		std::unique_lock<std::shared_mutex> lock(shared_mtx);
+		if (it != connected_clients.end()) {
+			(*it)->password = password; // クライアントのパスワードを更新
+		}
+		else {
+			LOG_ERROR("Failed set Client password.Client not found in the list.");
+		}
+	}
+	
 }
 
 
 void ClientHandler::set_clietn_socket(SOCKET socket, uint32_t list_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->connected_clients[list_num]->socket = socket;
 }
 
 void ClientHandler::set_client_sockaddr_in(sockaddr_in sock_in, uint32_t list_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->connected_clients[list_num]->sockaddr_in = sock_in;
 }
 
 void ClientHandler::set_socket_addr_in_length(socklen_t length, uint32_t list_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->connected_clients[list_num]->socket_address_in_length = length;
 }
 
 void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->connected_clients[list_num]->ipv4_address = ipv4_addr;
 }
 
 int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 
 		if (this->connected_clients[search_result]->id == search_client_id) {
@@ -362,7 +638,18 @@ int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 
 int ClientHandler::search_socket_from_clients(const SOCKET& search_socket)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->socket == search_socket) {
 			return search_result;
@@ -373,7 +660,18 @@ int ClientHandler::search_socket_from_clients(const SOCKET& search_socket)
 
 WOLFSSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->id == cid) {
 			return this->connected_clients[search_result]->ssl;
@@ -384,6 +682,11 @@ WOLFSSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
 
 void ClientHandler::show_client_info(const std::shared_ptr<Client>& client)
 {
+	LOG_TRACE;
+	if (client == nullptr) {
+		spdlog::error("Client is null. Cannot show client info.");
+		return;
+	}
 	spdlog::debug("Client  ID : {:s}", client->id);
 	spdlog::debug("Client  Name : {:s}", client->name);
 	spdlog::debug("Client  Mail : {:s}", client->mail_address);
@@ -392,6 +695,17 @@ void ClientHandler::show_client_info(const std::shared_ptr<Client>& client)
 
 std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients)
 {
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	std::vector<WOLFSSL*> client_ssl_list;
 	for (const auto& client : clients) {
 		if (client != nullptr && client->ssl != nullptr) {
@@ -403,7 +717,18 @@ std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::
 
 std::shared_ptr<ClientHandler:: Client>& ClientHandler::get_client_by_cid(const std::string& cid)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	return this->connected_clients.at(this->search_cid_from_clients(cid));
 }
 
@@ -411,20 +736,53 @@ std::shared_ptr<ClientHandler:: Client>& ClientHandler::get_client_by_cid(const 
 
 std::vector<std::shared_ptr<ClientHandler::Client>>& ClientHandler::get_connected_client_list()
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	return this->connected_clients;
 }
 
 const std::vector<std::shared_ptr<ClientHandler::Client>>& ClientHandler::get_connected_client_list() const
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	return this->connected_clients;
 }
 
 const std::vector<SOCKET> ClientHandler::get_all_connected_sockets() const  
 {  
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
     std::vector<SOCKET> socket_list;  
-    std::unique_lock<std::mutex> lock(this->mtx); 
+    //std::unique_lock<std::mutex> lock(this->mtx); 
     for (const auto& client : connected_clients) {  
         if (client != nullptr && client->socket != INVALID_SOCKET) {  
             socket_list.push_back(client->socket);  
@@ -436,11 +794,33 @@ const std::vector<SOCKET> ClientHandler::get_all_connected_sockets() const
 
 ClientHandler::Client& ClientHandler::get_init_client()
 {
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	return this->init_client;
 }
 
 const ClientHandler::Client& ClientHandler::get_init_client() const
 {
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	return this->init_client;
 }
 
@@ -449,13 +829,35 @@ const ClientHandler::Client& ClientHandler::get_init_client() const
 
 void ClientHandler::incliment_heart_beat_count(std::shared_ptr<Client>& client)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	client->incliment_heart_beat_count();
 }
 
 void ClientHandler::clear_heart_beat_count(uint32_t list_num)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	if(list_num < 0 || list_num >= this->connected_clients.size()) {
 		LOG_ERROR("Invalid list_num: {:d}", list_num);
 		return;
@@ -465,7 +867,18 @@ void ClientHandler::clear_heart_beat_count(uint32_t list_num)
 
 void ClientHandler::all_clear_heart_beat_count()
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
+	LOG_TRACE;
+	if (shared_mtx.try_lock()) {
+		spdlog::debug("ssl_mtx locked successfully");
+		// ... 処理 ...
+		shared_mtx.unlock();
+
+	}
+	else {
+		LOG_ERROR("ssl_mtx is already locked by another thread");
+	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	for (auto& client : this->connected_clients) {
 		if (client != nullptr) {
 			client->clear_heart_beat_count();

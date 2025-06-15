@@ -3,6 +3,7 @@
 #define SERVER_CERT_FILE_PASS ".//////certs/server-cert.pem"
 #define SERVER_PRIVATEKEY_FILE_PASS ".//////certs/server-key.pem"
 #include <sstream>
+#include <shared_mutex>
 #include "common.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"
@@ -38,7 +39,7 @@ private:
 	//std::unique_ptr<MessageIDGenerator> _message_id_generator;
 
 public:
-	std::mutex ssl_mtx;
+	std::shared_mutex ssl_shared_mtx;
 
 public:
 	//コンストラクタ
@@ -66,10 +67,10 @@ public:
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
 	
 	//メッセージの受信
-	std::tuple<json, bool, bool> receive_message_tls(WOLFSSL* client_ssl, std::mutex& mtx);
+	std::tuple<json, bool, bool> receive_message_tls(WOLFSSL* client_ssl);
 
 	//メッセージの送信
-	bool send_message_tls(WOLFSSL* client_ssl, std::mutex& mtx,json message);
+	bool send_message_tls(WOLFSSL* client_ssl,json message);
 
 	//TLSのバージョンを取得
 	const std::string get_tls_version(const WOLFSSL* ssl);
