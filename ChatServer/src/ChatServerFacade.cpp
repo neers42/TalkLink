@@ -195,7 +195,25 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 	{
 		std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 		detection_num = this->_client_handler->search_socket_from_clients(socket);
+		if (detection_num == -1) {
+			return;
+		}
+
 		auto& client = _client_handler->connected_clients[detection_num];
+		if (client == nullptr) {
+			LOG_ERROR("Client not found for detection number: {:d}", detection_num);
+			return;
+		}
+
+		if ((_socket_handler->is_socket_closed(client->socket) == true)) {
+			spdlog::debug("Client closed tcp connection.");
+			disconnect_flag = true;
+			this->_mysql_client->update_last_login(client->id, this->_server_time->get_current_time_to_milliseconds());
+			_socket_handler->disconnect_socket(client->socket);
+			_client_handler->delete_client(detection_num);
+			return;
+		}
+
 		if (detection_num <= this->_client_handler->connect_client_num - 1 && _client_handler->connected_clients.size() != 0) {
 			std::tie(receive_json, disconnect_flag) = _protocol_handler->receive_message_tls(client->ssl);
 		}

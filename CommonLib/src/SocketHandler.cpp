@@ -304,6 +304,8 @@ void SocketHandler::setting_select_info_to_listen_socket()
 {
 	FD_ZERO(&this->_fd_read);
 	FD_SET(this->_tcp_listen_socket, &this->_fd_read);
+	this->_timeout.tv_sec = 0; //タイムアウト秒数
+	this->_timeout.tv_usec = 500 * 1000; //タイムアウトマイクロ秒数(500ms)
 	
 
 }
@@ -556,6 +558,33 @@ bool SocketHandler::delete_connect_socket(const SOCKET socket)
 		this->_connect_sockets.erase(it);
 		return true;
 	}
+}
+
+bool SocketHandler::is_socket_closed(const SOCKET socket_fd)
+{
+	char buf;
+	if (socket_fd == INVALID_SOCKET) {
+		return true; // 無効なソケットは閉じられているとみなす
+	}
+	int result = recv(socket_fd, &buf, 1, MSG_PEEK);
+
+	if (result == 0) {
+		// クライアントが正常に切断した（FINを受け取った）
+		return true;
+	}
+	if (result < 0) {
+		if (errno == EWOULDBLOCK || errno == EAGAIN) {
+			// ノンブロッキングでデータがまだないだけ
+			return false;
+		}
+		else {
+			// 何らかのエラー（ECONNRESETなど）→切断とみなす
+			return true;
+		}
+	}
+
+	// データがある → 切断されていない
+	return false;
 }
 
 bool SocketHandler::setting_tcp_flags(ini::IniFile tcp_listen_socket_param_setting_ini)
