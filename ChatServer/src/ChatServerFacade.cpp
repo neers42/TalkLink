@@ -72,14 +72,14 @@ void ChatServerFacade::run()
 
 	//ディスクリプション監視スタート
 	while (1) {
-		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
+		//auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
 		this->_socket_handler->setting_select_info_to_listen_socket();
 		this->setting_select_info();
 		std::vector<SOCKET> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
 		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
 			[this](SOCKET changed_socket) {handle_changed_socket_process(changed_socket); });
 
-		std::this_thread::sleep_until(abs_time);
+		//std::this_thread::sleep_until(abs_time);
 
 	}
 	
@@ -207,7 +207,8 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 
 		if ((_socket_handler->is_socket_closed(client->socket) == true)) {
 			spdlog::debug("Client closed tcp connection.");
-			disconnect_flag = true;
+			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client->ipv4_address, client->id);
+			this->_protocol_handler->shutdown_wolfssl(client->ssl);
 			this->_mysql_client->update_last_login(client->id, this->_server_time->get_current_time_to_milliseconds());
 			_socket_handler->disconnect_socket(client->socket);
 			_client_handler->delete_client(detection_num);
