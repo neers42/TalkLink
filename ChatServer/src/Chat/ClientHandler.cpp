@@ -434,12 +434,12 @@ const std::vector<SOCKET> ClientHandler::get_all_connected_sockets() const
     return socket_list;  
 }
 
-ClientHandler::Client ClientHandler::get_init_client()
+ClientHandler::Client& ClientHandler::get_init_client()
 {
 	return this->init_client;
 }
 
-const ClientHandler::Client ClientHandler::get_init_client() const
+const ClientHandler::Client& ClientHandler::get_init_client() const
 {
 	return this->init_client;
 }

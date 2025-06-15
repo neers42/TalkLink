@@ -101,7 +101,11 @@ private:
 	{
 			//メッセージをデシリアライズする
 			json json_message = T::deserialize_message(message);
-			auto& sender = _client_handler->connected_clients.at(_client_handler->search_cid_from_clients(message->get_sender_id()));
+			auto sender = this->_client_handler->get_client_by_index(_client_handler->search_cid_from_clients(message->get_sender_id()));
+			if (sender == nullptr) {
+				LOG_ERROR("Sender with ID '{}' not found. Cannot send message.", message->get_sender_id());
+				return; // 送信者が見つからない場合は処理を終了
+			}
 			//送り先のclientの情報を取得する
 			auto receivers_cids = this->_chat_room_handler->get_client_infos_by_chatroom_id(message->get_room_id());
 
@@ -132,10 +136,10 @@ private:
 					}
 					else {
 						//クライアントの情報を取得する
-						auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
+						auto receiver = this->_client_handler->get_client_by_index(receiver_list_num);
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
 						if (receiver != nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
-							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
+							if (this->_protocol_handler->send_message_tls(receiver->ssl, receiver->client_mtx, json_message)) {
 								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
 							}
 							else {
@@ -195,10 +199,14 @@ private:
 					}
 					else {
 						//クライアントの情報を取得する
-						auto& receiver = this->_client_handler->connected_clients[receiver_list_num];
+						auto receiver = this->_client_handler->get_client_by_index(receiver_list_num);
+						if (receiver == nullptr) {
+							LOG_ERROR("Receiver with ID '{}' not found in client list. Cannot send message.", receiver_cid);
+
+						}
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
 						if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
-							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
+							if (this->_protocol_handler->send_message_tls(receiver->ssl, receiver->client_mtx, json_message)) {
 								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
 							}
 							else {
@@ -210,7 +218,7 @@ private:
 							//送信先と送信元のsslが一致する場合
 #define DEBUG
 #ifdef DEBUG
-							this->_protocol_handler->send_message_tls(sender->ssl, json_message);
+							this->_protocol_handler->send_message_tls(sender->ssl, sender->client_mtx, json_message);
 #endif // DEBUG
 #undef DEBUG
 							continue;

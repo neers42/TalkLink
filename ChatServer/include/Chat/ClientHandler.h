@@ -41,6 +41,7 @@ private:
 		int heart_beat_count;		//クライアントのハートビート回数
 		bool auth_status = false;	//クライアントの認証状態
 		WOLFSSL* ssl;				//クライアントのソケットにアタッチされたsslオブジェクト
+		mutable std::mutex client_mtx;
 
 
 	public:
@@ -90,8 +91,8 @@ public:
 	std::vector<std::shared_ptr<Client>>& get_connected_client_list();
 	const std::vector<std::shared_ptr<Client>>& get_connected_client_list() const;
 	const std::vector<SOCKET> get_all_connected_sockets() const;
-	Client get_init_client();
-	const Client get_init_client() const;
+	Client& get_init_client();
+	const Client& get_init_client() const;
 	bool get_client_auth_status(const int client_num);
 	void change_client_auth_status(std::shared_ptr<Client>& client);
 	std::shared_ptr<Client> get_client_by_index(const uint32_t index);

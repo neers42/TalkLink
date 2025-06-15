@@ -38,6 +38,9 @@ private:
 	//std::unique_ptr<MessageIDGenerator> _message_id_generator;
 
 public:
+	std::mutex ssl_mtx;
+
+public:
 	//コンストラクタ
 	ProtocolHandler();
 
@@ -63,10 +66,10 @@ public:
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
 	
 	//メッセージの受信
-	std::tuple<json, bool, bool> receive_message_tls(WOLFSSL* client_ssl);
+	std::tuple<json, bool, bool> receive_message_tls(WOLFSSL* client_ssl, std::mutex& mtx);
 
 	//メッセージの送信
-	bool send_message_tls(WOLFSSL* client_ssl, json message);
+	bool send_message_tls(WOLFSSL* client_ssl, std::mutex& mtx,json message);
 
 	//TLSのバージョンを取得
 	const std::string get_tls_version(const WOLFSSL* ssl);
@@ -80,6 +83,10 @@ public:
 	static void wolfssl_log_callback(const int log_level, const char* log_message);
 
 	void print_json_message(const json& json_message) {
+		if (json_message.is_null() || json_message.empty()) {
+			LOG_ERROR("Invalid JSON object.");
+			return;
+		}
 		spdlog::debug("Receive JSON DATA :\n{:s}", json_message.dump(4));
 	}
 	

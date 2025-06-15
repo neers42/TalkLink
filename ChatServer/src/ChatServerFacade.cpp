@@ -212,7 +212,7 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			if (wolfSSL_is_init_finished(client->ssl) == false) {
 				return;
 			}
-			std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client->ssl);
+			std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client->ssl, client->client_mtx);
 		}
 		else {
 			return;
@@ -659,7 +659,7 @@ void ChatServerFacade::mt101_process(
 	//MT101を送信する処理を記載する
 	auto mt101 = std::make_unique<MessageType101>(client->id, login_result);
 	json mt101_json = MessageType101::desirialize_message(mt101, unsend_messages_json, error_msg);
-	bool send_result = this->_protocol_handler->send_message_tls(client->ssl, mt101_json);
+	bool send_result = this->_protocol_handler->send_message_tls(client->ssl, client->client_mtx, mt101_json);
 	if (send_result == true) {
 		spdlog::info("The MT101 message was successfully sent to the client(ip:{}, id:{}).", client->ipv4_address, client->id);
 		
@@ -760,10 +760,7 @@ void ChatServerFacade::heartbeat_check_process()
 	
 		//現在接続しているクライアントリストを抽出
 		std::vector<std::shared_ptr<ClientHandler::Client>> current_connect_clients;
-		{
-			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
-			current_connect_clients = this->_client_handler->connected_clients;
-		}
+		current_connect_clients = this->_client_handler->get_connected_clients_snapshot();
 
 		//30秒wait
 		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30秒間隔
@@ -775,21 +772,17 @@ void ChatServerFacade::heartbeat_check_process()
 		}
 		
 		//ハートビート回数をクリアする
-		{
-			std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 			this->_client_handler->all_clear_heart_beat_count();
-		}
-				
 	}
 }
 
 
 void ChatServerFacade::heartbeat_nonresponse_process(const std::shared_ptr<ClientHandler::Client>& client)
 {
-	std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
+	//std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 
 	// クライアントが still connected か確認
-	auto& clients = _client_handler->connected_clients;
+	auto clients = _client_handler->get_connected_clients_snapshot();
 	//auto it = std::find(clients.begin(), clients.end(), client);
 	auto it = std::find_if(clients.begin(), clients.end(),
 		[&client](const std::shared_ptr<ClientHandler::Client>& c) {
@@ -823,7 +816,7 @@ void ChatServerFacade::setting_select_process()
 {
 	while (true) {
 		{
-			std::unique_lock<std::mutex> lock(_mutex);
+			//std::unique_lock<std::mutex> lock(_mutex);
 			this->_socket_handler->setting_select_info_to_listen_socket();
 			this->prepare_client_fd_set();
 			
@@ -959,11 +952,11 @@ void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt0
 		{
 			//mt104Bをデシリアライズする
 			json mt104B_json = MessageType104B::desirialize_message(mt104B);
-			auto& sender = _client_handler->connected_clients.at(_client_handler->search_cid_from_clients(mt004->get_sender_id()));
+			auto sender = _client_handler->get_client_by_index(_client_handler->search_cid_from_clients(mt004->get_sender_id()));
 
 			//jsonをsenderに送信する
 			if (sender->socket != INVALID_SOCKET || sender->ssl != nullptr) {
-				if (this->_protocol_handler->send_message_tls(sender->ssl, mt104B_json)) {
+				if (this->_protocol_handler->send_message_tls(sender->ssl, sender->client_mtx, mt104B_json)) {
 					spdlog::info("The MT104B message was successfully sent to the client(ip:{}, id:{}).", sender->ipv4_address, sender->id);
 				}
 				else {
@@ -1001,7 +994,7 @@ void ChatServerFacade::resend_message_process(const json& message, const std::st
 		}
 		if (client->socket != INVALID_SOCKET || client->ssl != nullptr) {
 			// メッセージを送信する
-			if (this->_protocol_handler->send_message_tls(client->ssl, message)) {
+			if (this->_protocol_handler->send_message_tls(client->ssl, client->client_mtx, message)) {
 				spdlog::info("Resend message(mid: {}) to client with cid: {}", mid, cid);
 				return;
 			}
