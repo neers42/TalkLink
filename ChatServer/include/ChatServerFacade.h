@@ -68,7 +68,7 @@ public:
 	void handle_changed_socket_process(const SOCKET socket);
 	void message_handle_process(const SOCKET socket);	
 	void heartbeat_check_process();
-	void heartbeat_nonresponse_process(const std::shared_ptr<ClientHandler::Client>& client);
+	void heartbeat_nonresponse_process(const std::shared_ptr<Client>& client);
 	void setting_select_process();
 
 
@@ -80,12 +80,12 @@ private:
 	std::string sign_in_process(int& auth_type, const char* token, const char* secret);
 
 	//メッセージ処理関連
-	void mt000_process(const std::unique_ptr<MessageType000>& mt000, std::shared_ptr<ClientHandler::Client>& client);
-	void mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<ClientHandler::Client>& client, std::string* error_msg_text, bool* login_result);
+	void mt000_process(const std::unique_ptr<MessageType000>& mt000, std::shared_ptr<Client>& client);
+	void mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<Client>& client, std::string* error_msg_text, bool* login_result);
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result);
 	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
-	void mt101_process(const std::shared_ptr<ClientHandler::Client>& client, const std::string& error_msg, const bool login_result, const bool recv_flag);
-	void mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<ClientHandler::Client>& client);
+	void mt101_process(const std::shared_ptr<Client>& client, const std::string& error_msg, const bool login_result, const bool recv_flag);
+	void mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<Client>& client);
 	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003>& mt003);
 	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids);
 	std::vector<MessageType103A::ClientInfo> generate_client_infos(const std::vector < std::string >& cids);
@@ -138,18 +138,18 @@ private:
 						//クライアントの情報を取得する
 						auto receiver = this->_client_handler->get_client_by_index(receiver_list_num);
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
-						if (receiver != nullptr && receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
-							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
-								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+						if (receiver != nullptr && receiver->get_ssl() != nullptr && receiver->get_ssl() != sender->get_ssl()) {
+							if (this->_protocol_handler->send_message_tls(receiver, json_message)) {
+								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->get_ipv4_address(), sender->get_id());
 							}
 							else {
-								LOG_ERROR("The MT{} message was not sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+								LOG_ERROR("The MT{} message was not sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->get_ipv4_address(), sender->get_id());
 								this->_mysql_client->insert_unsend_message(message->get_message_id(), cid, message->get_room_id());
-								unsend_cids->push_back(receiver->id);
+								unsend_cids->push_back(receiver->get_id());
 
 							}
 						}
-						else if (receiver->ssl == sender->ssl) {
+						else if (receiver->get_ssl() == sender->get_ssl()) {
 							//送信先と送信元のsslが一致する場合
 #define DEBUG
 #ifdef DEBUG
@@ -158,7 +158,7 @@ private:
 #undef DEBUG
 							continue;
 						}
-						else if (receiver->ssl == nullptr) {
+						else if (receiver->get_ssl() == nullptr) {
 							//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
 							if constexpr (std::is_same<T, MessageType103A>::value) {
 								this->_mysql_client->insert_unsend_control_message(message->get_message_id(), cid, message->get_room_id(), json_message, message->get_created_at());
@@ -166,7 +166,7 @@ private:
 							else if constexpr (std::is_same<T, MessageType104A>::value) {
 								this->_mysql_client->insert_unsend_message(message->get_send_message_id(), cid, message->get_room_id());
 							}
-							unsend_cids->push_back(receiver->id);
+							unsend_cids->push_back(receiver->get_id());
 							continue;
 						}
 						else {
@@ -205,33 +205,33 @@ private:
 
 						}
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
-						if (receiver->ssl != nullptr && receiver->ssl != sender->ssl) {
-							if (this->_protocol_handler->send_message_tls(receiver->ssl, json_message)) {
-								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
+						if (receiver->get_ssl() != nullptr && receiver->get_ssl() != sender->get_ssl()) {
+							if (this->_protocol_handler->send_message_tls(receiver->get_ssl(), json_message)) {
+								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->get_ipv4_address(), sender->get_id());
 							}
 							else {
-								LOG_ERROR("The MT{} message was not sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->ipv4_address, sender->id);
-								unsend_cids->push_back(receiver->id);
+								LOG_ERROR("The MT{} message was not sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->get_ipv4_address(), sender->get_id());
+								unsend_cids->push_back(receiver->get_id());
 							}
 						}
-						else if (receiver->ssl == sender->ssl) {
+						else if (receiver->get_ssl() == sender->get_ssl()) {
 							//送信先と送信元のsslが一致する場合
 #define DEBUG
 #ifdef DEBUG
-							this->_protocol_handler->send_message_tls(sender->ssl, json_message);
+							this->_protocol_handler->send_message_tls(sender, json_message);
 #endif // DEBUG
 #undef DEBUG
 							continue;
 						}
-						else if (receiver->ssl == nullptr) {
+						else if (receiver->get_ssl() == nullptr) {
 							// データベースにcidが存在するか確認
 							if (!this->_mysql_client->is_client_id_exist(receiver_cid)) {
 								LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
 								continue;
 							}
 							//クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-							if (!this->_mysql_client->insert_unsend_message(message->get_message_id(), receiver->id, message->get_room_id())) {
-								LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver->id);
+							if (!this->_mysql_client->insert_unsend_message(message->get_message_id(), receiver->get_id(), message->get_room_id())) {
+								LOG_ERROR("Failed to insert unsend message for client ID '{}'.", receiver->get_id());
 							}
 							continue;
 						}

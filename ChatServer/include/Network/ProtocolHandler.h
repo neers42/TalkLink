@@ -23,6 +23,8 @@
 #include "ulid/ulid_struct.hh"
 #include "spdlog/spdlog.h"
 #include "MessageIDGenerator.h"
+#include "Client.h"
+//#include "Chat/ClientHandler.h" // 修正: ヘッダーファイルの拡張子を修正
 
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
@@ -37,6 +39,7 @@ private:
 	WOLFSSL* _server_w_ssl = NULL;
 	WOLFSSL_CTX* _server_w_ctx = NULL;
 	//std::unique_ptr<MessageIDGenerator> _message_id_generator;
+	
 
 public:
 	std::shared_mutex ssl_shared_mtx;
@@ -68,9 +71,11 @@ public:
 	
 	//メッセージの受信
 	std::tuple<json, bool, bool> receive_message_tls(WOLFSSL* client_ssl);
-
+	std::tuple<json, bool, bool> receive_message_tls(std::shared_ptr<Client>& client);
+    
 	//メッセージの送信
 	bool send_message_tls(WOLFSSL* client_ssl,json message);
+	bool send_message_tls(std::shared_ptr<Client>& client, json message);
 
 	//TLSのバージョンを取得
 	const std::string get_tls_version(const WOLFSSL* ssl);
