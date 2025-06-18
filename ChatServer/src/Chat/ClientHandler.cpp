@@ -72,15 +72,6 @@ std::string ClientHandler::generate_client_id()
 
 std::vector<std::shared_ptr<Client>>::iterator ClientHandler::find_client(const std::shared_ptr<Client>& client)
 {
-	if (shared_mtx.try_lock()) {
-		spdlog::debug("ssl_mtx locked successfully");
-		// ... 処理 ...
-		shared_mtx.unlock();
-
-	}
-	else {
-		LOG_ERROR("ssl_mtx is already locked by another thread");
-	}
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	for (auto it = this->connected_clients.begin(); it != this->connected_clients.end(); ++it) {
 		if ((*it) == client) { // 修正: ポインタの中身を比較
@@ -140,15 +131,6 @@ void ClientHandler::delete_client(std::vector<std::shared_ptr<Client>>::iterator
 bool ClientHandler::get_client_auth_status(const int index)
 {
 	LOG_TRACE;
-	if (shared_mtx.try_lock()) {
-		spdlog::debug("ssl_mtx locked successfully");
-		// ... 処理 ...
-		shared_mtx.unlock();
-
-	}
-	else {
-		LOG_ERROR("ssl_mtx is already locked by another thread");
-	}
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	return this->connected_clients[index]->get_auth_status();
 }
@@ -156,23 +138,17 @@ bool ClientHandler::get_client_auth_status(const int index)
 
 void ClientHandler::change_client_auth_status(std::shared_ptr<Client>& client)
 {
-	LOG_TRACE;
-	if (shared_mtx.try_lock()) {
-		spdlog::debug("ssl_mtx locked successfully");
-		// ... 処理 ...
-		shared_mtx.unlock();
 
-	}
-	else {
-		LOG_ERROR("ssl_mtx is already locked by another thread");
-	}
-	auto it = this->find_client(client);
-	{
-		std::unique_lock<std::shared_mutex> lock(shared_mtx);
-		it->get()->change_auth_status();
-	}
-	
-	//client->change_auth_status();
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
+	client->change_auth_status();
+
+	//auto it = this->find_client(client);
+	//if (it != connected_clients.end()) {
+	//	(*it)->change_auth_status();
+	//}
+	//else {
+	//	LOG_ERROR("Client not found. Cannot change auth status.");
+	//}
 }
 
 std::shared_ptr < Client > ClientHandler::get_client_by_index(const uint32_t index)
@@ -196,6 +172,17 @@ std::shared_ptr<Client>& ClientHandler::get_client_ref_by_index(const uint32_t i
 		return connected_clients[index];
 	}
 	return dummy_ptr;
+}
+
+std::shared_ptr<Client> ClientHandler::get_client_by_socket(const SOCKET& socket)
+{
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	for (const auto& client : connected_clients) {
+		if (client != nullptr && client->get_socket() == socket) {
+			return client;
+		}
+	}
+	return nullptr; // 見つからなかった場合
 }
 
 
@@ -232,17 +219,16 @@ void ClientHandler::set_client_id(const std::shared_ptr<Client>& client, const s
 {
 	LOG_TRACE;
 		
-	//std::unique_lock<std::mutex> lock(this->mtx);
-	auto it = find_client(client);
-	{
-		std::unique_lock<std::shared_mutex> lock(shared_mtx);
-		if (it != connected_clients.end()) {
-			(*it)->set_id(id); // クライアントのIDを更新
-		}
-		else {
-			LOG_ERROR("Failed set Client ID.Client not found in the list.");
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+
+	for (auto& client : connected_clients) {
+		if (client == client) {
+			client->set_id(id); // クライアントのIDを更新
+			return;
 		}
 	}
+
+	LOG_ERROR("Failed to set Client ID. Client not found in the list.");
 	
 }
 
@@ -258,17 +244,16 @@ void ClientHandler::set_client_name(std::string name, uint32_t list_num)
 void ClientHandler::set_client_name(const std::shared_ptr<Client>& client, const std::string& name)
 {	
 	LOG_TRACE;
-	auto it = find_client(client);
-	{
-		std::unique_lock<std::shared_mutex> lock(shared_mtx);
-		if (it != connected_clients.end()) {
-			(*it)->set_name(name); // クライアントの名前を更新
-		}
-		else {
-			LOG_ERROR("Failed set Client name.Client not found in the list.");
+
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+
+	for (auto& client : connected_clients) {
+		if (client == client) {
+			client->set_name(name); // クライアントのIDを更新
+			return;
 		}
 	}
-	
+		
 }
 
 void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
@@ -284,15 +269,12 @@ void ClientHandler::set_client_mail_addr(const std::shared_ptr<Client>& client, 
 {
 	LOG_TRACE;
 		
-	//std::unique_lock<std::mutex> lock(this->mtx);
-	auto it = find_client(client);
-	{
-		std::unique_lock<std::shared_mutex> lock(shared_mtx);
-		if (it != connected_clients.end()) {
-			(*it)->set_mail_address(mail_addr); // クライアントのメールアドレスを更新
-		}
-		else {
-			LOG_ERROR("Failed set Client mail address.Client not found in the list.");
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+
+	for (auto& client : connected_clients) {
+		if (client == client) {
+			client->set_mail_address(mail_addr); // クライアントのIDを更新
+			return;
 		}
 	}
 	
@@ -300,17 +282,15 @@ void ClientHandler::set_client_mail_addr(const std::shared_ptr<Client>& client, 
 
 void ClientHandler::set_client_password(const std::shared_ptr<Client>& client, const std::string& password)
 {
+
 	LOG_TRACE;
-		
-	//std::unique_lock<std::mutex> lock(this->mtx);
-	auto it = find_client(client);
-	{
-		std::unique_lock<std::shared_mutex> lock(shared_mtx);
-		if (it != connected_clients.end()) {
-			(*it)->set_password(password); // クライアントのパスワードを更新
-		}
-		else {
-			LOG_ERROR("Failed set Client password.Client not found in the list.");
+
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+
+	for (auto& client : connected_clients) {
+		if (client == client) {
+			client->set_password(password); // クライアントのIDを更新
+			return;
 		}
 	}
 	
@@ -412,7 +392,6 @@ std::shared_ptr<Client> ClientHandler::get_client_by_cid(const std::string& cid)
 {
 	LOG_TRACE;	
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	//std::unique_lock<std::mutex> lock(this->mtx);
 	for (auto& client : connected_clients) {
 		if (client != nullptr && client->get_id() == cid) {
 			return client;
@@ -422,20 +401,6 @@ std::shared_ptr<Client> ClientHandler::get_client_by_cid(const std::string& cid)
 	return nullptr; // クライアントが見つからない場合はnullptrを返す
 }
 
-std::shared_ptr<Client>& ClientHandler::get_client_ref_by_cid(const std::string& cid)
-{
-	LOG_TRACE;
-	std::shared_ptr<Client> dummy_ptr = nullptr;
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	//std::unique_lock<std::mutex> lock(this->mtx);
-	for (auto& client : connected_clients) {
-		if (client != nullptr && client->get_id() == cid) {
-			return client;
-		}
-	}
-	LOG_ERROR("Client with ID {:s} not found.", cid);
-	return dummy_ptr; // クライアントが見つからない場合はnullptrを返す
-}
 
 
 
@@ -512,9 +477,8 @@ void ClientHandler::clear_heart_beat_count(uint32_t list_num)
 void ClientHandler::all_clear_heart_beat_count()
 {
 	LOG_TRACE;
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
-	//std::unique_lock<std::mutex> lock(this->mtx);
-	for (auto& client : this->connected_clients) {
+	auto snap_shot = this->get_connected_clients_snapshot();
+	for (auto& client : snap_shot) {
 		if (client != nullptr) {
 			client->clear_heart_beat_count();
 		}

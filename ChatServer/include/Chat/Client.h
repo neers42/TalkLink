@@ -29,7 +29,7 @@ private:
 	WOLFSSL* ssl;				//クライアントのソケットにアタッチされたsslオブジェクト
 
 public:
-	mutable std::shared_mutex shared_mtx;
+	mutable std::mutex mtx;
 
 public:
 	explicit Client();

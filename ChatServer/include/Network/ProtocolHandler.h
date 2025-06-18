@@ -70,12 +70,10 @@ public:
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
 	
 	//メッセージの受信
-	std::tuple<json, bool, bool> receive_message_tls(WOLFSSL* client_ssl);
-	std::tuple<json, bool, bool> receive_message_tls(std::shared_ptr<Client>& client);
+	std::tuple<json, bool, bool> receive_message_tls(std::shared_ptr<Client> client);
     
 	//メッセージの送信
-	bool send_message_tls(WOLFSSL* client_ssl,json message);
-	bool send_message_tls(std::shared_ptr<Client>& client, json message);
+	bool send_message_tls(std::shared_ptr<Client> client, json message);
 
 	//TLSのバージョンを取得
 	const std::string get_tls_version(const WOLFSSL* ssl);

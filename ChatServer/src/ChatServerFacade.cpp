@@ -71,13 +71,13 @@ void ChatServerFacade::run()
 
 	//ディスクリプション監視スタート
 	while (1) {
-		//auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(500);
+		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
 		this->_socket_handler->setting_select_info_to_listen_socket();
 		this->prepare_client_fd_set();
 		std::vector<SOCKET> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
 		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
 			[this](SOCKET changed_socket) {handle_changed_socket_process(changed_socket); });
-		//std::this_thread::sleep_until(abs_time);
+		std::this_thread::sleep_until(abs_time);
 
 	}
 	
@@ -182,20 +182,16 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 	bool* result = new bool();
 	char buf[32];
 	std::shared_ptr<Client> client;
+	WOLFSSL* client_ssl = nullptr;
 
 #ifdef TLS_PROTOCOL
 	try
 	{
-		detection_num = this->_client_handler->search_socket_from_clients(socket);
-		if (detection_num == -1) {
-			return;
-		}
-		client = _client_handler->get_client_by_index(detection_num);
+		auto client = _client_handler->get_client_by_socket(socket);
 		if (client == nullptr) {
 			LOG_ERROR("Client not found for detection number: {:d}", detection_num);
 			return;
 		}
-		//auto& client = _client_handler->connected_clients[detection_num];
 		if ((_socket_handler->is_socket_closed(client->get_socket()) == true)) {
 			LOG_ERROR("Client closed tcp connection.");
 			disconnect_flag = true;
@@ -204,21 +200,8 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			_client_handler->delete_client(detection_num);
 			return;
 		}
-		if (client == nullptr || client->get_ssl() == nullptr) {
-			LOG_ERROR("Client or client SSL is null. Skipping message handling.");
-			return;
-		}
-		if (detection_num <= this->_client_handler->get_connect_clients_num() - 1 && client->get_ssl() != nullptr) {
-			if (wolfSSL_is_init_finished(client->get_ssl()) == false) {
-				return;
-			}
-			std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client);
-			//std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(_client_handler->get_client_by_index(detection_num));
-		}
-		else {
-			return;
-		}
-
+		std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client);
+	
 
 		//クライアントの切断を検知した場合
 		if (disconnect_flag == true) {
@@ -278,8 +261,8 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			}
 			this->_protocol_handler->print_received_message_info(mt004, mt004->get_message_id(), mt004->get_sender_id(), mt004->get_receiver_id(), client->get_ipv4_address(), client->get_socket());
 			this->_protocol_handler->print_json_message(receive_json);
-			this->mt004_process(mt004);
-			this->mt104_process(mt004);
+			this->mt004_process(mt004, client);
+			this->mt104_process(mt004, client);
 		}
 
 		else {
@@ -438,15 +421,13 @@ void ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001>& mt00
 					_client_handler->set_client_mail_addr(client, client_mail_addr);
 					_client_handler->set_client_password(client, client_password);
 
-					/*client->id = client_id;
-					client->name = client_name;
-					client->mail_address = client_mail_addr;
-					client->password = client_password;*/
 					spdlog::debug("client name:{:s}, mail address:{:s}, password:{:s}", client_name, client_mail_addr, client_password);
 
 					//Auth statusを変更する
+					spdlog::warn("korekara change_client _auth_status wo yaruyo!!!");
 					this->_client_handler->change_client_auth_status(client);
 					//ハートビートのカウント回数をインクリメントする
+					spdlog::warn("korekara incliment_heart_beat_count wo yaruyo!!!");
 					this->_client_handler->incliment_heart_beat_count(client);
 				}
 				else {
@@ -591,7 +572,7 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003>& mt00
 
 
 
-void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt004)
+void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt004, std::shared_ptr<Client> client)
 {
 	std::vector<SOCKET> send_sockets;
 	std::vector<std::string> receive_clients;
@@ -607,7 +588,6 @@ void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt00
 		}
 		send_socket_num = _client_handler->search_cid_from_clients(mt004->get_receiver_id());
 		spdlog::debug("send_socket_num:{:d}", send_socket_num);
-
 		//データベースにクライアントIDが存在するか確認する
 		if (send_socket_num == -1) {
 			client_db_exist_flag = this->_mysql_client->is_client_id_exist(mt004->get_receiver_id());
@@ -641,7 +621,7 @@ void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt00
 }
 
 void ChatServerFacade::mt101_process(
-	const std::shared_ptr<Client>& client, 
+	std::shared_ptr<Client> client, 
 	const std::string& error_msg, 
 	const bool login_result, 
 	const bool recv_flag)
@@ -659,9 +639,9 @@ void ChatServerFacade::mt101_process(
 	
 	//MT101を送信する処理を記載する
 	auto mt101 = std::make_unique<MessageType101>(client->get_id(), login_result);
-	json mt101_json = MessageType101::desirialize_message(mt101, unsend_messages_json, error_msg);
+	json mt101_json = MessageType101::deserialize_message(mt101, unsend_messages_json, error_msg);
 	//bool send_result = this->_protocol_handler->send_message_tls(_client_handler->search_client_ssl_from_clients(client->get_id()), mt101_json);
-	bool send_result = this->_protocol_handler->send_message_tls(_client_handler->get_client_ref_by_cid(client->get_id()), mt101_json);
+	bool send_result = this->_protocol_handler->send_message_tls(client, mt101_json);
 	if (send_result == true) {
 		spdlog::info("The MT101 message was successfully sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
 		
@@ -747,11 +727,11 @@ std::vector<MessageType103A::ClientInfo> ChatServerFacade::generate_client_infos
 	return client_infos;
 }
 
-void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004>& mt004)
+void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004>& mt004, std::shared_ptr<Client> client)
 {
 	std::vector<std::string> unsend_cids;
 	unsend_cids = this->mt104A_process(mt004);
-	this->mt104B_process(mt004, unsend_cids);
+	this->mt104B_process(mt004, unsend_cids, client);
 }
 
 
@@ -893,7 +873,7 @@ std::vector<std::string> ChatServerFacade::mt104A_process(const std::unique_ptr<
 	return unsend_cids;
 }
 
-void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids)
+void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids, std::shared_ptr<Client> client)
 {
 	//mt104Bを生成
 	std::string message_type = "104B";
@@ -955,19 +935,12 @@ void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt0
 			//mt104Bをデシリアライズする
 			json mt104B_json = MessageType104B::desirialize_message(mt104B);
 			//auto sender = _client_handler->get_client_by_index(_client_handler->search_cid_from_clients(mt004->get_sender_id()));
-			auto sender = _client_handler->get_client_by_cid(mt004->get_sender_id());
-
-			//jsonをsenderに送信する
-			if (sender->get_socket() != INVALID_SOCKET || sender->get_ssl() != nullptr) {
-				if (this->_protocol_handler->send_message_tls(sender, mt104B_json)) {
-					spdlog::info("The MT104B message was successfully sent to the client(ip:{}, id:{}).", sender->get_ipv4_address(), sender->get_id());
-				}
-				else {
-					LOG_ERROR("The MT104B message was not sent to the client(ip:{}, id:{}).", sender->get_ipv4_address(), sender->get_id());
-				}
+			//auto sender = _client_handler->get_client_by_cid(mt004->get_sender_id());
+			if (this->_protocol_handler->send_message_tls(client, mt104B_json)) {
+				spdlog::info("The MT104B message was successfully sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
 			}
 			else {
-				LOG_ERROR("Failed to send MT104B because sender's ssl is nullptr(ip:{}, id : {}).", sender->get_ipv4_address(), sender->get_id());
+				LOG_ERROR("The MT104B message was not sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
 			}
 		}
 		catch (const std::out_of_range& e)

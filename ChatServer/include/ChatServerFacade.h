@@ -83,15 +83,15 @@ private:
 	void mt000_process(const std::unique_ptr<MessageType000>& mt000, std::shared_ptr<Client>& client);
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<Client>& client, std::string* error_msg_text, bool* login_result);
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result);
-	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
-	void mt101_process(const std::shared_ptr<Client>& client, const std::string& error_msg, const bool login_result, const bool recv_flag);
+	void mt004_process(const std::unique_ptr<MessageType004>& mt004, std::shared_ptr<Client> client);
+	void mt101_process(std::shared_ptr<Client> client, const std::string& error_msg, const bool login_result, const bool recv_flag);
 	void mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<Client>& client);
 	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003>& mt003);
 	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids);
 	std::vector<MessageType103A::ClientInfo> generate_client_infos(const std::vector < std::string >& cids);
-	void mt104_process(const std::unique_ptr<MessageType004>& mt004);
+	void mt104_process(const std::unique_ptr<MessageType004>& mt004, std::shared_ptr<Client> client);
 	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004>& mt004);
-	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids);
+	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids, std::shared_ptr<Client> client);
 	void resend_message_process(const json& message, const std::string& cid);
 
 	template <typename T>
@@ -101,7 +101,7 @@ private:
 	{
 			//メッセージをデシリアライズする
 			json json_message = T::deserialize_message(message);
-			auto sender = this->_client_handler->get_client_by_index(_client_handler->search_cid_from_clients(message->get_sender_id()));
+			auto sender = this->_client_handler->get_client_by_cid(message->get_sender_id());
 			if (sender == nullptr) {
 				LOG_ERROR("Sender with ID '{}' not found. Cannot send message.", message->get_sender_id());
 				return; // 送信者が見つからない場合は処理を終了
@@ -206,7 +206,7 @@ private:
 						}
 						//jsonメッセージを送信する(送信先のsslがnullではない、かつ送り先と送信先のsslが一致しないこと)
 						if (receiver->get_ssl() != nullptr && receiver->get_ssl() != sender->get_ssl()) {
-							if (this->_protocol_handler->send_message_tls(receiver->get_ssl(), json_message)) {
+							if (this->_protocol_handler->send_message_tls(receiver, json_message)) {
 								spdlog::info("The MT{} message was successfully sent to the client(ip:{}, id:{}).", message->get_message_type(), sender->get_ipv4_address(), sender->get_id());
 							}
 							else {

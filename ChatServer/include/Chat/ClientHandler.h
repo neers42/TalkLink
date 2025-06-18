@@ -33,7 +33,6 @@ private:
 	
 	//private関数
 	std::string generate_client_id();
-	std::vector<std::shared_ptr<Client>>::iterator find_client(const std::shared_ptr<Client>& client);
 
 public:
 	mutable std::shared_mutex shared_mtx; // for read/write lock
@@ -57,9 +56,11 @@ public:
 	void change_client_auth_status(std::shared_ptr<Client>& client);
 	std::shared_ptr<Client> get_client_by_index(const uint32_t index);
 	std::shared_ptr<Client>& get_client_ref_by_index(const uint32_t index);
+	std::shared_ptr<Client> get_client_by_socket(const SOCKET& socket);
 	std::vector<std::shared_ptr<Client>> get_connected_clients_snapshot();
 	WOLFSSL* get_client_ssl(const int index);
-	
+	std::shared_ptr<Client> get_client_by_cid(const std::string& cid);
+	std::vector<std::shared_ptr<Client>>::iterator find_client(const std::shared_ptr<Client>& client);
 
 	
 	//setter
@@ -88,8 +89,7 @@ public:
 	WOLFSSL* search_client_ssl_from_clients(const std::string& cid);
 	void show_client_info(const std::shared_ptr<Client>& client);
 	std::vector<WOLFSSL*> get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients);
-	std::shared_ptr<Client> get_client_by_cid(const std::string& cid);
-	std::shared_ptr<Client>& get_client_ref_by_cid(const std::string& cid);
+	
 	
 };
 
