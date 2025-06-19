@@ -854,6 +854,7 @@ std::string ChatServerFacade::sign_in_process(int& auth_type, const char* token,
 std::vector<std::string> ChatServerFacade::mt104A_process(const std::unique_ptr<MessageType004>& mt004)
 {
 	//mt104Aを生成
+	spdlog::debug("mt104A_process start.");
 	std::string message_type = "104A";
 	std::vector<std::string> unsend_cids;
 
@@ -876,6 +877,7 @@ std::vector<std::string> ChatServerFacade::mt104A_process(const std::unique_ptr<
 void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids, std::shared_ptr<Client> client)
 {
 	//mt104Bを生成
+	spdlog::debug("mt104B_process start.");
 	std::string message_type = "104B";
 	MessageType104B::MessageSendStatus send_status;
 	std::string send_room_id = mt004->get_room_id();

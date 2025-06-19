@@ -107,7 +107,9 @@ private:
 				return; // 送信者が見つからない場合は処理を終了
 			}
 			//送り先のclientの情報を取得する
+			spdlog::warn("get lock.....");
 			auto receivers_cids = this->_chat_room_handler->get_client_infos_by_chatroom_id(message->get_room_id());
+			spdlog::warn("get lock complete!!!");
 
 			//ChatroomHandlerが保持しているクライアントリストからチャットルームが検出できない場合
 			if (receivers_cids.size() == 0) {
