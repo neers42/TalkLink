@@ -84,6 +84,7 @@ public:
 	bool add_client(std::shared_ptr<Client> client);
 	void delete_client(const std::uint32_t delete_num);
 	void delete_client(std::vector<std::shared_ptr<Client>>::iterator it);
+	void delete_client(const std::shared_ptr<Client> client);
 	int search_cid_from_clients(const std::string& search_client_id);
 	int search_socket_from_clients(const SOCKET& search_socket);
 	WOLFSSL* search_client_ssl_from_clients(const std::string& cid);

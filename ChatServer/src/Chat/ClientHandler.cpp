@@ -126,6 +126,24 @@ void ClientHandler::delete_client(std::vector<std::shared_ptr<Client>>::iterator
 	}
 }
 
+void ClientHandler::delete_client(const std::shared_ptr<Client> client)
+{
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	if (this->connected_clients.empty() == true) {
+		LOG_ERROR("Client list is empty.");
+		return;
+	}
+	else {
+		auto it = std::find(this->connected_clients.begin(), this->connected_clients.end(), client);
+		if (it != this->connected_clients.end()) {
+			this->connected_clients.erase(it);
+		}
+		else {
+			LOG_ERROR("Client not found in connected_clients.");
+		}
+	}
+}
+
 
 
 bool ClientHandler::get_client_auth_status(const int index)

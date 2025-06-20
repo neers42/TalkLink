@@ -1069,6 +1069,7 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 		if (client_socket == INVALID_SOCKET) {
 			throw std::runtime_error("The client socket is invalid. The socket may already be closed.");
 		}
+		shutdown(client_socket, SD_BOTH);
 		int close_socket_result = closesocket(client_socket);
 		if (close_socket_result == SOCKET_ERROR) {
 			switch (WSAGetLastError())

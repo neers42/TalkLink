@@ -193,11 +193,8 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			return;
 		}
 		if ((_socket_handler->is_socket_closed(client->get_socket()) == true)) {
-			LOG_ERROR("Client closed tcp connection.");
-			disconnect_flag = true;
-			this->_mysql_client->update_last_login(client->get_id(), this->_server_time->get_current_time_to_milliseconds());
-			_socket_handler->disconnect_socket(client->get_socket());
-			_client_handler->delete_client(detection_num);
+			spdlog::warn("Client closed tcp connection.");
+			this->handle_disconnect_process(client);
 			return;
 		}
 		std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client);
@@ -784,13 +781,14 @@ void ChatServerFacade::heartbeat_nonresponse_process(const std::shared_ptr<Clien
 		spdlog::info("Client (Socket : {:d} ID: None), disconnect.(Not response)", (*it)->get_socket());
 
 	}
+	this->handle_disconnect_process((*it));
 
-	this->_mysql_client->update_last_login((*it)->get_id(), ServerTime::get_current_time_to_milliseconds());
-	// クライアント切断処理
-	_socket_handler->disconnect_socket((*it)->get_socket());
+	//this->_mysql_client->update_last_login((*it)->get_id(), ServerTime::get_current_time_to_milliseconds());
+	//// クライアント切断処理
+	//_socket_handler->disconnect_socket((*it)->get_socket());
 
-	// クライアントを接続リストから削除
-	this->_client_handler->delete_client(it);
+	//// クライアントを接続リストから削除
+	//this->_client_handler->delete_client(it);
 }
 
 
@@ -804,6 +802,24 @@ void ChatServerFacade::setting_select_process()
 			
 		}
 	}
+}
+
+void ChatServerFacade::handle_disconnect_process(const std::shared_ptr<Client> client)
+{
+	this->_mysql_client->update_last_login(client->get_id(), this->_server_time->get_current_time_to_milliseconds());
+	if(client == nullptr) {
+		LOG_ERROR("The client is null.");
+		return;
+	}
+	if (client->get_ssl() != nullptr) {
+		wolfSSL_shutdown(client->get_ssl());
+		wolfSSL_free(client->get_ssl());
+	}
+	if (client->get_socket() != INVALID_SOCKET) {
+		_socket_handler->disconnect_socket(client->get_socket());
+	}
+	this->_client_handler->delete_client(client);
+
 }
 
 

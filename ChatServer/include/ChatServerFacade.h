@@ -70,6 +70,7 @@ public:
 	void heartbeat_check_process();
 	void heartbeat_nonresponse_process(const std::shared_ptr<Client>& client);
 	void setting_select_process();
+	void handle_disconnect_process(const std::shared_ptr<Client> client);
 
 
 	
