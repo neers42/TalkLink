@@ -197,17 +197,14 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			this->handle_disconnect_process(client);
 			return;
 		}
-		std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client);
+		if (client->get_ssl() != nullptr) {
+			std::tie(receive_json, disconnect_flag, recv_flag) = _protocol_handler->receive_message_tls(client);
+		}
 	
 
 		//クライアントの切断を検知した場合
 		if (disconnect_flag == true) {
-
-			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", client->get_ipv4_address(), client->get_id());
-			this->_mysql_client->update_last_login(client->get_id(), this->_server_time->get_current_time_to_milliseconds());
-			this->_protocol_handler->shutdown_wolfssl(client->get_ssl());
-			_socket_handler->disconnect_socket(client->get_socket());
-			_client_handler->delete_client(detection_num);
+			this -> handle_disconnect_process(client);
 			return;
 		}
 
@@ -372,11 +369,6 @@ void ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001>& mt00
 					_client_handler->set_client_mail_addr(client, mt001->get_client_mail_addr());
 					_client_handler->set_client_password(client, mt001->get_client_password());
 
-					//client->id = client_id;
-					//client->name = mt001->get_client_name();
-					//client->mail_address = mt001->get_client_mail_addr();
-					//client->password = mt001->get_client_password();
-
 					if (this->_mysql_client->insert_client_data(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password(), "", ServerTime::get_current_time_to_seconds(), "") == true) {
 						spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", client->get_ipv4_address(), client->get_socket(), client_id);
 					}
@@ -421,10 +413,8 @@ void ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001>& mt00
 					spdlog::debug("client name:{:s}, mail address:{:s}, password:{:s}", client_name, client_mail_addr, client_password);
 
 					//Auth statusを変更する
-					spdlog::warn("korekara change_client _auth_status wo yaruyo!!!");
 					this->_client_handler->change_client_auth_status(client);
 					//ハートビートのカウント回数をインクリメントする
-					spdlog::warn("korekara incliment_heart_beat_count wo yaruyo!!!");
 					this->_client_handler->incliment_heart_beat_count(client);
 				}
 				else {
@@ -758,7 +748,6 @@ void ChatServerFacade::heartbeat_check_process()
 
 void ChatServerFacade::heartbeat_nonresponse_process(const std::shared_ptr<Client>& client)
 {
-	//std::unique_lock<std::mutex> lock(_connect_client_list_mutex);
 
 	// クライアントが still connected か確認
 	auto clients = _client_handler->get_connected_clients_snapshot();
@@ -771,24 +760,9 @@ void ChatServerFacade::heartbeat_nonresponse_process(const std::shared_ptr<Clien
 	if (it == clients.end() || (*it)->get_heart_beat_count() > 0) {
 		return;  // 既に削除されている or ハートビートがリセットされた場合
 	}
-
-	// ログ出力
-	if ((*it)->get_auth_status() == true) {
-		spdlog::info("Client (Socket : {:d} ID: {:s}), disconnect.(Not response)", (*it)->get_socket(), (*it)->get_id());
-	
-	}
-	else {
-		spdlog::info("Client (Socket : {:d} ID: None), disconnect.(Not response)", (*it)->get_socket());
-
-	}
+	spdlog::warn("The Client(ID:{}) did not return heartbeat.", (*it)->get_id());
 	this->handle_disconnect_process((*it));
 
-	//this->_mysql_client->update_last_login((*it)->get_id(), ServerTime::get_current_time_to_milliseconds());
-	//// クライアント切断処理
-	//_socket_handler->disconnect_socket((*it)->get_socket());
-
-	//// クライアントを接続リストから削除
-	//this->_client_handler->delete_client(it);
 }
 
 
@@ -796,7 +770,6 @@ void ChatServerFacade::setting_select_process()
 {
 	while (true) {
 		{
-			//std::unique_lock<std::mutex> lock(_mutex);
 			this->_socket_handler->setting_select_info_to_listen_socket();
 			this->prepare_client_fd_set();
 			
@@ -812,8 +785,7 @@ void ChatServerFacade::handle_disconnect_process(const std::shared_ptr<Client> c
 		return;
 	}
 	if (client->get_ssl() != nullptr) {
-		wolfSSL_shutdown(client->get_ssl());
-		wolfSSL_free(client->get_ssl());
+		_protocol_handler->shutdown_wolfssl(client);
 	}
 	if (client->get_socket() != INVALID_SOCKET) {
 		_socket_handler->disconnect_socket(client->get_socket());
@@ -870,7 +842,6 @@ std::string ChatServerFacade::sign_in_process(int& auth_type, const char* token,
 std::vector<std::string> ChatServerFacade::mt104A_process(const std::unique_ptr<MessageType004>& mt004)
 {
 	//mt104Aを生成
-	spdlog::debug("mt104A_process start.");
 	std::string message_type = "104A";
 	std::vector<std::string> unsend_cids;
 
@@ -893,7 +864,6 @@ std::vector<std::string> ChatServerFacade::mt104A_process(const std::unique_ptr<
 void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids, std::shared_ptr<Client> client)
 {
 	//mt104Bを生成
-	spdlog::debug("mt104B_process start.");
 	std::string message_type = "104B";
 	MessageType104B::MessageSendStatus send_status;
 	std::string send_room_id = mt004->get_room_id();

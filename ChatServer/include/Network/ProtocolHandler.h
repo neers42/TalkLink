@@ -68,6 +68,7 @@ public:
 
 	//wolfSSLのシャットダウン
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
+	void shutdown_wolfssl(std::shared_ptr<Client> client);
 	
 	//メッセージの受信
 	std::tuple<json, bool, bool> receive_message_tls(std::shared_ptr<Client> client);

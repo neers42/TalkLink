@@ -1103,7 +1103,7 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 			}
 		}
 		else {
-			spdlog::info("client socket({:d}) is closed.", client_socket);
+			spdlog::debug("client socket({:d}) is closed.", client_socket);
 		}
 
 	}

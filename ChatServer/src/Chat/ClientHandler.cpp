@@ -136,6 +136,7 @@ void ClientHandler::delete_client(const std::shared_ptr<Client> client)
 	else {
 		auto it = std::find(this->connected_clients.begin(), this->connected_clients.end(), client);
 		if (it != this->connected_clients.end()) {
+			spdlog::info("Deleted Client(ID : {})", client->get_id());
 			this->connected_clients.erase(it);
 		}
 		else {

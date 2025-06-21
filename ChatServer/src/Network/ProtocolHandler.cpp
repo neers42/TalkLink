@@ -105,6 +105,28 @@ void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
 
 }
 
+void ProtocolHandler::shutdown_wolfssl(std::shared_ptr<Client> client)
+{
+	std::unique_lock<std::mutex> client_lock(client->mtx);
+	WOLFSSL* client_ssl = client->get_ssl();
+	if (client_ssl == nullptr) {
+		LOG_ERROR("SSL is not initialized, cannot shutdown SSL connection.");
+		return;
+	}
+	int ret = wolfSSL_shutdown(client_ssl);
+	if (ret == WOLFSSL_SUCCESS) {
+		spdlog::debug("wolfSSL shutdown success.");
+	}
+	else
+	{
+		this->print_wolfssl_error(client_ssl);
+		return;
+	}
+	wolfSSL_free(client_ssl);
+	client->set_ssl(nullptr);
+
+}
+
 std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_ptr<Client> client)
 {
 	json recv_msg_json;
@@ -113,7 +135,6 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_pt
 	std::vector<uint8_t> message_buffer;
 	bool disconnect_flag = false;	//接続断の判定フラグ
 	bool recv_flag = false;	//受信完了の判定フラグ
-	spdlog::debug("receive_message_tls called.");
 	int bytes_read = 0;
 
 		// Clientのshared_mtxをshared_lockでロック
@@ -204,16 +225,12 @@ bool ProtocolHandler::send_message_tls(std::shared_ptr<Client> client, json mess
 
 	std::string mt = message["message_type"];
 
-	spdlog::info("Trying to lock client mutex...");
 	std::unique_lock<std::mutex> client_lock(client->mtx);
-	spdlog::info("Mutex locked.");
 	WOLFSSL* ssl = client->get_ssl();
 	if (ssl == nullptr || wolfSSL_is_init_finished(ssl) == false) {
 		LOG_ERROR("SSL is not initialized, cannot send message.");
 		return false;
 	}
-	spdlog::info("SSL is initialized, starting send loop...");
-	spdlog::warn("Sending message called");
 	while (total_sent < message_size) {
 		size_t to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
 		ret = wolfSSL_write(client->get_ssl(), message_buffer.data() + total_sent, static_cast<int>(to_send));
@@ -379,7 +396,7 @@ void ProtocolHandler::print_wolfssl_error(WOLFSSL* client_ssl)
 	err = wolfSSL_get_error(client_ssl, 0);
 	wolfSSL_ERR_error_string(err, buffer);
 	//spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d})", std::string(buffer), err);
-	LOG_ERROR("wolfSSL, failed, error content : {:s} (code : {:d}.)", std::string(buffer), err);
+	LOG_ERROR("wolfSSL error content : {:s} (code : {:d}.)", std::string(buffer), err);
 }
 
 void ProtocolHandler::initialize_wolfssl()
