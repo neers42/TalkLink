@@ -53,7 +53,7 @@ public:
 	const Client& get_init_client();
 	const Client& get_init_client() const;
 	bool get_client_auth_status(const int client_num);
-	void change_client_auth_status(std::shared_ptr<Client>& client);
+	void change_client_auth_status(std::shared_ptr<Client> client);
 	std::shared_ptr<Client> get_client_by_index(const uint32_t index);
 	std::shared_ptr<Client>& get_client_ref_by_index(const uint32_t index);
 	std::shared_ptr<Client> get_client_by_socket(const SOCKET& socket);

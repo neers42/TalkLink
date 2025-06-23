@@ -84,15 +84,15 @@ private:
 	void mt000_process(const std::unique_ptr<MessageType000>& mt000, std::shared_ptr<Client>& client);
 	void mt001_process(const std::unique_ptr<MessageType001>& mt001, std::shared_ptr<Client>& client, std::string* error_msg_text, bool* login_result);
 	void mt003_process(const std::unique_ptr<MessageType003>& mt003, std::string* error_msg, bool* action_result);
-	void mt004_process(const std::unique_ptr<MessageType004>& mt004, std::shared_ptr<Client> client);
-	void mt101_process(std::shared_ptr<Client> client, const std::string& error_msg, const bool login_result, const bool recv_flag);
+	void mt004_process(const std::unique_ptr<MessageType004>& mt004);
+	void mt101_process(std::shared_ptr<Client>& client, const std::string& error_msg, const bool login_result, const bool recv_flag);
 	void mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<Client>& client);
 	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003>& mt003);
 	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids);
 	std::vector<MessageType103A::ClientInfo> generate_client_infos(const std::vector < std::string >& cids);
-	void mt104_process(const std::unique_ptr<MessageType004>& mt004, std::shared_ptr<Client> client);
+	void mt104_process(const std::unique_ptr<MessageType004>& mt004, const std::shared_ptr<Client>& client);
 	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004>& mt004);
-	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids, std::shared_ptr<Client> client);
+	void mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids, const std::shared_ptr<Client>& client);
 	void resend_message_process(const json& message, const std::string& cid);
 
 	template <typename T>

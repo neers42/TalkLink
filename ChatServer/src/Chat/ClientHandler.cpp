@@ -136,7 +136,7 @@ void ClientHandler::delete_client(const std::shared_ptr<Client> client)
 	else {
 		auto it = std::find(this->connected_clients.begin(), this->connected_clients.end(), client);
 		if (it != this->connected_clients.end()) {
-			spdlog::info("Deleted Client(ID : {})", client->get_id());
+			spdlog::info("Deleted Client(ID : {}).", client->get_id());
 			this->connected_clients.erase(it);
 		}
 		else {
@@ -155,7 +155,7 @@ bool ClientHandler::get_client_auth_status(const int index)
 }
 
 
-void ClientHandler::change_client_auth_status(std::shared_ptr<Client>& client)
+void ClientHandler::change_client_auth_status(std::shared_ptr<Client> client)
 {
 
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
@@ -240,9 +240,9 @@ void ClientHandler::set_client_id(const std::shared_ptr<Client>& client, const s
 		
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);
 
-	for (auto& client : connected_clients) {
-		if (client == client) {
-			client->set_id(id); // クライアントのIDを更新
+	for (auto& c : connected_clients) {
+		if (c == client) {
+			c->set_id(id); // クライアントのIDを更新
 			return;
 		}
 	}
@@ -266,9 +266,9 @@ void ClientHandler::set_client_name(const std::shared_ptr<Client>& client, const
 
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);
 
-	for (auto& client : connected_clients) {
-		if (client == client) {
-			client->set_name(name); // クライアントのIDを更新
+	for (auto& c : connected_clients) {
+		if (c == client) {
+			c->set_name(name); // クライアントのIDを更新
 			return;
 		}
 	}
@@ -290,9 +290,9 @@ void ClientHandler::set_client_mail_addr(const std::shared_ptr<Client>& client, 
 		
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);
 
-	for (auto& client : connected_clients) {
-		if (client == client) {
-			client->set_mail_address(mail_addr); // クライアントのIDを更新
+	for (auto& c : connected_clients) {
+		if (c == client) {
+			c->set_mail_address(mail_addr); // クライアントのIDを更新
 			return;
 		}
 	}
@@ -306,9 +306,9 @@ void ClientHandler::set_client_password(const std::shared_ptr<Client>& client, c
 
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);
 
-	for (auto& client : connected_clients) {
-		if (client == client) {
-			client->set_password(password); // クライアントのIDを更新
+	for (auto& c : connected_clients) {
+		if (c == client) {
+			c->set_password(password); // クライアントのIDを更新
 			return;
 		}
 	}

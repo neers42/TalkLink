@@ -255,7 +255,7 @@ void ChatServerFacade::message_handle_process(const SOCKET socket)
 			}
 			this->_protocol_handler->print_received_message_info(mt004, mt004->get_message_id(), mt004->get_sender_id(), mt004->get_receiver_id(), client->get_ipv4_address(), client->get_socket());
 			this->_protocol_handler->print_json_message(receive_json);
-			this->mt004_process(mt004, client);
+			this->mt004_process(mt004);
 			this->mt104_process(mt004, client);
 		}
 
@@ -559,7 +559,7 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003>& mt00
 
 
 
-void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt004, std::shared_ptr<Client> client)
+void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt004)
 {
 	std::vector<SOCKET> send_sockets;
 	std::vector<std::string> receive_clients;
@@ -608,7 +608,7 @@ void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt00
 }
 
 void ChatServerFacade::mt101_process(
-	std::shared_ptr<Client> client, 
+	std::shared_ptr<Client>& client, 
 	const std::string& error_msg, 
 	const bool login_result, 
 	const bool recv_flag)
@@ -714,7 +714,7 @@ std::vector<MessageType103A::ClientInfo> ChatServerFacade::generate_client_infos
 	return client_infos;
 }
 
-void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004>& mt004, std::shared_ptr<Client> client)
+void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004>& mt004, const std::shared_ptr<Client>& client)
 {
 	std::vector<std::string> unsend_cids;
 	unsend_cids = this->mt104A_process(mt004);
@@ -861,7 +861,11 @@ std::vector<std::string> ChatServerFacade::mt104A_process(const std::unique_ptr<
 	return unsend_cids;
 }
 
-void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004>& mt004, const std::vector<std::string>& unsend_cids, std::shared_ptr<Client> client)
+void ChatServerFacade::mt104B_process(
+	const std::unique_ptr<MessageType004>& mt004, 
+	const std::vector<std::string>& unsend_cids,
+	const std::shared_ptr<Client>& client
+)
 {
 	//mt104Bを生成
 	std::string message_type = "104B";
