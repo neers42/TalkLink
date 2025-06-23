@@ -304,10 +304,8 @@ void SocketHandler::setting_select_info_to_listen_socket()
 {
 	FD_ZERO(&this->_fd_read);
 	FD_SET(this->_tcp_listen_socket, &this->_fd_read);
-	this->_timeout.tv_sec = 0; //タイムアウト秒数
-	this->_timeout.tv_usec = 500 * 1000; //タイムアウトマイクロ秒数(500ms)
-	
-
+	this->_timeout.tv_sec = 0; //タイムアウト秒数を0に設定
+	this->_timeout.tv_usec = 500 * 1000; //タイムアウトマイクロ秒数を500000に設定(0.5秒)
 }
 
 
@@ -1068,6 +1066,10 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 {
 	try
 	{
+		if (client_socket == INVALID_SOCKET) {
+			throw std::runtime_error("The client socket is invalid. The socket may already be closed.");
+		}
+		shutdown(client_socket, SD_BOTH);
 		int close_socket_result = closesocket(client_socket);
 		if (close_socket_result == SOCKET_ERROR) {
 			switch (WSAGetLastError())
@@ -1101,7 +1103,7 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 			}
 		}
 		else {
-			spdlog::info("client socket({:d}) is closed.", client_socket);
+			spdlog::debug("client socket({:d}) is closed.", client_socket);
 		}
 
 	}

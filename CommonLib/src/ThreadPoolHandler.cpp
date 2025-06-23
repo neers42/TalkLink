@@ -5,7 +5,7 @@ ThreadPoolHandler::ThreadPoolHandler(size_t threads) : stop(false)
     for (size_t i = 0; i < threads; ++i) {
         workers.emplace_back([this] {process_task(); });
     }
-	spdlog::debug("thread, success, server replicating threads:{:d}.", threads);
+	spdlog::debug("server replicating threads:{:d}.", threads);
 
 }
 
@@ -42,18 +42,5 @@ void ThreadPoolHandler::process_task()
     }
 }
 
-void ThreadPoolHandler::monitor_worker()
-{
-	spdlog::debug("monitoring tasks.");
-    while (true) {
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex);
-            if (!tasks.empty()) {
-                condition.notify_one();
-            }
-        }
-        
-    }
-}
 
 

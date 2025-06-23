@@ -1,92 +1,13 @@
 ﻿#include "ClientHandler.h"
-
-ClientHandler::Client::Client():id{""}
-							, name{""}
-							, mail_address{""}
-							, socket{INVALID_SOCKET}
-							, ipv4_address{""}
-							, password{""}
-							, heart_beat_count{0}
-{
-	this -> sockaddr_in.sin_family = AF_INET;
-	this->sockaddr_in.sin_port = 0;
-	this->sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
-}
-
-ClientHandler::Client::Client(const std::string id, const std::string name, const std::string mail_addr, const SOCKET socket, const struct sockaddr_in sockaddr_in, const std::string client_ipv4_addr, WOLFSSL* ssl)
-	:id{id},
-	name{name},
-	mail_address{mail_addr},
-	socket{socket},
-	sockaddr_in{sockaddr_in},
-	firebase_auth{nullptr},
-	ipv4_address{client_ipv4_addr},
-	heart_beat_count{ 0 },
-	ssl{ssl}
+ClientHandler::ClientHandler() :connect_client_num{ 0 }
 {
 
 }
 
-ClientHandler::Client::Client(const SOCKET socket, const struct sockaddr_in sockaddr_in, const socklen_t length, std::string& ipv4_addr, WOLFSSL* ssl)
-	:id{ "" },
-	name{ "" },
-	mail_address{ "" },
-	socket{ socket },
-	sockaddr_in{ sockaddr_in },
-	firebase_auth{nullptr},
-	ipv4_address{ ipv4_addr },
-	heart_beat_count{ 0 },
-	ssl{ssl}
-{
-}
-
-ClientHandler::Client::~Client()
+ClientHandler::~ClientHandler()
 {
 
 }
-
-
-
-
-void ClientHandler::Client::incliment_heart_beat_count()
-{
-	this->heart_beat_count++;
-}
-
-void ClientHandler::Client::clear_heart_beat_count()
-{
-	this->heart_beat_count = 0;
-}
-
-void ClientHandler::Client::change_auth_status()
-{
-	if (auth_status == true) {
-		auth_status = false;
-	}
-	else {
-		auth_status = true;
-	}
-}
-
-bool ClientHandler::Client::operator==(const Client& other_client) const
-{
-	return this->id == other_client.id;
-}
-
-ClientHandler::Client& ClientHandler::Client::operator=(const Client& other_client)
-{
-	id = other_client.id;
-	name = other_client.name;
-	mail_address = other_client.mail_address;
-	socket = other_client.socket;
-	sockaddr_in = other_client.sockaddr_in;
-	socket_address_in_length = other_client.socket_address_in_length;
-	ipv4_address = other_client.ipv4_address;
-	password = other_client.password;
-	return *this;
-}
-
-
 std::string ClientHandler::generate_client_id()
 {
 	UUID uuid;
@@ -149,126 +70,284 @@ std::string ClientHandler::generate_client_id()
 	return converted_uuid_str;
 }
 
-ClientHandler::ClientHandler() :connect_client_num{0}
+std::vector<std::shared_ptr<Client>>::iterator ClientHandler::find_client(const std::shared_ptr<Client>& client)
 {
-	
-}
-
-ClientHandler::~ClientHandler()
-{
-
-}
-
-bool ClientHandler::add_client(std::shared_ptr<Client> client)
-{
-	try
-	{
-		if (this->connected_clients.size() >= MAX_CONNECT_NUM) {
-			THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	for (auto it = this->connected_clients.begin(); it != this->connected_clients.end(); ++it) {
+		if ((*it) == client) { // 修正: ポインタの中身を比較
+			return it; // クライアントが見つかった場合、そのイテレータを返す
 		}
 	}
-	catch (const exception::ExceptionBase& ex)
-	{
-		LOG_ERROR(ex.what_for_str());
-		return false;
-	}
+	return this->connected_clients.end(); // クライアントが見つからなかった場合、endイテレータを返す
+}
 
-	this->connected_clients.push_back(std::move(client));
-	this->connect_client_num++;
-	return true;
+
+
+bool ClientHandler::add_client(std::shared_ptr<Client> client)  
+{  
+    std::unique_lock<std::shared_mutex> lock(shared_mtx);  
+    try  
+    {  
+        if (this->connected_clients.size() >= MAX_CONNECT_NUM) {  
+            THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");  
+        }  
+		this->connected_clients.push_back(std::move(client));
+		return true;  
+    }  
+    catch (const exception::ExceptionBase& ex)  
+    {  
+        LOG_ERROR(ex.what_for_str());  
+        return false;  
+    }  
 }
 
 
 void ClientHandler::delete_client(const uint32_t delete_num)
 {
-	if (!this->connected_clients.empty() && delete_num >= 0 && delete_num < this->connected_clients.size()) {
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	if (!this->connected_clients.empty() && delete_num >= 0 && delete_num < this->get_connect_clients_num() ){
 		auto it = this->connected_clients.begin() + delete_num;
 		this->connected_clients.erase(it);
 	}
 	else {
 		LOG_ERROR("Invalid delete_num: {:d}", delete_num);
 	}
-	this->connect_client_num--;
 }
 
 void ClientHandler::delete_client(std::vector<std::shared_ptr<Client>>::iterator it)
 {
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
 	if (this->connected_clients.empty() == true) {
 		LOG_ERROR("Client list is empty.");
 		return;
 	}
 	else {
 		this->connected_clients.erase(it);
-		this->connect_client_num--;
 	}
 }
 
-int ClientHandler::check_next_invalid_socket()
+void ClientHandler::delete_client(const std::shared_ptr<Client> client)
 {
-	for (int n_invalid_socket = 0; n_invalid_socket < MAX_CONNECT_NUM; n_invalid_socket++) {
-
-		if (this->connected_clients[n_invalid_socket]->socket == INVALID_SOCKET)
-			return n_invalid_socket;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	if (this->connected_clients.empty() == true) {
+		LOG_ERROR("Client list is empty.");
+		return;
 	}
-	return -1;
+	else {
+		auto it = std::find(this->connected_clients.begin(), this->connected_clients.end(), client);
+		if (it != this->connected_clients.end()) {
+			spdlog::info("Deleted Client(ID : {}).", client->get_id());
+			this->connected_clients.erase(it);
+		}
+		else {
+			LOG_ERROR("Client not found in connected_clients.");
+		}
+	}
 }
 
-void ClientHandler::delete_client_hbsock_from_hb_list(const std::uint32_t delete_num)
+
+
+bool ClientHandler::get_client_auth_status(const int index)
 {
-	this->heart_beat_list.erase(this->heart_beat_list.begin() + delete_num);
+	LOG_TRACE;
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	return this->connected_clients[index]->get_auth_status();
 }
 
-bool ClientHandler::get_client_auth_status(const int client_num)
-{
-	return this->connected_clients[client_num]->auth_status;
-}
 
-
-void ClientHandler::change_client_auth_status(std::shared_ptr<Client>& client)
+void ClientHandler::change_client_auth_status(std::shared_ptr<Client> client)
 {
+
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
 	client->change_auth_status();
+
+	//auto it = this->find_client(client);
+	//if (it != connected_clients.end()) {
+	//	(*it)->change_auth_status();
+	//}
+	//else {
+	//	LOG_ERROR("Client not found. Cannot change auth status.");
+	//}
+}
+
+std::shared_ptr < Client > ClientHandler::get_client_by_index(const uint32_t index)
+{
+	LOG_TRACE;
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	if (index < connected_clients.size()) {
+		return connected_clients[index];
+	}
+	return nullptr;
+}
+
+std::shared_ptr<Client>& ClientHandler::get_client_ref_by_index(const uint32_t index)
+{
+	LOG_TRACE;
+	std::shared_ptr<Client> dummy_ptr = nullptr;
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	if (index < connected_clients.size()) {
+		return connected_clients[index];
+	}
+	return dummy_ptr;
+}
+
+std::shared_ptr<Client> ClientHandler::get_client_by_socket(const SOCKET& socket)
+{
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	for (const auto& client : connected_clients) {
+		if (client != nullptr && client->get_socket() == socket) {
+			return client;
+		}
+	}
+	return nullptr; // 見つからなかった場合
+}
+
+
+std::vector<std::shared_ptr<Client>> ClientHandler::get_connected_clients_snapshot()
+{
+	LOG_TRACE;
+	{
+		std::shared_lock<std::shared_mutex> lock(shared_mtx);
+		return this->connected_clients; // 共有ロックを使用してコピーを取得
+	}
+	
+}
+
+WOLFSSL* ClientHandler::get_client_ssl(const int index)
+{
+	LOG_TRACE;
+	WOLFSSL* copy_ssl = nullptr;
+	{
+		std::shared_lock<std::shared_mutex> lock(shared_mtx);
+		return this->connected_clients[index]->get_ssl();
+
+	}
+	
 }
 
 void ClientHandler::set_client_id(std::string id, uint32_t list_num)
 {
-	this->connected_clients[list_num]->id = id;
+	LOG_TRACE;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	this->connected_clients[list_num]->set_id(id);
 }
+
+void ClientHandler::set_client_id(const std::shared_ptr<Client>& client, const std::string& id)
+{
+	LOG_TRACE;
+		
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+
+	for (auto& c : connected_clients) {
+		if (c == client) {
+			c->set_id(id); // クライアントのIDを更新
+			return;
+		}
+	}
+
+	LOG_ERROR("Failed to set Client ID. Client not found in the list.");
+	
+}
+
 
 void ClientHandler::set_client_name(std::string name, uint32_t list_num)
 {
-	this->connected_clients[list_num]->name = name;
+	LOG_TRACE;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	this->connected_clients[list_num]->set_name(name);
+}
+
+void ClientHandler::set_client_name(const std::shared_ptr<Client>& client, const std::string& name)
+{	
+	LOG_TRACE;
+
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+
+	for (auto& c : connected_clients) {
+		if (c == client) {
+			c->set_name(name); // クライアントのIDを更新
+			return;
+		}
+	}
+		
 }
 
 void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
 {
-	this->connected_clients[list_num]->mail_address = mail_addr;
+	LOG_TRACE;
+	
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	this->connected_clients[list_num]->set_mail_address(mail_addr);
 }
+
+void ClientHandler::set_client_mail_addr(const std::shared_ptr<Client>& client, const std::string& mail_addr)
+{
+	LOG_TRACE;
+		
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+
+	for (auto& c : connected_clients) {
+		if (c == client) {
+			c->set_mail_address(mail_addr); // クライアントのIDを更新
+			return;
+		}
+	}
+	
+}
+
+void ClientHandler::set_client_password(const std::shared_ptr<Client>& client, const std::string& password)
+{
+
+	LOG_TRACE;
+
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+
+	for (auto& c : connected_clients) {
+		if (c == client) {
+			c->set_password(password); // クライアントのIDを更新
+			return;
+		}
+	}
+	
+}
+
 
 void ClientHandler::set_clietn_socket(SOCKET socket, uint32_t list_num)
 {
-	this->connected_clients[list_num]->socket = socket;
+	LOG_TRACE;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	this->connected_clients[list_num]->set_socket(socket);
 }
 
 void ClientHandler::set_client_sockaddr_in(sockaddr_in sock_in, uint32_t list_num)
 {
-	this->connected_clients[list_num]->sockaddr_in = sock_in;
-}
-
-void ClientHandler::set_socket_addr_in_length(socklen_t length, uint32_t list_num)
-{
-	this->connected_clients[list_num]->socket_address_in_length = length;
+	LOG_TRACE;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	this->connected_clients[list_num]->set_sockaddr_in(sock_in);
 }
 
 void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num)
 {
-	this->connected_clients[list_num]->ipv4_address = ipv4_addr;
+	LOG_TRACE;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	this->connected_clients[list_num]->set_ipv4_address(ipv4_addr);
 }
 
 int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 {
+	LOG_TRACE;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 
-		if (this->connected_clients[search_result]->id == search_client_id) {
+		if (this->connected_clients[search_result]->get_id() == search_client_id) {
 			return search_result;
 		}
 	}
@@ -278,8 +357,11 @@ int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 
 int ClientHandler::search_socket_from_clients(const SOCKET& search_socket)
 {
+	LOG_TRACE;
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
-		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->socket == search_socket) {
+		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->get_socket() == search_socket) {
 			return search_result;
 		}
 	}
@@ -288,9 +370,12 @@ int ClientHandler::search_socket_from_clients(const SOCKET& search_socket)
 
 WOLFSSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
 {
+	LOG_TRACE;
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
-		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->id == cid) {
-			return this->connected_clients[search_result]->ssl;
+		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->get_id() == cid) {
+			return this->connected_clients[search_result]->get_ssl();
 		}
 	}
 	return nullptr;
@@ -298,63 +383,90 @@ WOLFSSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
 
 void ClientHandler::show_client_info(const std::shared_ptr<Client>& client)
 {
-	spdlog::debug("Client  ID : {:s}", client->id);
-	spdlog::debug("Client  Name : {:s}", client->name);
-	spdlog::debug("Client  Mail : {:s}", client->mail_address);
-	spdlog::debug("Client  Password : {:s}", client->password);
+	LOG_TRACE;
+	if (client == nullptr) {
+		spdlog::error("Client is null. Cannot show client info.");
+		return;
+	}
+	spdlog::debug("Client  ID : {:s}", client->get_id());
+	spdlog::debug("Client  Name : {:s}", client->get_name());
+	spdlog::debug("Client  Mail : {:s}", client->get_mail_address());
+	spdlog::debug("Client  Password : {:s}", client->get_password());
 }
 
 std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients)
 {
+	LOG_TRACE;
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	std::vector<WOLFSSL*> client_ssl_list;
 	for (const auto& client : clients) {
-		if (client != nullptr && client->ssl != nullptr) {
-			client_ssl_list.push_back(client->ssl);
+		if (client != nullptr && client->get_ssl() != nullptr) {
+			client_ssl_list.push_back(client->get_ssl());
 		}
 	}
 	return client_ssl_list;
 }
 
-std::shared_ptr<ClientHandler:: Client>& ClientHandler::get_client_by_cid(const std::string& cid)
+std::shared_ptr<Client> ClientHandler::get_client_by_cid(const std::string& cid)
 {
-	return this->connected_clients.at(this->search_cid_from_clients(cid));
-}
-
-
-
-std::vector<std::shared_ptr<ClientHandler::Client>>& ClientHandler::get_connected_client_list()
-{
-	return this->connected_clients;
-}
-
-const std::vector<std::shared_ptr<ClientHandler::Client>>& ClientHandler::get_connected_client_list() const
-{
-	return this->connected_clients;
-}
-
-const std::vector<SOCKET> ClientHandler::get_all_connected_sockets() const
-{
-	std::vector<SOCKET> socket_list;
-	{
-		std::mutex mutex;
-		std::unique_lock<std::mutex> lock(mutex);
-		for (const auto& client : connected_clients) {
-			if (client != nullptr && client->socket != INVALID_SOCKET) {
-				socket_list.push_back(client->socket);
-			}
+	LOG_TRACE;	
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	for (auto& client : connected_clients) {
+		if (client != nullptr && client->get_id() == cid) {
+			return client;
 		}
 	}
-	
-	return socket_list;
+	LOG_ERROR("Client with ID {:s} not found.", cid);
+	return nullptr; // クライアントが見つからない場合はnullptrを返す
 }
 
-ClientHandler::Client ClientHandler::get_init_client()
+
+
+
+size_t ClientHandler::get_connect_clients_num() const
 {
-	return this->init_client;
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	return this->connected_clients.size();
 }
 
-const ClientHandler::Client ClientHandler::get_init_client() const
+std::vector<std::shared_ptr<Client>>& ClientHandler::get_connected_client_list()
 {
+	LOG_TRACE;
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	return this->connected_clients;
+}
+
+const std::vector<std::shared_ptr<Client>>& ClientHandler::get_connected_client_list() const
+{
+	LOG_TRACE;
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	return this->connected_clients;
+}
+
+const std::vector<SOCKET> ClientHandler::get_all_connected_sockets() const  
+{  
+	LOG_TRACE;
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    std::vector<SOCKET> socket_list;  
+    for (const auto& client : connected_clients) {  
+        if (client != nullptr && client->get_socket() != INVALID_SOCKET) {
+            socket_list.push_back(client->get_socket());
+        }  
+    }  
+
+    return socket_list;  
+}
+
+const Client& ClientHandler::get_init_client()
+{
+	return init_client;
+}
+
+const Client& ClientHandler::get_init_client() const
+{
+	LOG_TRACE;
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	return this->init_client;
 }
 
@@ -363,17 +475,29 @@ const ClientHandler::Client ClientHandler::get_init_client() const
 
 void ClientHandler::incliment_heart_beat_count(std::shared_ptr<Client>& client)
 {
+	LOG_TRACE;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	client->incliment_heart_beat_count();
 }
 
 void ClientHandler::clear_heart_beat_count(uint32_t list_num)
 {
+	LOG_TRACE;
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	//std::unique_lock<std::mutex> lock(this->mtx);
+	if(list_num < 0 || list_num >= this->connected_clients.size()) {
+		LOG_ERROR("Invalid list_num: {:d}", list_num);
+		return;
+	}
 	this->connected_clients[list_num]->clear_heart_beat_count();
 }
 
 void ClientHandler::all_clear_heart_beat_count()
 {
-	for (auto& client : this->connected_clients) {
+	LOG_TRACE;
+	auto snap_shot = this->get_connected_clients_snapshot();
+	for (auto& client : snap_shot) {
 		if (client != nullptr) {
 			client->clear_heart_beat_count();
 		}

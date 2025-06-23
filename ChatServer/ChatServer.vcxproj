@@ -155,6 +155,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Chat\ChatRoom.cpp" />
+    <ClCompile Include="src\Chat\Client.cpp" />
     <ClCompile Include="src\Network\MessageType103B.cpp" />
     <ClCompile Include="src\Network\MessageType102.cpp" />
     <ClCompile Include="src\Network\MessageType002.cpp" />
@@ -179,6 +181,8 @@
     <ClCompile Include="src\ChatServerFacade.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Chat\ChatRoom.h" />
+    <ClInclude Include="include\Chat\Client.h" />
     <ClInclude Include="include\Database\hiredis\alloc.h" />
     <ClInclude Include="include\Database\hiredis\async.h" />
     <ClInclude Include="include\Database\hiredis\async_private.h" />

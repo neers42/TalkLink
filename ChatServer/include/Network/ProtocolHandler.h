@@ -3,6 +3,7 @@
 #define SERVER_CERT_FILE_PASS ".//////certs/server-cert.pem"
 #define SERVER_PRIVATEKEY_FILE_PASS ".//////certs/server-key.pem"
 #include <sstream>
+#include <shared_mutex>
 #include "common.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"
@@ -22,6 +23,8 @@
 #include "ulid/ulid_struct.hh"
 #include "spdlog/spdlog.h"
 #include "MessageIDGenerator.h"
+#include "Client.h"
+//#include "Chat/ClientHandler.h" // 修正: ヘッダーファイルの拡張子を修正
 
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
@@ -36,6 +39,10 @@ private:
 	WOLFSSL* _server_w_ssl = NULL;
 	WOLFSSL_CTX* _server_w_ctx = NULL;
 	//std::unique_ptr<MessageIDGenerator> _message_id_generator;
+	
+
+public:
+	std::shared_mutex ssl_shared_mtx;
 
 public:
 	//コンストラクタ
@@ -61,12 +68,13 @@ public:
 
 	//wolfSSLのシャットダウン
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
+	void shutdown_wolfssl(std::shared_ptr<Client> client);
 	
 	//メッセージの受信
-	std::tuple<json, bool> receive_message_tls(WOLFSSL* client_ssl);
-
+	std::tuple<json, bool, bool> receive_message_tls(std::shared_ptr<Client> client);
+    
 	//メッセージの送信
-	bool send_message_tls(WOLFSSL* client_ssl, json message);
+	bool send_message_tls(std::shared_ptr<Client> client, json message);
 
 	//TLSのバージョンを取得
 	const std::string get_tls_version(const WOLFSSL* ssl);
@@ -80,6 +88,10 @@ public:
 	static void wolfssl_log_callback(const int log_level, const char* log_message);
 
 	void print_json_message(const json& json_message) {
+		if (json_message.is_null() || json_message.empty()) {
+			LOG_ERROR("Invalid JSON object.");
+			return;
+		}
 		spdlog::debug("Receive JSON DATA :\n{:s}", json_message.dump(4));
 	}
 	

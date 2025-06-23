@@ -13,7 +13,7 @@ MessageType101::~MessageType101()
 {
 }
 
-json MessageType101::desirialize_message(const std::unique_ptr<MessageType101>& mt101, const json& unsend_messages, const std::string& error_message)
+json MessageType101::deserialize_message(const std::unique_ptr<MessageType101>& mt101, const json& unsend_messages, const std::string& error_message)
 {
 	json mt101_json;
 

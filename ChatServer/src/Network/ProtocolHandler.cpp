@@ -64,7 +64,6 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 	//クライアントのSSL生成が正常に処理されなかった場合
 	if (new_client_ssl == NULL) {
 		LOG_ERROR("new client ssl object creation failed.");
-		//spdlog::error("new client ssl object creation failed.");
 		wolfSSL_free(new_client_ssl);
 	}
 	//クライアントのSSL生成が正常に処理された場合
@@ -105,109 +104,153 @@ void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
 	wolfSSL_free(client_ssl);
 
 }
-std::tuple<json, bool> ProtocolHandler::receive_message_tls(WOLFSSL* client_ssl)
+
+void ProtocolHandler::shutdown_wolfssl(std::shared_ptr<Client> client)
+{
+	std::unique_lock<std::mutex> client_lock(client->mtx);
+	WOLFSSL* client_ssl = client->get_ssl();
+	if (client_ssl == nullptr) {
+		LOG_ERROR("SSL is not initialized, cannot shutdown SSL connection.");
+		return;
+	}
+	int ret = wolfSSL_shutdown(client_ssl);
+	if (ret == WOLFSSL_SUCCESS) {
+		spdlog::debug("wolfSSL shutdown success.");
+	}
+	else
+	{
+		this->print_wolfssl_error(client_ssl);
+		return;
+	}
+	wolfSSL_free(client_ssl);
+	client->set_ssl(nullptr);
+
+}
+
+std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_ptr<Client> client)
 {
 	json recv_msg_json;
 	char buffer[MESSAGE_SIZE];
 	int message_size = 0;
 	std::vector<uint8_t> message_buffer;
-	bool disconnect_flag = false;
+	bool disconnect_flag = false;	//接続断の判定フラグ
+	bool recv_flag = false;	//受信完了の判定フラグ
+	int bytes_read = 0;
+
+		// Clientのshared_mtxをshared_lockでロック
+	std::unique_lock<std::mutex> client_lock(client->mtx);
+	WOLFSSL* ssl = client->get_ssl();
+	if (ssl == nullptr || wolfSSL_is_init_finished(ssl) == false) {
+		LOG_ERROR("SSL is not initialized, cannot send message.");
+		disconnect_flag = true;
+		return std::make_tuple(json(), disconnect_flag, recv_flag);
+	}
+
 	while (true)
 	{
-		int bytes_read = wolfSSL_read(client_ssl, buffer, sizeof(buffer));
+		{
+			//std::unique_lock<std::shared_mutex> lock(this->ssl_shared_mtx);
+			bytes_read = wolfSSL_read(ssl, buffer, sizeof(buffer));
+		}
+
 		message_size += bytes_read;
 		//受信したバイト数が0より大きい場合msgの解析を実施する。
 		if (bytes_read > 0) {
 			//メッセージバッファーのvector行列に受信したbufferのmsg分を追加
-			message_buffer.insert(message_buffer.end(), buffer, buffer+bytes_read);
+			message_buffer.insert(message_buffer.end(), buffer, buffer + bytes_read);
 			try
 			{
 				//jsonメッセージの解析
 				recv_msg_json = json::from_msgpack(message_buffer);
 				//完全なメッセージが解析された場合は中身を表示
 				spdlog::debug("message receive success, received message size : {:d}.", bytes_read);
-				//LogHandler::get_instance().logging_debug(StringFormat("message receive success, received message size : %d.", bytes_read));
 			}
 			catch (const json::parse_error& e)
 			{
 				//jsonが完全ではない場合、再度受信を繰り返す
 				continue;
 			}
-
-			return std::make_tuple(recv_msg_json, disconnect_flag);
+			recv_flag = true;
+			return std::make_tuple(recv_msg_json, disconnect_flag, recv_flag);
 			break;
 		}
 		//受信したバイト数が0の場合はクライアントを切断する処理に移行する
-		else if(bytes_read == 0){
+		else if (bytes_read == 0) {
 			disconnect_flag = true;
-			return std::make_tuple(json(), disconnect_flag);
+			return std::make_tuple(json(), disconnect_flag, recv_flag);
 			break;
 		}
 		//上記の判定以外の場合の処理
 		else
 		{
-			int recv_error = wolfSSL_get_error(client_ssl, bytes_read);
+			int recv_error = wolfSSL_get_error(client->get_ssl(), bytes_read);
 			if (recv_error == WOLFSSL_ERROR_WANT_READ || recv_error == WOLFSSL_ERROR_WANT_WRITE) {
 				continue;
 			}
 			//0がリターンされてきた場合の処理について
 			else if (recv_error == WOLFSSL_ERROR_ZERO_RETURN) {
 				disconnect_flag = true;
-				return std::make_tuple(json(), disconnect_flag);
+				return std::make_tuple(json(), disconnect_flag, recv_flag);
 				break;
 			}
 			//システムコール関連のエラーが発生した場合
 			else if (recv_error == WOLFSSL_ERROR_SYSCALL) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
 					LOG_ERROR("message receive failed, wolfSSL read timeout occured.");
-					//spdlog::error("message receive failed, wolfSSL read timeout occured.");
+					break;
 				}
 				else {
 					LOG_ERROR("message receive failed, wolfSSL read syscall error occured.");
-					//spdlog::error("message receive failed, wolfSSL read syscall error occured.");
+					break;
 				}
 			}
 			//それ以外の理由
 			else {
-				LOG_ERROR("message receive failed.");
-				//spdlog::error("message receive failed.");
+				LOG_ERROR("message receive failed. error code : {}", recv_error);
 			}
-			return std::make_tuple(json(), disconnect_flag);
+			return std::make_tuple(json(), disconnect_flag, recv_flag);
 
 		}
 	}
-
 }
 
-bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
+
+bool ProtocolHandler::send_message_tls(std::shared_ptr<Client> client, json message)
 {
 	std::vector<uint8_t> message_buffer = json::to_msgpack(message);
 	size_t message_size = message_buffer.size();
 	size_t total_sent = 0;
 	size_t chunk_size = 16384;  // 最大TLSレコードサイズ
 	int ret = 0;
+
 	std::string mt = message["message_type"];
+
+	std::unique_lock<std::mutex> client_lock(client->mtx);
+	WOLFSSL* ssl = client->get_ssl();
+	if (ssl == nullptr || wolfSSL_is_init_finished(ssl) == false) {
+		LOG_ERROR("SSL is not initialized, cannot send message.");
+		return false;
+	}
 	while (total_sent < message_size) {
 		size_t to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
-		ret = wolfSSL_write(client_ssl, message_buffer.data() + total_sent, static_cast<int>(to_send));
+		ret = wolfSSL_write(client->get_ssl(), message_buffer.data() + total_sent, static_cast<int>(to_send));
 		if (ret > 0) {
 			total_sent += ret;
 			continue;
 		}
 		// エラー発生時
-		int err = wolfSSL_get_error(client_ssl, ret);
+		int err = wolfSSL_get_error(client->get_ssl(), ret);
 		if (err == WOLFSSL_ERROR_WANT_WRITE || err == WOLFSSL_ERROR_WANT_READ) {
 			// 一時的なエラー、リトライ
-			this->print_wolfssl_error(client_ssl);
+			this->print_wolfssl_error(client->get_ssl());
 			spdlog::info("Temporary error (WANT_WRITE/WANT_READ), retrying...");
 			continue;
 		}
 		else {
 			// 致命的なエラー
-			this->print_wolfssl_error(client_ssl);
+			this->print_wolfssl_error(client->get_ssl());
 			LOG_ERROR("wolfSSL_write failed: {:d}", err);
-			//spdlog::error("wolfSSL_write failed: {:d}", err);
-			wolfSSL_shutdown(client_ssl);
+			wolfSSL_shutdown(client->get_ssl());
 			return false;
 		}
 	}
@@ -219,6 +262,8 @@ bool ProtocolHandler::send_message_tls(WOLFSSL* client_ssl, json message)
 	}
 	return true;
 }
+
+
 
 const std::string ProtocolHandler::get_tls_version(const WOLFSSL* ssl)
 {
@@ -245,9 +290,6 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 		//spdlog::error("SSL object is null.");
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
-
-	///////////////////////
-
 
 	WOLFSSL_X509* server_cert = wolfSSL_get_peer_certificate(ssl);
 	if (!server_cert) {
@@ -354,7 +396,7 @@ void ProtocolHandler::print_wolfssl_error(WOLFSSL* client_ssl)
 	err = wolfSSL_get_error(client_ssl, 0);
 	wolfSSL_ERR_error_string(err, buffer);
 	//spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d})", std::string(buffer), err);
-	LOG_ERROR("wolfSSL, failed, error content : {:s} (code : {:d}.)", std::string(buffer), err);
+	LOG_ERROR("wolfSSL error content : {:s} (code : {:d}.)", std::string(buffer), err);
 }
 
 void ProtocolHandler::initialize_wolfssl()

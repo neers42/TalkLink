@@ -7,11 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <functional>
-#include "StringFormat.h"
-#include "ServerTime.h"
-#include "AppException.h"
 #include <string>
-//#include "common.h"
 #include "LogHandler.h"
 #include "spdlog/spdlog.h"
 
@@ -56,20 +52,16 @@ public:
 
 			}
 		}
-		catch (const std::runtime_error& re_ex)
+		catch (const std::runtime_error& e)
 		{
-			THROW_APP_EXCEPTION(StringFormat("%s", re_ex.what()));
+			LOG_ERROR("ThreadPoolHandler::enqueue_task: %s", e.what());
 		}
 		
-		catch (const exception::ExceptionBase& ex) {
-			LogHandler::logging(LogHandler::LogType::SERVER_ERROR, std::cerr, StringFormat("%s", ex.what_for_str()));
-		}
 
 		//新しいタスクが追加されたことをスレッドに通知する
 		condition.notify_one();
 	}
 
-	void monitor_worker();
 
 };
 
