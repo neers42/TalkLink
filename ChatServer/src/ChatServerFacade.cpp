@@ -695,8 +695,81 @@ std::vector<std::string> ChatServerFacade::mt103A_process(const std::unique_ptr<
 	return unsend_cids;
 }
 
-void ChatServerFacade::mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids)
+void ChatServerFacade::mt103B_process(
+	const std::unique_ptr<MessageType003>& mt003, 
+	const std::vector<std::string>& unsend_cids,
+	const std::shared_ptr<Client>& client)
 {
+	std::string message_type = "103B";
+	MessageType103B::MessageSendStatus send_status;
+	std::string send_room_id = mt003->get_room_id();
+	//送り先のclientの情報を取得する
+	auto receivers_infos = this->_chat_room_handler->get_client_infos_by_chatroom_id(send_room_id);
+	//ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できない場合
+	if (receivers_infos.size() == 0) {
+		//データベースからチャットルームに参加しているcidのリストを抽出
+		auto client_list = this->_mysql_client->get_client_list_from_chatroom(send_room_id);
+		if (client_list.size() == 0 && unsend_cids.size() == 0) {
+			//LOG_ERROR("The Chatroom ID was not found in the database.");
+			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
+
+		}
+		else if (client_list.size() != 1 && client_list.size() - 1 == unsend_cids.size()) {
+			//全てのクライアントにメッセージが送信できなかった場合
+			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
+		}
+		else if (client_list.size() > 0 && unsend_cids.size() == 0) {
+			//クライアントにメッセージが送信できた場合
+			send_status = MessageType103B::MessageSendStatus::SEND_SUCCESS;
+		}
+
+		else {		//一部のクライアントにメッセージが送信できなかった場合
+			send_status = MessageType103B::MessageSendStatus::SEND_PARTICAL_SUCCESS;
+		}
+
+	}
+	else {
+		if (receivers_infos.size() == 0 && unsend_cids.size() == 0) {
+			//全てのクライアントにメッセージが送信できなかった場合
+			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
+		}
+		else if (receivers_infos.size() - 1 == unsend_cids.size()) {
+			//全てのクライアントにメッセージが送信できなかった場合
+			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
+		}
+		else if (receivers_infos.size() > 0 && unsend_cids.size() == 0) {
+			//クライアントにメッセージが送信できた場合
+			send_status = MessageType103B::MessageSendStatus::SEND_SUCCESS;
+		}
+		else {		//一部のクライアントにメッセージが送信できなかった場合
+			send_status = MessageType103B::MessageSendStatus::SEND_PARTICAL_SUCCESS;
+
+		}
+	}
+	auto mt103B = std::make_unique<MessageType103B>(
+		0,
+		message_type,
+		send_status,
+		send_room_id,
+		mt003->get_message_id(),
+		unsend_cids
+	);
+	try
+	{
+		//mt104Bをデシリアライズする
+		json mt103B_json = MessageType103B::deserialize_message(mt103B);
+		if (this->_protocol_handler->send_message_tls(client, mt103B_json)) {
+			spdlog::info("The MT103B message was successfully sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
+		}
+		else {
+			LOG_ERROR("The MT103B message was not sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
+		}
+	}
+	catch (const std::out_of_range& e)
+	{
+		// エラーハンドリング
+		LOG_ERROR("Sender ID not found. exception content: {}", e.what());
+	}
 }
 
 std::vector<MessageType103A::ClientInfo> ChatServerFacade::generate_client_infos(const std::vector<std::string>& cids)
@@ -872,11 +945,11 @@ void ChatServerFacade::mt104B_process(
 	MessageType104B::MessageSendStatus send_status;
 	std::string send_room_id = mt004->get_room_id();
 	//送り先のclientの情報を取得する
-	auto receivers_infos = this->_chat_room_handler->get_client_infos_by_chatroom_id(mt004->get_room_id());
+	auto receivers_infos = this->_chat_room_handler->get_client_infos_by_chatroom_id(send_room_id);
 	//ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できない場合
 	if (receivers_infos.size() == 0) {
 		//データベースからチャットルームに参加しているcidのリストを抽出
-		auto client_list = this->_mysql_client->get_client_list_from_chatroom(mt004->get_room_id());
+		auto client_list = this->_mysql_client->get_client_list_from_chatroom(send_room_id);
 		if (client_list.size() == 0 && unsend_cids.size() == 0) {
 			//LOG_ERROR("The Chatroom ID was not found in the database.");
 			send_status = MessageType104B::MessageSendStatus::SEND_FAILED;
@@ -914,32 +987,30 @@ void ChatServerFacade::mt104B_process(
 
 		}
 	}
-		auto mt104B = std::make_unique<MessageType104B>(
-			0,
-			message_type,
-			send_status,
-			mt004->get_room_id(),
-			mt004->get_message_id(),
-			unsend_cids
-		);
-		try
-		{
-			//mt104Bをデシリアライズする
-			json mt104B_json = MessageType104B::desirialize_message(mt104B);
-			//auto sender = _client_handler->get_client_by_index(_client_handler->search_cid_from_clients(mt004->get_sender_id()));
-			//auto sender = _client_handler->get_client_by_cid(mt004->get_sender_id());
-			if (this->_protocol_handler->send_message_tls(client, mt104B_json)) {
-				spdlog::info("The MT104B message was successfully sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
-			}
-			else {
-				LOG_ERROR("The MT104B message was not sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
-			}
+	auto mt104B = std::make_unique<MessageType104B>(
+		0,
+		message_type,
+		send_status,
+		send_room_id,
+		mt004->get_message_id(),
+		unsend_cids
+	);
+	try
+	{
+		//mt104Bをデシリアライズする
+		json mt104B_json = MessageType104B::deserialize_message(mt104B);
+		if (this->_protocol_handler->send_message_tls(client, mt104B_json)) {
+			spdlog::info("The MT104B message was successfully sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
 		}
-		catch (const std::out_of_range& e)
-		{
-			// エラーハンドリング
-			LOG_ERROR("Sender ID not found. exception content: {}", e.what());
+		else {
+			LOG_ERROR("The MT104B message was not sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
 		}
+	}
+	catch (const std::out_of_range& e)
+	{
+		// エラーハンドリング
+		LOG_ERROR("Sender ID not found. exception content: {}", e.what());
+	}
 
 }
 

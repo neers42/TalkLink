@@ -36,7 +36,7 @@ public:
     const std::string& get_room_id() const { return _room_id; }
     uint64_t get_send_message_id() const { return _send_message_id; }
     const std::vector<std::string>& get_unsend_cid_list() const { return _unsend_cid_list; }
-    static json deserialize(const std::unique_ptr<MessageType103B>& mt103B);
+    static json deserialize_message(const std::unique_ptr<MessageType103B>& mt103B);
 
 };
 

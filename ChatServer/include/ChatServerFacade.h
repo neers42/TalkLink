@@ -88,7 +88,7 @@ private:
 	void mt101_process(std::shared_ptr<Client>& client, const std::string& error_msg, const bool login_result, const bool recv_flag);
 	void mt103_process(const std::unique_ptr<MessageType003>& mt003, const std::shared_ptr<Client>& client);
 	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003>& mt003);
-	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids);
+	void mt103B_process(const std::unique_ptr<MessageType003>& mt003, const std::vector<std::string>& unsend_cids, const std::shared_ptr<Client>& client);
 	std::vector<MessageType103A::ClientInfo> generate_client_infos(const std::vector < std::string >& cids);
 	void mt104_process(const std::unique_ptr<MessageType004>& mt004, const std::shared_ptr<Client>& client);
 	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004>& mt004);

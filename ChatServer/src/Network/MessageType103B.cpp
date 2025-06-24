@@ -20,7 +20,7 @@ MessageType103B::~MessageType103B()
 {
 }
 
-json MessageType103B::deserialize(const std::unique_ptr<MessageType103B>& mt103B)
+json MessageType103B::deserialize_message(const std::unique_ptr<MessageType103B>& mt103B)
 {
 	json mt103B_json, unsend_cids = json::array();
 
