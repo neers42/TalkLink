@@ -194,7 +194,6 @@ public:
 	bool delete_connect_socket(const SOCKET socket);
 	bool is_socket_closed(const SOCKET socket_fd);
 
-	bool is_socket_closed(const SOCKET socket_fd);
 
 
 	
