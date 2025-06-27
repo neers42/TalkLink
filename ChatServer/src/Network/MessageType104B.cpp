@@ -79,7 +79,7 @@ void MessageType104B::set_send_message_id(const uint64_t send_mid)
 	this->_send_message_id = send_mid;
 }
 
-json MessageType104B::desirialize_message(const std::unique_ptr<MessageType104B>& mt104B)
+json MessageType104B::deserialize_message(const std::unique_ptr<MessageType104B>& mt104B)
 {
 	json mt104B_json, unsend_cids = json::array();
 	try

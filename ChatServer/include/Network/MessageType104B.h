@@ -39,7 +39,7 @@ public:
 	void set_room_id(const std::string& room_id);
 	uint64_t get_send_message_id() const;
 	void set_send_message_id(const uint64_t send_mid);
-	static json desirialize_message(const std::unique_ptr<MessageType104B>& mt104B);
+	static json deserialize_message(const std::unique_ptr<MessageType104B>& mt104B);
 
 };
 #endif // !MESSAGETYPE104_H_

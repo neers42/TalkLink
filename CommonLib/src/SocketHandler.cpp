@@ -165,6 +165,36 @@ SocketHandler::~SocketHandler()
 	WSACleanup();
 }
 
+SOCKET SocketHandler::get_listen_socket()
+{
+	return this->_tcp_listen_socket;
+}
+
+SOCKET SocketHandler::get_udp_multicast_tx_socket()
+{
+	return this->_udp_multicast_tx_socket;
+}
+
+fd_set& SocketHandler::get_fd_read()
+{
+	return this->_fd_read;
+}
+
+fd_set& SocketHandler::get_fds()
+{
+	return this->_fds;
+}
+
+std::string& SocketHandler::get_server_ip_address()
+{
+	return this->_local_ip_addr;
+}
+
+int SocketHandler::get_port()
+{
+	return this->_port;
+}
+
 
 bool SocketHandler::setting_tcp_listen_socket_param()
 {
@@ -329,10 +359,6 @@ void SocketHandler::copy_fd_read_to_fds(fd_set* fds, fd_set* fd)
 
 bool SocketHandler::generate_udp_multicast_tx_socket()
 {
-	if (!setting_multicast_tx_socket_param(INIT_FILE_PASS)) {
-		LOG_ERROR("The socket configuration for multicast transmission was not completed successfully and will be terminated.");
-		return false;
-	}
 
 	try
 	{
@@ -528,35 +554,6 @@ bool SocketHandler::generate_udp_bloadcast_tx_socket()
 	return false;
 }
 
-bool SocketHandler::add_connect_socket(const SOCKET socket)
-{
-	try
-	{
-		if (this->_connect_sockets.size() >= MAX_CONNECT_NUM) {
-			throw std::out_of_range("The maximum number of client connections has been reached. The connection will be abandoned.");
-		}
-	}
-	catch (const std::out_of_range& e) {
-		LOG_ERROR(e.what());
-		return false;
-	}
-
-	this->_connect_sockets.push_back(socket);
-	return true;
-}
-
-bool SocketHandler::delete_connect_socket(const SOCKET socket)
-{
-	if (this->_connect_sockets.empty() == true) {
-		LOG_ERROR("Client list is empty.");
-		return false;
-	}
-	else {
-		auto it = std::find(this->_connect_sockets.begin(), this->_connect_sockets.end(), socket);
-		this->_connect_sockets.erase(it);
-		return true;
-	}
-}
 
 bool SocketHandler::is_socket_closed(const SOCKET socket_fd)
 {
@@ -946,18 +943,29 @@ std::string SocketHandler::obtain_local_ip_addr()
 	return _local_ip_addr;
 }
 
-
-bool SocketHandler::bind_tcp_listen_socket(SOCKET* listen_socket, struct addrinfo* result)
+bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo* result)
 {
 	try
 	{
-		int bind_result = bind(*listen_socket, result->ai_addr, (int)result->ai_addrlen);
+#ifdef _WIN32
+		SOCKET casted_listen_socket = static_cast<SOCKET>(listen_socket);
+		int bind_result = bind(casted_listen_socket, result->ai_addr, (int)result->ai_addrlen);
 		if (bind_result == SOCKET_ERROR) {
 			std::stringstream socket_error_msg;
 			socket_error_msg << "An error occurred while binding the TCP listening socket. WSAGetLastError Code : " << std::to_string(WSAGetLastError());
 			throw std::runtime_error(socket_error_msg.str());
-			
+
 		}
+#else
+		int bind_result = bind(listen_socket, result->ai_addr, (int)result->ai_addrlen);
+		if (bind_result == -1) {
+			std::stringstream socket_error_msg;
+			socket_error_msg << "An error occurred while binding the TCP listening socket. WSAGetLastError Code : " << std::to_string(WSAGetLastError());
+			throw std::runtime_error(socket_error_msg.str());
+
+		}
+#endif //_WIN32
+		
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -1119,11 +1127,7 @@ void SocketHandler::disconnect_socket(const SOCKET client_socket)
 
 bool SocketHandler::generate_tcp_listen_socket()
 {
-	////パラメータ設定
-	//if (!setting_tcp_listen_socket_param(INIT_FILE_PASS)) {
-	//	return false;
-	//}
-
+	
 	//名前解決
 	try
 	{
@@ -1191,7 +1195,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 	}
 	spdlog::debug("server generated listen socket({:d}).", _tcp_listen_socket);
 
-	bool bind_result = bind_tcp_listen_socket(&_tcp_listen_socket, _result_tcp);
+	bool bind_result = bind_tcp_listen_socket(static_cast<int>(_tcp_listen_socket), _result_tcp);
 	if (bind_result == true) {
 		spdlog::debug("server bind setting on listen socket({:d}).", _tcp_listen_socket);
 	}
