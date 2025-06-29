@@ -353,6 +353,7 @@
     <ClInclude Include="external_lib\include\spdlog\version.h" />
     <ClInclude Include="external_lib\include\ulid\ulid.hh" />
     <ClInclude Include="external_lib\include\ulid\ulid_struct.hh" />
+    <ClInclude Include="external_lib\include\ulid\ulid_uint128.hh" />
     <ClInclude Include="external_lib\include\wolfssl\callbacks.h" />
     <ClInclude Include="external_lib\include\wolfssl\certs_test.h" />
     <ClInclude Include="external_lib\include\wolfssl\crl.h" />
