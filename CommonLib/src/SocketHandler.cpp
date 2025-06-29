@@ -1002,7 +1002,7 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo* r
 #ifdef _WIN32
 		SOCKET casted_listen_socket = static_cast<SOCKET>(listen_socket);
 		int bind_result = bind(casted_listen_socket, result->ai_addr, (int)result->ai_addrlen);
-		if (bind_result == SOCKET_ERROR) {
+		if (bind_result == SOCKET_ERROR_FD) {
 			std::stringstream socket_error_msg;
 			socket_error_msg << "An error occurred while binding the TCP listening socket. WSAGetLastError Code : " << std::to_string(WSAGetLastError());
 			throw std::runtime_error(socket_error_msg.str());
@@ -1181,15 +1181,23 @@ bool SocketHandler::generate_tcp_listen_socket()
 	catch (const std::runtime_error& e)
 	{
 		LOG_ERROR(e.what());
-		freeaddrinfo(_result_tcp);
+		if (_result_tcp != nullptr) {
+			freeaddrinfo(_result_tcp);
+		}
+#ifdef _WIN32
 		WSACleanup();
+#endif
 		return false;
 	}
 	catch (const std::exception& e)
 	{
 		LOG_ERROR(e.what());
-		freeaddrinfo(_result_tcp);
+		if (_result_tcp != nullptr) {
+			freeaddrinfo(_result_tcp);
+		}
+#ifdef _WIN32
 		WSACleanup();
+#endif
 		return false;
 	}
 	spdlog::debug("server generated listen socket({:d}).", _tcp_listen_socket);
@@ -1343,6 +1351,7 @@ bool SocketHandler::trans_protocol(const std::string& protocol_str, addrinfo* pa
 		spdlog::debug("param：ai_protocol is set to IPPROTO_UDP.");
 #endif // DEBUG
 	}
+#ifdef _WIN32
 	//プロトコルをpgmに設定する場合
 	else if ((std::equal(protocol_str.begin(), protocol_str.end(), "IPPROTO_PGM")) && param->ai_family == AF_INET && param->ai_socktype == SOCK_RDM) {
 		param->ai_protocol = IPPROTO_PGM;
@@ -1350,6 +1359,7 @@ bool SocketHandler::trans_protocol(const std::string& protocol_str, addrinfo* pa
 		spdlog::debug("param：ai_protocol is set to IPPROTO_PGM.");
 #endif // DEBUG
 	}
+#endif // _WIN32	
 	else {
 		LOG_ERROR("Failed to set ai_protocol.");
 		return false;
@@ -1481,7 +1491,7 @@ bool SocketHandler::open_tcp_listen_socket()
 		if (!generate_tcp_listen_socket()) {
 			throw std::runtime_error("Failed to generate TCP listen socket for message.");
 		}
-		if (listen(_tcp_listen_socket, SOMAXCONN) == SOCKET_ERROR) {
+		if (listen(_tcp_listen_socket, SOMAXCONN) == SOCKET_ERROR_FD) {
 			throw std::runtime_error("Tcp Listen socket has been SOCKET_ERROR for some reason. WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
 			
 		}
