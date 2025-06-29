@@ -7,4 +7,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #サブディレクトリの追加
 add_subdirectory(CommonLib)
 add_subdirectory(ChatServer)
-add_subdirectory(AuthenticaionServer)
+add_subdirectory(AuthenticationServer)

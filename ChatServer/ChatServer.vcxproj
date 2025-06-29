@@ -398,6 +398,7 @@
     <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="CMakeLists.txt" />
     <Text Include="conf\db_config.ini" />
   </ItemGroup>
   <ItemGroup>

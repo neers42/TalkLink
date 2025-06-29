@@ -660,5 +660,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="conf\db_config.ini" />
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
 </Project>

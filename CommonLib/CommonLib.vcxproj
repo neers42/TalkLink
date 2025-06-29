@@ -629,6 +629,9 @@
   <ItemGroup>
     <ResourceCompile Include="external_lib\include\wolfssl\sniffer_error.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -33,4 +33,7 @@
   <ItemGroup>
     <None Include="conf\socket_setting.ini" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
 </Project>
