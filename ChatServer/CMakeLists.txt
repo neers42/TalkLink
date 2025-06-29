@@ -17,7 +17,7 @@ target_link_directories(ChatServer PUBLIC
 # CommonLib をリンク（CommonLib 側で外部ライブラリも設定済み）
 target_link_libraries(ChatServer PRIVATE 
     CommonLib
-    firebase/MD/x64\Release
+    firebase/MD/x64/Release
 
 )
 
