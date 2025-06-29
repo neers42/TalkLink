@@ -193,7 +193,7 @@ std::shared_ptr<Client>& ClientHandler::get_client_ref_by_index(const uint32_t i
 	return dummy_ptr;
 }
 
-std::shared_ptr<Client> ClientHandler::get_client_by_socket(const SOCKET& socket)
+std::shared_ptr<Client> ClientHandler::get_client_by_socket(const socket_t socket)
 {
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	for (const auto& client : connected_clients) {
@@ -316,11 +316,10 @@ void ClientHandler::set_client_password(const std::shared_ptr<Client>& client, c
 }
 
 
-void ClientHandler::set_clietn_socket(SOCKET socket, uint32_t list_num)
+void ClientHandler::set_clietn_socket(const socket_t socket, uint32_t list_num)
 {
 	LOG_TRACE;
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);
-	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->connected_clients[list_num]->set_socket(socket);
 }
 
@@ -355,11 +354,10 @@ int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 	return NOT_EXIST_CLIENT_ID;
 }
 
-int ClientHandler::search_socket_from_clients(const SOCKET& search_socket)
+int ClientHandler::search_socket_from_clients(const socket_t search_socket)
 {
 	LOG_TRACE;
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	//std::unique_lock<std::mutex> lock(this->mtx);
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->get_socket() == search_socket) {
 			return search_result;
@@ -444,11 +442,11 @@ const std::vector<std::shared_ptr<Client>>& ClientHandler::get_connected_client_
 	return this->connected_clients;
 }
 
-const std::vector<SOCKET> ClientHandler::get_all_connected_sockets() const  
+const std::vector<socket_t> ClientHandler::get_all_connected_sockets() const  
 {  
 	LOG_TRACE;
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-    std::vector<SOCKET> socket_list;  
+    std::vector<socket_t> socket_list;  
     for (const auto& client : connected_clients) {  
         if (client != nullptr && client->get_socket() != INVALID_SOCKET) {
             socket_list.push_back(client->get_socket());

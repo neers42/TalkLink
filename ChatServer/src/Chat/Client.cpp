@@ -12,7 +12,15 @@ Client::Client() :id{ "" }
 	this->sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
 }
 
-Client::Client(const std::string id, const std::string name, const std::string mail_addr, const SOCKET socket, const struct sockaddr_in sockaddr_in, const std::string client_ipv4_addr, WOLFSSL* ssl)
+Client::Client(
+	const std::string id, 
+	const std::string name, 
+	const std::string mail_addr, 
+	const socket_t socket, 
+	const struct sockaddr_in sockaddr_in, 
+	const std::string client_ipv4_addr, 
+	WOLFSSL* ssl
+)
 	:id{ id },
 	name{ name },
 	mail_address{ mail_addr },
@@ -26,7 +34,13 @@ Client::Client(const std::string id, const std::string name, const std::string m
 
 }
 
-Client::Client(const SOCKET socket, const struct sockaddr_in sockaddr_in, const socklen_t length, std::string& ipv4_addr, WOLFSSL* ssl)
+Client::Client(
+	const socket_t socket, 
+	const struct sockaddr_in sockaddr_in, 
+	const socklen_t length, 
+	std::string& ipv4_addr, 
+	WOLFSSL* ssl
+)
 	:id{ "" },
 	name{ "" },
 	mail_address{ "" },
@@ -59,7 +73,7 @@ std::string Client::get_mail_address() const
 	return this->mail_address;
 }
 
-SOCKET Client::get_socket() const
+socket_t Client::get_socket() const
 {
 	return this->socket;
 }
@@ -120,7 +134,7 @@ void Client::set_mail_address(const std::string& mail_address)
 	this->mail_address = mail_address;
 }
 
-void Client::set_socket(const SOCKET socket)
+void Client::set_socket(const socket_t socket)
 {
 	this->socket = socket;
 }

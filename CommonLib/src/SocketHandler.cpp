@@ -2,10 +2,6 @@
 
 //#define DEBUG
 
-/*
-* 【未実装リスト】
-* マルチキャスト用ソケット及びブロードキャスト用のソケットに対応する
-*/
 
 /**********************************************************************************
  * @fn	  SocketHandlerデフォルトコンストラクタ
@@ -26,15 +22,15 @@ SocketHandler::SocketHandler() :
 	_fds{},
 	_fd_read{},
 	_timeout{0, 500*1000},
-	_tcp_listen_socket{ INVALID_SOCKET },
-	_udp_bloadcast_tx_socket{ INVALID_SOCKET },
-	_udp_multicast_tx_socket{ INVALID_SOCKET },
+	_tcp_listen_socket{ INVALID_SOCKET_FD },
+	_udp_bloadcast_tx_socket{ INVALID_SOCKET_FD },
+	_udp_multicast_tx_socket{ INVALID_SOCKET_FD },
 	_port{ 0 },
 	_multicast_tx_addr{},
 	_bloadcast_tx_addr{},
 	_local_ip_addr{""},
 	_ttl{ 0 },
-	setting_file_pass{ ""}
+	socket_config_file_pass{ ""}
 {
 	try
 	{
@@ -67,7 +63,7 @@ SocketHandler::SocketHandler() :
 		FD_ZERO(&_fds);
 		FD_ZERO(&_fd_read);
 
-		if ((setting_tcp_listen_socket_param() == false || (setting_multicast_tx_socket_param()) == false)) {
+		if ((set_socket_param() == false || (set_multicast_tx_socket_param()) == false)) {
 			LOG_ERROR("The socket configuration for TCP listening and multicast transmission was not completed successfully and will be terminated.");
 			return;
 		}
@@ -97,15 +93,15 @@ SocketHandler::SocketHandler(const std::string& file_pass):
 	_fds{},
 	_fd_read{},
 	_timeout{ 0, 500*1000 },
-	_tcp_listen_socket{ INVALID_SOCKET },
-	_udp_bloadcast_tx_socket{ INVALID_SOCKET },
-	_udp_multicast_tx_socket{ INVALID_SOCKET },
+	_tcp_listen_socket{ INVALID_SOCKET_FD },
+	_udp_bloadcast_tx_socket{ INVALID_SOCKET_FD },
+	_udp_multicast_tx_socket{ INVALID_SOCKET_FD },
 	_port{ 0 },
 	_multicast_tx_addr{},
 	_bloadcast_tx_addr{},
 	_local_ip_addr{ "" },
 	_ttl{ 0 },
-	setting_file_pass{ file_pass }
+	socket_config_file_pass{ file_pass }
 {
 	try
 	{
@@ -137,7 +133,7 @@ SocketHandler::SocketHandler(const std::string& file_pass):
 		//ファイルディスクリプタキャッチ用のfdsを初期化
 		FD_ZERO(&_fds);
 		FD_ZERO(&_fd_read);
-		if ((setting_tcp_listen_socket_param(file_pass) == false || (setting_multicast_tx_socket_param(file_pass)) == false)) {
+		if ((set_socket_param(file_pass) == false || (set_multicast_tx_socket_param(file_pass)) == false)) {
 			LOG_ERROR("The socket configuration for TCP listening and multicast transmission was not completed successfully and will be terminated.");
 			return;
 		}
@@ -165,12 +161,12 @@ SocketHandler::~SocketHandler()
 	WSACleanup();
 }
 
-SOCKET SocketHandler::get_listen_socket()
+socket_t SocketHandler::get_listen_socket()
 {
 	return this->_tcp_listen_socket;
 }
 
-SOCKET SocketHandler::get_udp_multicast_tx_socket()
+socket_t SocketHandler::get_udp_multicast_tx_socket()
 {
 	return this->_udp_multicast_tx_socket;
 }
@@ -196,7 +192,7 @@ int SocketHandler::get_port()
 }
 
 
-bool SocketHandler::setting_tcp_listen_socket_param()
+bool SocketHandler::set_socket_param()
 {
     this->_tcp_socket_param.ai_flags = AI_PASSIVE; 
 	this->_tcp_socket_param.ai_family = AF_UNSPEC; //IPv4とIPv6の両方をサポート
@@ -208,31 +204,31 @@ bool SocketHandler::setting_tcp_listen_socket_param()
 
 //ここのtry構文見直す
 //設定値の読み込み
-bool SocketHandler::setting_tcp_listen_socket_param(const std::string& file_pass)
+bool SocketHandler::set_socket_param(const std::string& config_file_path)
 {
 
 	//iniファイルの読み込み
 	ini::IniFile socket_param_setting_ini;
-	socket_param_setting_ini.load(file_pass);
-	if (this->setting_tcp_flags(socket_param_setting_ini) == false) {
+	socket_param_setting_ini.load(config_file_path);
+	if (this->set_tcp_flags(socket_param_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_tcp_family(socket_param_setting_ini) == false) {
+	if (this->set_tcp_family(socket_param_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_tcp_socktype(socket_param_setting_ini) == false) {
+	if (this->set_tcp_socktype(socket_param_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_tcp_protocol(socket_param_setting_ini) == false) {
+	if (this->set_tcp_protocol(socket_param_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_tcp_port(socket_param_setting_ini) == false) {
+	if (this->set_tcp_port(socket_param_setting_ini) == false) {
 		return false;
 	}
 	return true;
 }
 
-bool SocketHandler::setting_multicast_tx_socket_param()
+bool SocketHandler::set_multicast_tx_socket_param()
 {
 	this->_multicast_tx_param.ai_flags = AI_PASSIVE; //マルチキャスト送信用のソケット
 	this->_multicast_tx_param.ai_family = AF_UNSPEC; //IPv4とIPv6の両方をサポート
@@ -242,28 +238,28 @@ bool SocketHandler::setting_multicast_tx_socket_param()
 	return true;
 }
 
-bool SocketHandler::setting_multicast_tx_socket_param(const std::string& file_pass)
+bool SocketHandler::set_multicast_tx_socket_param(const std::string& config_file_path)
 {
 	//iniファイルの読み込み
 	ini::IniFile multicast_socket_setting_ini;
-	multicast_socket_setting_ini.load(file_pass);
+	multicast_socket_setting_ini.load(config_file_path);
 	
-	if (this->setting_multicast_tx_sock_af(multicast_socket_setting_ini) == false) {
+	if (this->set_multicast_tx_sock_af(multicast_socket_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_multicast_tx_sock_type(multicast_socket_setting_ini) == false) {
+	if (this->set_multicast_tx_sock_type(multicast_socket_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_multicast_tx_sock_protocol(multicast_socket_setting_ini) == false) {
+	if (this->set_multicast_tx_sock_protocol(multicast_socket_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_multicast_tx_sin_family(multicast_socket_setting_ini) == false) {
+	if (this->set_multicast_tx_sin_family(multicast_socket_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_multicast_tx_sin_port(multicast_socket_setting_ini) == false) {
+	if (this->set_multicast_tx_sin_port(multicast_socket_setting_ini) == false) {
 		return false;
 	}
-	if (this->setting_multicast_tx_sin_address(multicast_socket_setting_ini) == false) {
+	if (this->set_multicast_tx_sin_address(multicast_socket_setting_ini) == false) {
 		return false;
 	}
 	return true;
@@ -271,12 +267,12 @@ bool SocketHandler::setting_multicast_tx_socket_param(const std::string& file_pa
 
 }
 
-bool SocketHandler::setting_bloadcast_tx_socket_param()
+bool SocketHandler::set_bloadcast_tx_socket_param()
 {
 	return false;
 }
 
-bool SocketHandler::setting_bloadcast_tx_socket_param(const std::string& file_pass)
+bool SocketHandler::set_bloadcast_tx_socket_param(const std::string& file_pass)
 {
 	return false;
 }
@@ -330,7 +326,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 }
 
 
-void SocketHandler::setting_select_info_to_listen_socket()
+void SocketHandler::initialize_select_param()
 {
 	FD_ZERO(&this->_fd_read);
 	FD_SET(this->_tcp_listen_socket, &this->_fd_read);
@@ -339,7 +335,7 @@ void SocketHandler::setting_select_info_to_listen_socket()
 }
 
 
-void SocketHandler::bind_select_info_to_socket(const SOCKET& socket, fd_set* fd)
+void SocketHandler::bind_select_info_to_socket(socket_t socket, fd_set* fd)
 {
 	FD_SET(socket, fd);
 }
@@ -364,7 +360,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	{
 		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_multicast_tx_addr.sin_port).c_str(), &_multicast_tx_param, &_result_multicast);
 		this->_udp_multicast_tx_socket = socket(_multicast_tx_param.ai_family, _multicast_tx_param.ai_socktype, 0);
-		if (this->_udp_multicast_tx_socket == INVALID_SOCKET) {
+		if (this->_udp_multicast_tx_socket == INVALID_SOCKET_FD) {
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -555,37 +551,76 @@ bool SocketHandler::generate_udp_bloadcast_tx_socket()
 }
 
 
-bool SocketHandler::is_socket_closed(const SOCKET socket_fd)
+bool SocketHandler::is_socket_closed(const socket_t socket_fd)
 {
+	//char buf;
+	//if (socket_fd == INVALID_SOCKET_FD) {
+	//	return true; // 無効なソケットは閉じられているとみなす
+	//}
+	//int result = recv(socket_fd, &buf, 1, MSG_PEEK);
+
+	//if (result == 0) {
+	//	// クライアントが正常に切断した（FINを受け取った）
+	//	return true;
+	//}
+	//if (result < 0) {
+	//	if (errno == EWOULDBLOCK || errno == EAGAIN) {
+	//		// ノンブロッキングでデータがまだないだけ
+	//		return false;
+	//	}
+	//	else {
+	//		// 何らかのエラー（ECONNRESETなど）→切断とみなす
+	//		return true;
+	//	}
+	//}
+
+	//// データがある → 切断されていない
+	//return false;
+
+
+
 	char buf;
-	if (socket_fd == INVALID_SOCKET) {
-		return true; // 無効なソケットは閉じられているとみなす
+
+	if (socket_fd == INVALID_SOCKET_FD) {
+		return true; // 無効なソケットは閉じているとみなす
 	}
+
 	int result = recv(socket_fd, &buf, 1, MSG_PEEK);
 
+#ifdef _WIN32
 	if (result == 0) {
-		// クライアントが正常に切断した（FINを受け取った）
-		return true;
+		return true; // FIN を受け取った（切断済）
+	}
+	if (result == SOCKET_ERROR_FD) {
+		int error_code = WSAGetLastError();
+		if (error_code == WSAEWOULDBLOCK) {
+			return false; // データはまだないがソケットは有効
+		}
+		else {
+			return true; // その他のエラーは切断とみなす
+		}
+	}
+#else
+	if (result == 0) {
+		return true; // FIN を受け取った（切断済）
 	}
 	if (result < 0) {
 		if (errno == EWOULDBLOCK || errno == EAGAIN) {
-			// ノンブロッキングでデータがまだないだけ
-			return false;
+			return false; // ノンブロッキングでまだデータがない
 		}
 		else {
-			// 何らかのエラー（ECONNRESETなど）→切断とみなす
-			return true;
+			return true; // その他のエラー（ECONNRESETなど）
 		}
 	}
+#endif
 
-	// データがある → 切断されていない
-	return false;
+	return false; // recvでバイトが返された → 切断されていない
 }
 
-bool SocketHandler::setting_tcp_flags(ini::IniFile tcp_listen_socket_param_setting_ini)
+bool SocketHandler::set_tcp_flags(ini::IniFile tcp_listen_socket_param_config)
 {
 	//フラッグの設定
-	std::string temp_flag = tcp_listen_socket_param_setting_ini["SocketSetting"]["flags"].as<std::string>();
+	std::string temp_flag = tcp_listen_socket_param_config["SocketSetting"]["flags"].as<std::string>();
 	if (trans_flags(temp_flag, &_tcp_socket_param) == false) {
 		return false;
 	}
@@ -595,11 +630,11 @@ bool SocketHandler::setting_tcp_flags(ini::IniFile tcp_listen_socket_param_setti
 
 }
 
-bool SocketHandler::setting_tcp_family(ini::IniFile tcp_listen_socket_param_setting_ini)
+bool SocketHandler::set_tcp_family(ini::IniFile tcp_listen_socket_param_config)
 {
 	//iniファイルの各セクションからキーを読み込む
 	//アドレスファミリの設定(ipv4 or ipv6)
-	std::string temp_family = tcp_listen_socket_param_setting_ini["SocketSetting"]["family"].as<std::string>();
+	std::string temp_family = tcp_listen_socket_param_config["SocketSetting"]["family"].as<std::string>();
 	if (trans_family(temp_family, &_tcp_socket_param) == false) {
 		return false;
 	}
@@ -609,10 +644,10 @@ bool SocketHandler::setting_tcp_family(ini::IniFile tcp_listen_socket_param_sett
 	
 }
 
-bool SocketHandler::setting_tcp_socktype(ini::IniFile tcp_listen_socket_param_setting_ini)
+bool SocketHandler::set_tcp_socktype(ini::IniFile tcp_listen_socket_param_config)
 {
 	//ソケット型の設定
-	std::string temp_socket_type = tcp_listen_socket_param_setting_ini["SocketSetting"]["socktype"].as<std::string>();
+	std::string temp_socket_type = tcp_listen_socket_param_config["SocketSetting"]["socktype"].as<std::string>();
 	if (trans_socktype(temp_socket_type, &_tcp_socket_param) == false) {
 		return false;
 }
@@ -621,10 +656,10 @@ bool SocketHandler::setting_tcp_socktype(ini::IniFile tcp_listen_socket_param_se
 	}
 }
 
-bool SocketHandler::setting_tcp_protocol(ini::IniFile tcp_listen_socket_param_setting_ini)
+bool SocketHandler::set_tcp_protocol(ini::IniFile tcp_listen_socket_param_config)
 {
 	//プロトコルの設定
-	std::string temp_protocol = tcp_listen_socket_param_setting_ini["SocketSetting"]["protocol"].as<std::string>();
+	std::string temp_protocol = tcp_listen_socket_param_config["SocketSetting"]["protocol"].as<std::string>();
 	//std::equal(temp_family.begin(), temp_family.end(), "AF_INET")
 	//プロトコルをtcpに設定する場合
 	if (trans_protocol(temp_protocol, &_tcp_socket_param) == false) {
@@ -635,12 +670,12 @@ bool SocketHandler::setting_tcp_protocol(ini::IniFile tcp_listen_socket_param_se
 	}
 }
 
-bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_setting_ini)
+bool SocketHandler::set_tcp_port(ini::IniFile tcp_listen_socket_param_config)
 {
 	//ポートの設定
 	try
 	{
-		int temp_port = tcp_listen_socket_param_setting_ini["SocketSetting"]["port"].as<int>();
+		int temp_port = tcp_listen_socket_param_config["SocketSetting"]["port"].as<int>();
 
 		if (temp_port < 0 || temp_port > 65535) {
 			throw std::out_of_range("The port number is set out of range. Reset to the range of 0 - 65535.");
@@ -655,9 +690,9 @@ bool SocketHandler::setting_tcp_port(ini::IniFile tcp_listen_socket_param_settin
 	return true;
 }
 
-bool SocketHandler::setting_multicast_tx_sock_af(ini::IniFile socket_param_setting_ini)
+bool SocketHandler::set_multicast_tx_sock_af(ini::IniFile socket_param_config)
 {
-	std::string temp_af = socket_param_setting_ini["MulticastTX_SocketSetting"]["family"].as<std::string>();
+	std::string temp_af = socket_param_config["MulticastTX_SocketSetting"]["family"].as<std::string>();
 	if (trans_family(temp_af, &_multicast_tx_param) == false) {
 		return false;
 	}
@@ -665,10 +700,10 @@ bool SocketHandler::setting_multicast_tx_sock_af(ini::IniFile socket_param_setti
 }
 
 
-bool SocketHandler::setting_multicast_tx_sock_type(ini::IniFile socket_param_setting_ini)
+bool SocketHandler::set_multicast_tx_sock_type(ini::IniFile socket_param_config)
 {
 	//ソケットタイプの設定
-	std::string temp_socktype = socket_param_setting_ini["MulticastTX_SocketSetting"]["type"].as<std::string>();
+	std::string temp_socktype = socket_param_config["MulticastTX_SocketSetting"]["type"].as<std::string>();
 	if (trans_socktype(temp_socktype, &_multicast_tx_param) == false) {
 		return false;
 	}
@@ -678,9 +713,9 @@ bool SocketHandler::setting_multicast_tx_sock_type(ini::IniFile socket_param_set
 
 }
 
-bool SocketHandler::setting_multicast_tx_sock_protocol(ini::IniFile socket_param_setting_ini)
+bool SocketHandler::set_multicast_tx_sock_protocol(ini::IniFile socket_param_config)
 {
-	int temp_protocol = socket_param_setting_ini["MulticastTX_SocketSetting"]["protocol"].as<int>();
+	int temp_protocol = socket_param_config["MulticastTX_SocketSetting"]["protocol"].as<int>();
 	if (trans_protocol(temp_protocol, &_multicast_tx_param) == false) {
 		return false;
 	
@@ -688,10 +723,10 @@ bool SocketHandler::setting_multicast_tx_sock_protocol(ini::IniFile socket_param
 	return true;
 }
 
-bool SocketHandler::setting_multicast_tx_sin_family(ini::IniFile socket_param_setting_ini)
+bool SocketHandler::set_multicast_tx_sin_family(ini::IniFile socket_param_config)
 {
 	//アドレスファミリの設定(socket関数の引数設定)
-	std::string temp_af = socket_param_setting_ini["MulticastTX_SocketSetting"]["sin_family"].as<std::string>();
+	std::string temp_af = socket_param_config["MulticastTX_SocketSetting"]["sin_family"].as<std::string>();
 
 	if (std::equal(temp_af.begin(), temp_af.end(), "AF_UNSPEC")) {
 		_multicast_tx_addr.sin_family = AF_UNSPEC;
@@ -752,7 +787,7 @@ bool SocketHandler::setting_multicast_tx_sin_family(ini::IniFile socket_param_se
 
 
 
-bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_setting_ini)
+bool SocketHandler::set_multicast_tx_sin_port(ini::IniFile socket_param_setting_ini)
 {
 	//マルチキャストのポートを設定する。
 	try
@@ -785,9 +820,9 @@ bool SocketHandler::setting_multicast_tx_sin_port(ini::IniFile socket_param_sett
 	return true;
 }
 
-bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_setting_ini)
+bool SocketHandler::set_multicast_tx_sin_address(ini::IniFile socket_param_config)
 {
-	std::string temp_multicast_addr = socket_param_setting_ini["MulticastTX_SocketSetting"]["sin_address"].as<std::string>();
+	std::string temp_multicast_addr = socket_param_config["MulticastTX_SocketSetting"]["sin_address"].as<std::string>();
 
 	//inet_addrの設定
 	try
@@ -835,6 +870,26 @@ bool SocketHandler::setting_multicast_tx_sin_address(ini::IniFile socket_param_s
 	}
 	
 	return true;
+}
+
+std::string SocketHandler::get_last_wsa_error_message()
+{
+	DWORD error_code = WSAGetLastError();
+	LPSTR message_buffer = nullptr;
+
+	FormatMessageA(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		error_code,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPSTR)&message_buffer,
+		0,
+		NULL
+	);
+
+	std::string message = message_buffer ? message_buffer : "Unknown error";
+	LocalFree(message_buffer); // メモリを解放
+	return message;
 }
 
 
@@ -991,7 +1046,7 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo* r
  * @detail 
  **********************************************************************************/
 
-std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t client_sockaddr_in_length)
+std::tuple<socket_t, sockaddr_in> SocketHandler::accept_client_socket(socklen_t client_sockaddr_in_length)
 {
 	try
 	{
@@ -999,62 +1054,17 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 		struct sockaddr_in accept_sockaddr_in_result;
 		accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
 
-		//acceptしたソケットがINVALID_SOCKETである場合
-		if (accept_client_socket_result == INVALID_SOCKET) {
-			switch (WSAGetLastError())
-			{
-			case WSANOTINITIALISED:
-				throw std::runtime_error("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
-				break;
-
-			case WSAECONNRESET:
-				throw std::runtime_error("WSA ERROR CASE:WSAECONNRESET(着信接続が示されましたが、その後、呼び出しを受け入れる前にリモート ピアによって終了されました。)");
-				break;
-
-			case WSAEFAULT:
-				throw std::runtime_error("WSA ERROR CASE:WSAEFAULT(addrlen パラメーターが小さすぎるか、addr がユーザー アドレス空間の有効な部分ではありません。)");
-				break;
-
-			case WSAEINTR:
-				throw std::runtime_error("WSA ERROR CASE:WSAEINTR(ブロッキング Windows Sockets 1.1 呼び出しは、WSACancelBlockingCall を介して取り消されました。)");
-				break;
-
-			case WSAEINVAL:
-				throw std::runtime_error("WSA ERROR CASE:WSAEINVAL(リッスン関数は、受け入れる前に呼び出されませんでした。)");
-				break;
-
-			case WSAEINPROGRESS:
-				throw std::runtime_error("WSA ERROR CASE:WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
-				break;
-
-			case EMFILE:
-				throw std::runtime_error("WSA ERROR CASE:EMFILE(キューは、受け入れるエントリに空きがなく、使用可能な記述子がありません。)");
-				break;
-
-			case WSAENETDOWN:
-				throw std::runtime_error("WSA ERROR CASE:WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
-				break;
-
-			case WSAENOBUFS:
-				throw std::runtime_error("WSA ERROR CASE:WSAENOBUFS(バッファーに空き領域がありません。)");
-				break;
-
-			case WSAENOTSOCK:
-				throw std::runtime_error("WSA ERROR CASE:WSAENOTSOCK(記述子はソケットではありません。)");
-				break;
-
-			case WSAEOPNOTSUPP:
-				throw std::runtime_error("WSA ERROR CASE:WSAEOPNOTSUPP(参照されるソケットは、接続指向サービスをサポートする型ではありません。)");
-				break;
-
-			case WSAEWOULDBLOCK:
-				throw std::runtime_error("WSA ERROR CASE:WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、受け入れられる接続はありません。)");
-				break;
-
-			default:
-
-				break;
-			}
+		//acceptしたソケットがINVALID_SOCKET_FDである場合
+		if (accept_client_socket_result == INVALID_SOCKET_FD) {
+#ifdef _WIN32
+			int error_code = WSAGetLastError();
+			std::string message = get_last_wsa_error_message();
+			std::string error_message = "accept failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+#else
+			int error_code = errno;
+			std::string error_message = "accept failed with error code: " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
+#endif // _WIN32
+			throw std::runtime_error(error_message);
 		}
 		else {
 			//acceptが成功した場合
@@ -1063,57 +1073,49 @@ std::tuple<SOCKET, sockaddr_in> SocketHandler::accept_client_socket(socklen_t cl
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(e.what());
+		LOG_ERROR("runtime error : {}",e.what());
 		struct sockaddr_in error_addr_in = { 0 };
-		return std::make_tuple(INVALID_SOCKET, error_addr_in);
+		return std::make_tuple(INVALID_SOCKET_FD, error_addr_in);
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("exception error : {}", e.what());
+		struct sockaddr_in error_addr_in = { 0 };
+		return std::make_tuple(INVALID_SOCKET_FD, error_addr_in);
 	}
 }
 
 
-void SocketHandler::disconnect_socket(const SOCKET client_socket)
+void SocketHandler::close_socket(const socket_t client_socket)
 {
 	try
 	{
-		if (client_socket == INVALID_SOCKET) {
+		int clnt_socket_result = 0;
+		if (client_socket == INVALID_SOCKET_FD) {
 			throw std::runtime_error("The client socket is invalid. The socket may already be closed.");
 		}
+#ifdef _WIN32
 		shutdown(client_socket, SD_BOTH);
 		int close_socket_result = closesocket(client_socket);
+#else
+		shutdown(client_socket, SHUT_RDWR);
+		int close_result = close(client_socket);
+#endif // _WIN32
+
 		if (close_socket_result == SOCKET_ERROR) {
-			switch (WSAGetLastError())
-			{
-			case WSANOTINITIALISED:
-				throw std::runtime_error("WSA ERROR CASE : WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
-				break;
-
-			case WSAENETDOWN:
-				throw std::runtime_error("WSA ERROR CASE : WSAENETDOWN(ネットワーク サブシステムが失敗しました。)");
-				break;
-
-			case WSAENOTSOCK:
-				throw std::runtime_error("WSA ERROR CASE : WSAENOTSOCK(記述子はソケットではありません。)");
-				break;
-
-			case WSAEINPROGRESS:
-				throw std::runtime_error("WSA ERROR CASE : WSAEINPROGRESS(ブロックしている Windows Sockets 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
-				break;
-
-			case WSAEINTR:
-				throw std::runtime_error("WSA ERROR CASE : WSAEINTR(ブロッキング Windows Socket 1.1 呼び出しは、WSACancelBlockingCall を介して取り消されました。)");
-				break;
-
-			case WSAEWOULDBLOCK:
-				throw std::runtime_error("WSA ERROR CASE : WSAEWOULDBLOCK(ソケットは非ブロッキングとしてマークされ、残留構造のl_onoff メンバーは 0 以外に設定され、残留構造のl_linger メンバーは 0 以外のタイムアウト値に設定されます。)");
-				break;
-
-			default:
-				break;
-			}
+#ifdef _WIN32
+			int error_code = WSAGetLastError();
+			std::string message = get_last_wsa_error_message();
+			std::string error_message = "closesocket failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+#else
+			int error_code = errno;
+			std::string error_message = "close failed with error code: " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
+#endif // _WIN32
+			throw std::runtime_error(error_message);
 		}
 		else {
 			spdlog::debug("client socket({:d}) is closed.", client_socket);
 		}
-
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -1175,7 +1177,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 
 		//リッスンソケットの生成
 		_tcp_listen_socket = socket(_result_tcp -> ai_family, _result_tcp -> ai_socktype, _result_tcp->ai_protocol);
-		if (_tcp_listen_socket == INVALID_SOCKET) {
+		if (_tcp_listen_socket == INVALID_SOCKET_FD) {
 			throw std::runtime_error("ソケットの生成に失敗しました。WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
 		}
 	}
@@ -1416,56 +1418,60 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 }
 
 
-void SocketHandler::monitor_socket_descriptor(const std::vector<SOCKET>& socket_list, std::function<void(SOCKET)> callback)
+void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t>& socket_list, std::function<void(socket_t)> callback)
 {
 	try {
-		int select_result = select(0, &_fds, NULL, NULL, &_timeout);
+		int select_result = 0;
+#ifdef _WIN32
+		select_result = select(0, &_fds, NULL, NULL, &_timeout);
+#else	//LINUX, MACOS, UNIX系OSの場合
+		auto max_ite = std::max_element(socket_list.begin(), socket_list.end());
+		int max_socket_fd = 0;
+		if (max_ite == socket_list.end()) {
+			return; // ソケットリストが空の場合は何もしない
+		}
+		else {
+			max_socket_fd = *max_ite;
+		}
+		select_result = select(max_socket_fd + 1, &_fds, NULL, NULL, &_timeout);										
 
-		switch (select_result) {
-		case 0:
+#endif // _WIN32
+
+		if (select_result < 0) {
+#ifdef _WIN32
+			int error_code = WSAGetLastError();
+			std::string message = get_last_wsa_error_message();
+			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+#else
+			int error_code = errno;
+			std::string error_message = "select failed with error code: " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
+
+#endif // _WIN32
+			throw std::runtime_error(error_message);
+		}
+		else if (select_result == 0) {
 			return; // タイムアウト
-		case SOCKET_ERROR:
-			switch (WSAGetLastError())
-			{
-			case WSANOTINITIALISED:
-				throw std::runtime_error("WSA ERROR CASE:WSANOTINITIALISED(この関数を使用する前に、 WSAStartup 呼び出しが正常に行われる必要があります。)");
-				break;
-			case WSAEFAULT:
-				throw std::runtime_error("WSA ERROR CASE:WSAEFAULT(Windows ソケットの実装では、内部操作に必要なリソースを割り当てることができませんでした。または、 readfds、 writefds、 exceptfds、または timeval パラメーターがユーザー アドレス空間の一部ではありません。)");
-				break;
-			case ENETDOWN:
-				throw std::runtime_error("WSA ERROR CASE:ENETDOWN(ネットワーク サブシステムが失敗しました。)");
-				break;
-			case WSAEINVAL:
-				throw std::runtime_error("WSA ERROR CASE:WSAEINVAL(タイムアウト値が無効であるか、3 つの記述子パラメーターがすべて null でした。)");
-				break;
-			case WSAEINTR:
-				throw std::runtime_error("WSA ERROR CASE:WSAEINTR(WSACancelBlockingCall を使用して、Windows ソケット 1.1 呼び出しのブロックが取り消されました。)");
-				break;
-			case WSAEINPROGRESS:
-				throw std::runtime_error("WSA ERROR CASE:WSAEINPROGRESS(ブロック中の Windows ソケット 1.1 呼び出しが進行中であるか、サービス プロバイダーがコールバック関数を処理しています。)");
-				break;
-			case WSAENOTSOCK:
-				throw std::runtime_error("WSA ERROR CASE:WSAENOTSOCK(記述子セットの 1 つに、ソケットではないエントリが含まれています。)");
-				break;
-			default:
-				break;
-			}
-			return;
-		default:
+		}
+		else {
 			if (FD_ISSET(_tcp_listen_socket, &_fds)) {
 				callback(_tcp_listen_socket); // 新しい接続リクエスト
 			}
 			for (const auto& socket : socket_list) {
-				if (socket != INVALID_SOCKET && FD_ISSET(socket, &_fds)) {
+				if (socket != INVALID_SOCKET_FD && FD_ISSET(socket, &_fds)) {
 					callback(socket); // 変化のあったソケットを通知
 				}
 			}
-			break;
 		}
 	}
 	catch (const std::runtime_error& e) {
 		LOG_ERROR(e.what());
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR(e.what());
+	}
+	catch (...)
+	{
+		LOG_ERROR("An unknown error occurred in monitor_socket_descriptor.");
 	}
 }
 
@@ -1514,9 +1520,9 @@ bool SocketHandler::open_tcp_listen_socket()
  * @param [in] SOCKET socket
  * @return
  **********************************************************************************/
-bool SocketHandler::check_valid_socket(SOCKET request_socket)
+bool SocketHandler::check_valid_socket(socket_t request_socket)
 {
-	if (request_socket == INVALID_SOCKET)
+	if (request_socket == INVALID_SOCKET_FD)
 		return false;
 	return true;
 }

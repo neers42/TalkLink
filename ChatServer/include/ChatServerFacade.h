@@ -20,6 +20,14 @@
 #include <mutex>
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#ifdef _WIN32
+	using socket_t = SOCKET;
+	#define INVALID_SOCKET_FD INVALID_SOCKET
+#else
+	using socket_t = int; // POSIX systems use int for sockets
+	#define INVALID_SOCKET_FD -1
+#endif // _WIN32
+
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
@@ -65,8 +73,8 @@ public:
 
 	const std::string& get_server_ip();
 	void set_server_ip(const std::string& ip);
-	void handle_changed_socket_process(const SOCKET socket);
-	void message_handle_process(const SOCKET socket);	
+	void handle_changed_socket_process(const socket_t socket);
+	void message_handle_process(const socket_t socket);	
 	void heartbeat_check_process();
 	void heartbeat_nonresponse_process(const std::shared_ptr<Client>& client);
 	void setting_select_process();

@@ -3,8 +3,21 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <WinSock2.h>
-#include <ws2tcpip.h>
+#ifdef _WIN32
+	#include <WinSock2.h>
+	#include <ws2tcpip.h>
+	using socket_t = SOCKET;
+#else
+	#include <sys/types.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+	#include <unistd.h>
+	#include <sys/select.h>
+	#include <netdb.h>
+using socket_t = int;
+#endif // _WIN32
+
 #include <memory>
 #include "FirebaseAuthHandler.h"
 #include "firebase/auth.h"
@@ -18,7 +31,7 @@ private:
 	std::string id;	//クライアントID
 	std::string name;	//クライアントネーム
 	std::string mail_address;	//クライアントのメールアドレス
-	SOCKET socket;		//クライアントのソケット
+	socket_t socket;		//クライアントのソケット
 	struct sockaddr_in sockaddr_in;	//クライアントのsockaddr_in情報
 	socklen_t socket_address_in_length = sizeof(this->sockaddr_in);
 	std::string ipv4_address = "";		//クライアントの端末ipv4アドレス
@@ -28,13 +41,14 @@ private:
 	bool auth_status = false;	//クライアントの認証状態
 	WOLFSSL* ssl;				//クライアントのソケットにアタッチされたsslオブジェクト
 
+
 public:
 	mutable std::mutex mtx;
 
 public:
 	explicit Client();
-	explicit Client(const std::string id, const std::string name, const std::string mail_addr, const SOCKET socket, const struct sockaddr_in sockaddr_in, const std::string client_ipv4_addr, WOLFSSL* ssl);
-	explicit Client(const SOCKET socket, const struct sockaddr_in sockaddr_in, const socklen_t length, std::string& ipv4_addr, WOLFSSL* ssl);
+	explicit Client(const std::string id, const std::string name, const std::string mail_addr, const socket_t socket, const struct sockaddr_in sockaddr_in, const std::string client_ipv4_addr, WOLFSSL* ssl);
+	explicit Client(const socket_t socket, const struct sockaddr_in sockaddr_in, const socklen_t length, std::string& ipv4_addr, WOLFSSL* ssl);
 	~Client();
 
 
@@ -42,7 +56,7 @@ public:
 	std::string get_id() const;
 	std::string get_name() const;
 	std::string get_mail_address() const;
-	SOCKET get_socket() const;
+	socket_t get_socket() const;
 	struct sockaddr_in get_sockaddr_in() const;
 	socklen_t get_socket_address_in_length() const;
 	std::string get_ipv4_address() const;
@@ -57,7 +71,7 @@ public:
 	void set_id(const std::string& id);
 	void set_name(const std::string& name);
 	void set_mail_address(const std::string& mail_address);
-	void set_socket(const SOCKET socket);
+	void set_socket(const socket_t socket);
 	void set_sockaddr_in(const struct sockaddr_in sockaddr_in);
 	void set_ipv4_address(const std::string& ipv4_addr);
 	void set_password(const std::string& password);

@@ -72,7 +72,7 @@ void ChatServerFacade::run()
 	//ディスクリプション監視スタート
 	while (1) {
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
-		this->_socket_handler->setting_select_info_to_listen_socket();
+		this->_socket_handler->initialize_select_param();
 		this->prepare_client_fd_set();
 		std::vector<SOCKET> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
 		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
@@ -158,7 +158,7 @@ void ChatServerFacade::set_server_ip(const std::string& ip)
 }
 
 //ソケットの変化を検知し、処理を振り分ける
-void ChatServerFacade::handle_changed_socket_process(const SOCKET socket)
+void ChatServerFacade::handle_changed_socket_process(const socket_t socket)
 {
 	if (socket == this->_socket_handler->get_listen_socket()) {
 		this->_thread_pool_handler->enqueue_task([this]() {accept_client_socket_process(); });
@@ -170,7 +170,7 @@ void ChatServerFacade::handle_changed_socket_process(const SOCKET socket)
 }
 
 //メッセージの処理を行う
-void ChatServerFacade::message_handle_process(const SOCKET socket)
+void ChatServerFacade::message_handle_process(const socket_t socket)
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	std::string receive_data, mt, data_time_stamp;
@@ -844,7 +844,7 @@ void ChatServerFacade::setting_select_process()
 {
 	while (true) {
 		{
-			this->_socket_handler->setting_select_info_to_listen_socket();
+			this->_socket_handler->initialize_select_param();
 			this->prepare_client_fd_set();
 			
 		}
@@ -861,9 +861,7 @@ void ChatServerFacade::handle_disconnect_process(const std::shared_ptr<Client> c
 	if (client->get_ssl() != nullptr) {
 		_protocol_handler->shutdown_wolfssl(client);
 	}
-	if (client->get_socket() != INVALID_SOCKET) {
-		_socket_handler->disconnect_socket(client->get_socket());
-	}
+	_socket_handler->close_socket(client->get_socket());
 	this->_client_handler->delete_client(client);
 
 }
@@ -1032,7 +1030,7 @@ void ChatServerFacade::resend_message_process(const json& message, const std::st
 		if (resend_count == 3) {
 			std::this_thread::sleep_for(std::chrono::seconds(5));
 		}
-		if (client->get_socket() != INVALID_SOCKET || client->get_ssl() != nullptr) {
+		if (client->get_socket() != INVALID_SOCKET_FD || client->get_ssl() != nullptr) {
 			// メッセージを送信する
 			if (this->_protocol_handler->send_message_tls(client, message)) {
 				spdlog::info("Resend message(mid: {}) to client with cid: {}", mid, cid);
