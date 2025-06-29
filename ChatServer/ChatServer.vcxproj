@@ -83,7 +83,7 @@
     <LibraryPath>$(ProjectDir)/lib/firebase/MD/x64/Debug/;$(ProjectDir)/lib/boost/x64/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)/include</IncludePath>
+    <IncludePath>$(ProjectDir)/include;$(ProjectDir)/include/Authentication</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
