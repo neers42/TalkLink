@@ -4,6 +4,7 @@
 #ifdef _WIN32
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
+	#include <iphlpapi.h>
 	using socket_t = SOCKET;
 	#define INVALID_SOCKET_FD INVALID_SOCKET
 	#define SOCKET_ERROR_FD SOCKET_ERROR
@@ -26,7 +27,7 @@
 #include "inicpp.h"
 #include "StringFormat.h"
 #include "ServerTime.h"
-#include <iphlpapi.h>
+
 #include "LogHandler.h"
 #include "spdlog/spdlog.h"
 #define SELECT_TIME_OUT -2

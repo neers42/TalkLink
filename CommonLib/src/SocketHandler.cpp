@@ -895,14 +895,13 @@ std::string SocketHandler::get_last_wsa_error_message()
 
 std::string SocketHandler::obtain_local_ip_addr()
 {
+#ifdef _WIN32
 	DWORD get_ip_addr_table_result;
-	//ローカルIPアドレス
 	DWORD _i_count = 0;
 	PMIB_IPADDRTABLE _ip_addr_table = nullptr;
 	DWORD _dw_size = 0;
-	DWORD _dw_ret_val = 0;
-	
-	//IPアドレステーブルの取得
+	std::string _local_ip_addr;
+
 	try
 	{
 		if (GetIpAddrTable(NULL, &_dw_size, 0) == ERROR_INSUFFICIENT_BUFFER) {
@@ -910,92 +909,178 @@ std::string SocketHandler::obtain_local_ip_addr()
 		}
 
 		get_ip_addr_table_result = GetIpAddrTable(_ip_addr_table, &_dw_size, 0);
-		switch (get_ip_addr_table_result)
-		{
-		case ERROR_INSUFFICIENT_BUFFER:
-			throw std::runtime_error("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
-			break;
-
-		case ERROR_INVALID_PARAMETER:
-			throw std::runtime_error("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
-			break;
-
-		case ERROR_NOT_SUPPORTED:
-			throw std::runtime_error("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
-			break;
-
-		case NO_ERROR:
-			break;
-		default:
-			throw std::runtime_error("ERROR CASE:Other(Use FormatMessage to obtain the message string for the returned error.)");
-			break;
+		if (get_ip_addr_table_result != NO_ERROR) {
+			throw std::runtime_error("Failed to get IP address table");
 		}
 
-	}
-	catch (const std::runtime_error& e)
-	{
-		LOG_ERROR(e.what());
-		return "";
-	}
-	catch (const std::exception& e)
-	{
-		LOG_ERROR(e.what());
-		return "";
-	}
-	
-	//IPアドレステーブルの結果を格納
-	try
-	{
-		DWORD dw_ret_val_result = GetIpAddrTable(_ip_addr_table, &_dw_size, 0);
-		switch (dw_ret_val_result)
-		{
-		case ERROR_INSUFFICIENT_BUFFER:
-			throw std::runtime_error("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
-			break;
-
-		case ERROR_INVALID_PARAMETER:
-			throw std::runtime_error("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
-			break;
-
-		case ERROR_NOT_SUPPORTED:
-			throw std::runtime_error("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
-			break;
-
-		case NO_ERROR:
-
-			break;
-
-		default:
-			break;
-		}
-	}
-	catch (const std::runtime_error& e)
-	{
-		LOG_ERROR(e.what());
-		return "";
-	}
-	catch (const std::exception& e)
-	{
-		LOG_ERROR(e.what());
-		return "";
-	}
-
-
-	if (_ip_addr_table->dwNumEntries > 0) {
-		char temp_local_ip_addr[100];
-		for (_i_count = 0; _i_count < _ip_addr_table->dwNumEntries; _i_count++) {
-			inet_ntop(AF_INET, (struct in_addr*)&_ip_addr_table->table[_i_count].dwAddr, temp_local_ip_addr, sizeof(temp_local_ip_addr));
-			if (_i_count == 0) {
-				_local_ip_addr = temp_local_ip_addr;
+		if (_ip_addr_table->dwNumEntries > 0) {
+			char temp_local_ip_addr[INET_ADDRSTRLEN];
+			for (_i_count = 0; _i_count < _ip_addr_table->dwNumEntries; _i_count++) {
+				inet_ntop(AF_INET, (struct in_addr*)&_ip_addr_table->table[_i_count].dwAddr, temp_local_ip_addr, sizeof(temp_local_ip_addr));
+				if (_i_count == 0) {
+					_local_ip_addr = temp_local_ip_addr;
+					break;
+				}
 			}
 		}
-		spdlog::debug("server-ip, success, obtain server ip address.");
+		else {
+			throw std::runtime_error("No IP entries found");
+		}
+
+		if (_ip_addr_table) free(_ip_addr_table);
+
+		return _local_ip_addr;
 	}
-	else{
-		LOG_ERROR("Failed to obtain the server IP address.");
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("Error obtaining local IP address: {}", e.what());
+		return "";
+	}
+#else
+	// Linux/macOS版
+	struct ifaddrs* ifaddr, * ifa;
+	char host[NI_MAXHOST];
+	std::string local_ip_addr;
+
+	if (getifaddrs(&ifaddr) == -1) {
+		return "";
 	}
 
-	return _local_ip_addr;
+	for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == nullptr)
+			continue;
+
+		int family = ifa->ifa_addr->sa_family;
+		if (family == AF_INET) { // IPv4
+			int s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
+				host, NI_MAXHOST,
+				nullptr, 0, NI_NUMERICHOST);
+			if (s == 0) {
+				std::string ifname(ifa->ifa_name);
+				// "lo" (ループバック)を除外したい場合
+				if (ifname != "lo") {
+					local_ip_addr = host;
+					break;  // 最初の非ループバックIPv4アドレスを返す
+				}
+			}
+		}
+	}
+
+	freeifaddrs(ifaddr);
+	return local_ip_addr;
+#endif
+
+
+
+
+//
+//#ifdef _WIN32
+//	DWORD get_ip_addr_table_result;
+//	//ローカルIPアドレス
+//	DWORD _i_count = 0;
+//	PMIB_IPADDRTABLE _ip_addr_table = nullptr;
+//	DWORD _dw_size = 0;
+//	DWORD _dw_ret_val = 0;
+//#else
+//
+//#endif // _WIN32
+//
+//	
+//	
+//	//IPアドレステーブルの取得
+//	try
+//	{
+//		if (GetIpAddrTable(NULL, &_dw_size, 0) == ERROR_INSUFFICIENT_BUFFER) {
+//			_ip_addr_table = (MIB_IPADDRTABLE*)malloc(_dw_size);
+//		}
+//
+//		get_ip_addr_table_result = GetIpAddrTable(_ip_addr_table, &_dw_size, 0);
+//		switch (get_ip_addr_table_result)
+//		{
+//		case ERROR_INSUFFICIENT_BUFFER:
+//			throw std::runtime_error("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
+//			break;
+//
+//		case ERROR_INVALID_PARAMETER:
+//			throw std::runtime_error("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
+//			break;
+//
+//		case ERROR_NOT_SUPPORTED:
+//			throw std::runtime_error("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
+//			break;
+//
+//		case NO_ERROR:
+//			break;
+//		default:
+//			throw std::runtime_error("ERROR CASE:Other(Use FormatMessage to obtain the message string for the returned error.)");
+//			break;
+//		}
+//
+//	}
+//	catch (const std::runtime_error& e)
+//	{
+//		LOG_ERROR(e.what());
+//		return "";
+//	}
+//	catch (const std::exception& e)
+//	{
+//		LOG_ERROR(e.what());
+//		return "";
+//	}
+//	
+//	//IPアドレステーブルの結果を格納
+//	try
+//	{
+//		DWORD dw_ret_val_result = GetIpAddrTable(_ip_addr_table, &_dw_size, 0);
+//		switch (dw_ret_val_result)
+//		{
+//		case ERROR_INSUFFICIENT_BUFFER:
+//			throw std::runtime_error("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
+//			break;
+//
+//		case ERROR_INVALID_PARAMETER:
+//			throw std::runtime_error("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
+//			break;
+//
+//		case ERROR_NOT_SUPPORTED:
+//			throw std::runtime_error("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
+//			break;
+//
+//		case NO_ERROR:
+//
+//			break;
+//
+//		default:
+//			break;
+//		}
+//	}
+//	catch (const std::runtime_error& e)
+//	{
+//		LOG_ERROR(e.what());
+//		return "";
+//	}
+//	catch (const std::exception& e)
+//	{
+//		LOG_ERROR(e.what());
+//		return "";
+//	}
+//
+//
+//	if (_ip_addr_table->dwNumEntries > 0) {
+//		char temp_local_ip_addr[100];
+//		for (_i_count = 0; _i_count < _ip_addr_table->dwNumEntries; _i_count++) {
+//			inet_ntop(AF_INET, (struct in_addr*)&_ip_addr_table->table[_i_count].dwAddr, temp_local_ip_addr, sizeof(temp_local_ip_addr));
+//			if (_i_count == 0) {
+//				_local_ip_addr = temp_local_ip_addr;
+//			}
+//		}
+//		spdlog::debug("server-ip, success, obtain server ip address.");
+//	}
+//	else{
+//		LOG_ERROR("Failed to obtain the server IP address.");
+//	}
+//
+//	return _local_ip_addr;
 }
 
 bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo* result)

@@ -10,7 +10,11 @@
 #include <chrono>
 #include <ctime>
 #include <iomanip>
-
+#ifdef _WIN32
+    #define LOCALTIME_SAFE(tm, time) localtime_s((tm), (time))
+#else
+    #define LOCALTIME_SAFE(tm, time) localtime_r((time), (tm))
+#endif
 class ServerTime
 {
 public:
@@ -29,7 +33,8 @@ public:
     {
 
         time(&current_time);
-        localtime_s(&time_info, &current_time);
+        LOCALTIME_SAFE(&time_info, &current_time);
+        //localtime_s(&time_info, &current_time);
 
         // 現在の時刻を取得
         auto now = std::chrono::system_clock::now();
@@ -40,7 +45,6 @@ public:
         // 現在の時刻を文字列に変換
         current_time = std::chrono::system_clock::to_time_t(now);
 
-        //timeInfo = std::localtime_s(&currentTime);
 
         char time_str[100];
         std::strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
@@ -65,7 +69,8 @@ public:
         auto now = std::chrono::system_clock::now();
         std::time_t now_c = std::chrono::system_clock::to_time_t(now);
         std::tm tm;
-        localtime_s(&tm, &now_c);  // 安全な関数 localtime_s を使用
+        LOCALTIME_SAFE(&tm, &now_c);
+        //localtime_s(&tm, &now_c);  // 安全な関数 localtime_s を使用
 
         std::ostringstream datetime_ss;
         datetime_ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");

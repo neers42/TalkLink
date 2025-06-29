@@ -92,5 +92,6 @@ namespace exception
 
             return message;
         }
+        return std::string();
     }
 }
