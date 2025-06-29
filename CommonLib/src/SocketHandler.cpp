@@ -476,6 +476,7 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 											this->_local_ip_addr.c_str(), 
 											sizeof(this->_local_ip_addr.c_str()));
 		if (!multicast_if_set_sockopt_result) {
+#ifdef _WIN32
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -517,6 +518,9 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 			default:
 				break;
 			}
+#else
+			throw std::runtime_error("Failed to set multicast interface option on the UDP multicast transmission socket. Check the parameters and address family.");
+#endif // _WIN32
 		}
 
 	}
@@ -894,7 +898,7 @@ bool SocketHandler::set_multicast_tx_sin_address(ini::IniFile socket_param_confi
 	
 	return true;
 }
-
+#ifdef _WIN32
 std::string SocketHandler::get_last_wsa_error_message()
 {
 	DWORD error_code = WSAGetLastError();
@@ -914,6 +918,7 @@ std::string SocketHandler::get_last_wsa_error_message()
 	LocalFree(message_buffer); // メモリを解放
 	return message;
 }
+#endif //_WIN32
 
 
 std::string SocketHandler::obtain_local_ip_addr()
@@ -1094,9 +1099,9 @@ std::tuple<socket_t, sockaddr_in> SocketHandler::accept_client_socket(socklen_t 
 
 void SocketHandler::close_socket(const socket_t client_socket)
 {
+	int clnt_socket_result = 0;
 	try
 	{
-		int clnt_socket_result = 0;
 		if (client_socket == INVALID_SOCKET_FD) {
 			throw std::runtime_error("The client socket is invalid. The socket may already be closed.");
 		}
@@ -1108,7 +1113,7 @@ void SocketHandler::close_socket(const socket_t client_socket)
 		int close_result = close(client_socket);
 #endif // _WIN32
 
-		if (close_socket_result == SOCKET_ERROR) {
+		if (close_socket_result == SOCKET_ERROR_FD) {
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
@@ -1184,7 +1189,11 @@ bool SocketHandler::generate_tcp_listen_socket()
 		//リッスンソケットの生成
 		_tcp_listen_socket = socket(_result_tcp -> ai_family, _result_tcp -> ai_socktype, _result_tcp->ai_protocol);
 		if (_tcp_listen_socket == INVALID_SOCKET_FD) {
-			throw std::runtime_error("ソケットの生成に失敗しました。WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
+#ifdef _WIN32
+			throw std::runtime_error("failed generated socket. WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
+#else
+			throw std::runtime_error("failed generated socket. Errno Code : " + std::to_string(errno) + ", Error message : " + std::string(strerror(errno)));
+#endif // _WIN32
 		}
 	}
 	catch (const std::runtime_error& e)
@@ -1386,7 +1395,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 		spdlog::debug("param：ai_protocol is set to IPPROTO_ICMP.");
 #endif // DEBUG
 	}
-
+#ifdef _WIN32
 	//protocol = IGMPの場合
 	if ((protocol_int == 2) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6 || param->ai_family == AF_UNSPEC) && (param->ai_socktype == SOCK_RAW || param->ai_family == 0))) {
 		param->ai_protocol = IPPROTO_IGMP;
@@ -1394,6 +1403,8 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 		spdlog::debug("param：ai_protocol is set to IPPROTO_IGMP.");
 #endif // DEBUG
 	}
+#endif // _WIN32
+
 	if ((protocol_int == 6) && ((param->ai_family == AF_INET || param->ai_family == AF_INET6) && param->ai_socktype == SOCK_STREAM)) {
 		param->ai_protocol = IPPROTO_TCP;
 #ifdef DEBUG
@@ -1416,6 +1427,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 		spdlog::debug("param：ai_protocol is set to IPPROTO_ICMPV6.");
 #endif // DEBUG
 	}
+#ifdef _WIN32
 	//プロトコルをpgmに設定する場合
 	else if ((protocol_int == 113) && param->ai_family == AF_INET && param->ai_socktype == SOCK_RDM) {
 		param->ai_protocol = IPPROTO_PGM;
@@ -1423,6 +1435,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo* param)
 		spdlog::debug("param：ai_protocol is set to IPPROTO_PGM.");
 #endif // DEBUG	
 	}
+#endif // _WIN32
 	else if (protocol_int == 0) {
 		//param->ai_protocol == IPPROTO_UDP;
 	}
@@ -1501,7 +1514,7 @@ bool SocketHandler::open_tcp_listen_socket()
 			throw std::runtime_error("Failed to generate TCP listen socket for message.");
 		}
 		if (listen(_tcp_listen_socket, SOMAXCONN) == SOCKET_ERROR_FD) {
-			throw std::runtime_error("Tcp Listen socket has been SOCKET_ERROR for some reason. WSAGetLastError Code : " + std::to_string(WSAGetLastError()));
+			throw std::runtime_error("Tcp Listen socket has been SOCKET_ERROR for some reason.");
 			
 		}
 		else

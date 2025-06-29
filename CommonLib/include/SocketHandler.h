@@ -113,9 +113,10 @@ private:
 	bool set_multicast_tx_sin_port(ini::IniFile socket_param_config);
 	bool set_multicast_tx_sin_address(ini::IniFile socket_param_config);
 
-
+#ifdef _WIN32
 	//error処理用の関数群
 	std::string get_last_wsa_error_message();
+#endif
 
 public:
 /*
