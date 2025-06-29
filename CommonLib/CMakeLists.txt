@@ -13,37 +13,34 @@ target_include_directories(CommonLib PUBLIC
 # - DLLではなく.lib/.a を使う前提です（動的なら .dll の配置も別途必要）
 target_link_directories(CommonLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/mysql-connector-c++-9.1.0/lib64/vs14
+#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/mysql-connector-c++-9.1.0/lib64/vs14
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/boost/x64/lib
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/wolfssl/x64
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/hiredis/x64
+#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/wolfssl/x64
+#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/hiredis/x64
 )
+find_library(MYSQLCPPCONN_LIB mysqlcppconn PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/wolfssl/x64)
+find_library(WOLFSSL_LIB wolfssl PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/wolfssl/x64)
+find_library(HIREDIS_LIB hiredis PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/hiredis/x64)
 
-# 例: MySQL Connector/C++ のライブラリ名（変更可）
-target_link_libraries(CommonLib PUBLIC 
+if(WIN32)
+  target_link_libraries(CommonLib PUBLIC
+    advapi32 shell32 ole32 oleaut32 uuid odbc32 odbccp32
+    wsock32 iphlpapi Rpcrt4 crypt32 dbghelp bcrypt psapi userenv ws2_32
+  )
+  else()
+  target_link_libraries(CommonLib PUBLIC 
     mysqlcppconn
-    advapi32
-    shell32
-    ole32
-    oleaut32
     uuid
-    odbc32
-    odbccp32
-    wsock32
-    iphlpapi
-    Rpcrt4
     firebase_auth
     firebase_app
-    crypt32
     rpcrt4
-    dbghelp
-    bcrypt
-    psapi
-    userenv
     icu
-    ws2_32
     mysqlcppconn
     mysqlcppconn-static
-    wolfssl
-    hiredis
+    ${WOLFSSL_LIB}
+    ${HIREDIS_LIB}
 )
+endif()
+
+
+
