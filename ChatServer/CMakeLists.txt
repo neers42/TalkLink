@@ -11,8 +11,15 @@ target_include_directories(ChatServer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+target_link_directories(ChatServer PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib
+)
 # CommonLib をリンク（CommonLib 側で外部ライブラリも設定済み）
-target_link_libraries(ChatServer PRIVATE CommonLib)
+target_link_libraries(ChatServer PRIVATE 
+    CommonLib
+    firebase/MD/x64\Release
+
+)
 
 # 出力先ディレクトリの設定（任意）
 set_target_properties(ChatServer PROPERTIES

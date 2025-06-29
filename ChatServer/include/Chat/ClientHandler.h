@@ -19,7 +19,6 @@
 	using socket_t = int;
 #endif	//_WIN32
 #include <memory>
-#include <rpcdce.h>
 #include "AppException.h"
 #include "StringFormat.h"
 #include "ServerTime.h"

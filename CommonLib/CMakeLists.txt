@@ -13,6 +13,10 @@ target_include_directories(CommonLib PUBLIC
 # - DLLではなく.lib/.a を使う前提です（動的なら .dll の配置も別途必要）
 target_link_directories(CommonLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/mysql-connector-c++-9.1.0/lib64/vs14
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/boost/x64/lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/wolfssl/x64
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/hiredis/x64
 )
 
 # 例: MySQL Connector/C++ のライブラリ名（変更可）
