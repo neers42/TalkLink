@@ -36,7 +36,7 @@ private:
 	socklen_t socket_address_in_length = sizeof(this->sockaddr_in);
 	std::string ipv4_address = "";		//クライアントの端末ipv4アドレス
 	std::string password = "";			//クライアントのパスワード
-	firebase::auth::Auth* firebase_auth;	//クライアントの認証情報
+	firebase::auth::Auth* firebase_auth = nullptr;	//クライアントの認証情報
 	int heart_beat_count;		//クライアントのハートビート回数
 	bool auth_status = false;	//クライアントの認証状態
 	WOLFSSL* ssl;				//クライアントのソケットにアタッチされたsslオブジェクト

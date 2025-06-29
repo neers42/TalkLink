@@ -1,11 +1,13 @@
 ﻿#include "Client.h"
-Client::Client() :id{ "" }
-, name{ "" }
-, mail_address{ "" }
-, socket{ INVALID_SOCKET }
-, ipv4_address{ "" }
-, password{ "" }
-, heart_beat_count{ 0 }
+Client::Client() 
+	:id{ "" }
+	, name{ "" }
+	, mail_address{ "" }
+	, socket{ INVALID_SOCKET }
+	, ipv4_address{ "" }
+	, password{ "" }
+	, heart_beat_count{ 0 }
+	, ssl{ nullptr }
 {
 	this->sockaddr_in.sin_family = AF_INET;
 	this->sockaddr_in.sin_port = 0;
