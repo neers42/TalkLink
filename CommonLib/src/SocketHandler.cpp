@@ -29,9 +29,9 @@ SocketHandler::SocketHandler() :
 	_bloadcast_tx_addr{},
 	_local_ip_addr{""},
 	_ttl{ 0 },
-	socket_config_file_pass{ ""},
+	socket_config_file_pass{ ""}
 #ifdef _WIN32
-	_wsa_data{}
+	, _wsa_data{}
 #endif // _WIN32
 {
 	try
@@ -106,9 +106,9 @@ SocketHandler::SocketHandler(const std::string& file_pass):
 	_bloadcast_tx_addr{},
 	_local_ip_addr{ "" },
 	_ttl{ 0 },
-	socket_config_file_pass{ file_pass },
+	socket_config_file_pass{ file_pass }
 #ifdef _WIN32
-	_wsa_data{}
+	, _wsa_data{}
 #endif // _WIN32
 {
 	try
@@ -1110,7 +1110,7 @@ void SocketHandler::close_socket(const socket_t client_socket)
 		int close_socket_result = closesocket(client_socket);
 #else
 		shutdown(client_socket, SHUT_RDWR);
-		int close_result = close(client_socket);
+		int close_socket_result = close(client_socket);
 #endif // _WIN32
 
 		if (close_socket_result == SOCKET_ERROR_FD) {
