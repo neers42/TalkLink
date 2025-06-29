@@ -19,8 +19,8 @@ using socket_t = int;
 #endif // _WIN32
 
 #include <memory>
-#include "FirebaseAuthHandler.h"
-#include "firebase/auth.h"
+#include "Authentication/FirebaseAuthHandler.h"
+#include "Authentication/firebase/auth.h"
 #include "wolfssl/ssl.h"
 #include <shared_mutex>
 class Client

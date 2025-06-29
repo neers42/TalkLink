@@ -1,6 +1,6 @@
 ﻿#ifndef DATABASEACCESSOR_H_
 #define DATABASEACCESSOR_H_
-#include "common.h"
+#include "Utils/common.h"
 #include <sstream>
 #include <memory>
 #include <mysql/jdbc.h>

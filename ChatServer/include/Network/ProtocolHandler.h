@@ -4,7 +4,7 @@
 #define SERVER_PRIVATEKEY_FILE_PASS ".//////certs/server-key.pem"
 #include <sstream>
 #include <shared_mutex>
-#include "common.h"
+#include "Utils/common.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"
 #include "MessageType000.h"
@@ -22,8 +22,8 @@
 #include "ulid/ulid.hh"
 #include "ulid/ulid_struct.hh"
 #include "spdlog/spdlog.h"
-#include "MessageIDGenerator.h"
-#include "Client.h"
+#include "Chat/MessageIDGenerator.h"
+#include "Chat/Client.h"
 //#include "Chat/ClientHandler.h" // 修正: ヘッダーファイルの拡張子を修正
 
 //TLS接続時のプロトコルバージョンを設定

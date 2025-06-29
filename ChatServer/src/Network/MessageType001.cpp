@@ -1,4 +1,4 @@
-﻿#include "MessageType001.h"
+﻿#include "Network/MessageType001.h"
 
 MessageType001::MessageType001(SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
     :_sign_type{s_type},

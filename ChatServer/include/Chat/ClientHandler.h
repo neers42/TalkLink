@@ -23,12 +23,12 @@
 #include "AppException.h"
 #include "StringFormat.h"
 #include "ServerTime.h"
-#include "FirebaseAuthHandler.h"
-#include "firebase/auth.h"
-#include "common.h"
+#include "Authentication/FirebaseAuthHandler.h"
+#include "Authentication/firebase/auth.h"
+#include "Utils/common.h"
 #include "wolfssl/ssl.h"
 #include <shared_mutex>
-#include "Client.h"
+#include "Chat/Client.h"
 #define MAX_CONNECT_NUM 50000
 #define NOT_EXIST_CLIENT_ID -1
 

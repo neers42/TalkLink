@@ -1,4 +1,4 @@
-﻿#include "Client.h"
+﻿#include "Chat/Client.h"
 Client::Client() 
 	:id{ "" }
 	, name{ "" }

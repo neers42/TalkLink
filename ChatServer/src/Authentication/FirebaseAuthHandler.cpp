@@ -1,4 +1,4 @@
-﻿#include "FirebaseAuthHandler.h"
+﻿#include "Authentication/FirebaseAuthHandler.h"
 
 void FirebaseAuthHandler::initialize_firebase()
 {

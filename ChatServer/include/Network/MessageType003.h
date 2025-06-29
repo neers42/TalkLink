@@ -1,6 +1,6 @@
 ﻿#ifndef MESSAGE_TYPE003_H
 #define MESSAGE_TYPE003_H
-#include "common.h"
+#include "Utils/common.h"
 #include "BaseMessage.h"
 #include "LogHandler.h"
 

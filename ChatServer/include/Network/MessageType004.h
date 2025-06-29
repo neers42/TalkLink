@@ -1,7 +1,7 @@
 ﻿#ifndef MESSAGETYPE004_H_
 #define MESSAGETYPE004_H_
 #include "BaseMessage.h"
-#include "MessageIDGenerator.h"
+#include "Chat/MessageIDGenerator.h"
 class MessageType004 :
     public BaseMessage
 {

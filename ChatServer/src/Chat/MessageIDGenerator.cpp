@@ -1,4 +1,4 @@
-﻿#include "MessageIDGenerator.h"
+﻿#include "Chat/MessageIDGenerator.h"
 uint64_t MessageIDGenerator::last_timestamp = 0;
 uint64_t MessageIDGenerator::sequence = 0;
 std::mutex MessageIDGenerator::mtx;

@@ -1,6 +1,6 @@
 ﻿#ifndef MESSAGEIDGENERATOR
 #define MESSAGEIDGENERATOR
-#include "common.h"
+#include "Utils/common.h"
 #include "spdlog/spdlog.h"
 
 class MessageIDGenerator

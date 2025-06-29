@@ -1,7 +1,7 @@
 ﻿#ifndef MESSAGETYPE001_H_
 #define MESSAGETYPE001_H_
 #include "BaseMessage.h"
-#include "common.h"
+#include "Utils/common.h"
 class MessageType001 :
     public BaseMessage
 {

@@ -1,7 +1,7 @@
 ﻿#ifndef MESSAGETYPE103A_H
 #define MESSAGETYPE103A_H
 #include "BaseMessage.h"
-#include "MessageIDGenerator.h"
+#include "Chat/MessageIDGenerator.h"
 #include "MessageType003.h"
 class MessageType103A :
     public BaseMessage

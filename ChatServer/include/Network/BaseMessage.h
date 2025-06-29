@@ -1,6 +1,6 @@
 ﻿#ifndef BASEMESSAGE
 #define BASEMESSAGE
-#include "common.h"
+#include "Utils/common.h"
 #include "spdlog/spdlog.h"
 #include "LogHandler.h"
 
