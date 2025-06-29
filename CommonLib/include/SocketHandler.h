@@ -48,7 +48,6 @@ private:
 	struct addrinfo _tcp_socket_param;		//TCPソケット生成用のパラメータ
 	struct addrinfo _multicast_tx_param;	//UDPマルチキャスト送信用のソケット生成用のパラメータ
 	struct addrinfo _bloadcast_tx_param;	//UDPブロードキャスト送信用のソケット生成用のパラメータ
-	WSADATA _wsa_data;
 	socket_t _tcp_listen_socket;				//TCPリッスンソケット	
 	socket_t _udp_bloadcast_tx_socket;		//UDPブロードキャスト送信用ソケット
 	socket_t _udp_multicast_tx_socket;		//UDPマルチキャスト送信用ソケット
@@ -60,6 +59,10 @@ private:
 	std::string _local_ip_addr;
 	int _ttl;								//UDPマルチキャスト送信用のTTL値
 	std::string socket_config_file_pass;			//ソケット設定ファイルのパス
+#ifdef _WIN32
+	WSADATA _wsa_data;
+#endif // _WIN32
+
 
 /*
 :::::::::::::::::::::::::::::::

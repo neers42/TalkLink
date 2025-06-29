@@ -18,7 +18,6 @@ SocketHandler::SocketHandler() :
 	_tcp_socket_param{},
 	_multicast_tx_param{},
 	_bloadcast_tx_param{},
-	_wsa_data{},
 	_fds{},
 	_fd_read{},
 	_timeout{0, 500*1000},
@@ -30,11 +29,15 @@ SocketHandler::SocketHandler() :
 	_bloadcast_tx_addr{},
 	_local_ip_addr{""},
 	_ttl{ 0 },
-	socket_config_file_pass{ ""}
+	socket_config_file_pass{ ""},
+#ifdef _WIN32
+	_wsa_data{}
+#endif // _WIN32
 {
 	try
 	{
-		ZeroMemory(&_tcp_socket_param, sizeof(_tcp_socket_param));
+		memset(&_tcp_socket_param, 0, sizeof(_tcp_socket_param));
+#ifdef _WIN32
 		int init_wsa_result = WSAStartup(MAKEWORD(2, 2), &_wsa_data);
 		if (init_wsa_result == false) {
 			switch (init_wsa_result) {
@@ -59,6 +62,9 @@ SocketHandler::SocketHandler() :
 				break;
 			}
 		}
+#endif // _WIN32
+
+		
 		//ファイルディスクリプタキャッチ用のfdsを初期化
 		FD_ZERO(&_fds);
 		FD_ZERO(&_fd_read);
@@ -89,7 +95,6 @@ SocketHandler::SocketHandler(const std::string& file_pass):
 	_tcp_socket_param{},
 	_multicast_tx_param{},
 	_bloadcast_tx_param{},
-	_wsa_data{},
 	_fds{},
 	_fd_read{},
 	_timeout{ 0, 500*1000 },
@@ -101,11 +106,15 @@ SocketHandler::SocketHandler(const std::string& file_pass):
 	_bloadcast_tx_addr{},
 	_local_ip_addr{ "" },
 	_ttl{ 0 },
-	socket_config_file_pass{ file_pass }
+	socket_config_file_pass{ file_pass },
+#ifdef _WIN32
+	_wsa_data{}
+#endif // _WIN32
 {
 	try
 	{
-		ZeroMemory(&_tcp_socket_param, sizeof(_tcp_socket_param));
+		memset(&_tcp_socket_param, 0, sizeof(_tcp_socket_param));
+#ifdef _WIN32
 		int init_wsa_result = WSAStartup(MAKEWORD(2, 2), &_wsa_data);
 		if (init_wsa_result == false) {
 			switch (init_wsa_result) {
@@ -130,6 +139,8 @@ SocketHandler::SocketHandler(const std::string& file_pass):
 				break;
 			}
 		}
+#endif // _WIN32
+
 		//ファイルディスクリプタキャッチ用のfdsを初期化
 		FD_ZERO(&_fds);
 		FD_ZERO(&_fd_read);
@@ -155,10 +166,34 @@ SocketHandler::SocketHandler(const std::string& file_pass):
 //デストラクタ
 SocketHandler::~SocketHandler()
 {
-	freeaddrinfo(_result_tcp);
-	closesocket(get_listen_socket());
-	closesocket(get_udp_multicast_tx_socket());
+	//freeaddrinfo(_result_tcp);
+	//closesocket(get_listen_socket());
+	//closesocket(get_udp_multicast_tx_socket());
+	//WSACleanup();
+
+	if (_result_tcp != nullptr) {
+		freeaddrinfo(_result_tcp);
+	}
+
+	if (get_listen_socket() != INVALID_SOCKET_FD) {
+#ifdef _WIN32
+		closesocket(get_listen_socket());
+#else
+		close(get_listen_socket());
+#endif
+	}
+
+	if (get_udp_multicast_tx_socket() != INVALID_SOCKET_FD) {
+#ifdef _WIN32
+		closesocket(get_udp_multicast_tx_socket());
+#else
+		close(get_udp_multicast_tx_socket());
+#endif
+	}
+
+#ifdef _WIN32
 	WSACleanup();
+#endif
 }
 
 socket_t SocketHandler::get_listen_socket()
@@ -294,13 +329,12 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 	{
 		char client_ip_addr_char[100];
 		struct sockaddr_in temp_paddr = client_sockaddr_in;
-		PCSTR iresult;
+		const char* iresult;
 		iresult = inet_ntop(temp_paddr.sin_family, &temp_paddr.sin_addr,
 			client_ip_addr_char,ipv4_addr_size);
 		std::string client_ip_addr_str(client_ip_addr_char);
-		//client_handler->get_client_list()[client_num].set_client_ipv4_addr(temp_ip_addr_char);
-		//new_client->set_client_ipv4_addr(temp_ip_addr_char);
 		if (iresult == NULL) {
+#ifdef _WIN32
 			switch (WSAGetLastError())
 			{
 			case WSAEAFNOSUPPORT:
@@ -314,6 +348,10 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in& client_sockaddr_in,
 			default:
 				break;
 			}
+#else
+			throw std::runtime_error("inet_ntop failed to convert IP address to string. Check the address family and parameters.");
+#endif // _WIN32
+
 		}else {
 			return client_ip_addr_str;
 		}
@@ -360,7 +398,10 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 	{
 		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_multicast_tx_addr.sin_port).c_str(), &_multicast_tx_param, &_result_multicast);
 		this->_udp_multicast_tx_socket = socket(_multicast_tx_param.ai_family, _multicast_tx_param.ai_socktype, 0);
+
+
 		if (this->_udp_multicast_tx_socket == INVALID_SOCKET_FD) {
+#ifdef _WIN32
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -415,7 +456,9 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 			default:
 				break;
 			}
-		
+#else
+			throw std::runtime_error("Failed to create UDP multicast transmission socket. Check the address family and parameters.");
+#endif // _WIN32
 		
 		}
 	}
@@ -488,10 +531,12 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 		int multicast_ttl_set_sockopt_result = setsockopt(_udp_multicast_tx_socket,
 			IPPROTO_IP,
 			IP_MULTICAST_TTL,
-			(char*)&_ttl,
+			//(char*)&_ttl,
+			reinterpret_cast<const char*>(&_ttl),
 			sizeof(_ttl));
 
 		if (!multicast_ttl_set_sockopt_result) {
+#ifdef _WIN32
 			switch (WSAGetLastError())
 			{
 			case WSANOTINITIALISED:
@@ -533,6 +578,9 @@ bool SocketHandler::generate_udp_multicast_tx_socket()
 			default:
 				break;
 			}
+#else
+			throw std::runtime_error("Failed to set multicast TTL option on the UDP multicast transmission socket. Check the parameters and address family.");
+#endif // _WIN32
 
 		}
 	}
@@ -741,42 +789,12 @@ bool SocketHandler::set_multicast_tx_sin_family(ini::IniFile socket_param_config
 		spdlog::debug("multicast param：sin_family = AF_INET");
 #endif // DEBUG
 	}
-	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_IPX")) {
-		_multicast_tx_addr.sin_family = AF_IPX;
-#ifdef DEBUG
-		spdlog::debug("multicast param：sin_family = AF_IPX");
-#endif // DEBUG
-	}
-	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_APPLETALK")) {
-		_multicast_tx_addr.sin_family = AF_APPLETALK;
-#ifdef DEBUG
-		spdlog::debug("multicast param：sin_family = AF_APPLETALK");
-#endif // DEBUG
-	}
-	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_NETBIOS")) {
-		_multicast_tx_addr.sin_family = AF_NETBIOS;
-#ifdef DEBUG
-		spdlog::debug("multicast param：sin_family = AF_NETBIOS");
-#endif // DEBUG
-	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_INET6")) {
 		_multicast_tx_addr.sin_family = AF_INET6;
 #ifdef DEBUG
 		spdlog::debug("multicast param：sin_family = AF_INET6");
 #endif // DEBUG
 
-	}
-	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_IRDA")) {
-		_multicast_tx_addr.sin_family = AF_IRDA;
-#ifdef DEBUG
-		spdlog::debug("multicast param：sin_family = AF_IRDA");
-#endif // DEBUG
-	}
-	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_BTH")) {
-		_multicast_tx_addr.sin_family = AF_BTH;
-#ifdef DEBUG
-		spdlog::debug("multicast param：sin_family = AF_BTH");
-#endif // DEBUG
 	}
 	else {
 		LOG_ERROR("The multicast transmit socket settings were not set correctly(sin_family). Exit the program.");
@@ -829,6 +847,7 @@ bool SocketHandler::set_multicast_tx_sin_address(ini::IniFile socket_param_confi
 	{
 		int inet_pton_result = inet_pton(_multicast_tx_param.ai_family, temp_multicast_addr.c_str(), &_multicast_tx_addr.sin_addr);
 		if (inet_pton_result == -1) {
+#ifdef _WIN32
 			switch (WSAGetLastError())
 			{
 			case WSAEAFNOSUPPORT:
@@ -842,6 +861,10 @@ bool SocketHandler::set_multicast_tx_sin_address(ini::IniFile socket_param_confi
 			default:
 				break;
 			}
+#else
+			throw std::runtime_error("inet_pton failed to convert the address string to binary format. Check the address family and parameters.");
+#endif //_WIN32
+		
 		}
 		else if (inet_pton_result == 0) {
 			throw std::invalid_argument("The pAddrBuf parameter points to a string that is not a valid IPv4 dotted decimal string or a valid IPv6 address string.");
@@ -970,117 +993,6 @@ std::string SocketHandler::obtain_local_ip_addr()
 	return local_ip_addr;
 #endif
 
-
-
-
-//
-//#ifdef _WIN32
-//	DWORD get_ip_addr_table_result;
-//	//ローカルIPアドレス
-//	DWORD _i_count = 0;
-//	PMIB_IPADDRTABLE _ip_addr_table = nullptr;
-//	DWORD _dw_size = 0;
-//	DWORD _dw_ret_val = 0;
-//#else
-//
-//#endif // _WIN32
-//
-//	
-//	
-//	//IPアドレステーブルの取得
-//	try
-//	{
-//		if (GetIpAddrTable(NULL, &_dw_size, 0) == ERROR_INSUFFICIENT_BUFFER) {
-//			_ip_addr_table = (MIB_IPADDRTABLE*)malloc(_dw_size);
-//		}
-//
-//		get_ip_addr_table_result = GetIpAddrTable(_ip_addr_table, &_dw_size, 0);
-//		switch (get_ip_addr_table_result)
-//		{
-//		case ERROR_INSUFFICIENT_BUFFER:
-//			throw std::runtime_error("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
-//			break;
-//
-//		case ERROR_INVALID_PARAMETER:
-//			throw std::runtime_error("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
-//			break;
-//
-//		case ERROR_NOT_SUPPORTED:
-//			throw std::runtime_error("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
-//			break;
-//
-//		case NO_ERROR:
-//			break;
-//		default:
-//			throw std::runtime_error("ERROR CASE:Other(Use FormatMessage to obtain the message string for the returned error.)");
-//			break;
-//		}
-//
-//	}
-//	catch (const std::runtime_error& e)
-//	{
-//		LOG_ERROR(e.what());
-//		return "";
-//	}
-//	catch (const std::exception& e)
-//	{
-//		LOG_ERROR(e.what());
-//		return "";
-//	}
-//	
-//	//IPアドレステーブルの結果を格納
-//	try
-//	{
-//		DWORD dw_ret_val_result = GetIpAddrTable(_ip_addr_table, &_dw_size, 0);
-//		switch (dw_ret_val_result)
-//		{
-//		case ERROR_INSUFFICIENT_BUFFER:
-//			throw std::runtime_error("ERROR CASE: ERROR_INSUFFICIENT_BUFFER(The buffer pointed to by the pIpAddrTable parameter is not large enough. The required size is returned in the DWORD variable pointed to by the pdwSize parameter.)");
-//			break;
-//
-//		case ERROR_INVALID_PARAMETER:
-//			throw std::runtime_error("ERROR CASE:ERROR_INVALID_PARAMETER(The pdwSize parameter is NULL, or GetIpAddrTable is unable to write to the memory pointed to by the pdwSize parameter.)");
-//			break;
-//
-//		case ERROR_NOT_SUPPORTED:
-//			throw std::runtime_error("ERROR CASE:ERROR_NOT_SUPPORTED(This function is not supported on the operating system in use on the local system.)");
-//			break;
-//
-//		case NO_ERROR:
-//
-//			break;
-//
-//		default:
-//			break;
-//		}
-//	}
-//	catch (const std::runtime_error& e)
-//	{
-//		LOG_ERROR(e.what());
-//		return "";
-//	}
-//	catch (const std::exception& e)
-//	{
-//		LOG_ERROR(e.what());
-//		return "";
-//	}
-//
-//
-//	if (_ip_addr_table->dwNumEntries > 0) {
-//		char temp_local_ip_addr[100];
-//		for (_i_count = 0; _i_count < _ip_addr_table->dwNumEntries; _i_count++) {
-//			inet_ntop(AF_INET, (struct in_addr*)&_ip_addr_table->table[_i_count].dwAddr, temp_local_ip_addr, sizeof(temp_local_ip_addr));
-//			if (_i_count == 0) {
-//				_local_ip_addr = temp_local_ip_addr;
-//			}
-//		}
-//		spdlog::debug("server-ip, success, obtain server ip address.");
-//	}
-//	else{
-//		LOG_ERROR("Failed to obtain the server IP address.");
-//	}
-//
-//	return _local_ip_addr;
 }
 
 bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo* result)
@@ -1581,17 +1493,59 @@ bool SocketHandler::open_tcp_listen_socket()
 	catch (const std::runtime_error& e)
 	{
 		LOG_ERROR(e.what());
-		freeaddrinfo(_result_tcp);
-		closesocket(_tcp_listen_socket);
+		if (_result_tcp != nullptr) {
+			freeaddrinfo(_result_tcp);
+		}
+
+		if (get_listen_socket() != INVALID_SOCKET_FD) {
+#ifdef _WIN32
+			closesocket(_tcp_listen_socket);
+#else
+			close(_tcp_listen_socket);
+#endif
+		}
+
+		if (get_udp_multicast_tx_socket() != INVALID_SOCKET_FD) {
+#ifdef _WIN32
+			closesocket(_udp_multicast_tx_socket);
+#else
+			close(_udp_multicast_tx_socket);
+#endif
+		}
+
+#ifdef _WIN32
 		WSACleanup();
+#endif
+
+
 		return false;
 	}
 	catch (const std::exception& e)
 	{
 		LOG_ERROR(e.what());
-		freeaddrinfo(_result_tcp);
-		closesocket(_tcp_listen_socket);
+		if (_result_tcp != nullptr) {
+			freeaddrinfo(_result_tcp);
+		}
+
+		if (get_listen_socket() != INVALID_SOCKET_FD) {
+#ifdef _WIN32
+			closesocket(_tcp_listen_socket);
+#else
+			close(_tcp_listen_socket);
+#endif
+		}
+
+		if (get_udp_multicast_tx_socket() != INVALID_SOCKET_FD) {
+#ifdef _WIN32
+			closesocket(_udp_multicast_tx_socket);
+#else
+			close(_udp_multicast_tx_socket);
+#endif
+		}
+
+#ifdef _WIN32
 		WSACleanup();
+#endif
 		return false;
 	}
 	return true;
