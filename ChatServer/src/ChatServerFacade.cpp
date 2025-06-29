@@ -482,7 +482,8 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003>& mt00
 		}
 		break;
 		this->_chat_room_handler->add_chatroom(std::move(new_room));
-		for (const auto& room : this->_chat_room_handler->chatroom_list) {
+		auto chatrooms = this->_chat_room_handler->get_chatrooms_snapshot();
+		for (const auto& room : chatrooms) {
 			spdlog::debug("room id : {:s}", room->get_chatroom_id());
 		}
 				

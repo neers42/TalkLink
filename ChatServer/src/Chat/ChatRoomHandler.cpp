@@ -155,7 +155,7 @@ std::vector<std::string> ChatroomHandler::get_client_infos_by_chatroom_id(const 
 
 }
 
-std::vector<std::shared_ptr<ChatRoom>> ChatroomHandler::get_chatroom_list()
+std::vector<std::shared_ptr<ChatRoom>> ChatroomHandler::get_chatrooms_snapshot()
 {
 	std::shared_lock<std::shared_mutex> lock(this->shared_mtx);
 	return this->chatroom_list;
