@@ -1012,7 +1012,7 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo* r
 		int bind_result = bind(listen_socket, result->ai_addr, (int)result->ai_addrlen);
 		if (bind_result == -1) {
 			std::stringstream socket_error_msg;
-			socket_error_msg << "An error occurred while binding the TCP listening socket. WSAGetLastError Code : " << std::to_string(WSAGetLastError());
+			socket_error_msg << "An error occurred while binding the TCP listening socket.";
 			throw std::runtime_error(socket_error_msg.str());
 
 		}
@@ -1045,11 +1045,20 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo* r
 
 std::tuple<socket_t, sockaddr_in> SocketHandler::accept_client_socket(socklen_t client_sockaddr_in_length)
 {
+	socket_t accept_client_socket_result;
+	struct sockaddr_in accept_sockaddr_in_result;
 	try
 	{
-		SOCKET accept_client_socket_result;
-		struct sockaddr_in accept_sockaddr_in_result;
+		
+#ifdef _WIN32
+		int addr_len = static_cast<int>(client_sockaddr_in_length);
+		accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &addr_len);
+		client_sockaddr_in_length = static_cast<socklen_t>(addr_len);
+#else
 		accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
+#endif
+
+		//accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
 
 		//acceptしたソケットがINVALID_SOCKET_FDである場合
 		if (accept_client_socket_result == INVALID_SOCKET_FD) {

@@ -16,6 +16,7 @@
 	#include <unistd.h>
 	#include <sys/select.h>
 	#include <netdb.h>
+	#include <ifaddrs.h>
 	using socket_t = int;
 	#define INVALID_SOCKET_FD -1
 	#define SOCKET_ERROR_FD -1
