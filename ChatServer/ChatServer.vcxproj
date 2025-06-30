@@ -80,7 +80,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)/src/modules/Authentication/include;$(ProjectDir)/src/modules/Chat/include;$(ProjectDir)/src/modules/Database/include;$(ProjectDir)/src/modules/Network/include;$(ProjectDir)/src/modules/Utils/include</IncludePath>
-    <LibraryPath>$(ProjectDir)/lib/firebase/MD/x64/Debug/;$(ProjectDir)/lib/boost/x64/;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)/lib/firebase/windows/MD/x64/Debug/;$(ProjectDir)/lib/boost/x64/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)/include;$(ProjectDir)/include/Authentication</IncludePath>
@@ -128,7 +128,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;Rpcrt4.lib;firebase_auth.lib;firebase_app.lib;firebase_app_check.lib;firebase_firestore.lib;firebase_functions.lib;firebase_database.lib;firebase_remote_config.lib;firebase_storage.lib;firebase_analytics.lib;firebase_dynamic_links.lib;firebase_gma.lib;firebase_installations.lib;firebase_messaging.lib;crypt32.lib;rpcrt4.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;icu.lib;ws2_32.lib;Ws2_32.lib;mysqlcppconn.lib;wolfssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjevtDir)\lib\firebase\MD\x64\Debug;$(ProjectDir)\lib\boost\x64;$(ProjectDir)\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(ProjectDir)\lib\mysql-connector-c++-9.1.0\lib64;$(ProjectDir)\lib\wolfssl\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)\lib\firebase\windows\MD\x64\Debug;$(ProjectDir)\lib\boost\x64;$(ProjectDir)\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(ProjectDir)\lib\mysql-connector-c++-9.1.0\lib64;$(ProjectDir)\lib\wolfssl\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -150,8 +150,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)\lib\firebase\MD\x64\Release;$(SolutionDir)CommonLib\external_lib\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(SolutionDir)CommonLib\external_lib\lib\boost\x64\lib;$(SolutionDir)CommonLib\external_lib\lib\wolfssl\x64;$(SolutionDir)CommonLib\external_lib\lib\hiredis\x64;$(SolutionDir)CommonLib\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;Rpcrt4.lib;firebase_auth.lib;firebase_app.lib;crypt32.lib;rpcrt4.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;icu.lib;ws2_32.lib;mysqlcppconn.lib;mysqlcppconn-static.lib;wolfssl.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\firebase\windows\MD\x64\Release;$(SolutionDir)CommonLib\external_lib\lib\mysql-connector-c++-9.1.0\lib64\vs14;$(SolutionDir)CommonLib\external_lib\lib\boost\x64\lib;$(SolutionDir)CommonLib\external_lib\lib\wolfssl\x64;$(SolutionDir)CommonLib\external_lib\lib\hiredis\x64;$(SolutionDir)CommonLib\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;wsock32.lib;iphlpapi.lib;rpcrt4.lib;firebase_auth.lib;firebase_app.lib;crypt32.lib;dbghelp.lib;bcrypt.lib;psapi.lib;userenv.lib;ws2_32.lib;mysqlcppconn.lib;wolfssl.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -364,38 +364,38 @@
     <None Include="conf\socket_setting.ini" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_analytics.lib">
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_analytics.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </Library>
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_app.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_app_check.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_auth.lib">
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_app.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_app_check.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_auth.lib">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </Library>
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_database.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_dynamic_links.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_firestore.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_functions.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_gma.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_installations.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_messaging.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_remote_config.lib" />
-    <Library Include="lib\firebase\MD\x64\Debug\firebase_storage.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_analytics.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_app.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_app_check.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_auth.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_database.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_dynamic_links.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_firestore.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_functions.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_gma.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_installations.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_messaging.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_remote_config.lib" />
-    <Library Include="lib\firebase\MD\x64\Release\firebase_storage.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_database.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_dynamic_links.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_firestore.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_functions.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_gma.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_installations.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_messaging.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_remote_config.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Debug\firebase_storage.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_analytics.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_app.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_app_check.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_auth.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_database.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_dynamic_links.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_firestore.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_functions.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_gma.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_installations.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_messaging.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_remote_config.lib" />
+    <Library Include="lib\firebase\windows\MD\x64\Release\firebase_storage.lib" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
