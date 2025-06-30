@@ -45,25 +45,24 @@ target_include_directories(CommonLib PUBLIC
 # 6. 必要な外部ライブラリ（OSによって異なる）
 target_link_directories(CommonLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib
-#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/mysql-connector-c++-9.1.0/lib64/vs14
+#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/mysql-connector-c++-9.1.0/linux/lib64
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/boost/x64/lib
-#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/wolfssl/x64
-#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/hiredis/x64
 )
-find_library(MYSQLCPPCONN_LIB mysqlcppconn PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/wolfssl/x64)
-#find_library(WOLFSSL_LIB wolfssl PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/wolfssl/x64)
-find_library(HIREDIS_LIB hiredis PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/hiredis/x64)
-
+find_library(MYSQLCPPCONN_LIB
+    NAMES libmysqlcppconn
+    PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/mysql-connector-c++-9.1.0/linux/lib64
+)
 if(WIN32)
   target_link_libraries(CommonLib PUBLIC
     advapi32 shell32 ole32 oleaut32 odbc32 odbccp32
     wsock32 iphlpapi rpcrt4 crypt32 dbghelp bcrypt psapi userenv ws2_32
+    mysqlcppconn
   )
   else()
   target_link_libraries(CommonLib PUBLIC 
     firebase_auth
     firebase_app
-    mysqlcppconn
+    ${MYSQLCPPCONN_LIB}
     wolfssl
     hiredis
 )
