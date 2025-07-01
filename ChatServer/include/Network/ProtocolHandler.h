@@ -7,6 +7,8 @@
 #include "Utils/common.h"
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"
+#include <wolfssl/wolfcrypt/asn.h>     // ASN.1 関連
+#include <wolfssl/openssl/x509.h>    // X509関連
 #include "MessageType000.h"
 #include "MessageType001.h"
 #include "MessageType002.h"
