@@ -49,6 +49,7 @@ target_include_directories(CommonLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include
     ${WOLFSSL_INCLUDE_DIR} 
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl      # Å© é¿ç€ÇÃÉwÉbÉ_åQ
 )
 
 find_library(MYSQLCPPCONN_LIB
