@@ -13,6 +13,10 @@ FetchContent_Declare(
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DWOLFSSL_CERT_EXT=ON
         -DWOLFSSL_USER_SETTINGS=${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl/user_settings.h
+        -DENABLE_OPENSSL_EXTRA=ON          # ここを追加
+        -DENABLE_X509=ON                  # ここを追加
+        -DENABLE_CERTGEN=ON               # ここを追加
+        -DENABLE_CERTREQ=ON               # ここを追加
 )
 
 # ビルド用に展開して有効化
