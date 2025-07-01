@@ -7,6 +7,7 @@
 	#include <WinSock2.h>
 	#include <ws2tcpip.h>
 	using socket_t = SOCKET;
+	#include "Authentication/firebase_windows/firebase/auth.h"
 #else
 	#include <sys/types.h>
 	#include <sys/socket.h>
@@ -15,12 +16,13 @@
 	#include <unistd.h>
 	#include <sys/select.h>
 	#include <netdb.h>
-using socket_t = int;
+	using socket_t = int;
+	#include "Authentication/firebase_linux/firebase/auth.h"
 #endif // _WIN32
 
 #include <memory>
 #include "Authentication/FirebaseAuthHandler.h"
-#include "Authentication/firebase/auth.h"
+
 #include "wolfssl/ssl.h"
 #include <shared_mutex>
 class Client
