@@ -1,5 +1,4 @@
 include(FetchContent)
-add_definitions(-DNO_ULID_UINT128)
 #---wolfsslの定義-------
 FetchContent_Declare(
     wolfssl
@@ -36,6 +35,8 @@ FetchContent_MakeAvailable(hiredis)
 # 4. 自作コードを追加
 file(GLOB_RECURSE COMMON_SRC src/*.cpp)
 add_library(CommonLib STATIC ${COMMON_SRC})
+
+target_compile_definitions(CommonLib PUBLIC NO_ULID_UINT128)
 
 # 5. インクルードディレクトリ
 target_include_directories(CommonLib PUBLIC
