@@ -74,9 +74,9 @@ void ChatServerFacade::run()
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
 		this->_socket_handler->initialize_select_param();
 		this->prepare_client_fd_set();
-		std::vector<SOCKET> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
+		std::vector<socket_t> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
 		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
-			[this](SOCKET changed_socket) {handle_changed_socket_process(changed_socket); });
+			[this](socket_t changed_socket) {handle_changed_socket_process(changed_socket); });
 		std::this_thread::sleep_until(abs_time);
 
 	}
@@ -88,7 +88,7 @@ void ChatServerFacade::prepare_client_fd_set()
 	auto clients_snapshot = this->_client_handler->get_connected_clients_snapshot();
 	for (auto& client : clients_snapshot) {
 		//有効なソケットにFDSETを実行する
-		if (client != nullptr && client->get_socket() != INVALID_SOCKET) {
+		if (client != nullptr && client->get_socket() != INVALID_SOCKET_FD) {
 			FD_SET(client->get_socket(), &_socket_handler->get_fd_read());
 		}
 	}
@@ -108,14 +108,14 @@ void ChatServerFacade::show_server_running_info()
 bool ChatServerFacade::accept_client_socket_process()
 {
 	std::thread::id this_thread_id = std::this_thread::get_id();
-	SOCKET new_client_socket = INVALID_SOCKET;
+	socket_t new_client_socket = INVALID_SOCKET_FD;
 	struct sockaddr_in new_client_sockaddr_in = { 0 };
 	socklen_t new_client_socklen_t = 0;
 	std::string new_client_ipv4_addr;
 
 	//TCPソケットのアクセプト処理
 	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(_client_handler->get_init_client().get_socket_address_in_length());
-	if (new_client_socket == INVALID_SOCKET) {
+	if (new_client_socket == INVALID_SOCKET_FD) {
 		LOG_ERROR("The accepted socket for message could not be added to the list because it was an INVALID SOCKET");
 		return ACCEPT_FAILED;
 	}
@@ -563,7 +563,7 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003>& mt00
 
 void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004>& mt004)
 {
-	std::vector<SOCKET> send_sockets;
+	std::vector<socket_t> send_sockets;
 	std::vector<std::string> receive_clients;
 	int chatroom_list_num = -1;
 	int send_socket_num = 0;
