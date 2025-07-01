@@ -1374,6 +1374,9 @@
     <ClInclude Include="external_lib\include\ulid\ulid_uint128.hh">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="external_lib\include\wolfssl\user_settings.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonLib.cpp">

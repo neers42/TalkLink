@@ -1,17 +1,18 @@
 include(FetchContent)
+
+
 #---wolfsslの定義-------
 FetchContent_Declare(
     wolfssl
     GIT_REPOSITORY https://github.com/wolfSSL/wolfssl.git
     GIT_TAG v5.8.0-stable
-)
-# オプションを事前にセット
-set(WOLFSSL_CMAKE_ARGS
-  -DWOLFSSL_CRYPT_TESTS=OFF
-  -DBUILD_SHARED_LIBS=OFF
-  -DWOLFSSL_DEBUG=OFF
-  -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-  -DWOLFSSL_CERT_EXT=ON
+    CMAKE_ARGS
+        -DWOLFSSL_CRYPT_TESTS=OFF
+        -DBUILD_SHARED_LIBS=OFF
+        -DWOLFSSL_DEBUG=OFF
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        -DWOLFSSL_CERT_EXT=ON
+        -DWOLFSSL_USER_SETTINGS=${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl/user_settings.h
 )
 
 # ビルド用に展開して有効化

@@ -423,6 +423,7 @@
     <ClInclude Include="external_lib\include\wolfssl\sniffer_error.h" />
     <ClInclude Include="external_lib\include\wolfssl\ssl.h" />
     <ClInclude Include="external_lib\include\wolfssl\test.h" />
+    <ClInclude Include="external_lib\include\wolfssl\user_settings.h" />
     <ClInclude Include="external_lib\include\wolfssl\version.h" />
     <ClInclude Include="external_lib\include\wolfssl\wolfcrypt\aes.h" />
     <ClInclude Include="external_lib\include\wolfssl\wolfcrypt\arc4.h" />
