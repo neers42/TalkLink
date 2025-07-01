@@ -21,7 +21,8 @@ FetchContent_Declare(
 
 # ビルド用に展開して有効化
 FetchContent_MakeAvailable(wolfssl)
-
+# ここでwolfsslのincludeディレクトリを取得
+get_target_property(WOLFSSL_INCLUDE_DIR wolfssl INTERFACE_INCLUDE_DIRECTORIES)
 #---hiredisの定義
 FetchContent_Declare(
     hiredis
@@ -47,6 +48,7 @@ target_compile_definitions(CommonLib PUBLIC NO_ULID_UINT128)
 target_include_directories(CommonLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include
+    ${WOLFSSL_INCLUDE_DIR} 
 )
 
 find_library(MYSQLCPPCONN_LIB
