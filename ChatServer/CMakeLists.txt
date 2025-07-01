@@ -7,10 +7,16 @@ file(GLOB_RECURSE CHATSERVER_SRC
 add_executable(ChatServer ${CHATSERVER_SRC})
 
 # インクルードディレクトリ（ChatServer固有のものを指定）
-target_include_directories(ChatServer PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication
-)
+if(WIN32)
+    target_include_directories(ChatServer PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication/firebase_windows
+    )
+    else()
+    target_include_directories(ChatServer PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication/firebase_linux
+    )
 
 target_link_directories(ChatServer PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/lib

@@ -11,11 +11,6 @@
 #include "Authentication/firebase_linux/firebase/log.h"
 #include "Authentication/firebase_linux/firebase/future.h"
 #endif // _WIN32
-
-#include "firebase/app.h"
-#include "firebase/auth.h"
-#include "firebase/log.h"
-#include "firebase/future.h"
 #include "AppException.h"
 #include "StringFormat.h"
 #include "ServerTime.h"
