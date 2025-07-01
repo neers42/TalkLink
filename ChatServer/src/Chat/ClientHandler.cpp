@@ -460,7 +460,7 @@ const std::vector<socket_t> ClientHandler::get_all_connected_sockets() const
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
     std::vector<socket_t> socket_list;  
     for (const auto& client : connected_clients) {  
-        if (client != nullptr && client->get_socket() != INVALID_SOCKET) {
+        if (client != nullptr && client->get_socket() != INVALID_SOCKET_FD) {
             socket_list.push_back(client->get_socket());
         }  
     }  
