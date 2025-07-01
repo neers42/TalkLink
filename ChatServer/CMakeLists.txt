@@ -15,10 +15,20 @@ target_include_directories(ChatServer PRIVATE
 target_link_directories(ChatServer PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/lib
 )
+find_library(FIREBASE_AUTH_LIB
+    NAMES libfirebase_auth
+    PATHS ${CMAKE_CURRENT_SOURCE_DIR}/lib/firebase/linux/x86_64/cxx11
+)
+
+find_library(FIREBASE_APP_LIB
+    NAMES libfirebase_app
+    PATHS ${CMAKE_CURRENT_SOURCE_DIR}/lib/firebase/linux/x86_64/cxx11
+)
 # CommonLib をリンク（CommonLib 側で外部ライブラリも設定済み）
 target_link_libraries(ChatServer PRIVATE 
     CommonLib
-    firebase/MD/x64/Release
+    ${FIREBASE_AUTH_LIB}
+    ${FIREBASE_APP_LIB}
 
 )
 
@@ -27,10 +37,3 @@ set_target_properties(ChatServer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-
-# conf/socket_setting.ini を実行ファイルの出力先にコピー（任意）
-#configure_file(
-#    ${CMAKE_CURRENT_SOURCE_DIR}/conf/socket_setting.ini
-#    ${CMAKE_BINARY_DIR}/bin/socket_setting.ini
-#    COPYONLY
-#)

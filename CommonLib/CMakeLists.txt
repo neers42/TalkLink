@@ -43,15 +43,16 @@ target_include_directories(CommonLib PUBLIC
 )
 
 # 6. 必要な外部ライブラリ（OSによって異なる）
-target_link_directories(CommonLib PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib
+#target_link_directories(CommonLib PUBLIC
+#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib
 #    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/mysql-connector-c++-9.1.0/linux/lib64
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/boost/x64/lib
-)
+#    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/boost/x64/lib
+#)
 find_library(MYSQLCPPCONN_LIB
     NAMES libmysqlcppconn
     PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/mysql-connector-c++-9.1.0/linux/lib64
 )
+
 if(WIN32)
   target_link_libraries(CommonLib PUBLIC
     advapi32 shell32 ole32 oleaut32 odbc32 odbccp32
@@ -60,8 +61,6 @@ if(WIN32)
   )
   else()
   target_link_libraries(CommonLib PUBLIC 
-    firebase_auth
-    firebase_app
     ${MYSQLCPPCONN_LIB}
     wolfssl
     hiredis
