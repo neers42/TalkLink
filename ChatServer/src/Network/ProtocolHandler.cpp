@@ -52,7 +52,7 @@ const std::string ProtocolHandler::generate_message_id()
 	long long now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 	//第二引数：0~255範囲の乱数を生成する関数
-	ulid::ULID ulid = ulid::Create(now, random::random_byte);
+	ulid::ULID ulid = ulid::Create(now, random_utils::random_byte);
 	std::string message_id = ulid::Marshal(ulid);
 	spdlog::info("generated message id:{:s}.", message_id);
 	return message_id;

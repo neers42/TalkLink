@@ -20,7 +20,7 @@
 
 using json = nlohmann::json;
 
-namespace random {
+namespace random_utils {
 	//乱数生成
     inline unsigned char random_byte() {
         static std::mt19937 rng(std::random_device{}());
