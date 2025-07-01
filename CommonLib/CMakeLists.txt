@@ -46,7 +46,7 @@ target_include_directories(CommonLib PUBLIC
 )
 
 find_library(MYSQLCPPCONN_LIB
-    NAMES libmysqlcppconn
+    NAMES mysqlcppconn
     PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/lib/mysql-connector-c++-9.1.0/linux/lib64
 )
 
