@@ -21,6 +21,11 @@ FetchContent_Declare(
 
 # ビルド用に展開して有効化
 FetchContent_MakeAvailable(wolfssl)
+
+FetchContent_GetProperties(wolfssl)
+message(STATUS "wolfssl source dir = ${wolfssl_SOURCE_DIR}")
+
+
 # ここでwolfsslのincludeディレクトリを取得
 get_target_property(WOLFSSL_INCLUDE_DIR wolfssl INTERFACE_INCLUDE_DIRECTORIES)
 #---hiredisの定義
