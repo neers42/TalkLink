@@ -58,7 +58,7 @@ const std::string ProtocolHandler::generate_message_id()
 	return message_id;
 }
 
-WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
+WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(socket_t client_socket)
 {
 	WOLFSSL* new_client_ssl = wolfSSL_new(this->_server_w_ctx);
 	//クライアントのSSL生成が正常に処理されなかった場合
@@ -76,7 +76,7 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(SOCKET client_socket)
 }
 
 
-WOLFSSL* ProtocolHandler::wolfssl_accept(const SOCKET client_socket)
+WOLFSSL* ProtocolHandler::wolfssl_accept(const socket_t client_socket)
 {
 	//SSLオブジェクトの生成及び
 	WOLFSSL* new_client_ssl = generate_and_attach_ssl_object(client_socket);

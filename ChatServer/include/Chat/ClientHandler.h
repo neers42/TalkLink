@@ -19,6 +19,7 @@
 	#include <netdb.h>
 	using socket_t = int;
 	#include "Authentication/firebase_linux/firebase/auth.h"
+	#include <uuid/uuid.h>
 #endif	//_WIN32
 #include <memory>
 #include "AppException.h"

@@ -3,7 +3,7 @@ Client::Client()
 	:id{ "" }
 	, name{ "" }
 	, mail_address{ "" }
-	, socket{ INVALID_SOCKET }
+	, socket{ INVALID_SOCKET_FD }
 	, ipv4_address{ "" }
 	, password{ "" }
 	, heart_beat_count{ 0 }
@@ -11,7 +11,11 @@ Client::Client()
 {
 	this->sockaddr_in.sin_family = AF_INET;
 	this->sockaddr_in.sin_port = 0;
+#ifdef _WIN32
 	this->sockaddr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+#else
+	this->sockaddr_in.sin_addr.s_addr = INADDR_ANY;
+#endif
 }
 
 Client::Client(

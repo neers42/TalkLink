@@ -8,6 +8,7 @@
 	#include <ws2tcpip.h>
 	using socket_t = SOCKET;
 	#include "Authentication/firebase_windows/firebase/auth.h"
+	#define INVALID_SOCKET_FD INVALID_SOCKET
 #else
 	#include <sys/types.h>
 	#include <sys/socket.h>
@@ -18,6 +19,7 @@
 	#include <netdb.h>
 	using socket_t = int;
 	#include "Authentication/firebase_linux/firebase/auth.h"
+	#define INVALID_SOCKET_FD -1
 #endif // _WIN32
 
 #include <memory>

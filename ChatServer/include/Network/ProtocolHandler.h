@@ -24,7 +24,11 @@
 #include "spdlog/spdlog.h"
 #include "Chat/MessageIDGenerator.h"
 #include "Chat/Client.h"
-//#include "Chat/ClientHandler.h" // 修正: ヘッダーファイルの拡張子を修正
+#ifdef _WIN32
+	using socket_t = SOCKET;	//WindowsではSOCKETを使用
+#else
+	using socket_t = int;		//Linuxではintを使用
+#endif //_WIN32
 
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
@@ -61,10 +65,10 @@ public:
 	const std::string generate_message_id();
 
 	//SSLオブジェクトの生成
-	WOLFSSL* generate_and_attach_ssl_object(SOCKET client_socket);
+	WOLFSSL* generate_and_attach_ssl_object(socket_t client_socket);
 
 	//SSLのアクセプト
-	WOLFSSL* wolfssl_accept(const SOCKET client_socket);
+	WOLFSSL* wolfssl_accept(const socket_t client_socket);
 
 	//wolfSSLのシャットダウン
 	void shutdown_wolfssl(WOLFSSL* client_ssl);
@@ -102,7 +106,7 @@ public:
 		const std::string& src_id,
 		const std::string dst_id,
 		const std::string& ipv4,
-		const SOCKET socket_num)
+		const socket_t socket_num)
 	{
 		if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType000>) {
 		

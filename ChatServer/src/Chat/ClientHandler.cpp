@@ -10,6 +10,7 @@ ClientHandler::~ClientHandler()
 }
 std::string ClientHandler::generate_client_id()
 {
+#ifdef _WIN32
 	UUID uuid;
 	try
 	{
@@ -38,7 +39,7 @@ std::string ClientHandler::generate_client_id()
 		spdlog::error(ex.what_for_str());
 		return "";
 	}
-	
+
 	RPC_CSTR uuid_str;
 	try
 	{
@@ -68,6 +69,17 @@ std::string ClientHandler::generate_client_id()
 	RpcStringFreeA(&uuid_str);
 
 	return converted_uuid_str;
+#else
+	uuid_t uuid;
+	char uuid_str[37]; // 36文字 + '\0'
+
+	uuid_generate(uuid);         // ランダムなUUIDを生成
+	uuid_unparse(uuid, uuid_str); // 文字列に変換
+
+	return std::string(uuid_str);
+#endif // _WIN32
+
+	
 }
 
 std::vector<std::shared_ptr<Client>>::iterator ClientHandler::find_client(const std::shared_ptr<Client>& client)
