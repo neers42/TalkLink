@@ -1,5 +1,7 @@
 include(FetchContent)
 
+# wolfssl ‚ğÃ“IƒŠƒ“ƒN‚Å‹­§‚·‚é
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Force static build" FORCE)
 
 #---wolfssl‚Ì’è‹`-------
 FetchContent_Declare(
