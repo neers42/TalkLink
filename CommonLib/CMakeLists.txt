@@ -1,5 +1,5 @@
 include(FetchContent)
-
+add_definitions(-DNO_ULID_UINT128)
 #---wolfssl‚Ì’è‹`-------
 FetchContent_Declare(
     wolfssl
