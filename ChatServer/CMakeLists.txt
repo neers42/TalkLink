@@ -17,6 +17,7 @@ if(WIN32)
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication/firebase_linux
     )
+endif()
 
 target_link_directories(ChatServer PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/lib
