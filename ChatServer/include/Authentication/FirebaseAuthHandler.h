@@ -1,5 +1,16 @@
 ﻿#ifndef FIREBASEAUTHHANDLER_H_
 #define FIREBASEAUTHHANDLER_H_
+#ifdef _WIN32
+#include "Authentication/firebase_windows/firebase/app.h"
+#include "Authentication/firebase_windows/firebase/auth.h"
+#include "Authentication/firebase_windows/firebase/log.h"
+#include "Authentication/firebase_windows/firebase/future.h"
+#else
+#include "Authentication/firebase_linux/firebase/app.h"
+#include "Authentication/firebase_linux/firebase/auth.h"
+#include "Authentication/firebase_linux/firebase/log.h"
+#include "Authentication/firebase_linux/firebase/future.h"
+#endif // _WIN32
 
 #include "firebase/app.h"
 #include "firebase/auth.h"
