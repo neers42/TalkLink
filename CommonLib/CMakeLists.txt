@@ -50,6 +50,8 @@ target_include_directories(CommonLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include
     ${WOLFSSL_INCLUDE_DIR} 
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl      # ← 実際のヘッダ群
+    ${wolfssl_SOURCE_DIR}                     # wolfssl のトップ
+    ${wolfssl_SOURCE_DIR}/wolfssl             # 実際のヘッダーがある場所
 )
 
 find_library(MYSQLCPPCONN_LIB
