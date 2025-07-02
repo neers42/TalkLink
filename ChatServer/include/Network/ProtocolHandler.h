@@ -5,11 +5,13 @@
 #include <sstream>
 #include <shared_mutex>
 #include "Utils/common.h"
-#ifdef _LINUX
-#define WOLFSSL_USER_SETTINGS
-#include <wolfssl/options.h>  // これを追加
-#endif //_LINUX
-
+#ifdef _WIN32
+using socket_t = SOCKET;	//WindowsではSOCKETを使用
+#else
+using socket_t = int;		//Linuxではintを使用
+	#define WOLFSSL_USER_SETTINGS
+	#include <wolfssl/options.h>  // これを追加
+#endif //_WIN32
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"
 #include <wolfssl/wolfcrypt/asn.h>     // ASN.1 関連
@@ -31,11 +33,7 @@
 #include "spdlog/spdlog.h"
 #include "Chat/MessageIDGenerator.h"
 #include "Chat/Client.h"
-#ifdef _WIN32
-	using socket_t = SOCKET;	//WindowsではSOCKETを使用
-#else
-	using socket_t = int;		//Linuxではintを使用
-#endif //_WIN32
+
 
 //TLS接続時のプロトコルバージョンを設定
 #define SERVER_METHOD_SSLV23	//サーバ及びクライアントの両方のサポートする最も高いバージョンを指定
