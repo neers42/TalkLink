@@ -1,9 +1,7 @@
 include(FetchContent)
 
-# wolfssl を静的リンクで強制する
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Force static build" FORCE)
 
-#---wolfsslの定義-------
 FetchContent_Declare(
     wolfssl
     GIT_REPOSITORY https://github.com/wolfSSL/wolfssl.git
@@ -15,18 +13,29 @@ FetchContent_Declare(
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DWOLFSSL_CERT_EXT=ON
         -DWOLFSSL_USER_SETTINGS=${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl/user_settings.h
-        -DENABLE_OPENSSL_EXTRA=ON          # ここを追加
-        -DENABLE_X509=ON                  # ここを追加
-        -DENABLE_CERTGEN=ON               # ここを追加
-        -DENABLE_CERTREQ=ON               # ここを追加
+        -DENABLE_OPENSSL_EXTRA=ON
+        -DENABLE_X509=ON
+        -DENABLE_CERTGEN=ON
+        -DENABLE_CERTREQ=ON
 )
 
-# ビルド用に展開して有効化
 FetchContent_MakeAvailable(wolfssl)
 
-FetchContent_GetProperties(wolfssl)
+# wolfsslのターゲットからインクルードディレクトリを取得（空になる場合がある）
+get_target_property(WOLFSSL_INCLUDE_DIR wolfssl INTERFACE_INCLUDE_DIRECTORIES)
+
 message(STATUS "wolfssl source dir = ${wolfssl_SOURCE_DIR}")
-message(STATUS "wolfssl include dir = ${WOLFSSL_INCLUDE_DIR}")
+message(STATUS "wolfssl include dir (from target) = ${WOLFSSL_INCLUDE_DIR}")
+
+# 空の場合は手動でインクルードパスを設定する
+if(WOLFSSL_INCLUDE_DIR STREQUAL "" OR NOT WOLFSSL_INCLUDE_DIR)
+    set(WOLFSSL_INCLUDE_DIR
+        ${wolfssl_SOURCE_DIR}
+        ${wolfssl_SOURCE_DIR}/wolfssl
+        ${wolfssl_SOURCE_DIR}/wolfcrypt
+    )
+    message(STATUS "wolfssl include dir manually set to: ${WOLFSSL_INCLUDE_DIR}")
+endif()
 
 
 #---hiredisの定義
@@ -42,8 +51,6 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 # ビルド用に展開して有効化
 FetchContent_MakeAvailable(hiredis)
 
-
-
 # 4. 自作コードを追加
 file(GLOB_RECURSE COMMON_SRC src/*.cpp)
 add_library(CommonLib STATIC ${COMMON_SRC})
@@ -57,7 +64,7 @@ target_include_directories(CommonLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl      # ← 実際のヘッダ群
     ${wolfssl_SOURCE_DIR}                     # wolfssl のトップ
     ${wolfssl_SOURCE_DIR}/wolfssl             # 実際のヘッダーがある場所
-     ${wolfssl_SOURCE_DIR}/wolfcrypt           # 実際のヘッダーがある場所
+    ${wolfssl_SOURCE_DIR}/wolfcrypt           # 実際のヘッダーがある場所
 )
 
 find_library(MYSQLCPPCONN_LIB
