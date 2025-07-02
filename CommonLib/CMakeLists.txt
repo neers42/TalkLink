@@ -59,9 +59,9 @@ target_compile_definitions(CommonLib PUBLIC NO_ULID_UINT128)
 
 # 5. インクルードディレクトリ
 target_include_directories(CommonLib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl      # ← 実際のヘッダ群
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl      # ← 実際のヘッダ群
     ${wolfssl_SOURCE_DIR}                     # wolfssl のトップ
     ${wolfssl_SOURCE_DIR}/wolfssl             # 実際のヘッダーがある場所
     ${wolfssl_SOURCE_DIR}/wolfcrypt           # 実際のヘッダーがある場所

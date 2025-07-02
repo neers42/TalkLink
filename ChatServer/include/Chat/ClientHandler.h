@@ -22,6 +22,8 @@
 	#include "Authentication/firebase_linux/firebase/auth.h"
 	#include <uuid/uuid.h>
 	#define INVALD_SOCKET_FD -1
+	#define WOLFSSL_USER_SETTINGS
+	#include <wolfssl/options.h>  // これを追加
 #endif	//_WIN32
 #include <memory>
 #include "AppException.h"

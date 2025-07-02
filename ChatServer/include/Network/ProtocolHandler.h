@@ -5,6 +5,11 @@
 #include <sstream>
 #include <shared_mutex>
 #include "Utils/common.h"
+#ifdef _LINUX
+#define WOLFSSL_USER_SETTINGS
+#include <wolfssl/options.h>  // これを追加
+#endif //_LINUX
+
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"
 #include <wolfssl/wolfcrypt/asn.h>     // ASN.1 関連
