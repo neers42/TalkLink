@@ -14,7 +14,7 @@ FetchContent_Declare(
         -DWOLFSSL_DEBUG=OFF
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DWOLFSSL_CERT_EXT=ON
-        -DWOLFSSL_USER_SETTINGS=${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl/user_settings.h
+        -DWOLFSSL_USER_SETTINGS=yes
         -DENABLE_OPENSSL_EXTRA=ON          # ‚±‚±‚ð’Ç‰Á
         -DENABLE_X509=ON                  # ‚±‚±‚ð’Ç‰Á
         -DENABLE_CERTGEN=ON               # ‚±‚±‚ð’Ç‰Á
