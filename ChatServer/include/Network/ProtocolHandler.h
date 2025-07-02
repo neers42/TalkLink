@@ -6,6 +6,8 @@
 #include <shared_mutex>
 #include "Utils/common.h"
 #ifdef _WIN32
+#include <winsock2.h>	//Windowsではwinsock2.hを使用
+#include <ws2tcpip.h>	//Windowsではws2tcpip.hを使用
 using socket_t = SOCKET;	//WindowsではSOCKETを使用
 #else
 using socket_t = int;		//Linuxではintを使用
