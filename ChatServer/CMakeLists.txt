@@ -23,6 +23,8 @@ else()
     target_include_directories(ChatServer PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication/firebase_linux
+        ${CMAKE_BINARY_DIR}/_deps/wolfssl-src
+        ${CMAKE_BINARY_DIR}/_deps/wolfssl-build
         ${SECRET_INCLUDE_DIRS}
         ${GLIB_INCLUDE_DIRS}
     )
@@ -55,7 +57,7 @@ endif()
 # ChatServer にライブラリをリンク
 target_link_libraries(ChatServer PRIVATE 
     CommonLib
-    wolfssl::wolfssl     # ← 明示的に target 名を指定
+    wolfssl     # ← 明示的に target 名を指定
     hiredis
     ${FIREBASE_AUTH_LIB}
     ${FIREBASE_APP_LIB}
