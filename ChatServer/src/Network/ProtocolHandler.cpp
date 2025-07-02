@@ -291,6 +291,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
 
+#ifdef _WIN32
 	WOLFSSL_X509* server_cert = wolfSSL_get_peer_certificate(ssl);
 	if (!server_cert) {
 		spdlog::warn("No client certificate received.");
@@ -354,6 +355,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 	spdlog::info(" * Server Certificate Not After : {:s}", cert_not_after);
 	return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 
+#endif
 }
 
 void ProtocolHandler::wolfssl_log_callback(const int log_level, const char* log_message)
@@ -382,10 +384,14 @@ void ProtocolHandler::print_wolfssl_global_error()
 {
 	int err = 0;
 	char buffer[80];
+#ifdef _WIN32
 	err = wolfSSL_ERR_get_error();
 	wolfSSL_ERR_error_string(err, buffer);
 	LOG_ERROR("wolfSSL, failed, error content : {:s} (code : {:d}.)", std::string(buffer), err);
 	//spdlog::error("wolfSSL, failed, error content : {:s} (code : {:d}.)", std::string(buffer), err);
+
+#endif //_WIN32
+
 }
 
 //SSL通信で発生するエラーの表示
