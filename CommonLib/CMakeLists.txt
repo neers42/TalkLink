@@ -20,6 +20,7 @@ FetchContent_Declare(
         -DWOLFSSL_OPENSSL_ALL=ON         # ← 追加
         -DWOLFSSL_CERT_EXT=ON            # ← 追加
         -DHAVE_X509=ON                   # ← 追加
+        -DKEEP_PEER_CERT=ON         # ← ピア証明書保持（X509操作に必要）
 )
 
 FetchContent_MakeAvailable(wolfssl)
