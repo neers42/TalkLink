@@ -17,6 +17,9 @@ FetchContent_Declare(
         -DENABLE_X509=ON
         -DENABLE_CERTGEN=ON
         -DENABLE_CERTREQ=ON
+        -DWOLFSSL_OPENSSL_ALL=ON         # Å© í«â¡
+        -DWOLFSSL_CERT_EXT=ON            # Å© í«â¡
+        -DHAVE_X509=ON                   # Å© í«â¡
 )
 
 FetchContent_MakeAvailable(wolfssl)
