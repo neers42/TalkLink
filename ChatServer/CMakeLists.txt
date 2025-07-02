@@ -53,6 +53,8 @@ endif()
 # ChatServer ‚Éƒ‰ƒCƒuƒ‰ƒŠ‚ðƒŠƒ“ƒN
 target_link_libraries(ChatServer PRIVATE 
     CommonLib
+    wolfssl
+    hiredis
     ${FIREBASE_AUTH_LIB}
     ${FIREBASE_APP_LIB}
 )
