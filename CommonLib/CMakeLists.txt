@@ -26,10 +26,9 @@ FetchContent_MakeAvailable(wolfssl)
 
 FetchContent_GetProperties(wolfssl)
 message(STATUS "wolfssl source dir = ${wolfssl_SOURCE_DIR}")
+message(STATUS "wolfssl include dir = ${WOLFSSL_INCLUDE_DIR}")
 
 
-# ここでwolfsslのincludeディレクトリを取得
-get_target_property(WOLFSSL_INCLUDE_DIR wolfssl INTERFACE_INCLUDE_DIRECTORIES)
 #---hiredisの定義
 FetchContent_Declare(
     hiredis
@@ -55,7 +54,6 @@ target_compile_definitions(CommonLib PUBLIC NO_ULID_UINT128)
 target_include_directories(CommonLib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include
-    ${WOLFSSL_INCLUDE_DIR} 
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl      # ← 実際のヘッダ群
     ${wolfssl_SOURCE_DIR}                     # wolfssl のトップ
     ${wolfssl_SOURCE_DIR}/wolfssl             # 実際のヘッダーがある場所
