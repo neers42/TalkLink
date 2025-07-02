@@ -6,23 +6,27 @@ file(GLOB_RECURSE CHATSERVER_SRC
 # ChatServer 実行ファイルを定義
 add_executable(ChatServer ${CHATSERVER_SRC})
 
+# PkgConfig 依存を検出する
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SECRET REQUIRED libsecret-1)
+pkg_check_modules(GLIB REQUIRED glib-2.0)
+
 # インクルードディレクトリ（ChatServer固有のものを指定）
 if(WIN32)
     target_include_directories(ChatServer PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication/firebase_windows
     )
-    else()
+else()
     target_include_directories(ChatServer PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication/firebase_linux
+        ${SECRET_INCLUDE_DIRS}
+        ${GLIB_INCLUDE_DIRS}
     )
 endif()
 
-target_link_directories(ChatServer PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib
-)
-
+# Firebaseライブラリのパスをfind_libraryで検索
 if(WIN32)
     find_library(FIREBASE_AUTH_LIB
         NAMES firebase_auth
@@ -32,7 +36,6 @@ if(WIN32)
         NAMES firebase_app
         PATHS ${CMAKE_CURRENT_SOURCE_DIR}/lib/firebase/windows/MD/x64/Release
     )
-
 else()
     find_library(FIREBASE_AUTH_LIB
         NAMES firebase_auth
@@ -47,14 +50,20 @@ else()
     message(STATUS "FIREBASE_APP_LIB = ${FIREBASE_APP_LIB}")
 endif()
 
-
-# CommonLib をリンク（CommonLib 側で外部ライブラリも設定済み）
+# ChatServer にライブラリをリンク
 target_link_libraries(ChatServer PRIVATE 
     CommonLib
     ${FIREBASE_AUTH_LIB}
     ${FIREBASE_APP_LIB}
-
 )
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(ChatServer PRIVATE
+        uuid
+        ${SECRET_LIBRARIES}
+        ${GLIB_LIBRARIES}
+    )
+endif()
 
 # 出力先ディレクトリの設定（任意）
 set_target_properties(ChatServer PROPERTIES
