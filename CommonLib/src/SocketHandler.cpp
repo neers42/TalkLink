@@ -98,6 +98,7 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 		int init_wsa_result = WSAStartup(MAKEWORD(2, 2), &_wsa_data);
 		if (init_wsa_result == false)
 		{
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
@@ -305,6 +306,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in &client_sockaddr_in,
 		if (iresult == NULL)
 		{
 #ifdef _WIN32
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
@@ -358,7 +360,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_multicast_tx_addr.sin_port).c_str(), &_multicast_tx_param, &_result_multicast);
 		if (get_addr_result_msg != 0)
 		{
-			throw std::runtime_error(std::string("getaddrinfo failed: ") + gai_strerror(get_addr_result_msg));
+			throw std::runtime_error(std::string("getaddrinfo failed: ") + std::string(gai_strerror(get_addr_result_msg)));
 		}
 
 		// socket() の第3引数を IPPROTO_UDP に
@@ -367,6 +369,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		if (this->_udp_multicast_tx_socket == INVALID_SOCKET_FD)
 		{
 #ifdef _WIN32
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
@@ -408,6 +411,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		if (multicast_if_set_sockopt_result != 0)
 		{
 #ifdef _WIN32
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
@@ -435,6 +439,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		if (multicast_ttl_set_sockopt_result != 0)
 		{
 #ifdef _WIN32
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
@@ -817,6 +822,8 @@ std::string SocketHandler::obtain_local_ip_addr()
 	struct ifaddrs *ifaddr, *ifa;
 	char host[NI_MAXHOST];
 	std::string local_ip_addr;
+	std::string ifname = "";
+	std::string ip_str = "";
 
 	if (getifaddrs(&ifaddr) == -1)
 	{
@@ -835,15 +842,14 @@ std::string SocketHandler::obtain_local_ip_addr()
 								host, NI_MAXHOST, nullptr, 0, NI_NUMERICHOST);
 			if (s == 0)
 			{
-				std::string ifname(ifa->ifa_name);
-				std::string ip_str(host);
+				ifname = ifa->ifa_name;
+				ip_str = host;
 				spdlog::debug("Interface: {}, IP: {}", ifname, ip_str);
 
 				// eth0を優先
 				if (ifname == "eth0")
 				{
 					this->_local_ip_addr = ip_str;
-					spdlog::info("Server Interface: {}, IP: {}", ifname, ip_str);
 					break;
 				}
 
@@ -851,11 +857,11 @@ std::string SocketHandler::obtain_local_ip_addr()
 				if (ip_str.rfind("127.", 0) != 0 && this->_local_ip_addr.empty())
 				{
 					this->_local_ip_addr = ip_str;
-					spdlog::debug("Server Interface: {}, IP: {}", ifname, ip_str);
 				}
 			}
 		}
 	}
+	spdlog::info("Server Interface: {}, IP: {}", ifname, ip_str);
 	freeifaddrs(ifaddr);
 	return local_ip_addr;
 #endif
@@ -870,6 +876,7 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo *r
 		int bind_result = bind(casted_listen_socket, result->ai_addr, (int)result->ai_addrlen);
 		if (bind_result == SOCKET_ERROR_FD)
 		{
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "Runtime Error : select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
@@ -1008,6 +1015,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 		if (get_addr_result_msg != 0)
 		{
 #ifdef _WIN32
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "Runtime Error : getaddrinfo failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
@@ -1023,6 +1031,7 @@ bool SocketHandler::generate_tcp_listen_socket()
 		if (_tcp_listen_socket == INVALID_SOCKET_FD)
 		{
 #ifdef _WIN32
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "Runtime Error : failed generated socket. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
