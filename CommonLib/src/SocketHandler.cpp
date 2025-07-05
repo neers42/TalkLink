@@ -29,8 +29,7 @@ SocketHandler::SocketHandler() : _result_tcp{nullptr},
 								 _ttl{0},
 								 socket_config_file_pass{""}
 #ifdef _WIN32
-								 ,
-								 _wsa_data{}
+								 ,_wsa_data{}
 #endif // _WIN32
 {
 	try
@@ -87,8 +86,7 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 															 _ttl{0},
 															 socket_config_file_pass{file_pass}
 #ifdef _WIN32
-															 ,
-															 _wsa_data{}
+															 ,_wsa_data{}
 #endif // _WIN32
 {
 	try
@@ -190,7 +188,7 @@ int SocketHandler::get_port()
 bool SocketHandler::set_socket_param()
 {
 	this->_tcp_socket_param.ai_flags = AI_PASSIVE;
-	this->_tcp_socket_param.ai_family = AF_UNSPEC;	   // IPv4とIPv6の両方をサポート
+	this->_tcp_socket_param.ai_family = AF_INET;	   // IPv4をサポート
 	this->_tcp_socket_param.ai_socktype = SOCK_STREAM; // TCPソケット
 	this->_tcp_socket_param.ai_protocol = IPPROTO_TCP; // TCPプロトコルを使用
 	this->_port = 50000;							   // ポート番号は後で設定
@@ -386,27 +384,32 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		return false;
 	}
 
+	
+#ifndef _WIN32	//LINUX
 	// IP_MULTICAST_IF のために in_addr 構造体に変換
 	struct in_addr localInterface;
-#ifdef _WIN32
-	inet_pton(AF_INET, this->_local_ip_addr.c_str(), &localInterface);
-#else
-
-	inet_pton(AF_INET, this->_local_ip_addr.c_str(), &localInterface);
-#endif
 	int ret = inet_pton(AF_INET, this->_local_ip_addr.c_str(), &localInterface);
 	if (ret != 1)
 	{
 		spdlog::error("inet_pton failed for local_ip_addr = {}", this->_local_ip_addr);
 		return false;
 	}
+#endif
 	// setsockoptの設定
+	int multicast_if_set_sockopt_result = 0;
 	try
 	{
-		int multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket,
-														 IPPROTO_IP, IP_MULTICAST_IF,
-														 reinterpret_cast<const char *>(&localInterface),
-														 sizeof(localInterface));
+#ifdef _WIN32
+		multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket, 
+											IPPROTO_IP, IP_MULTICAST_IF,
+											this->_local_ip_addr.c_str(), 
+											sizeof(this->_local_ip_addr.c_str()));
+#else
+		multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket,
+													 IPPROTO_IP, IP_MULTICAST_IF,
+													 reinterpret_cast<const char *>(&localInterface),
+													 sizeof(localInterface));
+#endif
 
 		if (multicast_if_set_sockopt_result != 0)
 		{
@@ -428,13 +431,14 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		return false;
 	}
 
+	int multicast_ttl_set_sockopt_result = 0;
 	try
 	{
-		int multicast_ttl_set_sockopt_result = setsockopt(_udp_multicast_tx_socket,
-														  IPPROTO_IP,
-														  IP_MULTICAST_TTL,
-														  reinterpret_cast<const char *>(&_ttl),
-														  sizeof(_ttl));
+		multicast_ttl_set_sockopt_result = setsockopt(_udp_multicast_tx_socket,
+													  IPPROTO_IP,
+													  IP_MULTICAST_TTL,
+													  reinterpret_cast<const char *>(&_ttl),
+													  sizeof(_ttl));
 
 		if (multicast_ttl_set_sockopt_result != 0)
 		{
