@@ -19,7 +19,7 @@ void AunthenticationServerFacade::run() {
 		exit(1);
 	}
 
-	if (_socket_handler->generate_udp_multicast_tx_socket() == false) {
+	if (_socket_handler->open_udp_multicast_tx_socket() == false) {
 		LOG_ERROR("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}

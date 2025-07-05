@@ -1,19 +1,19 @@
-# ChatServer ‚Ìƒ\[ƒXƒR[ƒh‚ğW‚ß‚é
+# ChatServer ï¿½Ìƒ\ï¿½[ï¿½Xï¿½Rï¿½[ï¿½hï¿½ï¿½ï¿½Wï¿½ß‚ï¿½
 file(GLOB_RECURSE CHATSERVER_SRC
     src/*.cpp
 )
 
-# ChatServer Àsƒtƒ@ƒCƒ‹‚ğ’è‹`
+# ChatServer ï¿½ï¿½ï¿½sï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½`
 add_executable(ChatServer ${CHATSERVER_SRC})
 
-# PkgConfig ˆË‘¶‚ğŒŸo‚·‚éiLinux‚Ì‚İj
+# PkgConfig ï¿½Ë‘ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½ï¿½ï¿½ï¿½iLinuxï¿½Ì‚İj
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SECRET REQUIRED libsecret-1)
     pkg_check_modules(GLIB REQUIRED glib-2.0)
 endif()
 
-# ƒCƒ“ƒNƒ‹[ƒhƒfƒBƒŒƒNƒgƒŠİ’èiƒvƒ‰ƒbƒgƒtƒH[ƒ€‚²‚Æ‚ÉØ‚è‘Ö‚¦j
+# ï¿½Cï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½[ï¿½hï¿½fï¿½Bï¿½ï¿½ï¿½Nï¿½gï¿½ï¿½ï¿½İ’ï¿½iï¿½vï¿½ï¿½ï¿½bï¿½gï¿½tï¿½Hï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Æ‚ÉØ‚ï¿½Ö‚ï¿½ï¿½j
 if(WIN32)
     target_include_directories(ChatServer PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -30,7 +30,7 @@ else()
     )
 endif()
 
-# Firebaseƒ‰ƒCƒuƒ‰ƒŠ‚ÌƒpƒX‚ğ find_library ‚ÅŒŸõ
+# Firebaseï¿½ï¿½ï¿½Cï¿½uï¿½ï¿½ï¿½ï¿½ï¿½Ìƒpï¿½Xï¿½ï¿½ find_library ï¿½ÅŒï¿½ï¿½ï¿½
 if(WIN32)
     find_library(FIREBASE_AUTH_LIB
         NAMES firebase_auth
@@ -54,16 +54,16 @@ else()
     message(STATUS "FIREBASE_APP_LIB = ${FIREBASE_APP_LIB}")
 endif()
 
-# ChatServer ‚Éƒ‰ƒCƒuƒ‰ƒŠ‚ğƒŠƒ“ƒN
+# ChatServer ï¿½Éƒï¿½ï¿½Cï¿½uï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½N
 target_link_libraries(ChatServer PRIVATE 
     CommonLib
-    wolfssl     # © –¾¦“I‚É target –¼‚ğw’è
+    wolfssl     # ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Iï¿½ï¿½ target ï¿½ï¿½ï¿½ï¿½ï¿½wï¿½ï¿½
     hiredis
     ${FIREBASE_AUTH_LIB}
     ${FIREBASE_APP_LIB}
 )
 
-# Linux ê—pƒŠƒ“ƒN
+# Linux ï¿½ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½N
 if(UNIX AND NOT APPLE)
     target_link_libraries(ChatServer PRIVATE
         uuid
@@ -72,7 +72,23 @@ if(UNIX AND NOT APPLE)
     )
 endif()
 
-# o—ÍæƒfƒBƒŒƒNƒgƒŠ‚Ìİ’è
+# ï¿½oï¿½Íï¿½fï¿½Bï¿½ï¿½ï¿½Nï¿½gï¿½ï¿½ï¿½Ìİ’ï¿½
 set_target_properties(ChatServer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+
+
+# conf/socket_setting.ini ã‚’ãƒ“ãƒ«ãƒ‰ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã® bin/ ã«ã‚³ãƒ”ãƒ¼
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/socket_setting.ini
+    ${CMAKE_BINARY_DIR}/bin/socket_setting.ini
+    COPYONLY
+)
+
+# conf/db_config.ini ã‚’ãƒ“ãƒ«ãƒ‰ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã® bin/ ã«ã‚³ãƒ”ãƒ¼
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/conf/db_config.ini
+    ${CMAKE_BINARY_DIR}/bin/db_config.ini
+    COPYONLY
+)
+

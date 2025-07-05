@@ -330,6 +330,7 @@ MessageType001::SignType MessageType001::exchange_sign_type_from_int(const int v
         return SignType::SIGNOUT;
         break;
     default:
+        return SignType::SIGNUP;
         break;
     }
 }
@@ -358,6 +359,7 @@ MessageType001::AuthType MessageType001::exchange_auth_type_from_int(const int v
         break;
 
     default:
+        return AuthType::NORMAL;
         break;
     }
 }

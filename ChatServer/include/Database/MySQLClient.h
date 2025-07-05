@@ -16,7 +16,7 @@ private:
 	sql::Connection* _connection = nullptr;
 	sql::Statement* _statement = nullptr;
 	sql::ResultSet* _mysql_res = nullptr;
-	sql::mysql::MySQL_Prepared_Statement* m_prep_stmt = nullptr;
+	sql::mysql::MySQL_Prepared_Statement* _prep_stmt = nullptr;
 	
 	std::string _mysql_host = "tcp://127.0.0.1:3306";
 	std::string _mysql_user_name = "root";

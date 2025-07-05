@@ -136,6 +136,7 @@ MessageType004::ChatType MessageType004::exchange_trans_type_from_int(int value)
 		return ChatType::P2P;
 		break;
 	default:
+		return ChatType::Group;
 		break;
 	}
 }

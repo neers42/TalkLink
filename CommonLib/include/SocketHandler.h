@@ -159,8 +159,8 @@ public:
 	void copy_fd_read_to_fds();
 	void copy_fd_read_to_fds(fd_set* fds, fd_set* fd);
 	std::string  obtain_local_ip_addr();
-	bool generate_udp_multicast_tx_socket();
-	bool generate_udp_bloadcast_tx_socket();
+	bool open_udp_multicast_tx_socket();
+	bool open_udp_bloadcast_tx_socket();
 	bool is_socket_closed(const socket_t socket_fd);
 
 };

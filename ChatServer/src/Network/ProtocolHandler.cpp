@@ -64,7 +64,8 @@ WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(socket_t client_socket)
 	//クライアントのSSL生成が正常に処理されなかった場合
 	if (new_client_ssl == NULL) {
 		LOG_ERROR("new client ssl object creation failed.");
-		wolfSSL_free(new_client_ssl);
+		//wolfSSL_free(new_client_ssl);
+		return nullptr;
 	}
 	//クライアントのSSL生成が正常に処理された場合
 	else {
@@ -148,12 +149,9 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_pt
 
 	while (true)
 	{
-		{
-			//std::unique_lock<std::shared_mutex> lock(this->ssl_shared_mtx);
-			bytes_read = wolfSSL_read(ssl, buffer, sizeof(buffer));
-		}
-
+		bytes_read = wolfSSL_read(ssl, buffer, sizeof(buffer));
 		message_size += bytes_read;
+
 		//受信したバイト数が0より大きい場合msgの解析を実施する。
 		if (bytes_read > 0) {
 			//メッセージバッファーのvector行列に受信したbufferのmsg分を追加
@@ -172,13 +170,13 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_pt
 			}
 			recv_flag = true;
 			return std::make_tuple(recv_msg_json, disconnect_flag, recv_flag);
-			break;
+
 		}
 		//受信したバイト数が0の場合はクライアントを切断する処理に移行する
 		else if (bytes_read == 0) {
 			disconnect_flag = true;
 			return std::make_tuple(json(), disconnect_flag, recv_flag);
-			break;
+
 		}
 		//上記の判定以外の場合の処理
 		else
@@ -191,24 +189,24 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_pt
 			else if (recv_error == WOLFSSL_ERROR_ZERO_RETURN) {
 				disconnect_flag = true;
 				return std::make_tuple(json(), disconnect_flag, recv_flag);
-				break;
+
 			}
 			//システムコール関連のエラーが発生した場合
 			else if (recv_error == WOLFSSL_ERROR_SYSCALL) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
 					LOG_ERROR("message receive failed, wolfSSL read timeout occured.");
-					break;
+					return std::make_tuple(json(), disconnect_flag, recv_flag);
 				}
 				else {
 					LOG_ERROR("message receive failed, wolfSSL read syscall error occured.");
-					break;
+					return std::make_tuple(json(), disconnect_flag, recv_flag);
 				}
 			}
 			//それ以外の理由
 			else {
 				LOG_ERROR("message receive failed. error code : {}", recv_error);
+				return std::make_tuple(json(), disconnect_flag, recv_flag);
 			}
-			return std::make_tuple(json(), disconnect_flag, recv_flag);
 
 		}
 	}
@@ -356,6 +354,7 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 	return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 
 #endif
+	return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 }
 
 void ProtocolHandler::wolfssl_log_callback(const int log_level, const char* log_message)

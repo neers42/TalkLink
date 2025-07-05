@@ -13,17 +13,17 @@ MySQLClient::MySQLClient(const std::string& host, const std::string& user_name, 
 
 MySQLClient::~MySQLClient()
 {
-	if (!_connection)
+	if (_connection)
 		delete _connection;
 
-	if (!_statement)
+	if (_statement)
 		delete _statement;
 
-	if (!_mysql_res)
+	if (_mysql_res)
 		delete _mysql_res;
 
-	if (!m_prep_stmt)
-		delete m_prep_stmt;
+	if (_prep_stmt)
+		delete _prep_stmt;
 
 }
 
@@ -74,13 +74,14 @@ bool MySQLClient::execute_query(const std::string& query)
 		}
 		_statement->execute(query);
 	}
-	catch (const std::runtime_error e)
-	{
-		LOG_ERROR(e.what());
+
+	catch (const sql::SQLException& e) {
+		LOG_ERROR("SQLException: {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
 		return false;
 	}
-	catch (const sql::SQLException e) {
-		LOG_ERROR("SQLException: {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR(e.what());
 		return false;
 	}
 	catch (const std::exception& e) {

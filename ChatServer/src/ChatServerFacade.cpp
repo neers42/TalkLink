@@ -17,7 +17,8 @@ ChatServerFacade::ChatServerFacade() : _server_ip{ "" }
 	////ログのフォーマット設定
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
 	spdlog::info("Starting MyChat server version 1.0.0!!");
-	_socket_handler = std::make_unique<SocketHandler>("conf/socket_setting.ini");
+	//_socket_handler = std::make_unique<SocketHandler>("conf/socket_setting.ini");
+	_socket_handler = std::make_unique<SocketHandler>();
 	this->set_server_ip(this->_socket_handler->obtain_local_ip_addr());
 	_firebase_auth_handler = std::make_unique<FirebaseAuthHandler>();
 	_mysql_client = std::make_unique<MySQLClient>();
@@ -55,7 +56,7 @@ void ChatServerFacade::run()
 		exit(1);
 	}
 
-	if (_socket_handler->generate_udp_multicast_tx_socket() == false) {
+	if (_socket_handler->open_udp_multicast_tx_socket() == false) {
 		LOG_ERROR("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
