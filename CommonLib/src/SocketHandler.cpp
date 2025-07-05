@@ -37,7 +37,7 @@ SocketHandler::SocketHandler() : _result_tcp{nullptr},
 		memset(&_tcp_socket_param, 0, sizeof(_tcp_socket_param));
 #ifdef _WIN32
 		int init_wsa_result = WSAStartup(MAKEWORD(2, 2), &_wsa_data);
-		if (init_wsa_result == false)
+		if (init_wsa_result == 1)
 		{
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
@@ -94,7 +94,7 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 		memset(&_tcp_socket_param, 0, sizeof(_tcp_socket_param));
 #ifdef _WIN32
 		int init_wsa_result = WSAStartup(MAKEWORD(2, 2), &_wsa_data);
-		if (init_wsa_result == false)
+		if (init_wsa_result == 1)
 		{
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
@@ -230,7 +230,7 @@ bool SocketHandler::set_socket_param(const std::string &config_file_path)
 bool SocketHandler::set_multicast_tx_socket_param()
 {
 	this->_multicast_tx_param.ai_flags = 0;				 // マルチキャスト送信用のソケット
-	this->_multicast_tx_param.ai_family = AF_UNSPEC;	 // IPv4とIPv6の両方をサポート
+	this->_multicast_tx_param.ai_family = AF_INET;	 // IPv4を両方をサポート
 	this->_multicast_tx_param.ai_socktype = SOCK_DGRAM;	 // UDPソケット
 	this->_multicast_tx_param.ai_protocol = IPPROTO_UDP; // UDPプロトコルを使用
 	this->_port = 50001;								 // マルチキャスト送信用のポート番号は50001に設定
