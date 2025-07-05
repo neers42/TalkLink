@@ -233,7 +233,8 @@ bool SocketHandler::set_multicast_tx_socket_param()
 	this->_multicast_tx_param.ai_family = AF_INET;	 // IPv4を両方をサポート
 	this->_multicast_tx_param.ai_socktype = SOCK_DGRAM;	 // UDPソケット
 	this->_multicast_tx_param.ai_protocol = IPPROTO_UDP; // UDPプロトコルを使用
-	this->_port = 50001;								 // マルチキャスト送信用のポート番号は50001に設定
+	this->_multicast_tx_addr.sin_family = AF_INET; // IPv4を使用
+	this->_multicast_tx_addr.sin_port = 50001;	 // マルチキャスト送信用のポート番号は50001に設定
 	return true;
 }
 
@@ -582,7 +583,6 @@ bool SocketHandler::set_tcp_port(ini::IniFile tcp_listen_socket_param_config)
 	try
 	{
 		int temp_port = tcp_listen_socket_param_config["SocketSetting"]["port"].as<int>();
-		spdlog::critical("temp_port = {}", temp_port);
 		if (temp_port < 0 || temp_port > 65535)
 		{
 			throw std::out_of_range("The port number is set out of range. Reset to the range of 0 - 65535.");
