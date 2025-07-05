@@ -360,7 +360,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		int get_addr_result_msg = getaddrinfo(NULL, std::to_string(_multicast_tx_addr.sin_port).c_str(), &_multicast_tx_param, &_result_multicast);
 		if (get_addr_result_msg != 0)
 		{
-			throw std::runtime_error(std::string("getaddrinfo failed: ") + std::string(gai_strerror(get_addr_result_msg)));
+			LOG_ERROR("getaddrinfo failed.");
 		}
 
 		// socket() の第3引数を IPPROTO_UDP に
@@ -707,6 +707,7 @@ bool SocketHandler::set_multicast_tx_sin_address(ini::IniFile socket_param_confi
 		if (inet_pton_result == -1)
 		{
 #ifdef _WIN32
+			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
 			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
