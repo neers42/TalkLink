@@ -41,7 +41,7 @@ SocketHandler::SocketHandler() : _result_tcp{nullptr},
 		{
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "WSA initialiize failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 		}
 #endif // _WIN32
@@ -98,7 +98,7 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 		{
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "WSA initialiize failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 		}
 #endif // _WIN32
@@ -307,7 +307,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in &client_sockaddr_in,
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "inet_ntop failed to convert IP address to string. Check the address family and parameters. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 #else
 			int error_code = errno;
@@ -370,7 +370,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "Failed to create UDP multicast transmission socket. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 #else
 			int error_code = errno;
@@ -392,7 +392,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 	int ret = inet_pton(AF_INET, this->_local_ip_addr.c_str(), &localInterface);
 	if (ret != 1)
 	{
-		spdlog::error("inet_pton failed for local_ip_addr = {}", this->_local_ip_addr);
+		LOG_ERROR("inet_pton failed for local_ip_addr = {}", this->_local_ip_addr);
 		return false;
 	}
 #endif
@@ -417,7 +417,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "Failed to set multicast interface option on the UDP multicast transmission socket. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 #else
 			int error_code = errno;
@@ -446,7 +446,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "Failed to set multicast TTL option on the UDP multicast transmission socket. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 #else
 			int error_code = errno;
@@ -689,12 +689,12 @@ bool SocketHandler::set_multicast_tx_sin_port(ini::IniFile socket_param_setting_
 	}
 	catch (const std::out_of_range &e)
 	{
-		LOG_ERROR(e.what());
+		LOG_ERROR("Out of range : {}", e.what());
 		return false;
 	}
 	catch (const std::invalid_argument &e)
 	{
-		LOG_ERROR(e.what());
+		LOG_ERROR("Invalid argument : {}", e.what());
 		return false;
 	}
 	return true;
@@ -713,7 +713,7 @@ bool SocketHandler::set_multicast_tx_sin_address(ini::IniFile socket_param_confi
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "inet_pton failed to convert the address string to binary format. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 #else
 			int error_code = errno;
@@ -883,7 +883,7 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo *r
 		{
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "Runtime Error : select failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "Failed to set multicast interface option on the UDP multicast transmission socket. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 		}
 #else
@@ -891,7 +891,7 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo *r
 		if (bind_result == -1)
 		{
 			int error_code = errno;
-			std::string error_message = "Runtime Error : Failed to set multicast interface option on the UDP multicast transmission socket. Error Code : " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
+			std::string error_message = "Failed to set multicast interface option on the UDP multicast transmission socket. Error Code : " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
 			throw std::runtime_error(error_message);
 		}
 #endif //_WIN32
@@ -1001,7 +1001,7 @@ void SocketHandler::close_socket(const socket_t client_socket)
 		}
 		else
 		{
-			spdlog::debug("client socket({:d}) is closed.", client_socket);
+			spdlog::debug("client socket({}) is closed.", client_socket);
 		}
 	}
 	catch (const std::runtime_error &e)
@@ -1022,11 +1022,11 @@ bool SocketHandler::generate_tcp_listen_socket()
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "Runtime Error : getaddrinfo failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "getaddrinfo failed. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 #else
 			int error_code = errno;
-			std::string error_message = "Runtime Error : getaddrinfo failed. Error Code : " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
+			std::string error_message = "getaddrinfo failed. Error Code : " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
 			throw std::runtime_error(error_message);
 #endif
 		}
@@ -1038,11 +1038,11 @@ bool SocketHandler::generate_tcp_listen_socket()
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
 			std::string message = get_last_wsa_error_message();
-			std::string error_message = "Runtime Error : failed generated socket. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
+			std::string error_message = "Failed generated socket. WSA error code: " + std::to_string(error_code) + ", error message:" + message + ".";
 			throw std::runtime_error(error_message);
 #else
 			int error_code = errno;
-			std::string error_message = "Runtime Error : failed generated socket. Error Code : " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
+			std::string error_message = "Failed generated socket. Error Code : " + std::to_string(error_code) + ", error message:" + std::string(strerror(error_code)) + ".";
 			throw std::runtime_error(error_message);
 #endif
 		}
@@ -1413,7 +1413,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	}
 	catch (const std::runtime_error &e)
 	{
-		LOG_ERROR(e.what());
+		LOG_ERROR("Runtime Error : {}", e.what());
 		if (_result_tcp != nullptr)
 		{
 			freeaddrinfo(_result_tcp);
@@ -1445,7 +1445,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR(e.what());
+		LOG_ERROR("Exception : {}", e.what());
 		if (_result_tcp != nullptr)
 		{
 			freeaddrinfo(_result_tcp);
