@@ -1077,6 +1077,16 @@ bool SocketHandler::generate_tcp_listen_socket()
 	if (bind_result == true)
 	{
 		spdlog::debug("server bind setting on listen socket: {}.", _tcp_listen_socket);
+		struct sockaddr_in addr;
+    	socklen_t addr_len = sizeof(addr);
+		if (getsockname(_tcp_listen_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
+			char ip_str[INET_ADDRSTRLEN];
+        	inet_ntop(AF_INET, &(addr.sin_addr), ip_str, sizeof(ip_str));
+        	uint16_t port = ntohs(addr.sin_port);
+			spdlog::info("Listening on IP: {}, Port : {}", ip_str, _port);
+		}else{
+
+		}
 	}
 	else
 	{
@@ -1368,6 +1378,7 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 		{
 			if (FD_ISSET(_tcp_listen_socket, &_fds))
 			{
+				spdlog::info("new client connect request!!");
 				callback(_tcp_listen_socket); // 新しい接続リクエスト
 			}
 			for (const auto &socket : socket_list)

@@ -120,6 +120,7 @@ bool ChatServerFacade::accept_client_socket_process()
 		return ACCEPT_FAILED;
 	}
 	else {
+		spdlog::info("accept success!! client socket :{}", new_client_socket);
 		new_client_ipv4_addr = this->_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client_ipv4_addr));
 	}
 

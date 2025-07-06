@@ -7,10 +7,12 @@ services:
       MYSQL_DATABASE: MyChat
       MYSQL_USER: chat_user
       MYSQL_PASSWORD: chat_pass
+      
     ports:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
+    
     networks:
       - mychat-net
 
@@ -19,6 +21,7 @@ services:
       context: .
       dockerfile: ChatServer/Dockerfile
     container_name: mychat-server
+
     #先にmysqlのコンテナを上げる
     depends_on:
       - mysql
@@ -31,6 +34,7 @@ services:
       DB_USER: chat_user
       DB_PASSWORD: chat_pass
       DB_NAME: MyChat
+      
     networks:
       - mychat-net
 
