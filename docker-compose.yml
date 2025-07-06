@@ -1,0 +1,41 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mychat-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ***REMOVED***
+      MYSQL_DATABASE: MyChat
+      MYSQL_USER: chat_user
+      MYSQL_PASSWORD: chat_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - mychat-net
+
+  chatserver:
+    build:
+      context: .
+      dockerfile: ChatServer/Dockerfile
+    container_name: mychat-server
+    #先にmysqlのコンテナを上げる
+    depends_on:
+      - mysql
+    ports:
+      - "50000:50000"       #TCPのリッスン用のポート
+      - "50001:50001/udp"   #UDPポート(マルチキャスト送信用)
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: chat_user
+      DB_PASSWORD: chat_pass
+      DB_NAME: MyChat
+    networks:
+      - mychat-net
+
+volumes:
+  db_data:
+
+networks:
+  mychat-net:

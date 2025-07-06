@@ -63,7 +63,6 @@ void ChatServerFacade::run()
 	
 	this->_mysql_client->connect();
 	this->_mysql_client->create_database();
-	this->_mysql_client->execute_query("USE mychat");
 	this->_mysql_client->create_table();
 	this->_redis_client->connect();
 

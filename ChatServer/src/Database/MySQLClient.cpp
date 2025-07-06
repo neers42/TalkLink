@@ -3,7 +3,15 @@
 
 MySQLClient::MySQLClient()
 {
+    const char* env_host = std::getenv("DB_HOST");
+    const char* env_user = std::getenv("DB_USER");
+    const char* env_pass = std::getenv("DB_PASSWORD");
+    const char* env_db   = std::getenv("DB_NAME");
 
+    _mysql_host = std::string("tcp://") + (env_host ? env_host : "127.0.0.1") + ":3306";
+    _mysql_user_name = env_user ? env_user : "root";
+    _mysql_password = env_pass ? env_pass : "";
+    _mysql_db_name = env_db ? env_db : "MyChat";
 }
 
 MySQLClient::MySQLClient(const std::string& host, const std::string& user_name, const std::string& password)
@@ -33,7 +41,9 @@ void MySQLClient::connect()
 	{
 		_connection = _driver->connect(_mysql_host, _mysql_user_name, _mysql_password);
 		_statement = _connection->createStatement();
+		spdlog::debug("host : {} user name : {} mysql_pass : {}", _mysql_host, _mysql_user_name, _mysql_password);
 		spdlog::info("MySQL:connect success!");
+		_connection->setSchema(_mysql_db_name);
 
 	}
 	catch (sql::SQLException& e)
@@ -749,16 +759,6 @@ json MySQLClient::get_unsend_control_message_fromDB(const std::string& cid)
 {
 	try
 	{
-		/*std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement(
-				"SELECT " + _mysql_table_name_unsend_control_messages + ".mid, " + _mysql_table_name_unsend_control_messages + ".cid, " +
-				  _mysql_table_name_unsend_control_messages + ".room_id, " + _mysql_table_name_unsend_control_messages + ".json_payload, " +
-				  _mysql_table_name_unsend_control_messages + ".created_at "
-				"FROM " + _mysql_table_name_unsend_control_messages + " "
-				"WHERE " + _mysql_table_name_unsend_control_messages + ".cid = ?;"
-			)
-		);*/
-
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement(
 				"SELECT " + _mysql_table_name_unsend_control_messages + ".mid, " +
@@ -853,15 +853,7 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 			LOG_ERROR("MySQL: No last login time found for client {}", cid);
 			return json();
 		}
-	/*	std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement(
-				"SELECT " + _mysql_table_name_unsend_messages + ".mid, " + _mysql_table_name_unsend_messages + ".cid, "
-				+_mysql_table_name_unsend_messages + ".room_id, " + _mysql_table_name_chat_messages + ".message "
-				"FROM " + _mysql_table_name_unsend_messages + " "
-				"JOIN " + _mysql_table_name_chat_messages + " ON " + _mysql_table_name_unsend_messages + ".mid = " + _mysql_table_name_chat_messages + ".mid "
-				"WHERE "_mysql_table_name_unsend_messages + ".cid = ? AND " + _mysql_table_name_chat_messages + ".send_time > ? "
-			)
-		);*/
+
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
 			this->_connection->prepareStatement(
 				"SELECT " + _mysql_table_name_unsend_messages + ".mid, " +

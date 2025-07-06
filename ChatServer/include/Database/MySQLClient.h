@@ -17,11 +17,14 @@ private:
 	sql::Statement* _statement = nullptr;
 	sql::ResultSet* _mysql_res = nullptr;
 	sql::mysql::MySQL_Prepared_Statement* _prep_stmt = nullptr;
-	
-	std::string _mysql_host = "tcp://127.0.0.1:3306";
-	std::string _mysql_user_name = "root";
-	std::string _mysql_password = "***REMOVED***";
-	std::string _mysql_db_name = "MyChat";
+	std::string _mysql_host;      // 例: tcp://mysql:3306 など
+	std::string _mysql_user_name;
+	std::string _mysql_password;
+	std::string _mysql_db_name;
+	// std::string _mysql_host = "tcp://127.0.0.1:3306";
+	// std::string _mysql_user_name = "root";
+	// std::string _mysql_password = "***REMOVED***";
+	// std::string _mysql_db_name = "MyChat";
 	std::string _mysql_port = "";
 	std::string _mysql_table_name_clients = "clients";
 	std::string _mysql_table_name_chatrooms = "chatrooms";
