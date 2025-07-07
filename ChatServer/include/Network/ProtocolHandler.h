@@ -1,7 +1,6 @@
 ﻿#ifndef PROTOCOLHANDLER
 #define PROTOCOLHANDLER
-#define SERVER_CERT_FILE_PASS ".//////certs/server-cert.pem"
-#define SERVER_PRIVATEKEY_FILE_PASS ".//////certs/server-key.pem"
+
 #include <sstream>
 #include <shared_mutex>
 #include "Utils/common.h"
@@ -9,10 +8,14 @@
 #include <winsock2.h>	//Windowsではwinsock2.hを使用
 #include <ws2tcpip.h>	//Windowsではws2tcpip.hを使用
 using socket_t = SOCKET;	//WindowsではSOCKETを使用
+#define SERVER_CERT_FILE_PASS ".//////certs/server-cert.pem"
+#define SERVER_PRIVATEKEY_FILE_PASS ".//////certs/server-key.pem"
 #else
 using socket_t = int;		//Linuxではintを使用
 	#define WOLFSSL_USER_SETTINGS
 	#include <wolfssl/options.h>  // これを追加
+	#define SERVER_CERT_FILE_PASS "./ChatServer/certs/server-cert.pem"
+	#define SERVER_PRIVATEKEY_FILE_PASS "./ChatServer/certs/server-key.pem"
 #endif //_WIN32
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"

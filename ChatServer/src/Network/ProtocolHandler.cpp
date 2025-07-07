@@ -60,6 +60,10 @@ const std::string ProtocolHandler::generate_message_id()
 
 WOLFSSL* ProtocolHandler::generate_and_attach_ssl_object(socket_t client_socket)
 {
+	if (this->_server_w_ctx == nullptr) {
+    	LOG_ERROR("WOLFSSL_CTX is null.");
+    	return nullptr;
+	}
 	WOLFSSL* new_client_ssl = wolfSSL_new(this->_server_w_ctx);
 	//クライアントのSSL生成が正常に処理されなかった場合
 	if (new_client_ssl == NULL) {
@@ -428,6 +432,7 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 	else
 	{
 		spdlog::debug("server_method set v23 for wolfssl context.");
+		return server_method;
 	}
 #endif // SERVER_METHOD_SSLV23
 
@@ -436,10 +441,12 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 	auto server_method = wolfTLSv1_3_server_method();
 	if (server_method == NULL) {
 		spdlog::critical("TLS v1.3 server method, failed, unable to get method.");
+		exit(1);
 	}
 	else
 	{
 		spdlog::debug("server_method set TLS 1.3 for wolfssl context.");
+		return server_method;
 	}
 
 #endif // server_method_TLS1_3
@@ -449,10 +456,12 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 	auto server_method = wolfTLSv1_2_server_method();
 	if (server_method == NULL) {
 		spdlog::critical("TLS v1.2 server method, failed, unable to get method.");
+		exit(1);
 	}
 	else
 	{
-		LogHandler::get_instance().logging_debug("server_method set TLS 1.2 for wolfssl context.");
+		spdlog::debug("server_method set TLS 1.2 for wolfssl context.");
+		return server_method;
 	}
 
 #endif // SERVER_METHOD_TLS_1_2
@@ -462,21 +471,24 @@ WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 	auto server_method = wolfTLSv1_1_server_method();
 	if (server_method == NULL) {
 		spdlog::critical("TLS v1.1 server method, failed, unable to get method.");
-		LogHandler::get_instance().logging_critical(StringFormat("TLS v1.1 server method, failed, unable to get method."));
+		exit(1);
 	}
 	else
 	{
 		spdlog::debug("server_method set TLS 1.1 for wolfssl context.");
-		LogHandler::get_instance().logging_debug("server_method set TLS 1.1 for wolfssl context.");
+		return server_method;
 	}
 #endif // SERVER_METHOD_TLS_1_1
 
-
-	return server_method;
+	//どれも定義されていない場合の安全対策
+	spdlog::critical("No valid TLS method defined. Please define SERVER_METHOD_* macro.");
+	exit(1);  // 明示的に終了して UB を防ぐ
+	return nullptr;  // これは念のため
 }
 
 void ProtocolHandler::generate_ssl_context(WOLFSSL_METHOD* method)
 {
+
 	//wolf contextの確保
 	_server_w_ctx = wolfSSL_CTX_new(method);
 	if (_server_w_ctx == NULL) {

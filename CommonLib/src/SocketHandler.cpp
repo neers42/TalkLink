@@ -1337,22 +1337,23 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 
 void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socket_list, std::function<void(socket_t)> callback)
 {
+	spdlog::info("monitor_socket_descriptor called");
+	int select_result = 0;
+
 	try
 	{
-		int select_result = 0;
+		
 #ifdef _WIN32
 		select_result = select(0, &_fds, NULL, NULL, &_timeout);
 #else // LINUX, MACOS, UNIX系OSの場合
-		auto max_ite = std::max_element(socket_list.begin(), socket_list.end());
-		int max_socket_fd = 0;
-		if (max_ite == socket_list.end())
-		{
-			return; // ソケットリストが空の場合は何もしない
+		int max_socket_fd = _tcp_listen_socket;
+		if(socket_list.size() > 0){
+			auto max_ite = std::max_element(socket_list.begin(), socket_list.end());
+			if(max_socket_fd < *max_ite){
+				max_socket_fd = *max_ite;
+			}
 		}
-		else
-		{
-			max_socket_fd = *max_ite;
-		}
+		spdlog::info("max_socket_fd = {}", max_socket_fd);
 		select_result = select(max_socket_fd + 1, &_fds, NULL, NULL, &_timeout);
 
 #endif // _WIN32
