@@ -1337,7 +1337,6 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 
 void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socket_list, std::function<void(socket_t)> callback)
 {
-	spdlog::info("monitor_socket_descriptor called");
 	int select_result = 0;
 
 	try
@@ -1353,7 +1352,6 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 				max_socket_fd = *max_ite;
 			}
 		}
-		spdlog::info("max_socket_fd = {}", max_socket_fd);
 		select_result = select(max_socket_fd + 1, &_fds, NULL, NULL, &_timeout);
 
 #endif // _WIN32

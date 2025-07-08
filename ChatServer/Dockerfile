@@ -26,4 +26,4 @@ RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
  && cmake --build build -j$(nproc)
 
  # デフォルトの実行コマンド
-CMD ["/bin/bash"]
+CMD ["./build/bin/ChatServer"]

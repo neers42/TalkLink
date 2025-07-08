@@ -178,7 +178,7 @@ bool MySQLClient::insert_client_data(
 			pre_stmt->setString(2, name);
 			pre_stmt->setString(3, mail_address);
 			pre_stmt->setString(4, password_hash);
-			pre_stmt->setString(6, created_at);
+			pre_stmt->setString(5, created_at);
 			pre_stmt->executeUpdate();
 		}
 		else if (icon_url != "") {
@@ -651,9 +651,8 @@ bool MySQLClient::delete_chatroom_member(const std::string& room_id_hex, const s
 			pre_stmt->setBlob(1, &blob_stream);
 			pre_stmt->setString(2, cid);
 			pre_stmt->executeUpdate();
-			spdlog::debug("MySQL:delete chatroom member(room_id:{}, cid:{}) success.", room_id_hex, cid);
+			spdlog::info("MySQL:delete chatroom member(room_id:{}, cid:{}) success.", room_id_hex, cid);
 		}
-		spdlog::info("MySQL:delete chatroom member(room id : {})", room_id_hex);
 		return true;
 	}
 	catch (const sql::SQLException& e)
