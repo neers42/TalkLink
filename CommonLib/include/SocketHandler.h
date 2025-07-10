@@ -17,10 +17,21 @@
 	#include <sys/select.h>
 	#include <netdb.h>
 	#include <ifaddrs.h>
+	#include <shared_mutex>
 	using socket_t = int;
 	#define INVALID_SOCKET_FD -1
 	#define SOCKET_ERROR_FD -1
 #endif // _WIN32
+
+#ifdef __linux__
+	#include <sys/epoll.h>
+	#include <fcntl.h>
+	#define USE_POLL
+	#define NEVENTS 16
+#else
+	#define USE_SELECT
+#endif //__linux__
+
 #include <vector>
 #include <string>
 #include <exception>
@@ -52,14 +63,25 @@ private:
 	socket_t _tcp_listen_socket;				//TCPリッスンソケット	
 	socket_t _udp_bloadcast_tx_socket;		//UDPブロードキャスト送信用ソケット
 	socket_t _udp_multicast_tx_socket;		//UDPマルチキャスト送信用ソケット
-	fd_set _fds, _fd_read;
-	timeval _timeout;
+	
 	int _port;								//リッスンソケットのポート番号
 	struct sockaddr_in _multicast_tx_addr;	//UDPマルチキャスト送信用のアドレス構造体
 	struct sockaddr_in _bloadcast_tx_addr;	//UDPブロードキャスト用送信用のアドレス構造体
 	std::string _local_ip_addr;
 	int _ttl;								//UDPマルチキャスト送信用のTTL値
-	std::string socket_config_file_pass;			//ソケット設定ファイルのパス
+	std::string socket_config_file_pass;	//ソケット設定ファイルのパス
+#ifdef USE_POLL
+	//epoll file descriptor(epoll インスタンスのfd)
+	int _epfd;
+	//number of file descriptor(監視対象のソケットやファイルディスクリプタを登録・待機するためのfdの数)
+	int _nfds;	
+  	struct epoll_event listen_ev, _ev_ret[NEVENTS];
+	std::shared_mutex smtx;
+#elif defined(USE_SELECT)
+	fd_set _fds, _fd_read;
+	timeval _timeout;
+#endif //USE_POLL
+
 #ifdef _WIN32
 	WSADATA _wsa_data;
 #endif // _WIN32
@@ -113,6 +135,8 @@ private:
 	bool set_multicast_tx_sin_port(ini::IniFile socket_param_config);
 	bool set_multicast_tx_sin_address(ini::IniFile socket_param_config);
 
+	
+
 #ifdef _WIN32
 	//error処理用の関数群
 	std::string get_last_wsa_error_message();
@@ -135,8 +159,11 @@ public:
 	//getter関数
 	socket_t get_listen_socket();
 	socket_t get_udp_multicast_tx_socket();
+
+#ifdef USE_SELECT
 	fd_set& get_fd_read();
 	fd_set& get_fds();
+#endif
 	std::string& get_server_ip_address();
 	int get_port();
 
@@ -153,15 +180,21 @@ public:
 	void close_socket(const socket_t client_socket);
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(socket_t request_socket);
+
+#ifdef USE_SELECT
 	//select関数の初期化
 	void initialize_select_param();
 	void bind_select_info_to_socket(socket_t socket, fd_set* fd);
 	void copy_fd_read_to_fds();
 	void copy_fd_read_to_fds(fd_set* fds, fd_set* fd);
+#endif
 	std::string  obtain_local_ip_addr();
 	bool open_udp_multicast_tx_socket();
 	bool open_udp_bloadcast_tx_socket();
 	bool is_socket_closed(const socket_t socket_fd);
+	//epoll関連
+	void add_epoll_ctrl(socket_t socket);
+	void delete_epoll_ctrl(socket_t socket);
 
 };
 

@@ -28,6 +28,12 @@
 	#define INVALID_SOCKET_FD -1
 #endif // _WIN32
 
+#ifdef __linux__
+	#define USE_POLL
+#else
+	#define USE_SELECT
+#endif
+
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
@@ -65,10 +71,12 @@ public:
 	//サーバプログラム実行
 	void run();
 	
+#ifdef USE_SELECT
 	void prepare_client_fd_set();
+	void setting_select_process();
+#endif
 
 	void show_server_running_info();
-
 	bool accept_client_socket_process();
 
 	const std::string& get_server_ip();
@@ -77,7 +85,7 @@ public:
 	void message_handle_process(const socket_t socket);	
 	void heartbeat_check_process();
 	void heartbeat_nonresponse_process(const std::shared_ptr<Client>& client);
-	void setting_select_process();
+
 	void handle_disconnect_process(const std::shared_ptr<Client> client);
 
 

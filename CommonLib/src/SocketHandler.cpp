@@ -16,9 +16,6 @@ SocketHandler::SocketHandler() : _result_tcp{nullptr},
 								 _tcp_socket_param{},
 								 _multicast_tx_param{},
 								 _bloadcast_tx_param{},
-								 _fds{},
-								 _fd_read{},
-								 _timeout{0, 500 * 1000},
 								 _tcp_listen_socket{INVALID_SOCKET_FD},
 								 _udp_bloadcast_tx_socket{INVALID_SOCKET_FD},
 								 _udp_multicast_tx_socket{INVALID_SOCKET_FD},
@@ -28,8 +25,16 @@ SocketHandler::SocketHandler() : _result_tcp{nullptr},
 								 _local_ip_addr{""},
 								 _ttl{0},
 								 socket_config_file_pass{""}
+#ifdef USE_POLL
+								 ,
+								 _epfd{epoll_create1(0)}, listen_ev{}, _nfds{0}
+#elif defined(USE_SELECT)
+								 ,
+								 _fds{}, _fd_read{}, _timeout{0, 500 * 1000}
+#endif
 #ifdef _WIN32
-								 ,_wsa_data{}
+								 ,
+								 _wsa_data{}
 #endif // _WIN32
 {
 	try
@@ -45,9 +50,18 @@ SocketHandler::SocketHandler() : _result_tcp{nullptr},
 			throw std::runtime_error(error_message);
 		}
 #endif // _WIN32
-	   // ファイルディスクリプタキャッチ用のfdsを初期化
+
+#ifdef USE_POLL
+		if (_epfd < 0)
+		{
+			throw std::runtime_error("epoll create failed.");
+		}
+
+#elif defined(USE_SELECT)
+		// ファイルディスクリプタキャッチ用のfdsを初期化
 		FD_ZERO(&_fds);
 		FD_ZERO(&_fd_read);
+#endif // USE_POLL
 
 		if ((set_socket_param() == false || (set_multicast_tx_socket_param()) == false))
 		{
@@ -73,9 +87,6 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 															 _tcp_socket_param{},
 															 _multicast_tx_param{},
 															 _bloadcast_tx_param{},
-															 _fds{},
-															 _fd_read{},
-															 _timeout{0, 500 * 1000},
 															 _tcp_listen_socket{INVALID_SOCKET_FD},
 															 _udp_bloadcast_tx_socket{INVALID_SOCKET_FD},
 															 _udp_multicast_tx_socket{INVALID_SOCKET_FD},
@@ -85,8 +96,16 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 															 _local_ip_addr{""},
 															 _ttl{0},
 															 socket_config_file_pass{file_pass}
+#ifdef USE_POLL
+															 ,
+															 _epfd{epoll_create1(0)}, listen_ev{}, _nfds{0}
+#elif defined(USE_SELECT)
+															 ,
+															 _fds{}, _fd_read{}, _timeout{0, 500 * 1000}
+#endif
 #ifdef _WIN32
-															 ,_wsa_data{}
+															 ,
+															 _wsa_data{}
 #endif // _WIN32
 {
 	try
@@ -103,9 +122,17 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 		}
 #endif // _WIN32
 
+#ifdef USE_POLL
+		if (_epfd < 0)
+		{
+			throw std::runtime_error("epoll create failed.");
+		}
+
+#elif defined(USE_SELECT)
 		// ファイルディスクリプタキャッチ用のfdsを初期化
 		FD_ZERO(&_fds);
 		FD_ZERO(&_fd_read);
+#endif
 		if ((set_socket_param(file_pass) == false || (set_multicast_tx_socket_param(file_pass)) == false))
 		{
 			LOG_ERROR("The socket configuration for TCP listening and multicast transmission was not completed successfully and will be terminated.");
@@ -114,12 +141,12 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 	}
 	catch (const std::runtime_error &e)
 	{
-		LOG_ERROR("Runtime Error : {}", e.what());
+		spdlog::critical("Runtime Error : {}", e.what());
 		return;
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR("Exception : {}", e.what());
+		spdlog::critical("Exception : {}", e.what());
 		return;
 	}
 }
@@ -132,21 +159,24 @@ SocketHandler::~SocketHandler()
 		freeaddrinfo(_result_tcp);
 	}
 
-	if (get_listen_socket() != INVALID_SOCKET_FD)
+	if (_tcp_listen_socket != INVALID_SOCKET_FD)
 	{
 #ifdef _WIN32
-		closesocket(get_listen_socket());
+		closesocket(_tcp_listen_socket);
 #else
-		close(get_listen_socket());
+#ifdef USE_POLL
+		delete_epoll_ctrl(_tcp_listen_socket);
+#endif //_USE_POLE
+		close(_tcp_listen_socket);
 #endif
 	}
 
-	if (get_udp_multicast_tx_socket() != INVALID_SOCKET_FD)
+	if (_udp_multicast_tx_socket != INVALID_SOCKET_FD)
 	{
 #ifdef _WIN32
-		closesocket(get_udp_multicast_tx_socket());
+		closesocket(_udp_multicast_tx_socket);
 #else
-		close(get_udp_multicast_tx_socket());
+		close(_udp_multicast_tx_socket);
 #endif
 	}
 
@@ -165,6 +195,7 @@ socket_t SocketHandler::get_udp_multicast_tx_socket()
 	return this->_udp_multicast_tx_socket;
 }
 
+#ifdef USE_SELECT
 fd_set &SocketHandler::get_fd_read()
 {
 	return this->_fd_read;
@@ -174,7 +205,7 @@ fd_set &SocketHandler::get_fds()
 {
 	return this->_fds;
 }
-
+#endif
 std::string &SocketHandler::get_server_ip_address()
 {
 	return this->_local_ip_addr;
@@ -230,11 +261,11 @@ bool SocketHandler::set_socket_param(const std::string &config_file_path)
 bool SocketHandler::set_multicast_tx_socket_param()
 {
 	this->_multicast_tx_param.ai_flags = 0;				 // マルチキャスト送信用のソケット
-	this->_multicast_tx_param.ai_family = AF_INET;	 // IPv4を両方をサポート
+	this->_multicast_tx_param.ai_family = AF_INET;		 // IPv4を両方をサポート
 	this->_multicast_tx_param.ai_socktype = SOCK_DGRAM;	 // UDPソケット
 	this->_multicast_tx_param.ai_protocol = IPPROTO_UDP; // UDPプロトコルを使用
-	this->_multicast_tx_addr.sin_family = AF_INET; // IPv4を使用
-	this->_multicast_tx_addr.sin_port = 50001;	 // マルチキャスト送信用のポート番号は50001に設定
+	this->_multicast_tx_addr.sin_family = AF_INET;		 // IPv4を使用
+	this->_multicast_tx_addr.sin_port = 50001;			 // マルチキャスト送信用のポート番号は50001に設定
 	return true;
 }
 
@@ -326,7 +357,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in &client_sockaddr_in,
 		return "";
 	}
 }
-
+#ifdef USE_SELECT
 void SocketHandler::initialize_select_param()
 {
 	FD_ZERO(&this->_fd_read);
@@ -334,6 +365,7 @@ void SocketHandler::initialize_select_param()
 	this->_timeout.tv_sec = 0;			 // タイムアウト秒数を0に設定
 	this->_timeout.tv_usec = 500 * 1000; // タイムアウトマイクロ秒数を500000に設定(0.5秒)
 }
+#
 
 void SocketHandler::bind_select_info_to_socket(socket_t socket, fd_set *fd)
 {
@@ -349,6 +381,7 @@ void SocketHandler::copy_fd_read_to_fds(fd_set *fds, fd_set *fd)
 {
 	memcpy(fds, fd, sizeof(fd_set));
 }
+#endif
 
 bool SocketHandler::open_udp_multicast_tx_socket()
 {
@@ -385,8 +418,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		return false;
 	}
 
-	
-#ifndef _WIN32	//LINUX
+#ifndef _WIN32 // LINUX
 	// IP_MULTICAST_IF のために in_addr 構造体に変換
 	struct in_addr localInterface;
 	int ret = inet_pton(AF_INET, this->_local_ip_addr.c_str(), &localInterface);
@@ -401,10 +433,10 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 	try
 	{
 #ifdef _WIN32
-		multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket, 
-											IPPROTO_IP, IP_MULTICAST_IF,
-											this->_local_ip_addr.c_str(), 
-											sizeof(this->_local_ip_addr.c_str()));
+		multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket,
+													 IPPROTO_IP, IP_MULTICAST_IF,
+													 this->_local_ip_addr.c_str(),
+													 sizeof(this->_local_ip_addr.c_str()));
 #else
 		multicast_if_set_sockopt_result = setsockopt(this->_udp_multicast_tx_socket,
 													 IPPROTO_IP, IP_MULTICAST_IF,
@@ -460,7 +492,8 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		LOG_ERROR("Runtime Error : {}", e.what());
 		return false;
 	}
-
+	// epfdに_udp_multicast_tx_socketを登録して監視対象にする
+	this->add_epoll_ctrl(_udp_multicast_tx_socket);
 	spdlog::info("server open udp multicast tx socket: {}.", _udp_multicast_tx_socket);
 	return true;
 }
@@ -751,6 +784,9 @@ bool SocketHandler::set_multicast_tx_sin_address(ini::IniFile socket_param_confi
 
 	return true;
 }
+
+
+
 #ifdef _WIN32
 std::string SocketHandler::get_last_wsa_error_message()
 {
@@ -952,6 +988,10 @@ std::tuple<socket_t, sockaddr_in> SocketHandler::accept_client_socket(socklen_t 
 		}
 		else
 		{
+#ifdef USE_POLL
+			// epollにアクセプトしたfdを登録
+			this->add_epoll_ctrl(accept_client_socket_result);
+#endif
 			// acceptが成功した場合
 			return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result);
 		}
@@ -1078,14 +1118,16 @@ bool SocketHandler::generate_tcp_listen_socket()
 	{
 		spdlog::debug("server bind setting on listen socket: {}.", _tcp_listen_socket);
 		struct sockaddr_in addr;
-    	socklen_t addr_len = sizeof(addr);
-		if (getsockname(_tcp_listen_socket, (struct sockaddr*)&addr, &addr_len) == 0) {
+		socklen_t addr_len = sizeof(addr);
+		if (getsockname(_tcp_listen_socket, (struct sockaddr *)&addr, &addr_len) == 0)
+		{
 			char ip_str[INET_ADDRSTRLEN];
-        	inet_ntop(AF_INET, &(addr.sin_addr), ip_str, sizeof(ip_str));
-        	uint16_t port = ntohs(addr.sin_port);
+			inet_ntop(AF_INET, &(addr.sin_addr), ip_str, sizeof(ip_str));
+			uint16_t port = ntohs(addr.sin_port);
 			spdlog::info("Listening on IP: {}, Port : {}", ip_str, _port);
-		}else{
-
+		}
+		else
+		{
 		}
 	}
 	else
@@ -1338,17 +1380,40 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socket_list, std::function<void(socket_t)> callback)
 {
 	int select_result = 0;
-
 	try
 	{
-		
+#ifdef USE_POLL
+		// イベントが発生したFDをevents[]に登録
+		this->_nfds = epoll_wait(this->_epfd, this->_ev_ret, NEVENTS, -1);
+		for (int index = 0; index < this->_nfds; index++)
+		{
+			if (this->_ev_ret[index].data.fd == this->_tcp_listen_socket)
+			{
+				callback(_tcp_listen_socket); // 新しい接続リクエスト
+			}
+			else
+			{
+				auto socket = _ev_ret[index].data.fd;
+				callback(socket);
+				// for (const auto &socket : socket_list)
+				// {
+				// 	if (socket != INVALID_SOCKET_FD && this->_ev_ret[index].data.fd == socket)
+				// 	{
+				// 		callback(socket); // 変化のあったソケットを通知
+				// 	}
+				// }
+			}
+		}
+#elif defined(USE_SELECT)
 #ifdef _WIN32
 		select_result = select(0, &_fds, NULL, NULL, &_timeout);
 #else // LINUX, MACOS, UNIX系OSの場合
 		int max_socket_fd = _tcp_listen_socket;
-		if(socket_list.size() > 0){
+		if (socket_list.size() > 0)
+		{
 			auto max_ite = std::max_element(socket_list.begin(), socket_list.end());
-			if(max_socket_fd < *max_ite){
+			if (max_socket_fd < *max_ite)
+			{
 				max_socket_fd = *max_ite;
 			}
 		}
@@ -1377,7 +1442,6 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 		{
 			if (FD_ISSET(_tcp_listen_socket, &_fds))
 			{
-				spdlog::info("new client connect request!!");
 				callback(_tcp_listen_socket); // 新しい接続リクエスト
 			}
 			for (const auto &socket : socket_list)
@@ -1388,6 +1452,7 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 				}
 			}
 		}
+#endif
 	}
 	catch (const std::runtime_error &e)
 	{
@@ -1402,7 +1467,6 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 		LOG_ERROR("An unknown error occurred in monitor_socket_descriptor.");
 	}
 }
-
 bool SocketHandler::open_tcp_listen_socket()
 {
 	try
@@ -1418,6 +1482,8 @@ bool SocketHandler::open_tcp_listen_socket()
 		}
 		else
 		{
+			// epfdに_tcp_listen_socketを登録して監視対象にする
+			this->add_epoll_ctrl(_tcp_listen_socket);
 			spdlog::info("server open listen socket: {}.", _tcp_listen_socket);
 		}
 	}
@@ -1499,4 +1565,53 @@ bool SocketHandler::check_valid_socket(socket_t request_socket)
 	if (request_socket == INVALID_SOCKET_FD)
 		return false;
 	return true;
+}
+
+
+void SocketHandler::add_epoll_ctrl(socket_t socket)
+{
+	struct epoll_event ev{};
+	memset(&ev, 0, sizeof(ev));
+	ev.events = EPOLLIN;
+	ev.data.fd = socket; // クライアントごとのFD
+	std::unique_lock<std::shared_mutex> lock(this->smtx);
+	if (epoll_ctl(_epfd, EPOLL_CTL_ADD, socket, &ev) == -1)
+	{
+		if (errno == EEXIST)
+		{
+			// 既に登録されている場合はMODに変更して登録を行う。
+			if (epoll_ctl(_epfd, EPOLL_CTL_MOD, socket, &ev) == -1)
+			{
+				LOG_ERROR("poll_ctl MOD failed for fd {}: {}", socket, strerror(errno));
+			}
+		}
+		else
+		{
+			LOG_ERROR("epoll_ctl ADD failed for fd {}: {}", socket, strerror(errno));
+		}
+	}
+}
+
+void SocketHandler::delete_epoll_ctrl(socket_t socket)
+{
+	if (socket == INVALID_SOCKET_FD) {
+        spdlog::warn("Attempted to delete invalid socket from epoll.");
+        return;
+    }
+	std::unique_lock<std::shared_mutex> lock(this->smtx);
+	try
+	{
+		if (epoll_ctl(this->_epfd, EPOLL_CTL_DEL, socket, nullptr) == -1)
+		{
+			spdlog::error("epoll_ctl DEL failed for fd {}: {}", socket, strerror(errno));
+		}
+		else
+		{
+			spdlog::debug("epoll_ctl DEL success for fd {}", socket);
+		}
+	}
+	catch (const std::exception &e)
+	{
+		spdlog::error("Exception in delete_epoll_ctrl: {}", e.what());
+	}
 }

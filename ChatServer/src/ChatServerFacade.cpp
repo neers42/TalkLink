@@ -71,6 +71,12 @@ void ChatServerFacade::run()
 
 	//ディスクリプション監視スタート
 	while (1) {
+
+	#ifdef USE_POLL
+		std::vector<socket_t> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
+		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
+			[this](socket_t changed_socket) {handle_changed_socket_process(changed_socket); });
+	#elif defined(USE_SELECT)
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
 		this->_socket_handler->initialize_select_param();
 		this->prepare_client_fd_set();
@@ -78,22 +84,13 @@ void ChatServerFacade::run()
 		_socket_handler->monitor_socket_descriptor(changed_client_sockets, 
 			[this](socket_t changed_socket) {handle_changed_socket_process(changed_socket); });
 		std::this_thread::sleep_until(abs_time);
+	#endif
 
 	}
 	
 }
 
-void ChatServerFacade::prepare_client_fd_set()
-{
-	auto clients_snapshot = this->_client_handler->get_connected_clients_snapshot();
-	for (auto& client : clients_snapshot) {
-		//有効なソケットにFDSETを実行する
-		if (client != nullptr && client->get_socket() != INVALID_SOCKET_FD) {
-			FD_SET(client->get_socket(), &_socket_handler->get_fd_read());
-		}
-	}
-	this->_socket_handler->copy_fd_read_to_fds(&(_socket_handler->get_fds()), &(_socket_handler->get_fd_read()));
-}
+
 
 
 void ChatServerFacade::show_server_running_info()
@@ -841,6 +838,18 @@ void ChatServerFacade::heartbeat_nonresponse_process(const std::shared_ptr<Clien
 
 }
 
+#ifdef USE_SELECT
+void ChatServerFacade::prepare_client_fd_set()
+{
+	auto clients_snapshot = this->_client_handler->get_connected_clients_snapshot();
+	for (auto& client : clients_snapshot) {
+		//有効なソケットにFDSETを実行する
+		if (client != nullptr && client->get_socket() != INVALID_SOCKET_FD) {
+			FD_SET(client->get_socket(), &_socket_handler->get_fd_read());
+		}
+	}
+	this->_socket_handler->copy_fd_read_to_fds(&(_socket_handler->get_fds()), &(_socket_handler->get_fd_read()));
+}
 
 void ChatServerFacade::setting_select_process()
 {
@@ -852,6 +861,7 @@ void ChatServerFacade::setting_select_process()
 		}
 	}
 }
+#endif
 
 void ChatServerFacade::handle_disconnect_process(const std::shared_ptr<Client> client)
 {
