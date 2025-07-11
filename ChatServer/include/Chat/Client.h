@@ -26,11 +26,17 @@
 
 #include <memory>
 #include "Authentication/FirebaseAuthHandler.h"
-
+#include <atomic>
 #include "wolfssl/ssl.h"
 #include <shared_mutex>
 class Client
 {
+public:
+	enum class ConnectState{
+		ACTIVE,
+		DISCONNECTING,
+		DISCONNECT
+	};
 
 	//Client private変数
 private:
@@ -46,7 +52,7 @@ private:
 	int heart_beat_count;		//クライアントのハートビート回数
 	bool auth_status = false;	//クライアントの認証状態
 	WOLFSSL* ssl;				//クライアントのソケットにアタッチされたsslオブジェクト
-
+	std::atomic<ConnectState> c_state;
 
 public:
 	mutable std::mutex mtx;
@@ -71,6 +77,7 @@ public:
 	int get_heart_beat_count() const;
 	bool get_auth_status() const;
 	WOLFSSL* get_ssl();
+	ConnectState get_connect_state() const;
 
 
 	//setter
@@ -90,7 +97,11 @@ public:
 	void change_auth_status();
 	bool operator==(const Client& other_client)const;
 	Client& operator=(const Client& other_client);
+	void set_conncet_state(ConnectState state);
 
+	//other
+	bool isActive() const noexcept {return c_state == ConnectState::ACTIVE;}
+	bool compare_and_set_state(ConnectState& expected, ConnectState desired);
 };
 #endif // !CLIENT_H
 

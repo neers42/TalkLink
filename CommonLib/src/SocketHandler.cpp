@@ -1023,8 +1023,14 @@ void SocketHandler::close_socket(const socket_t client_socket)
 		shutdown(client_socket, SD_BOTH);
 		int close_socket_result = closesocket(client_socket);
 #else
-		shutdown(client_socket, SHUT_RDWR);
+		int shutdown_result = shutdown(client_socket, SHUT_RDWR);
+		if (shutdown_result == -1) {
+			int error_code = errno;
+			std::string message = strerror(error_code);
+			spdlog::warn("shutdown failed: errno={}, message={}", error_code, message);
+		}
 		int close_socket_result = close(client_socket);
+		
 #endif // _WIN32
 
 		if (close_socket_result == SOCKET_ERROR_FD)
@@ -1377,12 +1383,11 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 	return true;
 }
 
-void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socket_list, std::function<void(socket_t)> callback)
+#ifdef USE_POLL
+void SocketHandler::monitor_socket_descriptor(std::function<void(socket_t)> callback)
 {
-	int select_result = 0;
 	try
 	{
-#ifdef USE_POLL
 		// イベントが発生したFDをevents[]に登録
 		this->_nfds = epoll_wait(this->_epfd, this->_ev_ret, NEVENTS, -1);
 		for (int index = 0; index < this->_nfds; index++)
@@ -1395,16 +1400,27 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 			{
 				auto socket = _ev_ret[index].data.fd;
 				callback(socket);
-				// for (const auto &socket : socket_list)
-				// {
-				// 	if (socket != INVALID_SOCKET_FD && this->_ev_ret[index].data.fd == socket)
-				// 	{
-				// 		callback(socket); // 変化のあったソケットを通知
-				// 	}
-				// }
 			}
 		}
+	}catch(const std::runtime_error &e)
+	{
+		LOG_ERROR("Runtime Error : {}", e.what());
+	}
+	catch (const std::exception &e)
+	{
+		LOG_ERROR("Exception : {}", e.what());
+	}
+	catch (...)
+	{
+		LOG_ERROR("An unknown error occurred in monitor_socket_descriptor.");
+	}
+}
 #elif defined(USE_SELECT)
+void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socket_list, std::function<void(socket_t)> callback)
+{
+	int select_result = 0;
+	try
+	{
 #ifdef _WIN32
 		select_result = select(0, &_fds, NULL, NULL, &_timeout);
 #else // LINUX, MACOS, UNIX系OSの場合
@@ -1452,7 +1468,7 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 				}
 			}
 		}
-#endif
+
 	}
 	catch (const std::runtime_error &e)
 	{
@@ -1467,6 +1483,9 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 		LOG_ERROR("An unknown error occurred in monitor_socket_descriptor.");
 	}
 }
+#endif
+
+
 bool SocketHandler::open_tcp_listen_socket()
 {
 	try

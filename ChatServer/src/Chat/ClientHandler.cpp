@@ -140,20 +140,36 @@ void ClientHandler::delete_client(std::vector<std::shared_ptr<Client>>::iterator
 
 void ClientHandler::delete_client(const std::shared_ptr<Client> client)
 {
+	// std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	// if (this->connected_clients.empty() == true) {
+	// 	LOG_ERROR("Client list is empty.");
+	// 	return;
+	// }
+	// else {
+	// 	auto it = std::find(this->connected_clients.begin(), this->connected_clients.end(), client);
+	// 	if (it != this->connected_clients.end()) {
+	// 		spdlog::info("Deleted Client(ID : {}).", client->get_id());
+	// 		this->connected_clients.erase(it);
+	// 	}
+	// 	else {
+	// 		LOG_ERROR("Client not found in connected_clients.");
+	// 	}
+	// }
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);
-	if (this->connected_clients.empty() == true) {
+	if (this->connected_clients.empty()) {
 		LOG_ERROR("Client list is empty.");
 		return;
 	}
+	auto it = std::find_if(this->connected_clients.begin(), this->connected_clients.end(),
+		[&](const std::shared_ptr<Client>& c) {
+			return c && c->get_id() == client->get_id();
+		});
+	if (it != this->connected_clients.end()) {
+		spdlog::info("Deleted Client(ID : {}).", client->get_id());
+		this->connected_clients.erase(it);
+	}
 	else {
-		auto it = std::find(this->connected_clients.begin(), this->connected_clients.end(), client);
-		if (it != this->connected_clients.end()) {
-			spdlog::info("Deleted Client(ID : {}).", client->get_id());
-			this->connected_clients.erase(it);
-		}
-		else {
-			LOG_ERROR("Client not found in connected_clients.");
-		}
+		LOG_ERROR("Client(ID : {}) not found in connected_clients.", client->get_id());
 	}
 }
 
@@ -209,6 +225,7 @@ std::shared_ptr<Client> ClientHandler::get_client_by_socket(const socket_t socke
 {
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	for (const auto& client : connected_clients) {
+		
 		if (client != nullptr && client->get_socket() == socket) {
 			return client;
 		}

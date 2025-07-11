@@ -35,7 +35,8 @@ Client::Client(
 	firebase_auth{ nullptr },
 	ipv4_address{ client_ipv4_addr },
 	heart_beat_count{ 0 },
-	ssl{ ssl }
+	ssl{ ssl },
+	c_state{Client::ConnectState::ACTIVE}
 {
 
 }
@@ -55,7 +56,8 @@ Client::Client(
 	firebase_auth{ nullptr },
 	ipv4_address{ ipv4_addr },
 	heart_beat_count{ 0 },
-	ssl{ ssl }
+	ssl{ ssl },
+	c_state{Client::ConnectState::ACTIVE}
 {
 }
 
@@ -125,62 +127,82 @@ WOLFSSL* Client::get_ssl()
 	return this->ssl;
 }
 
+Client::ConnectState Client::get_connect_state() const
+{
+	return c_state.load();
+}
+
+
 void Client::set_id(const std::string& id)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->id = id;
 }
 
 void Client::set_name(const std::string& name)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->name = name;
 }
 
 void Client::set_mail_address(const std::string& mail_address)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->mail_address = mail_address;
 }
 
 void Client::set_socket(const socket_t socket)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->socket = socket;
 }
 
 void Client::set_sockaddr_in(const struct sockaddr_in sockaddr_in)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->sockaddr_in = sockaddr_in;
 }
 
 void Client::set_ipv4_address(const std::string& ipv4_addr)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->ipv4_address = ipv4_addr;
 }
 
 void Client::set_password(const std::string& password)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->password = password;
 }
 
 void Client::set_firebase_auth(firebase::auth::Auth* firebase_auth)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->firebase_auth = firebase_auth;
 }
 
 void Client::set_heart_beat_count(const int count)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->heart_beat_count = count;
 }
 
 void Client::set_auth_status(const bool status)
 {
+	std::unique_lock<std::mutex> lock(this->mtx);
 	this->auth_status = status;
 }
 
 void Client::set_ssl(WOLFSSL* ssl)
 {
+	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->ssl = ssl;
 }
 
-
+void Client::set_conncet_state(ConnectState state)
+{
+	c_state.store(state);
+}
 
 void Client::incliment_heart_beat_count()
 {
@@ -221,4 +243,9 @@ Client& Client::operator=(const Client& other_client)
 	ipv4_address = other_client.ipv4_address;
 	password = other_client.password;
 	return *this;
+}
+
+bool Client::compare_and_set_state(Client::ConnectState& expected, Client::ConnectState desired) 
+{
+    return c_state.compare_exchange_strong(expected, desired);
 }

@@ -169,7 +169,11 @@ public:
 
 	//other
 	//ファイルディスクリプタに変化がないか監視する
+#ifdef USE_POLL
+	void monitor_socket_descriptor(std::function<void(socket_t)> callback);
+#elif defined(USE_SELECT)
 	void monitor_socket_descriptor(const std::vector<socket_t>& socket_list, std::function<void(socket_t)> callback);
+#endif
 	//メッセージ用のリッスンソケットをアクティブにする
 	bool open_tcp_listen_socket();
 	//クライアントのIPアドレスを抽出する
