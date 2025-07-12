@@ -7,6 +7,7 @@ Client::Client()
 	, ipv4_address{ "" }
 	, password{ "" }
 	, heart_beat_count{ 0 }
+	, auth_status{ false }
 	, ssl{ nullptr }
 {
 	this->sockaddr_in.sin_family = AF_INET;
@@ -35,6 +36,7 @@ Client::Client(
 	firebase_auth{ nullptr },
 	ipv4_address{ client_ipv4_addr },
 	heart_beat_count{ 0 },
+	auth_status { false },
 	ssl{ ssl },
 	c_state{Client::ConnectState::ACTIVE}
 {
@@ -56,6 +58,7 @@ Client::Client(
 	firebase_auth{ nullptr },
 	ipv4_address{ ipv4_addr },
 	heart_beat_count{ 0 },
+	auth_status { false },
 	ssl{ ssl },
 	c_state{Client::ConnectState::ACTIVE}
 {
@@ -114,12 +117,12 @@ firebase::auth::Auth* Client::get_firebase_auth() const
 
 int Client::get_heart_beat_count() const
 {
-	return this->heart_beat_count;
+	return this->heart_beat_count.load();
 }
 
 bool Client::get_auth_status() const
 {
-	return this->auth_status;
+	return this->auth_status.load();
 }
 
 WOLFSSL* Client::get_ssl()
@@ -183,14 +186,12 @@ void Client::set_firebase_auth(firebase::auth::Auth* firebase_auth)
 
 void Client::set_heart_beat_count(const int count)
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
-	this->heart_beat_count = count;
+	this->heart_beat_count.store(count);
 }
 
 void Client::set_auth_status(const bool status)
 {
-	//std::unique_lock<std::mutex> lock(this->mtx);
-	this->auth_status = status;
+	this->auth_status.store(status);
 }
 
 void Client::set_ssl(WOLFSSL* ssl)
@@ -206,25 +207,27 @@ void Client::set_conncet_state(ConnectState state)
 
 void Client::incliment_heart_beat_count()
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
-	this->heart_beat_count++;
+	this->heart_beat_count.fetch_add(1);
 }
 
 void Client::clear_heart_beat_count()
 {
-	std::unique_lock<std::mutex> lock(this->mtx);
-	this->heart_beat_count = 0;
+	this->heart_beat_count.store(0);
 }
 
 void Client::change_auth_status()
 {
-	//std::unique_lock<std::mutex> lock(this->mtx);
-	if (auth_status == true) {
-		auth_status = false;
-	}
-	else {
-		auth_status = true;
-	}
+	// std::unique_lock<std::mutex> lock(this->mtx);
+	// if (auth_status == true) {
+	// 	auth_status = false;
+	// }
+	// else {
+	// 	auth_status = true;
+	// }
+
+	bool expected = auth_status.load();
+    auth_status.store(!expected);
+
 }
 
 bool Client::operator==(const Client& other_client) const
