@@ -801,13 +801,14 @@ void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004>& mt00
 void ChatServerFacade::heartbeat_check_process()
 {
 	while (true) {
-	
+			//30秒wait
+		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30秒間隔
+		
 		//現在接続しているクライアントリストを抽出
 		std::vector<std::shared_ptr<Client>> current_connect_clients;
 		current_connect_clients = this->_client_handler->get_connected_clients_snapshot();
 
-		//30秒wait
-		std::this_thread::sleep_for(std::chrono::seconds(30));  // 30秒間隔
+
 
 		for (const auto& client : current_connect_clients) {
 			if (client != nullptr && client->get_heart_beat_count() == 0) {

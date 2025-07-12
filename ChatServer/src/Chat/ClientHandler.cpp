@@ -371,7 +371,7 @@ void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_nu
 int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
 {
 	LOG_TRACE;
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	//std::unique_lock<std::mutex> lock(this->mtx);
 	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
 
