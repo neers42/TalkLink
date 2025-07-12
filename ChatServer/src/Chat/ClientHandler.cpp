@@ -437,7 +437,15 @@ std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::
 std::shared_ptr<Client> ClientHandler::get_client_by_cid(const std::string& cid)
 {
 	LOG_TRACE;	
+	if (cid.empty()) {
+		LOG_ERROR("Client ID is empty.");
+		return nullptr;
+	}
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	if (connected_clients.empty()) {
+		return nullptr;
+	}
+
 	for (auto& client : connected_clients) {
 		if (client != nullptr && client->get_id() == cid) {
 			return client;

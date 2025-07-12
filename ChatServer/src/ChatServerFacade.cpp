@@ -964,6 +964,7 @@ void ChatServerFacade::mt104B_process(
 	const std::shared_ptr<Client>& client
 )
 {
+	LOG_TRACE;
 	//mt104Bを生成
 	std::string message_type = "104B";
 	MessageType104B::MessageSendStatus send_status;
@@ -991,7 +992,6 @@ void ChatServerFacade::mt104B_process(
 		else {		//一部のクライアントにメッセージが送信できなかった場合
 			send_status = MessageType104B::MessageSendStatus::SEND_PARTIAL_SUCCESS;
 		}
-
 	}
 	else {
 		if (receivers_infos.size() == 0 && unsend_cids.size() == 0) {
@@ -1008,7 +1008,6 @@ void ChatServerFacade::mt104B_process(
 		}
 		else {		//一部のクライアントにメッセージが送信できなかった場合
 			send_status = MessageType104B::MessageSendStatus::SEND_PARTIAL_SUCCESS;
-
 		}
 	}
 	auto mt104B = std::make_unique<MessageType104B>(
