@@ -594,10 +594,8 @@ std::string ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001
 
 					// Auth statusを変更する
 					this->_client_handler->change_client_auth_status(socket);
-					spdlog::debug("kokomadewa OK!!! change_client_auth");
 					// ハートビートのカウント回数をインクリメントする
 					this->_client_handler->incliment_heart_beat_count(socket);
-					spdlog::debug("kokomadewa OK!!! incliment");
 				}
 				else
 				{
@@ -878,21 +876,17 @@ void ChatServerFacade::mt101_process(
 	json unsend_messages_json, unsend_control_messages_json;
 	// 未送信コントロールメッセージを取得する
 	unsend_control_messages_json = this->_mysql_client->get_unsend_control_message_fromDB(this->_client_handler->get_client_id(socket));
-	spdlog::debug("kokomadewa OK!!! get_unsend_contorol message");
 	// 未送信チャットメッセージを取得する
 	unsend_messages_json = this->_mysql_client->get_unsend_message_fromDB(this->_client_handler->get_client_id(socket), 20);
-	spdlog::debug("kokomadewa OK!!! get_unsend_message");
 
 	// MT101を送信する処理を記載する
 	auto mt101 = std::make_unique<MessageType101>(cid, login_result);
 
 	// メッセージのデシリアライズ
 	json mt101_json = MessageType101::deserialize_message(mt101, unsend_messages_json, error_msg);
-	spdlog::debug("kokomadewa OK!!! deserialize message");
 
 	// メッセージの送信
 	bool send_result = this->_client_handler->client_message_send(socket, mt101_json);
-	spdlog::debug("kokomadewa OK!!! message send");
 
 	// メッセージ送信が成功の場合
 	if (send_result == true)
@@ -1371,13 +1365,11 @@ void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004> &mt0
 		std::string send_room_id = mt004->get_room_id();
 		// 送り先のclientの情報を取得する
 		auto receivers_infos = this->_chat_room_handler->get_client_infos_by_chatroom_id(send_room_id);
-		spdlog::info("kokomade ok get_client_infos_by_chatroom_id");
 		// ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できない場合
 		if (receivers_infos.size() == 0)
 		{
 			// データベースからチャットルームに参加しているcidのリストを抽出
 			auto client_list = this->_mysql_client->get_client_list_from_chatroom(send_room_id);
-			spdlog::info("kokomade ok get_client_list_from_chatroom");
 			if (client_list.size() == 0 && unsend_cids.size() == 0)
 			{
 				// LOG_ERROR("The Chatroom ID was not found in the database.");
