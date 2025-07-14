@@ -112,7 +112,7 @@ void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
 
 void ProtocolHandler::shutdown_wolfssl(std::shared_ptr<Client> client)
 {
-	std::unique_lock<std::mutex> client_lock(client->mtx);
+	//std::unique_lock<std::mutex> client_lock(client->mtx);
 	WOLFSSL* client_ssl = client->get_ssl();
 	if (client_ssl == nullptr) {
 		LOG_ERROR("SSL is not initialized, cannot shutdown SSL connection.");
@@ -141,9 +141,8 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_pt
 	bool disconnect_flag = false;	//接続断の判定フラグ
 	bool recv_flag = false;	//受信完了の判定フラグ
 	int bytes_read = 0;
-
-		// Clientのshared_mtxをshared_lockでロック
-	std::unique_lock<std::mutex> client_lock(client->mtx);
+	// Clientのshared_mtxをshared_lockでロック
+	//std::unique_lock<std::mutex> client_lock(client->mtx);
 	WOLFSSL* ssl = client->get_ssl();
 	if (ssl == nullptr || wolfSSL_is_init_finished(ssl) == false) {
 		LOG_ERROR("SSL is not initialized, cannot send message.");
@@ -217,7 +216,7 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_pt
 }
 
 
-bool ProtocolHandler::send_message_tls(std::shared_ptr<Client> client, json message)
+bool ProtocolHandler::send_message_tls(std::shared_ptr<Client> client, const json& message)
 {
 	LOG_TRACE;
 	std::vector<uint8_t> message_buffer = json::to_msgpack(message);
@@ -228,7 +227,7 @@ bool ProtocolHandler::send_message_tls(std::shared_ptr<Client> client, json mess
 
 	std::string mt = message["message_type"];
 	spdlog::info("before locking client mutex");
-	std::unique_lock<std::mutex> client_lock(client->mtx);
+	//std::unique_lock<std::mutex> client_lock(client->mtx);
 	spdlog::info("after locking client mutex");
 	WOLFSSL* ssl = client->get_ssl();
 	spdlog::info("get_ssl success");
@@ -421,9 +420,6 @@ void ProtocolHandler::initialize_wolfssl()
 	}
 
 }
-
-
-
 
 WOLFSSL_METHOD* ProtocolHandler::set_server_method()
 {

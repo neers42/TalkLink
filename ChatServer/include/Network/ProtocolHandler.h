@@ -88,7 +88,7 @@ public:
 	std::tuple<json, bool, bool> receive_message_tls(std::shared_ptr<Client> client);
     
 	//メッセージの送信
-	bool send_message_tls(std::shared_ptr<Client> client, json message);
+	bool send_message_tls(std::shared_ptr<Client> client, const json& message);
 
 	//TLSのバージョンを取得
 	const std::string get_tls_version(const WOLFSSL* ssl);

@@ -168,19 +168,16 @@ void Client::set_sockaddr_in(const struct sockaddr_in sockaddr_in)
 
 void Client::set_ipv4_address(const std::string& ipv4_addr)
 {
-	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->ipv4_address = ipv4_addr;
 }
 
 void Client::set_password(const std::string& password)
 {
-	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->password = password;
 }
 
 void Client::set_firebase_auth(firebase::auth::Auth* firebase_auth)
 {
-	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->firebase_auth = firebase_auth;
 }
 
@@ -217,14 +214,6 @@ void Client::clear_heart_beat_count()
 
 void Client::change_auth_status()
 {
-	// std::unique_lock<std::mutex> lock(this->mtx);
-	// if (auth_status == true) {
-	// 	auth_status = false;
-	// }
-	// else {
-	// 	auth_status = true;
-	// }
-
 	bool expected = auth_status.load();
     auth_status.store(!expected);
 

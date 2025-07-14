@@ -28,6 +28,7 @@
 	#include <fcntl.h>
 	#define USE_POLL
 	#define NEVENTS 16
+	constexpr uint32_t EPOLL_EVENTS = EPOLLIN | EPOLLET | EPOLLONESHOT;
 #else
 	#define USE_SELECT
 #endif //__linux__
@@ -199,6 +200,7 @@ public:
 	//epoll関連
 	void add_epoll_ctrl(socket_t socket);
 	void delete_epoll_ctrl(socket_t socket);
+	void reactivate_epoll_ctrl(socket_t socket);
 
 };
 

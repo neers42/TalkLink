@@ -990,7 +990,7 @@ std::tuple<socket_t, sockaddr_in> SocketHandler::accept_client_socket(socklen_t 
 		{
 #ifdef USE_POLL
 			// epollにアクセプトしたfdを登録
-			this->add_epoll_ctrl(accept_client_socket_result);
+			//this->add_epoll_ctrl(accept_client_socket_result);
 #endif
 			// acceptが成功した場合
 			return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result);
@@ -1591,7 +1591,7 @@ void SocketHandler::add_epoll_ctrl(socket_t socket)
 {
 	struct epoll_event ev{};
 	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLLIN;
+	ev.events = EPOLL_EVENTS;
 	ev.data.fd = socket; // クライアントごとのFD
 	std::unique_lock<std::shared_mutex> lock(this->smtx);
 	if (epoll_ctl(_epfd, EPOLL_CTL_ADD, socket, &ev) == -1)
@@ -1633,4 +1633,22 @@ void SocketHandler::delete_epoll_ctrl(socket_t socket)
 	{
 		spdlog::error("Exception in delete_epoll_ctrl: {}", e.what());
 	}
+}
+
+void SocketHandler::reactivate_epoll_ctrl(socket_t socket)
+{
+	struct epoll_event event;
+	memset(&event, 0, sizeof(event));
+    event.data.fd = socket;
+    event.events = EPOLL_EVENTS;
+	std::unique_lock<std::shared_mutex> lock(this->smtx);
+    if (epoll_ctl(_epfd, EPOLL_CTL_MOD, socket, &event) == -1)
+    {
+        spdlog::error("Failed to reactivate epoll socket (fd: {}), errno: {}, msg: {}",
+                      socket, errno, strerror(errno));
+    }
+    else
+    {
+        spdlog::debug("Successfully reactivated epoll socket (fd: {})", socket);
+    }
 }
