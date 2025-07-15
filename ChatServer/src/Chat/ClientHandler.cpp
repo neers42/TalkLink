@@ -436,7 +436,7 @@ void ClientHandler::set_client_id(const socket_t socket, const std::string &id)
 	std::shared_ptr<Client> client = nullptr;
 	LOG_TRACE;
 	spdlog::debug("before locking unique lock. func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking unique lock. func : {}", __func__);
 	client = this->get_client_by_socket(socket);
 
@@ -445,8 +445,13 @@ void ClientHandler::set_client_id(const socket_t socket, const std::string &id)
 		LOG_ERROR("Client not found for socket {}", socket);
 		return;
 	}
-
-	client->set_id(id);
+	{
+		spdlog::debug("before locking client lock. func : {}", __func__);
+		std::lock_guard<std::mutex> client_lock(client->mtx);
+		spdlog::debug("aftre locking client lock. func : {}", __func__);
+		client->set_id(id);
+	}
+	
 }
 void ClientHandler::set_client_name(std::string name, uint32_t list_num)
 {
@@ -478,7 +483,7 @@ void ClientHandler::set_client_name(const socket_t socket, const std::string &na
 	std::shared_ptr<Client> client = nullptr;
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
 	client = this->get_client_by_socket(socket);
 
@@ -487,8 +492,13 @@ void ClientHandler::set_client_name(const socket_t socket, const std::string &na
 		LOG_ERROR("Client not found for socket {}", socket);
 		return;
 	}
-
-	client->set_name(name);
+	{
+		spdlog::debug("before locking client lock. func : {}", __func__);
+		std::lock_guard<std::mutex> client_lock(client->mtx);
+		spdlog::debug("aftre locking client lock. func : {}", __func__);
+		client->set_name(name);
+	}
+	
 }
 
 void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
@@ -521,7 +531,7 @@ void ClientHandler::set_client_mail_addr(const socket_t socket, const std::strin
 	std::shared_ptr<Client> client = nullptr;
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
 	client = this->get_client_by_socket(socket);
 
@@ -530,7 +540,13 @@ void ClientHandler::set_client_mail_addr(const socket_t socket, const std::strin
 		LOG_ERROR("Client not found for socket {}", socket);
 		return;
 	}
-	client->set_mail_address(mail_addr);
+	{
+		spdlog::debug("before locking client lock. func : {}", __func__);
+		std::lock_guard<std::mutex> client_lock(client->mtx);
+		spdlog::debug("aftre locking client lock. func : {}", __func__);
+		client->set_mail_address(mail_addr);
+	}
+	
 }
 
 void ClientHandler::set_client_password(const std::shared_ptr<Client>& client, const std::string& password)
@@ -556,7 +572,7 @@ void ClientHandler::set_client_password(const socket_t socket, const std::string
 
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
 	client = this->get_client_by_socket(socket);
 
@@ -565,8 +581,13 @@ void ClientHandler::set_client_password(const socket_t socket, const std::string
 		LOG_ERROR("Client not found for socket {}", socket);
 		return;
 	}
-
-	client->set_password(password);
+	{
+		spdlog::debug("before locking client lock. func : {}", __func__);
+		std::lock_guard<std::mutex> client_lock(client->mtx);
+		spdlog::debug("aftre locking client lock. func : {}", __func__);
+		client->set_password(password);
+	}
+	
 }
 
 
@@ -584,7 +605,7 @@ void ClientHandler::set_client_sockaddr_in(const sockaddr_in sock_in, const sock
 	std::shared_ptr<Client> client = nullptr;
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
 	client = this->get_client_by_socket(socket);
 
@@ -593,7 +614,13 @@ void ClientHandler::set_client_sockaddr_in(const sockaddr_in sock_in, const sock
 		LOG_ERROR("Client not found for socket {}", socket);
 		return;
 	}
-	client->set_sockaddr_in(sock_in);
+	{
+		spdlog::debug("before locking client lock. func : {}", __func__);
+		std::lock_guard<std::mutex> client_lock(client->mtx);
+		spdlog::debug("aftre locking client lock. func : {}", __func__);
+		client->set_sockaddr_in(sock_in);
+	}
+	
 }
 
 
@@ -612,7 +639,7 @@ void ClientHandler::set_client_ipv4_addr(const std::string ipv4_addr, const sock
 	std::shared_ptr<Client> client = nullptr;
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
 	client = this->get_client_by_socket(socket);
 
@@ -622,7 +649,13 @@ void ClientHandler::set_client_ipv4_addr(const std::string ipv4_addr, const sock
 		return;
 	}
 
-	client->set_ipv4_address(ipv4_addr);
+	{
+		spdlog::debug("before locking client lock. func : {}", __func__);
+		std::lock_guard<std::mutex> client_lock(client->mtx);
+		spdlog::debug("aftre locking client lock. func : {}", __func__);
+		client->set_ipv4_address(ipv4_addr);
+	}
+	
 }
 
 
@@ -800,7 +833,33 @@ void ClientHandler::set_conncet_status(const socket_t socket, Client::ConnectSta
 	client->set_conncet_state(status);
 }
 
-bool ClientHandler::add_client(std::shared_ptr<Client> client)  
+void ClientHandler::set_authentication_info(const socket_t socket, const std::string &id, const std::string &name, const std::string &mail_addr)
+{
+	LOG_TRACE;
+	std::shared_ptr<Client> client = nullptr;
+
+	// クライアントリストから該当ソケットの Client を探す
+	LOG_TRACE;
+	spdlog::debug("before locking shared lock. func : {}", __func__);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	spdlog::debug("after locking shared lock. func : {}", __func__);
+	client = this->get_client_by_socket(socket);
+
+	if (client == nullptr)
+	{
+		LOG_ERROR("Client not found for socket {}", socket);
+		return;
+	}
+	{
+		spdlog::debug("before locking client lock. func : {}", __func__);
+		std::lock_guard<std::mutex> client_lock(client->mtx);
+		spdlog::debug("aftre locking client lock. func : {}", __func__);
+		client->set_id(id);
+		client->set_name(name);
+		client->set_mail_address(mail_addr);
+	}
+}
+bool ClientHandler::add_client(std::shared_ptr<Client> client)
 {  
     LOG_TRACE;
 	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);

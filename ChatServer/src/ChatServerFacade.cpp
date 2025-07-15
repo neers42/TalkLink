@@ -546,18 +546,15 @@ std::string ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001
 					spdlog::info("Client(ip:{:s}, socket num:{:d}) successfully signed up, Client id:{:s}", this->_client_handler->get_client_ipv4_address(socket), socket, client_id);
 					*login_result = true;
 					// SIGN UPが成功した場合に、クライアント情報を登録する
-					_client_handler->set_client_id(socket, client_id);
-					_client_handler->set_client_name(socket, mt001->get_client_name());
-					_client_handler->set_client_mail_addr(socket, mt001->get_client_mail_addr());
-					_client_handler->set_client_password(socket, mt001->get_client_password());
+					_client_handler->set_authentication_info(socket, client_id, mt001->get_client_name(), mt001->get_client_mail_addr());
 
 					if (this->_mysql_client->insert_client_data(client_id, mt001->get_client_name(), mt001->get_client_mail_addr(), mt001->get_client_password(), "", ServerTime::get_current_time_to_seconds(), "") == true)
 					{
-						spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", _client_handler->get_client_ipv4_address(socket), socket, client_id);
+						spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", _client_handler->get_client_ipv4_address(socket), socket);
 					}
 					else
 					{
-						LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", _client_handler->get_client_ipv4_address(socket), socket, client_id);
+						LOG_ERROR("Client(ip:{:s}, socket num:{:d}) information has been failed registered in the database.", _client_handler->get_client_ipv4_address(socket), socket);
 					}
 
 					// Auth statusを変更する
@@ -586,9 +583,7 @@ std::string ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001
 					// データベースからユーザ情報を読み取る。
 					std::string client_name, client_mail_addr, client_icon_url;
 					std::tie(client_name, client_mail_addr, client_icon_url) = this->_mysql_client->get_client_info_fromDB(client_id);
-					_client_handler->set_client_id(socket, client_id);
-					_client_handler->set_client_name(socket, client_name);
-					_client_handler->set_client_mail_addr(socket, client_mail_addr);
+					_client_handler->set_authentication_info(socket, client_id, client_name, client_mail_addr);
 
 					spdlog::debug("client name:{}, mail address:{}, icon_url:{}", client_name, client_mail_addr, client_icon_url);
 

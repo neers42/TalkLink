@@ -120,6 +120,7 @@ public:
 	void clear_heart_beat_count(const socket_t socket);
 	void all_clear_heart_beat_count();
 	void set_conncet_status(const socket_t socket, Client::ConnectState status);
+	void set_authentication_info(const socket_t socket, const std::string& id, const std::string& name, const std::string& mail_addr);
 	
 	
 
