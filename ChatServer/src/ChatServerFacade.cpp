@@ -151,6 +151,7 @@ void ChatServerFacade::allocate_process(const socket_t socket)
 
 bool ChatServerFacade::accept_client_socket_process()
 {
+	LOG_TRACE;
 	std::thread::id this_thread_id = std::this_thread::get_id();
 	socket_t new_client_socket = INVALID_SOCKET_FD;
 	struct sockaddr_in new_client_sockaddr_in = {0};
@@ -1192,6 +1193,14 @@ void ChatServerFacade::handle_disconnect_process(const socket_t socket)
 	}
 
 	this->_socket_handler->delete_epoll_ctrl(socket);
+	// **ここでブロッキングモードに切り替え**
+	// 例:
+	int flags = fcntl(socket, F_GETFL, 0);
+	if (flags != -1)
+	{
+		fcntl(socket, F_SETFL, flags & ~O_NONBLOCK);
+	}
+
 	this->_client_handler->client_ssl_shutdown(socket);
 	this->_socket_handler->close_socket(socket);
 	this->_mysql_client->update_last_login(_client_handler->get_client_id(socket), this->_server_time->get_current_time_to_milliseconds());

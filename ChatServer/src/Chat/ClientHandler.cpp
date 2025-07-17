@@ -951,6 +951,7 @@ void ClientHandler::delete_client(const socket_t socket)
             spdlog::info("Deleted nullptr Client.");
         }
         this->connected_clients.erase(it);
+		spdlog::info("delete saremashita!!!");
 	}else {
 		LOG_ERROR("Client(ID : {}) not found in connected_clients.", (*it)->get_id());
 	}

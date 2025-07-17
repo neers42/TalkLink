@@ -1591,7 +1591,11 @@ void SocketHandler::add_epoll_ctrl(socket_t socket)
 {
 	struct epoll_event ev{};
 	memset(&ev, 0, sizeof(ev));
-	ev.events = EPOLL_EVENTS;
+	if(socket == _tcp_listen_socket){
+		ev.events = EPOLLIN;
+	}else{
+		ev.events = EPOLL_EVENTS;
+	}
 	ev.data.fd = socket; // クライアントごとのFD
 	std::unique_lock<std::shared_mutex> lock(this->smtx);
 	if (epoll_ctl(_epfd, EPOLL_CTL_ADD, socket, &ev) == -1)
