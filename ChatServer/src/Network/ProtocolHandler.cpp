@@ -96,7 +96,7 @@ WOLFSSL* ProtocolHandler::wolfssl_accept(const socket_t client_socket)
 	}
 }
 
-void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
+bool ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
 {
 	int ret = wolfSSL_shutdown(client_ssl);
 	if (ret == WOLFSSL_SUCCESS) {
@@ -110,13 +110,16 @@ void ProtocolHandler::shutdown_wolfssl(WOLFSSL* client_ssl)
 
 }
 
-void ProtocolHandler::shutdown_wolfssl(std::shared_ptr<Client> client)
+bool ProtocolHandler::shutdown_wolfssl(std::shared_ptr<Client> client)
 {
-	//std::unique_lock<std::mutex> client_lock(client->mtx);
+	if(client == nullptr){
+		LOG_ERROR("Client is null");
+		return false;
+	}
 	WOLFSSL* client_ssl = client->get_ssl();
 	if (client_ssl == nullptr) {
 		LOG_ERROR("SSL is not initialized, cannot shutdown SSL connection.");
-		return;
+		return false;
 	}
 	int ret = wolfSSL_shutdown(client_ssl);
 	if (ret == WOLFSSL_SUCCESS) {
@@ -125,11 +128,11 @@ void ProtocolHandler::shutdown_wolfssl(std::shared_ptr<Client> client)
 	else
 	{
 		this->print_wolfssl_error(client_ssl);
-		return;
+		return false;
 	}
 	wolfSSL_free(client_ssl);
 	client->set_ssl(nullptr);
-
+	return true;
 }
 
 std::tuple<json, bool, bool> ProtocolHandler::receive_message_tls(std::shared_ptr<Client> client)

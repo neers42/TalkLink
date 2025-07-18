@@ -56,9 +56,9 @@ ChatServerFacade::ChatServerFacade() : _server_ip{""}
 		});
 
 	_client_handler->set_ssl_shutdown_function(
-		[this](std::shared_ptr<Client> client)
+		[this](std::shared_ptr<Client> client) -> bool
 		{
-			_protocol_handler->shutdown_wolfssl(client);
+			return _protocol_handler->shutdown_wolfssl(client);
 		});
 }
 
@@ -88,7 +88,7 @@ void ChatServerFacade::run()
 	this->_redis_client->connect();
 
 	spdlog::info("Start monitoring requests from clients.");
-	// this->_thread_pool_handler->enqueue_task([this](){ heartbeat_check_process(); });
+	this->_thread_pool_handler->enqueue_task([this](){ heartbeat_check_process(); });
 
 	// ディスクリプション監視スタート
 	while (1)
@@ -1073,24 +1073,21 @@ void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004> &mt00
 
 void ChatServerFacade::heartbeat_check_process()
 {
+	LOG_TRACE;
 	while (true)
 	{
 		// 30秒wait
 		std::this_thread::sleep_for(std::chrono::seconds(30)); // 30秒間隔
-
-		// 現在接続しているクライアントリストを抽出
-		std::vector<std::shared_ptr<Client>> current_connect_clients;
-		current_connect_clients = this->_client_handler->get_connected_clients_snapshot();
-
-		for (const auto &client : current_connect_clients)
-		{
-			if (client != nullptr && client->get_heart_beat_count() == 0)
-			{
-				this->heartbeat_nonresponse_process(client);
-			}
+		const auto unres_sockets = this->_client_handler->monitor_heartbeat();
+		if(unres_sockets.size() == 0){
+			// ハートビート回数をクリアする
+			this->_client_handler->all_clear_heart_beat_count();
+			continue;
 		}
-
-		// ハートビート回数をクリアする
+		for(const auto socket : unres_sockets){
+			spdlog::info("unresponse->handle_disconnect_socket called");
+			this->handle_disconnect_process(socket);
+		}
 		this->_client_handler->all_clear_heart_beat_count();
 	}
 }
@@ -1172,11 +1169,7 @@ void ChatServerFacade::handle_disconnect_process(const std::shared_ptr<Client> c
 
 void ChatServerFacade::handle_disconnect_process(const socket_t socket)
 {
-	std::shared_ptr<Client> client = nullptr;
-	{
-		std::shared_lock<std::shared_mutex> lock(this->_client_handler->shared_mtx);
-		client = this->_client_handler->get_client_by_socket(socket);
-	}
+	std::shared_ptr<Client> client = this->_client_handler->get_client_by_socket(socket);
 
 	if (client == nullptr)
 	{

@@ -384,6 +384,7 @@ std::shared_ptr<Client> &ClientHandler::get_client_ref_by_index(const uint32_t i
 
 std::shared_ptr<Client> ClientHandler::get_client_by_socket(const socket_t socket)
 {
+	std::shared_lock<std::shared_mutex> lock(this->shared_mtx);
 	for (const auto& client : connected_clients) {
 		
 		if (client != nullptr && client->get_socket() == socket) {
@@ -809,6 +810,9 @@ void ClientHandler::all_clear_heart_beat_count()
 	spdlog::debug("before locking shared lock. func : {}", __func__);
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
+	if(this->connected_clients.size() == 0){
+		return;
+	}
 	for (auto& client : connected_clients) {
 		if (client != nullptr) {
 			client->clear_heart_beat_count();
@@ -951,7 +955,6 @@ void ClientHandler::delete_client(const socket_t socket)
             spdlog::info("Deleted nullptr Client.");
         }
         this->connected_clients.erase(it);
-		spdlog::info("delete saremashita!!!");
 	}else {
 		LOG_ERROR("Client(ID : {}) not found in connected_clients.", (*it)->get_id());
 	}
@@ -1029,6 +1032,30 @@ std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::
 	return client_ssl_list;
 }
 
+std::vector<socket_t> ClientHandler::monitor_heartbeat()
+{
+	LOG_TRACE;
+    std::vector<socket_t> unresponsive_sockets;
+
+
+    spdlog::debug("before locking shared lock. func : {}", __func__);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	spdlog::debug("after locking shared lock. func : {}", __func__);
+
+	if(connected_clients.size() == 0){
+		return std::vector<socket_t>();
+	}
+    for (const auto& client : connected_clients)
+    {
+        if (client != nullptr && client->get_heart_beat_count() == 0)
+        {
+            unresponsive_sockets.push_back(client->get_socket());
+
+        }
+    }
+	return unresponsive_sockets;
+}
+
 std::tuple<json, bool, bool> ClientHandler::client_message_receive(socket_t socket)
 {
 	LOG_TRACE;
@@ -1099,30 +1126,22 @@ bool ClientHandler::client_message_send(socket_t socket, const json& send_data)
 bool ClientHandler::client_ssl_shutdown(socket_t socket)
 {
 	std::shared_ptr<Client> client = nullptr;
+	bool ssl_shutdown_result = false;
 
 	// まず接続中クライアント一覧から対象を取得（読み取りロック）
 	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
 	client = this->get_client_by_socket(socket);
 
 	if (client == nullptr)
 	{
 		LOG_ERROR("Client not found for socket {}", socket);
 		return false;
+		
 	}
 
-	if (client->get_ssl() != nullptr)
-	{
-		this->_ssl_shutdown_func(client);
-		return true;
-	}
-	else
-	{
-		spdlog::warn("SSL is already null for socket {}", socket);
-		return false;
-	}
+	std::unique_lock<std::shared_mutex> lock(shared_mtx);
+	ssl_shutdown_result = this->_ssl_shutdown_func(client);
+	return ssl_shutdown_result;
 }
 
 void ClientHandler::set_send_function(SendFunction func)

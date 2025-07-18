@@ -49,7 +49,7 @@ public:
 
 	using SendFunction = std::function<bool(std::shared_ptr<Client>, const json&)>;
 	using ReceiveFunction = std::function<std::tuple<json, bool, bool>(std::shared_ptr<Client>)>;
-	using SSLShutdonwFunction = std::function<void(std::shared_ptr<Client>)>;
+	using SSLShutdonwFunction = std::function<bool(std::shared_ptr<Client>)>;
 
 private:
 
@@ -135,6 +135,7 @@ public:
 	WOLFSSL* search_client_ssl_from_clients(const std::string& cid);
 	void show_client_info(const std::shared_ptr<Client>& client);
 	std::vector<WOLFSSL*> get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients);
+	std::vector<socket_t> monitor_heartbeat();
 	std::tuple<json, bool, bool> client_message_receive(socket_t socket);
 	bool client_message_send(socket_t socket, const json& send_data);
 	bool client_ssl_shutdown(socket_t socket);

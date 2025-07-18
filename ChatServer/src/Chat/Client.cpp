@@ -193,7 +193,6 @@ void Client::set_auth_status(const bool status)
 
 void Client::set_ssl(WOLFSSL* ssl)
 {
-	//std::unique_lock<std::mutex> lock(this->mtx);
 	this->ssl = ssl;
 }
 
