@@ -229,16 +229,11 @@ bool ProtocolHandler::send_message_tls(std::shared_ptr<Client> client, const jso
 	int ret = 0;
 
 	std::string mt = message["message_type"];
-	spdlog::info("before locking client mutex");
-	//std::unique_lock<std::mutex> client_lock(client->mtx);
-	spdlog::info("after locking client mutex");
 	WOLFSSL* ssl = client->get_ssl();
-	spdlog::info("get_ssl success");
 	if (ssl == nullptr || wolfSSL_is_init_finished(ssl) == false) {
 		LOG_ERROR("SSL is not initialized, cannot send message.");
 		return false;
 	}
-	spdlog::info("wolf write....");
 	while (total_sent < message_size) {
 		size_t to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
 		ret = wolfSSL_write(client->get_ssl(), message_buffer.data() + total_sent, static_cast<int>(to_send));

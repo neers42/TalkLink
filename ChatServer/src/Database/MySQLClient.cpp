@@ -37,19 +37,34 @@ MySQLClient::~MySQLClient()
 
 void MySQLClient::connect()
 {
-	try
-	{
-		_connection = _driver->connect(_mysql_host, _mysql_user_name, _mysql_password);
-		_statement = _connection->createStatement();
-		spdlog::debug("host : {} user name : {} mysql_pass : {}", _mysql_host, _mysql_user_name, _mysql_password);
-		spdlog::info("MySQL:connect success!");
-		_connection->setSchema(_mysql_db_name);
+	const int max_retries = 10;
+	const int retry_delay_ms = 2000;  // 2 seconds
 
-	}
-	catch (sql::SQLException& e)
-	{	
-		spdlog::critical("SQL Exception Content : {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
-		exit(1);
+	for (int attempt = 1; attempt <= max_retries; ++attempt)
+	{
+		try
+		{
+			_connection = _driver->connect(_mysql_host, _mysql_user_name, _mysql_password);
+			_statement = _connection->createStatement();
+			spdlog::debug("host: {}, username: {}, password: {}", _mysql_host, _mysql_user_name, _mysql_password);
+			spdlog::info("MySQL: Connection established successfully.");
+			_connection->setSchema(_mysql_db_name);
+			return; // Success
+		}
+		catch (sql::SQLException& e)
+		{
+			spdlog::error("[Attempt {}] Failed to connect to MySQL: {} (Error Code: {}, SQL State: {})",
+			              attempt, e.what(), e.getErrorCode(), e.getSQLState());
+
+			if (attempt == max_retries)
+			{
+				spdlog::critical("Reached maximum number of connection attempts. Terminating the application.");
+				exit(1);
+			}
+
+			spdlog::warn("Retrying to connect in {} ms...", retry_delay_ms);
+			std::this_thread::sleep_for(std::chrono::milliseconds(retry_delay_ms));
+		}
 	}
 }
 

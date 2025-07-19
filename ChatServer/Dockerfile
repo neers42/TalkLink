@@ -1,6 +1,17 @@
-FROM ubuntu:22.04
+# ===============================
+# Build Stage
+# ===============================
+FROM ubuntu:22.04 AS builder
 
-# 依存パッケージインストール
+WORKDIR /app
+
+# キャッシュを有効にするため、先に依存ファイルだけコピー
+COPY CMakeLists.txt ./
+COPY ChatServer ./ChatServer
+COPY AuthenticationServer ./AuthenticationServer
+COPY CommonLib ./CommonLib
+
+# パッケージインストール
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
@@ -12,18 +23,42 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-dev \
     libsecret-1-dev \
     libwolfssl-dev \
+    libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-    
-# 作業ディレクトリを作成
+# ビルド
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build build -j$(nproc)
+
+# ===============================
+# Runtime Stage
+# ===============================
+FROM ubuntu:22.04
+
 WORKDIR /app
 
-# プロジェクトファイルを全てコピー（.dockerignore で不要ファイルは除外）
-COPY . .
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    libpq-dev \
+    libhiredis-dev \
+    libwolfssl-dev \
+    libglib2.0-0 \
+    libsecret-1-0 \
+    libcurl4 \
+    dbus \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# 外部依存の取得とCMakeビルド
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
- && cmake --build build -j$(nproc)
+# ビルド成果物と必要ファイルコピー
+COPY --from=builder /app/build/bin/ChatServer ./ChatServer/bin/ChatServer
+COPY ChatServer/conf ./ChatServer/conf
+COPY ChatServer/certs ./ChatServer/certs
+COPY CommonLib/external_lib/lib/mysql-connector-c++-9.1.0/linux/lib64/libmysqlcppconn.so.10 /usr/local/lib/libmysqlcppconn.so.10
 
- # デフォルトの実行コマンド
-CMD ["./build/bin/ChatServer"]
+# certs ディレクトリの確認用ログを出すようにしてもよい
+RUN ls -l ./ChatServer/certs
+
+# 共有ライブラリのリンクを更新
+RUN ldconfig
+
+CMD ["./ChatServer/bin/ChatServer"]

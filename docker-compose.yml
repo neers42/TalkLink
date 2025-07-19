@@ -1,5 +1,5 @@
 services:
-  mysql:
+  mychat-mysql:
     image: mysql:8.0
     container_name: mychat-mysql
     environment:
@@ -12,11 +12,16 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     
     networks:
       - mychat-net
 
-  chatserver:
+  mychat-server:
     build:
       context: .
       dockerfile: ChatServer/Dockerfile
@@ -24,12 +29,13 @@ services:
 
     #先にmysqlのコンテナを上げる
     depends_on:
-      - mysql
+      mychat-mysql:
+        condition: service_healthy
     ports:
       - "50000:50000"       #TCPのリッスン用のポート
       - "50001:50001/udp"   #UDPポート(マルチキャスト送信用)
     environment:
-      DB_HOST: mysql
+      DB_HOST: mychat-mysql
       DB_PORT: 3306
       DB_USER: chat_user
       DB_PASSWORD: chat_pass

@@ -1085,7 +1085,6 @@ void ChatServerFacade::heartbeat_check_process()
 			continue;
 		}
 		for(const auto socket : unres_sockets){
-			spdlog::info("unresponse->handle_disconnect_socket called");
 			this->handle_disconnect_process(socket);
 		}
 		this->_client_handler->all_clear_heart_beat_count();

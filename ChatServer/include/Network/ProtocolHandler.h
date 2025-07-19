@@ -14,8 +14,8 @@ using socket_t = SOCKET;	//WindowsではSOCKETを使用
 using socket_t = int;		//Linuxではintを使用
 	#define WOLFSSL_USER_SETTINGS
 	#include <wolfssl/options.h>  // これを追加
-	#define SERVER_CERT_FILE_PASS "./ChatServer/certs/server-cert.pem"
-	#define SERVER_PRIVATEKEY_FILE_PASS "./ChatServer/certs/server-key.pem"
+	#define SERVER_CERT_FILE_PASS "/app/ChatServer/certs/server-cert.pem"
+	#define SERVER_PRIVATEKEY_FILE_PASS "/app/ChatServer/certs/server-key.pem"
 #endif //_WIN32
 #include "wolfssl/ssl.h"
 #include "wolfssl/wolfcrypt/asn_public.h"
