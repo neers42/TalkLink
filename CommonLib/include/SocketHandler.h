@@ -172,6 +172,11 @@ public:
 	//ファイルディスクリプタに変化がないか監視する
 #ifdef USE_POLL
 	void monitor_socket_descriptor(std::function<void(socket_t)> callback);
+	
+	//epoll関連
+	void add_epoll_ctrl(socket_t socket);
+	void delete_epoll_ctrl(socket_t socket);
+	void reactivate_epoll_ctrl(socket_t socket);
 #elif defined(USE_SELECT)
 	void monitor_socket_descriptor(const std::vector<socket_t>& socket_list, std::function<void(socket_t)> callback);
 #endif
@@ -197,10 +202,7 @@ public:
 	bool open_udp_multicast_tx_socket();
 	bool open_udp_bloadcast_tx_socket();
 	bool is_socket_closed(const socket_t socket_fd);
-	//epoll関連
-	void add_epoll_ctrl(socket_t socket);
-	void delete_epoll_ctrl(socket_t socket);
-	void reactivate_epoll_ctrl(socket_t socket);
+
 
 };
 

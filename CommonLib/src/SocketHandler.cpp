@@ -1415,6 +1415,75 @@ void SocketHandler::monitor_socket_descriptor(std::function<void(socket_t)> call
 		LOG_ERROR("An unknown error occurred in monitor_socket_descriptor.");
 	}
 }
+
+void SocketHandler::add_epoll_ctrl(socket_t socket)
+{
+	struct epoll_event ev{};
+	memset(&ev, 0, sizeof(ev));
+	if(socket == _tcp_listen_socket){
+		ev.events = EPOLLIN;
+	}else{
+		ev.events = EPOLL_EVENTS;
+	}
+	ev.data.fd = socket; // クライアントごとのFD
+	std::unique_lock<std::shared_mutex> lock(this->smtx);
+	if (epoll_ctl(_epfd, EPOLL_CTL_ADD, socket, &ev) == -1)
+	{
+		if (errno == EEXIST)
+		{
+			// 既に登録されている場合はMODに変更して登録を行う。
+			if (epoll_ctl(_epfd, EPOLL_CTL_MOD, socket, &ev) == -1)
+			{
+				LOG_ERROR("poll_ctl MOD failed for fd {}: {}", socket, strerror(errno));
+			}
+		}
+		else
+		{
+			LOG_ERROR("epoll_ctl ADD failed for fd {}: {}", socket, strerror(errno));
+		}
+	}
+}
+void SocketHandler::delete_epoll_ctrl(socket_t socket)
+{
+	if (socket == INVALID_SOCKET_FD) {
+        spdlog::warn("Attempted to delete invalid socket from epoll.");
+        return;
+    }
+	std::unique_lock<std::shared_mutex> lock(this->smtx);
+	try
+	{
+		if (epoll_ctl(this->_epfd, EPOLL_CTL_DEL, socket, nullptr) == -1)
+		{
+			spdlog::error("epoll_ctl DEL failed for fd {}: {}", socket, strerror(errno));
+		}
+		else
+		{
+			spdlog::debug("epoll_ctl DEL success for fd {}", socket);
+		}
+	}
+	catch (const std::exception &e)
+	{
+		spdlog::error("Exception in delete_epoll_ctrl: {}", e.what());
+	}
+}
+
+void SocketHandler::reactivate_epoll_ctrl(socket_t socket)
+{
+	struct epoll_event event;
+	memset(&event, 0, sizeof(event));
+    event.data.fd = socket;
+    event.events = EPOLL_EVENTS;
+	std::unique_lock<std::shared_mutex> lock(this->smtx);
+    if (epoll_ctl(_epfd, EPOLL_CTL_MOD, socket, &event) == -1)
+    {
+        spdlog::error("Failed to reactivate epoll socket (fd: {}), errno: {}, msg: {}",
+                      socket, errno, strerror(errno));
+    }
+    else
+    {
+        spdlog::debug("Successfully reactivated epoll socket (fd: {})", socket);
+    }
+}
 #elif defined(USE_SELECT)
 void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socket_list, std::function<void(socket_t)> callback)
 {
@@ -1484,6 +1553,8 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 	}
 }
 #endif
+
+
 
 
 bool SocketHandler::open_tcp_listen_socket()
@@ -1587,72 +1658,4 @@ bool SocketHandler::check_valid_socket(socket_t request_socket)
 }
 
 
-void SocketHandler::add_epoll_ctrl(socket_t socket)
-{
-	struct epoll_event ev{};
-	memset(&ev, 0, sizeof(ev));
-	if(socket == _tcp_listen_socket){
-		ev.events = EPOLLIN;
-	}else{
-		ev.events = EPOLL_EVENTS;
-	}
-	ev.data.fd = socket; // クライアントごとのFD
-	std::unique_lock<std::shared_mutex> lock(this->smtx);
-	if (epoll_ctl(_epfd, EPOLL_CTL_ADD, socket, &ev) == -1)
-	{
-		if (errno == EEXIST)
-		{
-			// 既に登録されている場合はMODに変更して登録を行う。
-			if (epoll_ctl(_epfd, EPOLL_CTL_MOD, socket, &ev) == -1)
-			{
-				LOG_ERROR("poll_ctl MOD failed for fd {}: {}", socket, strerror(errno));
-			}
-		}
-		else
-		{
-			LOG_ERROR("epoll_ctl ADD failed for fd {}: {}", socket, strerror(errno));
-		}
-	}
-}
 
-void SocketHandler::delete_epoll_ctrl(socket_t socket)
-{
-	if (socket == INVALID_SOCKET_FD) {
-        spdlog::warn("Attempted to delete invalid socket from epoll.");
-        return;
-    }
-	std::unique_lock<std::shared_mutex> lock(this->smtx);
-	try
-	{
-		if (epoll_ctl(this->_epfd, EPOLL_CTL_DEL, socket, nullptr) == -1)
-		{
-			spdlog::error("epoll_ctl DEL failed for fd {}: {}", socket, strerror(errno));
-		}
-		else
-		{
-			spdlog::debug("epoll_ctl DEL success for fd {}", socket);
-		}
-	}
-	catch (const std::exception &e)
-	{
-		spdlog::error("Exception in delete_epoll_ctrl: {}", e.what());
-	}
-}
-
-void SocketHandler::reactivate_epoll_ctrl(socket_t socket)
-{
-	struct epoll_event event;
-	memset(&event, 0, sizeof(event));
-    event.data.fd = socket;
-    event.events = EPOLL_EVENTS;
-	std::unique_lock<std::shared_mutex> lock(this->smtx);
-    if (epoll_ctl(_epfd, EPOLL_CTL_MOD, socket, &event) == -1)
-    {
-        spdlog::error("Failed to reactivate epoll socket (fd: {}), errno: {}, msg: {}",
-                      socket, errno, strerror(errno));
-    }
-    else
-    {
-        spdlog::debug("Successfully reactivated epoll socket (fd: {})", socket);
-    }
-}
