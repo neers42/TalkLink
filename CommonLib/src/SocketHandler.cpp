@@ -493,7 +493,9 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 		return false;
 	}
 	// epfdに_udp_multicast_tx_socketを登録して監視対象にする
+#ifdef USE_POLL
 	this->add_epoll_ctrl(_udp_multicast_tx_socket);
+#endif
 	spdlog::info("server open udp multicast tx socket: {}.", _udp_multicast_tx_socket);
 	return true;
 }
@@ -1572,8 +1574,10 @@ bool SocketHandler::open_tcp_listen_socket()
 		}
 		else
 		{
+#ifdef USE_POLL
 			// epfdに_tcp_listen_socketを登録して監視対象にする
 			this->add_epoll_ctrl(_tcp_listen_socket);
+#endif
 			spdlog::info("server open listen socket: {}.", _tcp_listen_socket);
 		}
 	}

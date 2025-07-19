@@ -170,6 +170,7 @@ bool ChatServerFacade::accept_client_socket_process()
 		spdlog::info("accept success!! client socket :{}", new_client_socket);
 		new_client_ipv4_addr = this->_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client_ipv4_addr));
 	}
+#ifdef USE_POLL
 	// ノンブロッキング設定（fcntl利用例）
 	int flags = fcntl(new_client_socket, F_GETFL, 0);
 	if (flags == -1)
@@ -178,6 +179,7 @@ bool ChatServerFacade::accept_client_socket_process()
 		// 必要ならclose(new_client_socket); してエラー処理
 		return ACCEPT_FAILED;
 	}
+#endif
 
 	// SSLアクセプト処理
 	WOLFSSL *new_client_ssl = this->_protocol_handler->wolfssl_accept(new_client_socket);
@@ -198,7 +200,10 @@ bool ChatServerFacade::accept_client_socket_process()
 	spdlog::info("client ip : {:s} , success, server accept client(socket:{:d}).", new_client->get_ipv4_address(), new_client->get_socket());
 	if (_client_handler->add_client(std::move(new_client)) == true)
 	{
+#ifdef USE_POLL
+		//アクセプトしたクライアントの通知を検知できるようにepollの設定を実施
 		this->_socket_handler->add_epoll_ctrl(new_client_socket);
+#endif
 		return ACCEPT_SUCCEEDED;
 	}
 	else
@@ -239,7 +244,9 @@ void ChatServerFacade::message_handle_process(const socket_t socket)
 		//disconnect_flagがfalseの場合、epoll_ctrlにONESHOTを登録する。
 		if (disconnect_flag == false)
 		{
+#ifdef USE_POLL
 			this->_socket_handler->reactivate_epoll_ctrl(socket);
+#endif
 		}
 		// クライアントの切断を検知した場合
 		else
@@ -1153,8 +1160,9 @@ void ChatServerFacade::handle_disconnect_process(const std::shared_ptr<Client> c
 		spdlog::warn("Client(ID: {}) is already disconnecting or disconnected.", client->get_id());
 		return;
 	}
-
+#ifdef USE_POLL
 	this->_socket_handler->delete_epoll_ctrl(client->get_socket());
+#endif
 	this->_mysql_client->update_last_login(client->get_id(), this->_server_time->get_current_time_to_milliseconds());
 
 	if (client->get_ssl() != nullptr)
@@ -1183,7 +1191,7 @@ void ChatServerFacade::handle_disconnect_process(const socket_t socket)
 		spdlog::warn("Client(ID: {}) is already disconnecting or disconnected.", client->get_id());
 		return;
 	}
-
+#ifdef USE_POLL
 	this->_socket_handler->delete_epoll_ctrl(socket);
 	// **ここでブロッキングモードに切り替え**
 	// 例:
@@ -1192,7 +1200,7 @@ void ChatServerFacade::handle_disconnect_process(const socket_t socket)
 	{
 		fcntl(socket, F_SETFL, flags & ~O_NONBLOCK);
 	}
-
+#endif
 	this->_client_handler->client_ssl_shutdown(socket);
 	this->_socket_handler->close_socket(socket);
 	this->_mysql_client->update_last_login(_client_handler->get_client_id(socket), this->_server_time->get_current_time_to_milliseconds());
