@@ -1,19 +1,19 @@
-# ChatServer �̃\�[�X�R�[�h���W�߂�
+# ChatServerのソースコードを集める
 file(GLOB_RECURSE CHATSERVER_SRC
     src/*.cpp
 )
 
-# ChatServer ���s�t�@�C�����`
+# ChatServer 実行ファイルを生成
 add_executable(ChatServer ${CHATSERVER_SRC})
 
-# PkgConfig �ˑ������o����iLinux�̂݁j
+# PkgConfigを使用して依存ライブラリを探す(Linuxのみ)
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SECRET REQUIRED libsecret-1)
     pkg_check_modules(GLIB REQUIRED glib-2.0)
 endif()
 
-# �C���N���[�h�f�B���N�g���ݒ�i�v���b�g�t�H�[�����Ƃɐ؂�ւ��j
+# インクルードディレクトリを設定(プラットフォームごとに切り替えを実施)
 if(WIN32)
     target_include_directories(ChatServer PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -30,7 +30,7 @@ else()
     )
 endif()
 
-# Firebase���C�u�����̃p�X�� find_library �Ō���
+# Firebaseライブラリのパスをfind_libraryで取得
 if(WIN32)
     find_library(FIREBASE_AUTH_LIB
         NAMES firebase_auth
@@ -54,16 +54,16 @@ else()
     message(STATUS "FIREBASE_APP_LIB = ${FIREBASE_APP_LIB}")
 endif()
 
-# ChatServer �Ƀ��C�u�����������N
+# ChatServerにライブラリをリンク
 target_link_libraries(ChatServer PRIVATE 
     CommonLib
-    wolfssl     # �� �����I�� target �����w��
+    wolfssl     # 事前にtargetが定義されている必要あり
     hiredis
     ${FIREBASE_AUTH_LIB}
     ${FIREBASE_APP_LIB}
 )
 
-# Linux ��p�����N
+# Linux固有のリンク
 if(UNIX AND NOT APPLE)
     target_link_libraries(ChatServer PRIVATE
         uuid
@@ -72,7 +72,7 @@ if(UNIX AND NOT APPLE)
     )
 endif()
 
-# �o�͐�f�B���N�g���̐ݒ�
+# 実行ファイルの出力ディレクトリを指定
 set_target_properties(ChatServer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )

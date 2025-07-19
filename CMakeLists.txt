@@ -4,7 +4,7 @@ project(MyChat VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-#サブディレクトリの追加
+#繧ｵ繝悶ョ繧｣繝ｬ繧ｯ繝医Μ繧定ｿｽ蜉
 add_subdirectory(CommonLib)
 add_subdirectory(ChatServer)
 add_subdirectory(AuthenticationServer)
