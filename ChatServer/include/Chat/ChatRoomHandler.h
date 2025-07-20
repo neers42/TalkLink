@@ -42,12 +42,11 @@ private:
 	static std::string issue_chatroom_id_unhex();
 
 
-private:
-	//private変数
+private:	//private変数
 	std::vector<std::shared_ptr<ChatRoom>> chatroom_list;
-	//public変数
-public:
-	//std::mutex chatroom_mutex;	//チャットルームの操作を保護するためのミューテックス
+	
+public:		//public変数
+	//チャットルームの操作を保護するためのミューテックス
 	mutable std::shared_mutex shared_mtx; // for read/write lock
 
 

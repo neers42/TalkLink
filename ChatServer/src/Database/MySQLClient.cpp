@@ -32,7 +32,7 @@ MySQLClient::MySQLClient()
 	}else {
 		LOG_ERROR("DB_NAME environment variable is not set.");
 	}
-#elif
+#else
 	env_host = std::getenv("DB_HOST");
 	env_user = std::getenv("DB_USER");
 	env_pass = std::getenv("DB_PASSWORD");
@@ -144,7 +144,7 @@ bool MySQLClient::execute_query(const std::string& query)
 	}
 	catch (const std::runtime_error& e)
 	{
-		LOG_ERROR(e.what());
+		LOG_ERROR("Runtime Error:{}.",e.what());
 		return false;
 	}
 	catch (const std::exception& e) {

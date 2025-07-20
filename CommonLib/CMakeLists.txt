@@ -17,21 +17,21 @@ FetchContent_Declare(
         -DENABLE_X509=ON
         -DENABLE_CERTGEN=ON
         -DENABLE_CERTREQ=ON
-        -DWOLFSSL_OPENSSL_ALL=ON         # © ’Ç‰Á
-        -DWOLFSSL_CERT_EXT=ON            # © ’Ç‰Á
-        -DHAVE_X509=ON                   # © ’Ç‰Á
-        -DKEEP_PEER_CERT=ON         # © ƒsƒAØ–¾‘•ÛiX509‘€ì‚É•K—vj
+        -DWOLFSSL_OPENSSL_ALL=ON         # OpenSSLäº’æ›APIã‚’è¿½åŠ 
+        -DWOLFSSL_CERT_EXT=ON            # è¨¼æ˜æ›¸æ‹¡å¼µã‚’æœ‰åŠ¹åŒ–
+        -DHAVE_X509=ON                   # X.509ã‚µãƒãƒ¼ãƒˆã‚’æœ‰åŠ¹åŒ–
+        -DKEEP_PEER_CERT=ON              # ç›¸æ‰‹ã®è¨¼æ˜æ›¸ã‚’ä¿æŒï¼ˆX509ã®å‡¦ç†ã«å¿…è¦ï¼‰
 )
 
 FetchContent_MakeAvailable(wolfssl)
 
-# wolfssl‚Ìƒ^[ƒQƒbƒg‚©‚çƒCƒ“ƒNƒ‹[ƒhƒfƒBƒŒƒNƒgƒŠ‚ğæ“¾i‹ó‚É‚È‚éê‡‚ª‚ ‚éj
+# wolfsslã®ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã‹ã‚‰ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’å–å¾—ï¼ˆå¤±æ•—ã™ã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹ï¼‰
 get_target_property(WOLFSSL_INCLUDE_DIR wolfssl INTERFACE_INCLUDE_DIRECTORIES)
 
 message(STATUS "wolfssl source dir = ${wolfssl_SOURCE_DIR}")
 message(STATUS "wolfssl include dir (from target) = ${WOLFSSL_INCLUDE_DIR}")
 
-# ‹ó‚Ìê‡‚Íè“®‚ÅƒCƒ“ƒNƒ‹[ƒhƒpƒX‚ğİ’è‚·‚é
+# å¤±æ•—ã—ãŸå ´åˆã¯æ‰‹å‹•ã§ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ãƒ‘ã‚¹ã‚’è¨­å®š
 if(WOLFSSL_INCLUDE_DIR STREQUAL "" OR NOT WOLFSSL_INCLUDE_DIR)
     set(WOLFSSL_INCLUDE_DIR
         ${wolfssl_SOURCE_DIR}
@@ -42,33 +42,33 @@ if(WOLFSSL_INCLUDE_DIR STREQUAL "" OR NOT WOLFSSL_INCLUDE_DIR)
 endif()
 
 
-#---hiredis‚Ì’è‹`
+#---hiredisã®å–å¾—
 FetchContent_Declare(
     hiredis
     GIT_REPOSITORY https://github.com/redis/hiredis.git
     GIT_TAG v1.2.0
 )
 
-# hiredisƒIƒvƒVƒ‡ƒ“
+# hiredisã‚ªãƒ—ã‚·ãƒ§ãƒ³è¨­å®š
 set(ENABLE_SSL OFF CACHE BOOL "" FORCE)  
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-# ƒrƒ‹ƒh—p‚É“WŠJ‚µ‚Ä—LŒø‰»
+# ãƒ“ãƒ«ãƒ‰æ™‚ã«è‡ªå‹•ã§å–å¾—ãƒ»ãƒ“ãƒ«ãƒ‰
 FetchContent_MakeAvailable(hiredis)
 
-# 4. ©ìƒR[ƒh‚ğ’Ç‰Á
+# 4. å…±é€šã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ 
 file(GLOB_RECURSE COMMON_SRC src/*.cpp)
 add_library(CommonLib STATIC ${COMMON_SRC})
 
 target_compile_definitions(CommonLib PUBLIC NO_ULID_UINT128)
 
-# 5. ƒCƒ“ƒNƒ‹[ƒhƒfƒBƒŒƒNƒgƒŠ
+# 5. ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªè¨­å®š
 target_include_directories(CommonLib PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl      # © ÀÛ‚Ìƒwƒbƒ_ŒQ
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include/wolfssl      # ç‹¬è‡ªã®ãƒ˜ãƒƒãƒ€ãƒ¼ç¾¤
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/external_lib/include
-    ${wolfssl_SOURCE_DIR}                     # wolfssl ‚Ìƒgƒbƒv
-    ${wolfssl_SOURCE_DIR}/wolfssl             # ÀÛ‚Ìƒwƒbƒ_[‚ª‚ ‚éêŠ
-    ${wolfssl_SOURCE_DIR}/wolfcrypt           # ÀÛ‚Ìƒwƒbƒ_[‚ª‚ ‚éêŠ
+    ${wolfssl_SOURCE_DIR}                     # wolfssl ã®ãƒˆãƒƒãƒ—
+    ${wolfssl_SOURCE_DIR}/wolfssl             # ç‹¬è‡ªã®ãƒ˜ãƒƒãƒ€ãƒ¼ãƒ•ã‚©ãƒ«ãƒ€
+    ${wolfssl_SOURCE_DIR}/wolfcrypt           # ç‹¬è‡ªã®ãƒ˜ãƒƒãƒ€ãƒ¼ãƒ•ã‚©ãƒ«ãƒ€
 )
 
 find_library(MYSQLCPPCONN_LIB
@@ -82,14 +82,10 @@ if(WIN32)
     wsock32 iphlpapi rpcrt4 crypt32 dbghelp bcrypt psapi userenv ws2_32
     mysqlcppconn
   )
-  else()
+else()
   target_link_libraries(CommonLib PUBLIC 
     ${MYSQLCPPCONN_LIB}
     wolfssl
     hiredis
-)
+  )
 endif()
-
-
-
-
