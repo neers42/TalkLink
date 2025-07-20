@@ -104,7 +104,7 @@ void ChatServerFacade::run()
 		std::vector<socket_t> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
 		_socket_handler->monitor_socket_descriptor(changed_client_sockets,
 												   [this](socket_t changed_socket)
-												   { handle_changed_socket_process(changed_socket); });
+												   { allocate_process(changed_socket); });
 		std::this_thread::sleep_until(abs_time);
 #endif
 	}
