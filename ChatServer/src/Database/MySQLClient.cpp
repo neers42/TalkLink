@@ -3,15 +3,53 @@
 
 MySQLClient::MySQLClient()
 {
-    const char* env_host = std::getenv("DB_HOST");
-    const char* env_user = std::getenv("DB_USER");
-    const char* env_pass = std::getenv("DB_PASSWORD");
-    const char* env_db   = std::getenv("DB_NAME");
+	char* env_host = nullptr;
+	char* env_user = nullptr;
+	char* env_pass = nullptr;
+	char* env_db = nullptr;
+#ifdef _WIN32
+	size_t len = 0;
 
+	if (_dupenv_s(&env_host, &len, "DB_HOST") == 0 && env_host != nullptr) {
+		spdlog::debug("DB_HOST: {}", env_host);
+	}
+	else {
+		LOG_ERROR("DB_HOST environment variable is not set.");
+	}
+	if(_dupenv_s(&env_user, &len, "DB_USER") == 0 && env_user != nullptr) {
+		spdlog::debug("DB_USER: {}", env_user);
+	}
+	else {
+		LOG_ERROR("DB_USER environment variable is not set.");
+	}
+	if(_dupenv_s(&env_pass, &len, "DB_PASSWORD") == 0 && env_pass != nullptr) {
+		spdlog::debug("DB_PASSWORD: {}", env_pass);
+	}else {
+		LOG_ERROR("DB_PASSWORD environment variable is not set.");
+	}
+	if(_dupenv_s(&env_db, &len, "DB_NAME") == 0 && env_db != nullptr) {
+		spdlog::debug("DB_NAME: {}", env_db);
+	}else {
+		LOG_ERROR("DB_NAME environment variable is not set.");
+	}
+#elif
+	env_host = std::getenv("DB_HOST");
+	env_user = std::getenv("DB_USER");
+	env_pass = std::getenv("DB_PASSWORD");
+	env_db = std::getenv("DB_NAME");
+#endif // _WIN32
     _mysql_host = std::string("tcp://") + (env_host ? env_host : "127.0.0.1") + ":3306";
-    _mysql_user_name = env_user ? env_user : "root";
-    _mysql_password = env_pass ? env_pass : "";
+    _mysql_user_name = env_user ? env_user : "chat_user";
+    _mysql_password = env_pass ? env_pass : "chat_pass";
     _mysql_db_name = env_db ? env_db : "MyChat";
+	spdlog::debug("MySQL: host: {}, user: {}, password: {}, db_name: {}", _mysql_host, _mysql_user_name, _mysql_password, _mysql_db_name);
+#ifdef _WIN32
+	free(env_host);
+	free(env_user);
+	free(env_pass);
+	free(env_db);
+#endif // _WIN32
+
 }
 
 MySQLClient::MySQLClient(const std::string& host, const std::string& user_name, const std::string& password)

@@ -17,7 +17,7 @@ private:
 	sql::Statement* _statement = nullptr;
 	sql::ResultSet* _mysql_res = nullptr;
 	sql::mysql::MySQL_Prepared_Statement* _prep_stmt = nullptr;
-	std::string _mysql_host;      // 例: tcp://mysql:3306 など
+	std::string _mysql_host;
 	std::string _mysql_user_name;
 	std::string _mysql_password;
 	std::string _mysql_db_name;
