@@ -1095,7 +1095,6 @@ bool ClientHandler::client_message_send(socket_t socket, const json& send_data)
 	std::shared_ptr<Client> client = nullptr;
 
 	// クライアントリストから該当ソケットの Client を探す
-	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
@@ -1116,10 +1115,15 @@ bool ClientHandler::client_message_send(socket_t socket, const json& send_data)
 	{
 		spdlog::debug("before locking client lock. func : {}", __func__);
 		std::lock_guard<std::mutex> client_lock(client->mtx);
-		spdlog::debug("aftre locking client lock. func : {}", __func__);
+		spdlog::debug("after locking client lock. func : {}", __func__);
 		send_result = _send_func(client, send_data);
 	}
-
+	if (send_result == false)
+	{
+		LOG_ERROR("Failed to send message to client(id : {}, socket : {})", client->get_id(), socket);
+	}else{
+		spdlog::info("Message sent to client(id : {}, socket : {})", client->get_id(), socket);
+	}
 	return send_result;
 }
 

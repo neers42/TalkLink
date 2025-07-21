@@ -5,12 +5,6 @@ FROM ubuntu:22.04 AS builder
 
 WORKDIR /app
 
-# キャッシュを有効にするため、先に依存ファイルだけコピー
-COPY CMakeLists.txt ./
-COPY ChatServer ./ChatServer
-COPY AuthenticationServer ./AuthenticationServer
-COPY CommonLib ./CommonLib
-
 # パッケージインストール
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -25,6 +19,13 @@ RUN apt-get update && apt-get install -y \
     libwolfssl-dev \
     libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# キャッシュを有効にするため、先に依存ファイルだけコピー
+COPY CMakeLists.txt ./
+COPY AuthenticationServer ./AuthenticationServer
+COPY CommonLib ./CommonLib
+COPY ChatServer ./ChatServer
+
 
 # ビルド
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \

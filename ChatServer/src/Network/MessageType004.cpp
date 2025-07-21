@@ -1,31 +1,26 @@
 ﻿#include "Network/MessageType004.h"
 
 
-MessageType004::MessageType004(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id, ChatType tt,
-	const std::string& room_id, const std::string& receiver_id, const std::string& sender_id, 
+MessageType004::MessageType004(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id,
+	const std::string& room_id, const std::vector<std::string>& mention_ids, const std::string& sender_id, 
 	const std::string& send_time, const std::string& content)
-	//BaseMessage::ContentType c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const uint64_t m_id, ChatType tt, const std::string& dst_chatroom_id)
 	:BaseMessage::BaseMessage(c_type, mt, m_id),
 	_room_id{room_id},
-	_receiver_id{receiver_id},
+	_mention_ids{mention_ids},
 	_sender_id{sender_id},
 	_send_time{send_time},
-	_content{ content },
-	_chat_type{tt}
+	_content{ content }
 {
 }
 
 MessageType004::MessageType004(int c_type, 
 	const std::string& mt,
 	const uint64_t m_id,
-	int chat_type,
 	const std::string& room_id, 
-	const std::string& receiver_id, const std::string& sender_id, 
+	const std::vector<std::string>& mention_ids, const std::string& sender_id, 
 	const std::string& send_time, const std::string& content)	
-	//int c_type, const std::string& mt, const std::string& dst_id, const std::string& src_id, const std::string& content, const uint64_t m_id, int trans_type, const std::string& dst_chatroom_id)
 	:BaseMessage::BaseMessage(exchange_content_type_from_int(c_type), mt, m_id),
-	_chat_type{exchange_trans_type_from_int(chat_type)},
-	_receiver_id{receiver_id},
+	_mention_ids{mention_ids},
 	_sender_id{sender_id},
 	_send_time{send_time},
 	_content{content},
@@ -38,56 +33,15 @@ MessageType004::~MessageType004()
 {
 }
 
-MessageType004::ChatType MessageType004::get_chat_type()
+
+const std::vector<std::string>& MessageType004::get_mention_ids() const
 {
-	return this->_chat_type;
+	return this->_mention_ids;
 }
 
-int MessageType004::convert_chat_type_to_int()
+void MessageType004::set_mention_ids(const std::vector<std::string>& mention_ids)
 {
-	switch (this->get_chat_type())
-	{
-	case ChatType::Group:
-		return 0;
-		break;
-	case ChatType::P2P:
-		return 1;
-		break;
-	default:
-		return -1;
-		break;
-	}
-
-}
-
-void MessageType004::set_chat_type(ChatType tt)
-{
-	this->_chat_type = tt;
-}
-
-void MessageType004::set_chat_type_from_int(const int value)
-{
-	switch (value)
-	{
-	case 0:
-		this->_chat_type = ChatType::Group;
-		break;
-	case 1:
-		this->_chat_type = ChatType::P2P;
-		break;
-	default:
-		break;
-	}
-}
-
-std::string MessageType004::get_receiver_id() const
-{
-	return this->_receiver_id;
-}
-
-void MessageType004::set_receiver_id(const std::string& dst_id)
-{
-	this->_receiver_id = dst_id;
+	this->_mention_ids = mention_ids;
 }
 
 std::string MessageType004::get_sender_id() const
@@ -125,48 +79,20 @@ void MessageType004::set_room_id(const std::string& id)
 	this->_room_id = id;
 }
 
-MessageType004::ChatType MessageType004::exchange_trans_type_from_int(int value)
-{
-	switch (value)
-	{
-	case 0:
-		return ChatType::Group;
-		break;
-	case 1:
-		return ChatType::P2P;
-		break;
-	default:
-		return ChatType::Group;
-		break;
-	}
-}
 
 bool MessageType004::is_valid()
 {
-	//グループチャットの場合
-	if (this->get_chat_type() == MessageType004::ChatType::Group) {
-		if (is_valid_mesasge_type(this->_message_type) == true &&
+	if (is_valid_mesasge_type(this->_message_type) == true &&
 			is_valid_message_id(this->_message_id) == true &&
 			is_valid_room_id(this->_room_id) == true &&
+			is_valid_mention_ids(this->_mention_ids) == true &&
 			is_valid_sender_id(this->_sender_id) == true &&
 			is_valid_conent(this->_content) == true)
 		{
 			return true;
+		}else{
+			return false;
 		}
-	//P2Pの場合
-	}else if (this->get_chat_type() == MessageType004::ChatType::P2P) {
-		if (is_valid_mesasge_type(this->_message_type) == true &&
-			is_valid_message_id(this->_message_id) == true &&
-			is_valid_room_id(this->_room_id) == true &&
-			is_valid_receiver_id(this->_receiver_id) == true &&
-			is_valid_sender_id(this->_sender_id) == true &&
-			is_valid_conent(this->_content) == true)
-		{
-			return true;
-		}
-	}
-	return false;	
-	
 }
 
 std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& json_message)
@@ -175,7 +101,7 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 	{
 		// 1. 必須キーがすべて存在するかチェック
 		static const std::vector<std::string> required_keys = {
-			"content_type", "message_type", "chat_type","room_id","receiver_id",
+			"content_type", "message_type", "room_id","mention_ids",
 			"sender_id", "send_time", "content"
 		};
 		for(const auto& key : required_keys)
@@ -191,14 +117,18 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 		if (!json_message["message_type"].is_string()) {
 			throw std::runtime_error("Invalid type for 'message_type'");
 		}
-		if (!json_message["chat_type"].is_string()) {
-			throw std::runtime_error("Invalid type for 'chat_type'");
-		}
 		if (!json_message["room_id"].is_string()) {
 			throw std::runtime_error("Invalid type for 'room_id'");
 		}
-		if (!json_message["receiver_id"].is_string()) {
-			throw std::runtime_error("Invalid type for 'receiver_id'");
+		if (!json_message["mention_ids"].is_array()) {
+			throw std::runtime_error("Invalid type for 'mention_ids'");
+		}else{
+			// mention_idsの各要素が文字列であることを確認
+			for (const auto& item : json_message["mention_ids"]) {
+				if (!item.is_string()) {
+					throw std::runtime_error("Invalid type in 'mention_ids' array");
+				}
+			}
 		}
 		if (!json_message["sender_id"].is_string()) {
 			throw std::runtime_error("Invalid type for 'sender_id'");
@@ -228,19 +158,12 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 			throw std::runtime_error("Invalid content type");
 		}
 		std::string message_type = json_message["message_type"];
-		std::string chat_type_str = json_message["chat_type"];
-		int chat_type;
-		if (chat_type_str == "Group") {
-			chat_type = 0;
-		}
-		else if (chat_type_str == "P2P") {
-			chat_type = 1;
-		}
-		else {
-			throw std::runtime_error("Invalid chat type");
-		}
 		std::string room_id = json_message["room_id"];
-		std::string receiver_id = json_message["receiver_id"];
+		// mention_ids を vector に変換
+		std::vector<std::string> mention_ids;
+		for (const auto& item : json_message["mention_ids"]) {
+			mention_ids.push_back(item.get<std::string>());
+		}
 		std::string sender_id = json_message["sender_id"];
 		std::string send_time = json_message["send_time"];
 		std::string content = json_message["content"];
@@ -250,9 +173,8 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 			static_cast<int>(content_type),
 			message_type,
 			message_id,
-			static_cast<int>(chat_type),
 			room_id,
-			receiver_id,
+			mention_ids,
 			sender_id,
 			send_time,
 			content
@@ -271,18 +193,24 @@ bool MessageType004::is_valid_room_id(const std::string& room_id)
 {
 	//dst_idが32byteではない場合
 	if (room_id.size() != 32) {
-		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {:d}", room_id.size());
+		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {}", room_id.size());
 		return false;
 	}
 	return true;
 }
 
-bool MessageType004::is_valid_receiver_id(const std::string& receiver)
+bool MessageType004::is_valid_mention_ids(const std::vector<std::string>& mention_ids)
 {
-	//dst_idが28byteではない場合
-	if (receiver.size() != 28) {
-		LOG_ERROR("receiver id is invalid. dst client id byte size : {:d}", receiver.size());
-		return false;
+	// mention_idsが空でないことを確認
+	if (mention_ids.empty()) {
+		return true; // 空のメンションIDは許容する
+	}
+	// 各メンションIDが28byteであることを確認
+	for (const auto& mention_id : mention_ids) {
+		if (mention_id.size() != 28) {
+			LOG_ERROR("mention id is invalid. mention id byte size : {}", mention_id.size());
+			return false;
+		}
 	}
 	return true;
 }
@@ -291,7 +219,7 @@ bool MessageType004::is_valid_sender_id(const std::string& sender_id)
 {
 	//dst_idが28byteではない場合
 	if (sender_id.size() != 28) {
-		LOG_ERROR("sender id is invalid. src client id byte size : {:d}", sender_id.size());
+		LOG_ERROR("sender id is invalid. src client id byte size : {}", sender_id.size());
 		return false;
 	}
 	return true;
@@ -301,7 +229,7 @@ bool MessageType004::is_valid_conent(const std::string& content)
 {
 	//dst_idが28byteではない場合
 	if (content.size() <= 0) {
-		LOG_ERROR("content is invalid. content byte size : {:d}", content.size());
+		LOG_ERROR("content is invalid. content byte size : {}", content.size());
 		return false;
 	}
 	return true;

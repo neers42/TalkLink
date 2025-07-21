@@ -113,24 +113,32 @@ public:
 	template<typename T>
 	void print_received_message_info(const std::unique_ptr<T>& message_instance,
 		const uint64_t message_id,
-		const std::string& src_id,
-		const std::string dst_id,
-		const std::string& ipv4,
-		const socket_t socket_num)
+		const std::string& sender_id,
+		const std::string& room_id,
+		const std::string& sender_ipv4,
+		const socket_t socket_num,
+		const json& json_message)
 	{
+		if (json_message.is_null() || json_message.empty()) {
+			LOG_ERROR("Invalid JSON object.");
+			return;
+		}
 		if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType000>) {
 		
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType001>) {
-			spdlog::info("server received \033[33mMessage Type 001\033[m from sender(ip:{:s}, socket:{:d})", ipv4, socket_num);
+			spdlog::info("server received \033[33mMessage Type 001\033[m from sender(ip:{}, socket:{}).", sender_ipv4, socket_num);
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType003>) {
-			spdlog::info("server received \033[33mMessage Type 003\033[m from sender(id:{:s}ip:{:s}, socket:{:d})", dst_id, ipv4, socket_num);
+			spdlog::info("server received \033[33mMessage Type 003\033[m from sender(id:{} ip:{}, socket:{}) ==> room(id:{})"
+				, sender_id, sender_ipv4, socket_num, room_id);
 		}
 		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T>>, MessageType004>) {
-			spdlog::info("server received \033[33mMessage Type 004\033[m(message id:{:d}) from sender(id:{:s}, ip:{:s}, socket:{:d}) ==> receiver(id:{:s})"
-				, message_id, src_id, ipv4, socket_num, dst_id);
+			spdlog::info("server received \033[33mMessage Type 004\033[m(message id:{}) from sender(id:{}, ip:{}, socket:{}) ==> room(id:{})."
+				, message_id, sender_id, sender_ipv4, socket_num, room_id);
 		}
+		
+		spdlog::debug("Receive JSON DATA :\n{:s}", json_message.dump(4));
 
 	}
 

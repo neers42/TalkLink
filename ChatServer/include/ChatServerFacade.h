@@ -104,19 +104,19 @@ private:
 	void mt101_process(std::shared_ptr<Client> &client, const std::string &error_msg, const bool login_result, const bool recv_flag);
 	void mt101_process(const socket_t socket, const std::string &cid, const std::string &error_msg, const bool login_result, const bool recv_flag);
 	void mt103_process(const std::unique_ptr<MessageType003> &mt003, const std::shared_ptr<Client> &client, socket_t socket);
-	std::vector<std::string> mt103A_process(const std::unique_ptr<MessageType003> &mt003, socket_t socket);
+	const std::tuple<int, std::vector<std::string>> mt103A_process(const std::unique_ptr<MessageType003> &mt003, socket_t socket);
 	void mt103B_process(const std::unique_ptr<MessageType003> &mt003, const std::vector<std::string> &unsend_cids, const std::shared_ptr<Client> &client);
 	std::vector<MessageType103A::ClientInfo> generate_client_infos(const std::vector<std::string> &cids);
 	void mt104_process(const std::unique_ptr<MessageType004> &mt004, const std::shared_ptr<Client> &client);
 	void mt104_process(const std::unique_ptr<MessageType004> &mt004, const socket_t socket);
-	std::vector<std::string> mt104A_process(const std::unique_ptr<MessageType004> &mt004, socket_t socket);
-	void mt104B_process(const std::unique_ptr<MessageType004> &mt004, const std::vector<std::string> &unsend_cids, const std::shared_ptr<Client> &client);
-	void mt104B_process(const std::unique_ptr<MessageType004> &mt004, const std::vector<std::string> &unsend_cids, const socket_t socket);
+	const std::tuple<int, std::vector<std::string>> mt104A_process(const std::unique_ptr<MessageType004> &mt004, socket_t socket);
+	void mt104B_process(const std::unique_ptr<MessageType004> &mt004, const int send_cid_num, const std::vector<std::string> &unsend_cids, const socket_t socket);
 	void resend_message_process(const json &message, const std::string &cid);
 
 	template <typename T>
-	void send_message_to_room(const std::unique_ptr<T> &message, std::vector<std::string> *unsend_cids, socket_t socket, const std::string& sender_cid)
+	const std::tuple<int, std::vector<std::string>> send_message_to_room(const std::unique_ptr<T> &message, socket_t socket, const std::string& sender_cid)
 	{
+		std::vector<std::string> unsend_cids;
 		try
 		{
 			// メッセージをデシリアライズする
@@ -125,7 +125,7 @@ private:
 			if (socket == INVALID_SOCKET_FD)
 			{
 				LOG_ERROR("Sender with ID '{}' not found. Cannot send message.", message->get_sender_id());
-				return; // 送信者が見つからない場合は処理を終了
+				return std::make_tuple(0, std::vector<std::string>()); // 送信者が見つからない場合は処理を終了
 			}
 			// 送り先のclientの情報を取得する
 			auto receivers_cids = this->_chat_room_handler->get_client_infos_by_chatroom_id(message->get_room_id());
@@ -139,7 +139,7 @@ private:
 				if (send_cids.size() == 0)
 				{
 					LOG_ERROR("Invalid receiver cid.Interruputed Send message to Chatroom.");
-					return;
+					return std::make_tuple(0, std::vector<std::string>());
 				}
 
 				for (const auto &cid : send_cids)
@@ -159,9 +159,9 @@ private:
 						else
 						{
 							LOG_ERROR("Unsupported message type for unsend message insertion.");
-							return;
+							return std::make_tuple(0, std::vector<std::string>());
 						}
-						unsend_cids->push_back(cid);
+						unsend_cids.push_back(cid);
 						continue;
 					}
 					else
@@ -175,7 +175,7 @@ private:
 						auto send_socket = this->_client_handler->get_client_socket_by_cid(cid);
 						if(send_socket == INVALID_SOCKET_FD){
 							this->_mysql_client->insert_unsend_message(message->get_message_id(), cid, message->get_room_id());
-							unsend_cids->push_back(cid);
+							unsend_cids.push_back(cid);
 							continue;
 						}
 						bool send_result = this->_client_handler->client_message_send(this->_client_handler->get_client_socket_by_cid(cid), json_message);
@@ -187,10 +187,19 @@ private:
 						{
 							LOG_ERROR("The MT{} message was not sent to the client(id:{}).", message->get_message_type(), cid);
 							this->_mysql_client->insert_unsend_message(message->get_message_id(), cid, message->get_room_id());
-							unsend_cids->push_back(cid);
+							unsend_cids.push_back(cid);
 						}
 					}
 				}
+				if (unsend_cids.size() == 0)
+				{
+					spdlog::info("The MT{} message was successfully sent to all clients.", message->get_message_type());
+				}
+				else if (unsend_cids.size() > 0)
+				{
+					spdlog::warn("The MT{} message was not sent to all clients.", message->get_message_type());
+				}
+				return std::make_tuple(send_cids.size(), unsend_cids);
 			}
 			// ChatroomHandlerが保持しているクライアントリストからチャットルームが検出できた場合
 			else
@@ -211,10 +220,12 @@ private:
 						if constexpr (std::is_same<T, MessageType103A>::value)
 						{
 							this->_mysql_client->insert_unsend_control_message(message->get_message_id(), receiver_cid, message->get_room_id(), json_message, message->get_created_at());
+							unsend_cids.push_back(receiver_cid);
 						}
 						else if constexpr (std::is_same<T, MessageType104A>::value)
 						{
 							this->_mysql_client->insert_unsend_message(message->get_send_message_id(), receiver_cid, message->get_room_id());
+							unsend_cids.push_back(receiver_cid);
 						}
 						continue;
 					}
@@ -235,26 +246,27 @@ private:
 						{
 							LOG_ERROR("The MT{} message was not sent to the client(id:{}).", message->get_message_type(), receiver_cid);
 							this->_mysql_client->insert_unsend_message(message->get_message_id(), receiver_cid, message->get_room_id());
-							unsend_cids->push_back(receiver_cid);
+							unsend_cids.push_back(receiver_cid);
 						}
 					}
 				}
+				if (unsend_cids.size() == 0)
+				{
+					spdlog::info("The MT{} message was successfully sent to all clients.", message->get_message_type());
+				}
+				else if (unsend_cids.size() > 0)
+				{
+					spdlog::warn("The MT{} message was not sent to all clients.", message->get_message_type());
+				}
+				return std::make_tuple(receivers_cids.size(), unsend_cids);
 			}
-
-			if (unsend_cids->size() == 0)
-			{
-				spdlog::info("The MT{} message was successfully sent to all clients.", message->get_message_type());
-			}
-			else if (unsend_cids->size() > 0)
-			{
-				spdlog::warn("The MT{} message was not sent to all clients.", message->get_message_type());
-			}
+			
 		}
 		catch (const std::out_of_range &e)
 		{
 			// エラーハンドリング
 			LOG_ERROR("Sender ID not found. exception content: {}", e.what());
-			return;
+			return std::make_tuple(0, std::vector<std::string>());
 		}
 	}
 };
