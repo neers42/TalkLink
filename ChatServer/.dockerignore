@@ -2,6 +2,7 @@
 *.o
 *.so
 *.exe
+build/
 
 # CMakeキャッシュ
 CMakeFiles/

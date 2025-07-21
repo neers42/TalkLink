@@ -1,6 +1,7 @@
 # ===============================
 # Build Stage
 # ===============================
+# syntax=docker/dockerfile:1.4
 FROM ubuntu:22.04 AS builder
 
 WORKDIR /app
@@ -10,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     git \
     cmake \
+    ninja-build \
     libssl-dev \
     libpq-dev \
     libhiredis-dev \
@@ -28,8 +30,9 @@ COPY ChatServer ./ChatServer
 
 
 # ビルド
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build build -j$(nproc)
+RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build build
+
 
 # ===============================
 # Runtime Stage
