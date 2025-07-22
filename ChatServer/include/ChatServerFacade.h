@@ -101,13 +101,11 @@ private:
 	std::string mt001_process(const std::unique_ptr<MessageType001> &mt001, const socket_t socket, std::string *error_msg_text, bool *login_result);
 	void mt003_process(const std::unique_ptr<MessageType003> &mt003, std::string *error_msg, bool *action_result);
 	void mt004_process(const std::unique_ptr<MessageType004> &mt004);
-	void mt101_process(std::shared_ptr<Client> &client, const std::string &error_msg, const bool login_result, const bool recv_flag);
 	void mt101_process(const socket_t socket, const std::string &cid, const std::string &error_msg, const bool login_result, const bool recv_flag);
 	void mt103_process(const std::unique_ptr<MessageType003> &mt003, const std::shared_ptr<Client> &client, socket_t socket);
 	const std::tuple<int, std::vector<std::string>> mt103A_process(const std::unique_ptr<MessageType003> &mt003, socket_t socket);
 	void mt103B_process(const std::unique_ptr<MessageType003> &mt003, const std::vector<std::string> &unsend_cids, const std::shared_ptr<Client> &client);
 	std::vector<MessageType103A::ClientInfo> generate_client_infos(const std::vector<std::string> &cids);
-	void mt104_process(const std::unique_ptr<MessageType004> &mt004, const std::shared_ptr<Client> &client);
 	void mt104_process(const std::unique_ptr<MessageType004> &mt004, const socket_t socket);
 	const std::tuple<int, std::vector<std::string>> mt104A_process(const std::unique_ptr<MessageType004> &mt004, socket_t socket);
 	void mt104B_process(const std::unique_ptr<MessageType004> &mt004, const int send_cid_num, const std::vector<std::string> &unsend_cids, const socket_t socket);
