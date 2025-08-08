@@ -1,4 +1,4 @@
-﻿#include "ThreadPoolHandler.h"
+﻿#include "ThreadPoolHandler.hpp"
 
 ThreadPoolHandler::ThreadPoolHandler(size_t threads) : stop(false)
 {

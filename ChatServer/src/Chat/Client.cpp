@@ -1,4 +1,4 @@
-﻿#include "Chat/Client.h"
+﻿#include "Chat/Client.hpp"
 Client::Client() 
 	:id{ "" }
 	, name{ "" }
@@ -26,14 +26,13 @@ Client::Client(
 	const socket_t socket, 
 	const struct sockaddr_in sockaddr_in, 
 	const std::string client_ipv4_addr, 
-	WOLFSSL* ssl
+	SSL* ssl
 )
 	:id{ id },
 	name{ name },
 	mail_address{ mail_addr },
 	socket{ socket },
 	sockaddr_in{ sockaddr_in },
-	firebase_auth{ nullptr },
 	ipv4_address{ client_ipv4_addr },
 	heart_beat_count{ 0 },
 	auth_status { false },
@@ -48,14 +47,13 @@ Client::Client(
 	const struct sockaddr_in sockaddr_in, 
 	const socklen_t length, 
 	std::string& ipv4_addr, 
-	WOLFSSL* ssl
+	SSL* ssl
 )
 	:id{ "" },
 	name{ "" },
 	mail_address{ "" },
 	socket{ socket },
 	sockaddr_in{ sockaddr_in },
-	firebase_auth{ nullptr },
 	ipv4_address{ ipv4_addr },
 	heart_beat_count{ 0 },
 	auth_status { false },
@@ -110,10 +108,6 @@ std::string Client::get_password() const
 	return this->password;
 }
 
-firebase::auth::Auth* Client::get_firebase_auth() const
-{
-	return this->firebase_auth;
-}
 
 int Client::get_heart_beat_count() const
 {
@@ -125,7 +119,7 @@ bool Client::get_auth_status() const
 	return this->auth_status.load();
 }
 
-WOLFSSL* Client::get_ssl()
+SSL* Client::get_ssl()
 {
 	return this->ssl;
 }
@@ -176,10 +170,6 @@ void Client::set_password(const std::string& password)
 	this->password = password;
 }
 
-void Client::set_firebase_auth(firebase::auth::Auth* firebase_auth)
-{
-	this->firebase_auth = firebase_auth;
-}
 
 void Client::set_heart_beat_count(const int count)
 {
@@ -191,7 +181,7 @@ void Client::set_auth_status(const bool status)
 	this->auth_status.store(status);
 }
 
-void Client::set_ssl(WOLFSSL* ssl)
+void Client::set_ssl(SSL* ssl)
 {
 	this->ssl = ssl;
 }

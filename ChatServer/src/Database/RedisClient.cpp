@@ -1,44 +1,42 @@
-﻿#include "Database/RedisClient.h"
+﻿#include "Database/RedisClient.hpp"
 
 RedisClient::RedisClient()
 {
+    char* env_host = nullptr;
+    char* env_port = nullptr;
+
+#ifdef _WIN32
+    size_t len = 0;
+    if (_dupenv_s(&env_host, &len, "REDIS_HOST") == 0 && env_host != nullptr) {
+        spdlog::debug("REDIS_HOST: {}", env_host);
+    } else {
+        LOG_ERROR("REDIS_HOST environment variable is not set.");
+    }
+    if (_dupenv_s(&env_port, &len, "REDIS_PORT") == 0 && env_port != nullptr) {
+        spdlog::debug("REDIS_PORT: {}", env_port);
+    } else {
+        LOG_ERROR("REDIS_PORT environment variable is not set.");
+    }
+#else
+    env_host = std::getenv("REDIS_HOST");
+    env_port = std::getenv("REDIS_PORT");
+#endif // _WIN32
+    std::string redis_host = env_host ? env_host : "localhost";  // デフォルトは任意
+    int redis_port = env_port ? std::atoi(env_port) : 6379; // デフォルトポート
+    _redis_helper = std::make_unique<RedisHelper>(redis_host, redis_port);
+    if (!_redis_helper->connect()) {
+        exit(1);
+    }
 }
 
-RedisClient::~RedisClient()
+RedisClient::~RedisClient() {
+    if (_redis_helper) {
+        _redis_helper->disconnect();
+    }
+}
+
+bool RedisClient::is_client_session_key(const std::string &session_key)
 {
-	this->close();
+    return _redis_helper->is_key_exists(session_key);
 }
-
-void RedisClient::connect()
-{
-	this->context = redisConnect(this->get_host(), this->get_port());
-	
-	if (context == NULL || context->err) {
-		if (context) {
-			LOG_ERROR("Redis Connection error: {}.", context->errstr);
-			//spdlog::error("Redis Connection error: {}", context->errstr);
-			redisFree(context);
-		}
-		else {
-			LOG_ERROR("Redis Connection error: can't allocate redis context.");
-			//spdlog::error("Redis Connection error: can't allocate redis context");
-		}
-		//throw std::runtime_error("Connection error");
-	}
-	else {
-		spdlog::info("Redis Database Connect success!.");
-	}
-}
-
-void RedisClient::close()
-{
-	redisFree(this->context);
-	spdlog::info("Redis Connection closed.");
-}
-
-bool RedisClient::execute_query(const std::string& query)
-{
-	return true;
-}
-
 

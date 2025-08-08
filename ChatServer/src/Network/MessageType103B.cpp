@@ -1,4 +1,4 @@
-﻿#include "Network/MessageType103B.h"
+﻿#include "Network/MessageType103B.hpp"
 
 MessageType103B::MessageType103B(
 	int content_type, 

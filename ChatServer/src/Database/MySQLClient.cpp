@@ -1,4 +1,4 @@
-﻿#include "Database/MySQLClient.h"
+﻿#include "Database/MySQLClient.hpp"
 
 
 MySQLClient::MySQLClient()
@@ -49,115 +49,19 @@ MySQLClient::MySQLClient()
 	free(env_pass);
 	free(env_db);
 #endif // _WIN32
-
-}
-
-MySQLClient::MySQLClient(const std::string& host, const std::string& user_name, const std::string& password)
-	:_mysql_host{host}, _mysql_user_name{user_name}, _mysql_password{password}
-{
-}
-
-MySQLClient::~MySQLClient()
-{
-	if (_connection)
-		delete _connection;
-
-	if (_statement)
-		delete _statement;
-
-	if (_mysql_res)
-		delete _mysql_res;
-
-	if (_prep_stmt)
-		delete _prep_stmt;
-
-}
-
-void MySQLClient::connect()
-{
-	const int max_retries = 10;
-	const int retry_delay_ms = 2000;  // 2 seconds
-
-	for (int attempt = 1; attempt <= max_retries; ++attempt)
-	{
-		try
-		{
-			_connection = _driver->connect(_mysql_host, _mysql_user_name, _mysql_password);
-			_statement = _connection->createStatement();
-			spdlog::debug("host: {}, username: {}, password: {}", _mysql_host, _mysql_user_name, _mysql_password);
-			spdlog::info("MySQL: Connection established successfully.");
-			_connection->setSchema(_mysql_db_name);
-			return; // Success
-		}
-		catch (sql::SQLException& e)
-		{
-			spdlog::error("[Attempt {}] Failed to connect to MySQL: {} (Error Code: {}, SQL State: {})",
-			              attempt, e.what(), e.getErrorCode(), e.getSQLState());
-
-			if (attempt == max_retries)
-			{
-				spdlog::critical("Reached maximum number of connection attempts. Terminating the application.");
-				exit(1);
-			}
-
-			spdlog::warn("Retrying to connect in {} ms...", retry_delay_ms);
-			std::this_thread::sleep_for(std::chrono::milliseconds(retry_delay_ms));
-		}
+	_mysql_helper = std::make_unique<MySQLHelper>(_mysql_host, _mysql_user_name, _mysql_password, _mysql_db_name);
+	if (!_mysql_helper->connect(_mysql_db_name)) {
+		LOG_ERROR("Failed to connect to MySQL database.");
+		exit(1);
 	}
-}
-
-void MySQLClient::close()
-{
-	try
-	{
-		if (!_connection) {
-			throw std::runtime_error("MySQL:database is not connected.");
-		}
-	}
-	catch (const std::runtime_error& e)
-	{
-
-		spdlog::error(e.what());
-		LOG_ERROR("Runtime Error:{}", e.what());
-		return;
-	}
-	catch (const std::exception& e) {
-		LOG_ERROR("Exception:{}.", e.what());
-		return;
-	}
-	_connection->close();
-}
-
-bool MySQLClient::execute_query(const std::string& query)
-{
-	try
-	{
-		if (!_connection) {
-			throw std::runtime_error("MySQL:database is not connected.");
-		}
-		_statement->execute(query);
-	}
-
-	catch (const sql::SQLException& e) {
-		LOG_ERROR("SQLException: {}, SQL Error Code : {}, SQL State : {}", e.what(), e.getErrorCode(), e.getSQLState());
-		return false;
-	}
-	catch (const std::runtime_error& e)
-	{
-		LOG_ERROR("Runtime Error:{}.",e.what());
-		return false;
-	}
-	catch (const std::exception& e) {
-		LOG_ERROR("Exception:{}.", e.what());
-		return false;
-	}
-	return true;
+	spdlog::debug("MySQLClient initialized successfully.");
 	
 }
 
-void MySQLClient::print_sql_exception(const sql::SQLException& e)
+
+MySQLClient::~MySQLClient()
 {
-	LOG_ERROR("SQLException Content:{}, SQL Error Code:{}, SQL State:{}", e.what(), e.getErrorCode(), e.getSQLState());
+
 }
 
 void MySQLClient::create_database()
@@ -165,13 +69,13 @@ void MySQLClient::create_database()
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("CREATE DATABASE IF NOT EXISTS " + _mysql_db_name)
+			this->_mysql_helper->get_connection()->prepareStatement("CREATE DATABASE IF NOT EXISTS " + _mysql_db_name)
 		);
 		pre_stmt->executeUpdate();
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return;
 	}	
 	catch (const std::runtime_error& e) {
@@ -213,7 +117,6 @@ bool MySQLClient::insert_client_data(
 	const std::string& cid,
 	const std::string& name, 
 	const std::string& mail_address,
-	const std::string& password_hash,
 	const std::string& icon_url,
 	const std::string& created_at, 
 	const std::string& last_login
@@ -223,45 +126,42 @@ bool MySQLClient::insert_client_data(
 	{
 		if (last_login == "" && icon_url == "") {
 			std::unique_ptr < sql::PreparedStatement> pre_stmt(
-				this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
-					"(cid, name, mail_address, password_hash, icon_url, created_at, last_login) "
-					"VALUES(?, ?, ?, ?, NULL, ?, NULL);")
+				this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
+					"(cid, name, mail_address, icon_url, created_at, last_login) "
+					"VALUES(?, ?, ?, NULL, ?, NULL);")
 			);
 			pre_stmt->setString(1, cid);
 			pre_stmt->setString(2, name);
 			pre_stmt->setString(3, mail_address);
-			pre_stmt->setString(4, password_hash);
-			pre_stmt->setString(5, created_at);
+			pre_stmt->setString(4, created_at);
 			pre_stmt->executeUpdate();
 		}
 		else if (icon_url != "") {
 			std::unique_ptr < sql::PreparedStatement> pre_stmt(
-				this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
-					"(cid, name, mail_address, password_hash, icon_url, created_at, last_login) "
-					"VALUES(?, ?, ?, ?, ?, ?, NULL);")
+				this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
+					"(cid, name, mail_address, icon_url, created_at, last_login) "
+					"VALUES(?, ?, ?, ?, ?, NULL);")
 			);
 			pre_stmt->setString(1, cid);
 			pre_stmt->setString(2, name);
 			pre_stmt->setString(3, mail_address);
-			pre_stmt->setString(4, password_hash);
-			pre_stmt->setString(5, icon_url);
-			pre_stmt->setString(6, created_at);
+			pre_stmt->setString(4, icon_url);
+			pre_stmt->setString(5, created_at);
 			pre_stmt->executeUpdate();
 		}
 		else {
 
 			std::unique_ptr < sql::PreparedStatement> pre_stmt(
-				this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
-					"(cid, name, mail_address, password_hash, icon_url, created_at, last_login) "
-					"VALUES(?, ?, ?, ?, ?, ?, ?);")
+				this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_clients +
+					"(cid, name, mail_address, icon_url, created_at, last_login) "
+					"VALUES(?, ?, ?, ?, ?, ?);")
 			);
 			pre_stmt->setString(1, cid);
 			pre_stmt->setString(2, name);
 			pre_stmt->setString(3, mail_address);
-			pre_stmt->setString(4, password_hash);
-			pre_stmt->setString(5, icon_url);
-			pre_stmt->setString(6, created_at);
-			pre_stmt->setString(7, last_login);
+			pre_stmt->setString(4, icon_url);
+			pre_stmt->setString(5, created_at);
+			pre_stmt->setString(6, last_login);
 			pre_stmt->executeUpdate();
 		}
 		
@@ -270,7 +170,7 @@ bool MySQLClient::insert_client_data(
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 
 	}
@@ -292,7 +192,7 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::get_client_info_
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("SELECT * FROM " + _mysql_table_name_clients + " WHERE cid = ?;")
+			this->_mysql_helper->get_connection()->prepareStatement("SELECT * FROM " + _mysql_table_name_clients + " WHERE cid = ?;")
 		);
 		pre_stmt->setString(1, cid);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
@@ -317,7 +217,7 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::get_client_info_
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		LOG_ERROR("SQLException:{}", e.what());
 		return std::make_tuple("", "", "");
 
@@ -341,7 +241,7 @@ bool MySQLClient::update_last_login(const std::string& cid, const std::string& l
 			return false;
 		}
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_clients +
+			this->_mysql_helper->get_connection()->prepareStatement("UPDATE " + _mysql_table_name_clients +
 				" SET last_login = ? WHERE cid = ?;")
 		);
 		pre_stmt->setString(1, last_login);
@@ -371,7 +271,7 @@ bool MySQLClient::is_client_id_exist(const std::string& cid)
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_clients + " WHERE cid = ?);")
+			this->_mysql_helper->get_connection()->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_clients + " WHERE cid = ?);")
 		);
 		pre_stmt->setString(1, cid);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
@@ -393,7 +293,7 @@ bool MySQLClient::is_client_id_exist(const std::string& cid)
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e) {
@@ -427,7 +327,7 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 	
 	
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?);")
+			this->_mysql_helper->get_connection()->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?);")
 		);
 		pre_stmt->setBlob(1, &blob_stream);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
@@ -450,7 +350,7 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 	
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -474,7 +374,7 @@ bool MySQLClient::is_room_id_hex_exist(const std::string& room_id_hex)
 		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
 
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?);")
+			this->_mysql_helper->get_connection()->prepareStatement("SELECT EXISTS (SELECT 1 FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?);")
 		);
 
 		std::istringstream blob_stream(binary_str);  // バイナリストリームに変換
@@ -499,7 +399,7 @@ bool MySQLClient::is_room_id_hex_exist(const std::string& room_id_hex)
 
 	}
 	catch (const sql::SQLException& e) {
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -531,7 +431,7 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 
 		//SQL文のセット
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chat_messages +
+			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_chat_messages +
 				"(mid, room_id, sender_id, send_time, `message`) "
 				"VALUES(?, ?, ?, ?, ?);")
 		);
@@ -548,7 +448,7 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -574,7 +474,7 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 		std::istringstream blob_stream(binary_str);
 
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_unsend_messages +
+			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_unsend_messages +
 				"(mid, cid, room_id) "
 				"VALUES(?, ?, ?);")
 		);
@@ -588,7 +488,7 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& c
 
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -615,7 +515,7 @@ bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::str
 		std::istringstream blob_stream(binary_str);
 
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chatrooms +
+			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_chatrooms +
 				"(room_id, room_name, room_icon_url, created_at) "
 				"VALUES(?, ?, ?, ?);")
 		);
@@ -631,7 +531,7 @@ bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::str
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -651,7 +551,7 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id_hex, const s
 	{
 	
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("INSERT INTO " + _mysql_table_name_chat_members +
+			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_chat_members +
 				"(room_id, cid, joined_at) "
 				"VALUES(?, ?, ?);")
 		);
@@ -672,7 +572,7 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id_hex, const s
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -692,7 +592,7 @@ bool MySQLClient::delete_chatroom_member(const std::string& room_id_hex, const s
 	{
 		
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_chat_members +
+			this->_mysql_helper->get_connection()->prepareStatement("DELETE FROM " + _mysql_table_name_chat_members +
 				" WHERE room_id = ? AND cid = ?;")
 		);
 		for (const auto& cid : cids){
@@ -710,7 +610,7 @@ bool MySQLClient::delete_chatroom_member(const std::string& room_id_hex, const s
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -735,7 +635,7 @@ std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
 		std::string query = "SELECT last_login FROM " + _mysql_table_name_clients + " WHERE cid = ?";
 
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement(query)
+			this->_mysql_helper->get_connection()->prepareStatement(query)
 		);
 
 		// パラメータを設定
@@ -752,7 +652,7 @@ std::string MySQLClient::get_client_last_login_fromDB(const std::string& cid)
 
 	}
 	catch (const sql::SQLException& e) {
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 	}
 	catch (const std::exception& e) {
 		LOG_ERROR("Exception:{}.", e.what());
@@ -774,7 +674,7 @@ bool MySQLClient::insert_unsend_control_message(
 		std::string query = "INSERT INTO " + _mysql_table_name_unsend_control_messages +
 			"(mid, cid, room_id, json_payload, request_time) VALUES(?, ?, ?, ?, ?);";
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement(query)
+			this->_mysql_helper->get_connection()->prepareStatement(query)
 		);
 		// room_idを16進数文字列をバイナリデータに変換
 		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id);
@@ -793,7 +693,7 @@ bool MySQLClient::insert_unsend_control_message(
 		spdlog::debug("MySQL:insert unsend control message(mid:{}, cid:{}, room_id:{}) success.", mid, cid, room_id);
 	}
 	catch (const sql::SQLException& e) {
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e) {
@@ -812,7 +712,7 @@ json MySQLClient::get_unsend_control_message_fromDB(const std::string& cid)
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement(
+			this->_mysql_helper->get_connection()->prepareStatement(
 				"SELECT " + _mysql_table_name_unsend_control_messages + ".mid, " +
 				_mysql_table_name_unsend_control_messages + ".cid, " +
 				_mysql_table_name_unsend_control_messages + ".room_id, " +
@@ -850,7 +750,7 @@ json MySQLClient::get_unsend_control_message_fromDB(const std::string& cid)
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return json();
 	}
 	catch (const std::exception& e) {
@@ -864,7 +764,7 @@ bool MySQLClient::delete_unsend_control_message(const uint64_t mid, const std::s
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_unsend_control_messages +
+			this->_mysql_helper->get_connection()->prepareStatement("DELETE FROM " + _mysql_table_name_unsend_control_messages +
 				" WHERE mid = ? AND cid = ? AND room_id = ?;")
 		);
 		// room_idを16進数文字列をバイナリデータに変換
@@ -882,7 +782,7 @@ bool MySQLClient::delete_unsend_control_message(const uint64_t mid, const std::s
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e) {
@@ -907,7 +807,7 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 		}
 
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement(
+			this->_mysql_helper->get_connection()->prepareStatement(
 				"SELECT " + _mysql_table_name_unsend_messages + ".mid, " +
 				_mysql_table_name_unsend_messages + ".cid, " +
 				_mysql_table_name_unsend_messages + ".room_id, " +
@@ -953,7 +853,7 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return json();
 	}
 	catch (const std::exception& e) {
@@ -967,7 +867,7 @@ bool MySQLClient::delete_unsend_message(const uint64_t mid, const std::string& c
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_unsend_messages +
+			this->_mysql_helper->get_connection()->prepareStatement("DELETE FROM " + _mysql_table_name_unsend_messages +
 				" WHERE mid = ? AND cid = ? AND room_id = ?;")
 		);
 		// room_idを16進数文字列をバイナリデータに変換
@@ -984,7 +884,7 @@ bool MySQLClient::delete_unsend_message(const uint64_t mid, const std::string& c
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e) {
@@ -1010,7 +910,7 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 		std::vector<std::string> client_list;
 
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("SELECT cid FROM " + _mysql_table_name_chat_members + " WHERE room_id = ?;")
+			this->_mysql_helper->get_connection()->prepareStatement("SELECT cid FROM " + _mysql_table_name_chat_members + " WHERE room_id = ?;")
 		);
 		pre_stmt->setBlob(1, &blob_stream);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
@@ -1024,7 +924,7 @@ std::vector<std::string> MySQLClient::get_client_list_from_chatroom(const std::s
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return std::vector<std::string>();
 	}
 	catch (const std::runtime_error& e) {
@@ -1051,7 +951,7 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id_hex
 		std::vector<std::string> client_list;
 
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("SELECT room_name FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?;")
+			this->_mysql_helper->get_connection()->prepareStatement("SELECT room_name FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?;")
 		);
 		pre_stmt->setBlob(1, &blob_stream);
 		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
@@ -1068,7 +968,7 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id_hex
 
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return std::string();
 	}
 	catch (const std::runtime_error& e)
@@ -1094,7 +994,7 @@ bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id_hex)
 
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("DELETE FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?;")
+			this->_mysql_helper->get_connection()->prepareStatement("DELETE FROM " + _mysql_table_name_chatrooms + " WHERE room_id = ?;")
 		);
 		pre_stmt->setBlob(1, &blob_stream);
 		pre_stmt->executeUpdate();
@@ -1103,7 +1003,7 @@ bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id_hex)
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -1129,7 +1029,7 @@ bool MySQLClient::update_chatroom_name(const std::string& room_id_hex, const std
 
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
+			this->_mysql_helper->get_connection()->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
 				" SET room_name = ? WHERE room_id = ?;")
 		);
 		pre_stmt->setString(1, room_name);
@@ -1140,7 +1040,7 @@ bool MySQLClient::update_chatroom_name(const std::string& room_id_hex, const std
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -1166,7 +1066,7 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std
 	
 		std::istringstream blob_stream(binary_str);
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
-			this->_connection->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
+			this->_mysql_helper->get_connection()->prepareStatement("UPDATE " + _mysql_table_name_chatrooms +
 				" SET room_icon_url = ? WHERE room_id = ?;")
 		);
 		pre_stmt->setString(1, icon_url);
@@ -1177,7 +1077,7 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::runtime_error& e)
@@ -1196,11 +1096,10 @@ bool MySQLClient::create_table_clients()
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
-			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_clients +
+			this->_mysql_helper->get_connection()->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_clients +
 				"(cid VARCHAR(28) NOT NULL PRIMARY KEY,"
 				"name VARCHAR(28) NOT NULL,"
 				"mail_address VARCHAR(256) NOT NULL,"
-				"password_hash VARCHAR(255) NOT NULL,"
 				"icon_url VARCHAR(255),"
 				"created_at DATETIME NOT NULL,"
 				"last_login DATETIME);")
@@ -1211,7 +1110,7 @@ bool MySQLClient::create_table_clients()
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -1225,7 +1124,7 @@ bool MySQLClient::create_table_chatrooms()
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
-			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chatrooms +
+			this->_mysql_helper->get_connection()->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chatrooms +
 				"(room_id BINARY(16) NOT NULL,"
 				"room_name VARCHAR(50) NOT NULL,"
 				"room_icon_url VARCHAR(255),"
@@ -1238,7 +1137,7 @@ bool MySQLClient::create_table_chatrooms()
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -1253,7 +1152,7 @@ bool MySQLClient::create_table_chat_members()
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
-			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_members +
+			this->_mysql_helper->get_connection()->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_members +
 				"(room_id BINARY(16) NOT NULL,"
 				"cid VARCHAR(28) NOT NULL,"
 				"joined_at DATETIME,"
@@ -1267,7 +1166,7 @@ bool MySQLClient::create_table_chat_members()
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -1281,7 +1180,7 @@ bool MySQLClient::create_table_chat_messages()
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
-			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_messages +
+			this->_mysql_helper->get_connection()->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_messages +
 				"(mid BIGINT PRIMARY KEY,"
 				"room_id BINARY(16) NOT NULL,"
 				"sender_id VARCHAR(28) NOT NULL,"
@@ -1296,7 +1195,7 @@ bool MySQLClient::create_table_chat_messages()
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -1310,7 +1209,7 @@ bool MySQLClient::create_table_unsend_messages()
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
-			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unsend_messages +
+			this->_mysql_helper->get_connection()->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unsend_messages +
 				"(mid BIGINT NOT NULL,"
 				"cid VARCHAR(28) NOT NULL,"
 				"room_id BINARY(16) NOT NULL,"
@@ -1325,7 +1224,7 @@ bool MySQLClient::create_table_unsend_messages()
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::exception& e) {
@@ -1339,7 +1238,7 @@ bool MySQLClient::create_table_unsend_control_messages()
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement > pre_stmt(
-			this->_connection->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unsend_control_messages +
+			this->_mysql_helper->get_connection()->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_unsend_control_messages +
 				"(mid BIGINT NOT NULL,"
 				"cid VARCHAR(28) NOT NULL,"
 				"room_id BINARY(16) NOT NULL,"
@@ -1356,7 +1255,7 @@ bool MySQLClient::create_table_unsend_control_messages()
 	}
 	catch (const sql::SQLException& e)
 	{
-		this->print_sql_exception(e);
+		this->_mysql_helper->printError(e);
 		return false;
 	}
 	catch (const std::exception& e)

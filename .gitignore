@@ -16,6 +16,9 @@
 # Mono auto generated files
 mono_crash.*
 
+#cert
+*.pem
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -363,3 +366,13 @@ MigrationBackup/
 FodyWeavers.xsd
 
 /build/
+
+.vscode/
+AuthenticationServer/conf/firebase_jwk.json
+AuthenticationServer/certs/firebase/pubkeys.json
+AuthenticationServer/AuthenticationServer.vcxproj
+AuthenticationServer/AuthenticationServer.vcxproj.filters
+.gitignore
+.gitignore
+CommonLib/CommonLib.vcxproj
+.gitignore

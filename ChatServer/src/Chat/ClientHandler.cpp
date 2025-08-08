@@ -1,4 +1,4 @@
-﻿#include "Chat/ClientHandler.h"
+﻿#include "Chat/ClientHandler.hpp"
 
 ClientHandler::ClientHandler() :connect_client_num{ 0 }
 {
@@ -235,27 +235,6 @@ std::string ClientHandler::get_client_password(const socket_t socket)
 	return password;
 }
 
-firebase::auth::Auth *ClientHandler::get_client_firebase_auth(const socket_t socket)
-{
-	std::shared_ptr<Client> client = nullptr;
-	firebase::auth::Auth *auth = nullptr;
-
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
-
-	if (client == nullptr)
-	{
-		LOG_ERROR("Client not found for socket {}", socket);
-		return nullptr;
-	}
-
-	auth = client->get_firebase_auth();
-
-	return auth;
-}
 
 int ClientHandler::get_client_heart_beat_count(const socket_t socket)
 {
@@ -296,7 +275,7 @@ bool ClientHandler::get_client_auth_status(const socket_t socket)
 	return client->get_auth_status();
 }
 
-WOLFSSL *ClientHandler::get_client_ssl(const socket_t socket)
+SSL *ClientHandler::get_client_ssl(const socket_t socket)
 {
 	std::shared_ptr<Client> client = nullptr;
 
@@ -368,18 +347,6 @@ void ClientHandler::change_client_auth_status(socket_t socket)
 		return;
 	}
 	client->change_auth_status();
-}
-std::shared_ptr<Client> &ClientHandler::get_client_ref_by_index(const uint32_t index)
-{
-	std::shared_ptr<Client> dummy_ptr = nullptr;
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	if (index < connected_clients.size()) {
-		return connected_clients[index];
-	}
-	return dummy_ptr;
 }
 
 std::shared_ptr<Client> ClientHandler::get_client_by_socket(const socket_t socket)
@@ -990,7 +957,7 @@ int ClientHandler::search_socket_from_clients(const socket_t search_socket)
 	return -1;
 }
 
-WOLFSSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
+SSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
 {
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
@@ -1017,13 +984,13 @@ void ClientHandler::show_client_info(const std::shared_ptr<Client>& client)
 	spdlog::debug("Client  Password : {:s}", client->get_password());
 }
 
-std::vector<WOLFSSL*> ClientHandler::get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients)
+std::vector<SSL*> ClientHandler::get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients)
 {
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
-	std::vector<WOLFSSL*> client_ssl_list;
+	std::vector<SSL*> client_ssl_list;
 	for (const auto& client : clients) {
 		if (client != nullptr && client->get_ssl() != nullptr) {
 			client_ssl_list.push_back(client->get_ssl());
@@ -1082,8 +1049,8 @@ std::tuple<json, bool, bool> ClientHandler::client_message_receive(socket_t sock
 	{
 		spdlog::debug("before locking client lock. func : {}", __func__);
 		std::lock_guard<std::mutex> client_lock(client->mtx);
-		spdlog::debug("aftre locking client lock. func : {}", __func__);
-		std::tie(recv_json, disconnect_flag, recv_flag) = _recv_func(client);
+		spdlog::debug("after locking client lock. func : {}", __func__);
+		std::tie(recv_json, disconnect_flag, recv_flag) = _recv_func(client->get_ssl());
 	}
 	
 	return {recv_json, disconnect_flag, recv_flag};
@@ -1116,7 +1083,7 @@ bool ClientHandler::client_message_send(socket_t socket, const json& send_data)
 		spdlog::debug("before locking client lock. func : {}", __func__);
 		std::lock_guard<std::mutex> client_lock(client->mtx);
 		spdlog::debug("after locking client lock. func : {}", __func__);
-		send_result = _send_func(client, send_data);
+		send_result = _send_func(client->get_ssl(), send_data);
 	}
 	if (send_result == false)
 	{
@@ -1144,7 +1111,7 @@ bool ClientHandler::client_ssl_shutdown(socket_t socket)
 	}
 
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);
-	ssl_shutdown_result = this->_ssl_shutdown_func(client);
+	ssl_shutdown_result = this->_ssl_shutdown_func(client->get_ssl());
 	return ssl_shutdown_result;
 }
 
@@ -1158,7 +1125,7 @@ void ClientHandler::set_receive_function(ReceiveFunction func)
 	this->_recv_func = std::move(func);
 }
 
-void ClientHandler::set_ssl_shutdown_function(SSLShutdonwFunction func)
+void ClientHandler::set_ssl_shutdown_function(SSLShutdownFunction func)
 {
 	this->_ssl_shutdown_func = std::move(func);
 }

@@ -1,0 +1,28 @@
+﻿#ifndef MESSAGEIDGENERATOR_HPP
+#define MESSAGEIDGENERATOR_HPP
+#include "Utils/common.hpp"
+
+class MessageIDGenerator
+{
+public:
+	MessageIDGenerator();
+	~MessageIDGenerator();
+
+    static uint64_t generate_message_id();
+
+private:
+    static constexpr uint64_t epoch = 1700000000000; // 任意の開始時間（2023年11月以降）
+    static constexpr uint64_t machine_id = 1; // マシンID（環境に応じて変更）
+    static constexpr uint64_t machine_bits = 10;
+    static constexpr uint64_t sequence_bits = 12;
+    static constexpr uint64_t max_sequence = (1 << sequence_bits) - 1;
+
+    static std::mutex mtx;
+    static uint64_t last_timestamp;
+    static uint64_t sequence;
+
+};
+#endif // !MESSAGEIDGENERATOR_HPP
+
+
+

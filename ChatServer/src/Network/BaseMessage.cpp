@@ -1,4 +1,4 @@
-﻿#include "Network/BaseMessage.h"
+﻿#include "Network/BaseMessage.hpp"
 
 BaseMessage::BaseMessage()
 	:_content_type{ ContentType::TEXT }, _message_type{""}, _created_at{ServerTime::get_current_time_to_milliseconds()}, _message_id{0}

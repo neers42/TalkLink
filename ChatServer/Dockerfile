@@ -18,20 +18,18 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libglib2.0-dev \
     libsecret-1-dev \
-    libwolfssl-dev \
     libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # キャッシュを有効にするため、先に依存ファイルだけコピー
 COPY CMakeLists.txt ./
-COPY AuthenticationServer ./AuthenticationServer
 COPY CommonLib ./CommonLib
 COPY ChatServer ./ChatServer
 
 
 # ビルド
-RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && \
-    cmake --build build
+RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_CHAT_SERVER=ON -DWITH_MYSQL=ON && \
+    cmake --build build --target ChatServer
 
 
 # ===============================
@@ -42,10 +40,9 @@ FROM ubuntu:22.04
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
-    libssl-dev \
     libpq-dev \
     libhiredis-dev \
-    libwolfssl-dev \
+    libssl3 \
     libglib2.0-0 \
     libsecret-1-0 \
     libcurl4 \

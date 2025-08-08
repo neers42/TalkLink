@@ -1,7 +1,7 @@
 services:
-  mychat-mysql:
+  mysql:
     image: mysql:8.0
-    container_name: mychat-mysql
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: ***REMOVED***
       MYSQL_DATABASE: MyChat
@@ -13,7 +13,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,26 +21,61 @@ services:
     networks:
       - mychat-net
 
-  mychat-server:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mychat-net
+
+  chat-server:
     build:
       context: .
       dockerfile: ChatServer/Dockerfile
-    container_name: mychat-server
+    container_name: chat-server
 
     #先にmysqlのコンテナを上げる
     depends_on:
-      mychat-mysql:
+      mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "50000:50000"       #TCPのリッスン用のポート
       - "50001:50001/udp"   #UDPポート(マルチキャスト送信用)
     environment:
-      DB_HOST: mychat-mysql
+      DB_HOST: mysql
       DB_PORT: 3306
       DB_USER: chat_user
       DB_PASSWORD: chat_pass
       DB_NAME: MyChat
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       
+    networks:
+      - mychat-net
+  
+  auth-server:
+    build:
+      context: .
+      dockerfile: AuthenticationServer/Dockerfile
+    container_name: auth-server
+     #先にmysqlのコンテナを上げる
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "50002:50002"       #TCPのリッスン用のポート
+      - "50003:50003/udp"   #UDPポート(マルチキャスト送信用)
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     networks:
       - mychat-net
 

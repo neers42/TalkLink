@@ -1,4 +1,4 @@
-﻿#include "SocketHandler.h"
+﻿#include "SocketHandler.hpp"
 
 // #define DEBUG
 
@@ -79,6 +79,7 @@ SocketHandler::SocketHandler() : _result_tcp{nullptr},
 		LOG_ERROR("Exception : {}", e.what());
 		return;
 	}
+	obtain_local_ip_addr();
 }
 
 SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr},
@@ -149,6 +150,7 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 		spdlog::critical("Exception : {}", e.what());
 		return;
 	}
+	obtain_local_ip_addr();
 }
 
 // デストラクタ

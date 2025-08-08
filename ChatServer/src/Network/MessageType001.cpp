@@ -1,36 +1,33 @@
-﻿#include "Network/MessageType001.h"
+﻿#include "Network/MessageType001.hpp"
 
-MessageType001::MessageType001(SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
+MessageType001::MessageType001(SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr)
     :_sign_type{s_type},
-    _auth_type{a_type},
+    _jwt_token{jwt_token},
     _client_name{name},
-    _client_mail_addr{mail_addr},
-    _client_password{password}
+    _client_mail_addr{mail_addr}
 {
 }
-MessageType001::MessageType001(int s_type, int a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
+MessageType001::MessageType001(int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr)
     :_sign_type{exchange_sign_type_from_int(s_type)},
-    _auth_type{exchange_auth_type_from_int(a_type)},
+    _jwt_token{jwt_token},
     _client_name{name},
-    _client_mail_addr{mail_addr},
-    _client_password{password}
+    _client_mail_addr{mail_addr}
 {
 }
-MessageType001::MessageType001(ContentType c_type, const std::string& mt, SignType s_type, AuthType a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
+MessageType001::MessageType001(ContentType c_type, const std::string& mt, SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr)
     :BaseMessage(c_type, mt),
     _sign_type{ s_type },
-    _auth_type{ a_type },
+    _jwt_token{ jwt_token },
     _client_name{ name },
-    _client_mail_addr{ mail_addr },
-    _client_password{ password }
+    _client_mail_addr{ mail_addr }
 {
 }
-MessageType001::MessageType001(int c_type, const std::string& mt, int s_type, int a_type, const std::string& name, const std::string& mail_addr, const std::string& password)
+MessageType001::MessageType001(int c_type, const std::string& mt, int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr)
     :BaseMessage(c_type, mt),
     _sign_type{ this->exchange_sign_type_from_int(s_type)},
-    _auth_type{exchange_auth_type_from_int(a_type)},
-    _client_name{name}, _client_mail_addr{mail_addr},
-    _client_password{password}
+    _jwt_token{ jwt_token },
+    _client_name{name}, 
+    _client_mail_addr{mail_addr}
 {
 }
 MessageType001::~MessageType001()
@@ -86,40 +83,13 @@ void MessageType001::set_sign_type(int s_type)
     }
 }
 
-MessageType001::AuthType MessageType001::get_auth_type() const
+std::string MessageType001::get_jwt_token() const
 {
-    return this->_auth_type;
+    return this->_jwt_token;
 }
-
-void MessageType001::set_auth_type(AuthType a_type)
+void MessageType001::set_jwt_token(const std::string &jwt_token)
 {
-    this->_auth_type = a_type;
-}
-
-void MessageType001::set_auth_type(int a_type)
-{
-    switch (a_type)
-    {
-    case 0:
-        this->_auth_type = AuthType::NORMAL;
-        break;
-    case 1:
-        this->_auth_type = AuthType::GOOGLE;
-        break;
-    case 2:
-        this->_auth_type = AuthType::FACEBOOK;
-        break;
-    case 3:
-        this->_auth_type = AuthType::TWITTER;
-        break;
-    case 4:
-        this->_auth_type = AuthType::MICROSOFT;
-        break;
-    case 5:
-        this->_auth_type = AuthType::YAHOO;
-    default:
-        break;
-    }
+    this->_jwt_token = jwt_token;
 }
 
 std::string MessageType001::get_client_name() const
@@ -137,26 +107,16 @@ std::string MessageType001::get_client_mail_addr() const
     return this->_client_mail_addr;
 }
 
-void MessageType001::set_clilent_mail_addr(const std::string& mail_addr)
+void MessageType001::set_client_mail_addr(const std::string& mail_addr)
 {
     this->_client_mail_addr = mail_addr;
 }
 
-std::string MessageType001::get_client_password() const
-{
-    return this->_client_password;
-}
-
-void MessageType001::set_client_password(const std::string& password)
-{
-    this->_client_password = password;
-}
-
 bool MessageType001::is_valid()
 {
-    if (is_valid_name(this->_client_name) == true &&
-        is_valid_mail_addr(this->_client_mail_addr) == true &&
-        is_valid_password(this->_client_password) == true) {
+    if (is_valid_jwt_token(this->_jwt_token) == true &&
+        is_valid_name(this->_client_name) == true &&
+        is_valid_mail_addr(this->_client_mail_addr) == true) {
         return true;
     }
     else
@@ -171,7 +131,7 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
         // 1. 必須キーがすべて存在するかチェック
         static const std::vector<std::string> required_keys = {
             "content_type", "message_type", "sign_type",
-            "auth_type", "name", "mail_address", "password"
+            "jwt_token", "name", "mail_address"
         };
 
         for (const auto& key : required_keys) {
@@ -190,17 +150,14 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
         if (!json_message["sign_type"].is_string()) {
 			throw std::runtime_error("Invalid type for 'sign_type'");
         }
-        if (!json_message["auth_type"].is_string()) {
-            throw std::runtime_error("Invalid type for 'auth_type'");
+        if (!json_message["jwt_token"].is_string()) {
+            throw std::runtime_error("Invalid type for 'jwt_token'");
         }
 		if (!json_message["name"].is_string()) {
 			throw std::runtime_error("Invalid type for 'name'");
 		}
 		if (!json_message["mail_address"].is_string()) {
 			throw std::runtime_error("Invalid type for 'mail_address'");
-		}
-		if (!json_message["password"].is_string()) {
-			throw std::runtime_error("Invalid type for 'password'");
 		}
 		// 3. 各フィールドを読み取る
         std::string content_type_str = json_message["content_type"];
@@ -235,41 +192,17 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
 		else {
 			throw std::runtime_error("Invalid sign type");
 		}
-        std::string auth_type_str = json_message["auth_type"];
-		int auth_type;
-		if (auth_type_str == "NORMAL") {
-			auth_type = 0;
-		}
-		else if (auth_type_str == "GOOGLE") {
-			auth_type = 1;
-		}
-		else if (auth_type_str == "FACEBOOK") {
-			auth_type = 2;
-		}
-		else if (auth_type_str == "TWITTER") {
-			auth_type = 3;
-		}
-		else if (auth_type_str == "MICROSOFT") {
-			auth_type = 4;
-		}
-		else if (auth_type_str == "YAHOO") {
-			auth_type = 5;
-		}
-		else {
-			throw std::runtime_error("Invalid auth type");
-		}
+        std::string jwt_token = json_message["jwt_token"];
         std::string client_name = json_message["name"];
         std::string client_mail_addr = json_message["mail_address"];
-        std::string client_password = json_message["password"];
 
         return std::make_unique<MessageType001>(
             content_type,
             message_type,
             sign_type,
-            auth_type,
+            jwt_token,
             client_name,
-            client_mail_addr,
-            client_password
+            client_mail_addr
         );
     }
     catch (const std::exception& e) {
@@ -279,7 +212,18 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
 
 }
 
-bool MessageType001::is_valid_name(const std::string& name)
+bool MessageType001::is_valid_jwt_token(const std::string &jwt_token)
+{
+    if (jwt_token.size() > 0) {
+        return true;
+    }
+    else {
+        LOG_ERROR("JWT token is invalid by byte size error(jwt token byte size : {:d}).", jwt_token.size());
+        return false;
+    }
+}
+
+bool MessageType001::is_valid_name(const std::string &name)
 {
     //Client nameが0byteより大きい場合
     if (name.size() > 0) {
@@ -304,18 +248,6 @@ bool MessageType001::is_valid_mail_addr(const std::string& mail_addr)
     return false;
 }
 
-bool MessageType001::is_valid_password(const std::string& password)
-{
-    //Client nameが0byteより大きい場合
-    if (password.size() > 0) {
-        return true;
-    }
-    else {
-		LOG_ERROR("Password is invalid by byte size error(password byte size : {:d}).", password.size());
-        return false;
-    }
-}
-
 MessageType001::SignType MessageType001::exchange_sign_type_from_int(const int value)
 {
     switch (value)
@@ -335,33 +267,5 @@ MessageType001::SignType MessageType001::exchange_sign_type_from_int(const int v
     }
 }
 
-MessageType001::AuthType MessageType001::exchange_auth_type_from_int(const int value)
-{
-    switch (value)
-    {
-    case 0:
-        return AuthType::NORMAL;
-        break;
-    case 1:
-        return AuthType::GOOGLE;
-        break;
-    case 2:
-        return AuthType::FACEBOOK;
-        break;
-    case 3:
-        return AuthType::TWITTER;
-        break;
-    case 4:
-        return AuthType::MICROSOFT;
-        break;
-    case 5:
-        return AuthType::YAHOO;
-        break;
-
-    default:
-        return AuthType::NORMAL;
-        break;
-    }
-}
 
 

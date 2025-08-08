@@ -1,4 +1,4 @@
-﻿#include "LogHandler.h"
+﻿#include "LogHandler.hpp"
 std::mutex LogHandler::cout_mutex;
 
 LogHandler::LogHandler() : log_level{10}

@@ -1,18 +1,38 @@
-﻿#include "AunthenticationServerFacade.h"
+﻿#include "AunthenticationServerFacade.hpp"
 
-AunthenticationServerFacade::AunthenticationServerFacade() {
+AunthenticationServerFacade::AunthenticationServerFacade()
+{
 
-	////ログのフォーマット設定
+    ////ログのフォーマット設定
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
-	spdlog::info("Starting MyChat server version 1.0.0!!");
-	_socket_handler = std::make_unique<SocketHandler>("conf/socket_setting.ini");
+	spdlog::info("Starting MyChat Auth-server version 1.0.0!!");
+	std::string socket_config_file_pass = "/app/AuthenticationServer/conf/socket_setting.ini";
+	std::string server_cert_path = "/app/AuthenticationServer/certs/server-cert.pem";
+	std::string server_private_key_path = "/app/AuthenticationServer/certs/server-key.pem";
+	_socket_handler = std::make_unique<SocketHandler>(socket_config_file_pass);
+	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
+	_protocol_handler = std::make_unique<ProtocolHandler>(server_cert_path, server_private_key_path);
+	_redis_client = std::make_unique<RedisClient>();
+	_token_handler = std::make_unique<TokenHandler>();
+	
+	if (_socket_handler == nullptr
+		|| _thread_pool_handler == nullptr
+		|| _protocol_handler == nullptr
+		|| _redis_client == nullptr
+		|| _token_handler == nullptr)
+	{
+		LOG_ERROR("Failed to initialize AunthenticationServerFacade components. Please check the configuration and try again.");
+		exit(1);
+	}
 }
 
 AunthenticationServerFacade::~AunthenticationServerFacade()
 {
+	this->_ssl_list.clear();
 }
 
 void AunthenticationServerFacade::run() {
+	LOG_TRACE;       
 	//リッスンソケットの生成
 	if (_socket_handler->open_tcp_listen_socket() == false) {
 		LOG_ERROR("The TCP listening socket for message could not be opened properly, so the program is forcibly terminated. Please set it again.");
@@ -23,4 +43,206 @@ void AunthenticationServerFacade::run() {
 		LOG_ERROR("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
+	spdlog::info("Start monitoring requests from clients.");
+	//ディスクリプション監視スタート
+	while (true) {
+		// クライアントからの接続を待機
+#ifdef USE_POLL
+		_socket_handler->monitor_socket_descriptor([this](socket_t changed_socket)
+												   { allocate_process(changed_socket); });
+#endif
+	}
+}
+
+void AunthenticationServerFacade::allocate_process(const socket_t socket) {
+	// socketがINVALIDの場合は処理をしない
+	if (socket == INVALID_SOCKET_FD)
+	{
+		return;
+	}
+	if (socket == this->_socket_handler->get_listen_socket())
+	{
+		this->_thread_pool_handler->enqueue_task([this]()
+												 { accept_client_socket_process(); });
+	}
+	else
+	{
+		// 既存クライアントのデータを処理
+		this->_thread_pool_handler->enqueue_task([this, socket]()
+												 { auth_handle_process(socket); });
+	}
+}
+
+bool AunthenticationServerFacade::accept_client_socket_process() {
+	LOG_TRACE;
+	socket_t new_client_socket = INVALID_SOCKET_FD;
+	struct sockaddr_in new_client_sockaddr_in = {0};
+	socklen_t new_client_socklen_t = 0;
+	std::string new_client_ipv4_addr;
+
+	// TCPソケットのアクセプト処理
+	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(sizeof(new_client_sockaddr_in));
+	if (new_client_socket == INVALID_SOCKET_FD)
+	{
+		LOG_ERROR("The accepted socket for message could not be added to the list because it was an INVALID SOCKET");
+		return ACCEPT_FAILED;
+	}
+	else
+	{
+		spdlog::info("accept success!! client socket :{}", new_client_socket);
+		new_client_ipv4_addr = this->_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client_ipv4_addr));
+	}
+#ifdef USE_POLL
+	// ノンブロッキング設定（fcntl利用例）
+	int flags = fcntl(new_client_socket, F_GETFL, 0);
+	if (flags == -1)
+	{
+		LOG_ERROR("fcntl get flags failed");
+		return ACCEPT_FAILED;
+	}
+#endif
+
+	// SSLアクセプト処理
+	SSL* new_client_ssl = this->_protocol_handler->ssl_accept(new_client_socket);
+	if (new_client_ssl == nullptr)
+	{
+		LOG_ERROR("client ssl is not accepted(socket:{})", new_client_socket);
+		SSL_free(new_client_ssl);
+		return ACCEPT_FAILED;
+	}
+	else
+	{
+		this->_protocol_handler->get_peer_cetificate(new_client_ssl);
+		spdlog::info("client ip : {} , success, server accept client(socket:{}).", new_client_ipv4_addr, new_client_socket);
+#ifdef USE_POLL
+		//アクセプトしたクライアントの通知を検知できるようにepollの設定を実施
+		this->_socket_handler->add_epoll_ctrl(new_client_socket);
+#endif
+		_ssl_list.insert(std::make_pair(new_client_socket, new_client_ssl));
+		return ACCEPT_SUCCEEDED;
+	}
+}
+
+void AunthenticationServerFacade::auth_handle_process(const socket_t socket) 
+{
+	std::string receive_token = "", cid = "";
+	std::uint64_t expire = 0, ttl = 0;
+	bool disconnect_flag = false;
+	bool recv_flag = false;
+	json response;
+
+	try
+	{
+		auto it = _ssl_list.find(socket);
+		if (it == _ssl_list.end()) {
+			LOG_ERROR("SSL object for socket {} not found.", socket);
+			return;
+		}
+		SSL* client_ssl = it->second;
+		if (client_ssl == nullptr) {
+			LOG_ERROR("Client SSL is null, cannot process message.");
+			return;
+		}
+
+		// メッセージの受信
+		std::tie(receive_token, disconnect_flag, recv_flag) = this->_protocol_handler->receive_message_str(client_ssl);
+
+		//disconnect_flagがfalseの場合、epoll_ctrlにONESHOTを登録する。
+		if (disconnect_flag == false)
+		{
+#ifdef USE_POLL
+			this->_socket_handler->reactivate_epoll_ctrl(socket);
+#endif
+		}
+		// クライアントの切断を検知した場合
+		else
+		{
+			spdlog::info("client(socket : {}) is disconnected, server initialize client info.", socket);
+			this->handle_disconnect_process(socket);
+			return;
+		}
+
+		if(receive_token.empty()) {
+			LOG_ERROR("Received empty message from client.");
+			return;
+		}
+
+		//検証を実施し、トークンが有効な場合の処理
+		if(this->_token_handler->verify_token(receive_token, cid, expire) == true){
+			spdlog::info("Received valid token from client(CID: {} / Expire: {}).", cid, expire);
+			if(this->_redis_client->save_session(cid, receive_token, expire, ttl) == true) {
+				//成功メッセージを送信する(statusとttlを送信する)
+				response = this->make_auth_response("ok", ttl);
+
+			} else {
+				//失敗メッセージを送信する
+				response = this->make_auth_response("error", 0);
+			}
+			if(response.empty())	//responseのjsonメッセージが空の場合は処理を中止
+			{
+				LOG_ERROR("Failed to create response for client(socket : {}).", socket);
+				return;
+			}
+			// レスポンスをクライアントに送信する
+			if(this->_protocol_handler->send_message_json(client_ssl, response) == true)
+			{
+				spdlog::info("Sent response to client(socket : {}).", socket);
+			}
+			else
+			{
+				LOG_ERROR("Failed to send response to client(socket : {}).", socket);
+			}
+		} else {
+			LOG_ERROR("Invalid token received from client(socket : {}).", socket);
+			return;
+		}
+
+	}
+	catch (const std::exception &e)
+	{
+		LOG_ERROR(e.what());
+	}
+}
+
+
+void AunthenticationServerFacade::handle_disconnect_process(const socket_t socket) 
+{
+	auto it = _ssl_list.find(socket);
+		if (it == _ssl_list.end()) {
+			LOG_ERROR("SSL object for socket {} not found.", socket);
+			return;
+		}
+		SSL *client_ssl = it->second;
+		if(client_ssl == nullptr) {
+			LOG_ERROR("Client SSL is null, cannot process message.");
+			return;
+		}
+
+#ifdef USE_POLL
+	this->_socket_handler->delete_epoll_ctrl(socket);
+	// **ここでブロッキングモードに切り替え**
+	int flags = fcntl(socket, F_GETFL, 0);
+	if (flags != -1)
+	{
+		fcntl(socket, F_SETFL, flags & ~O_NONBLOCK);
+	}
+#endif
+	this->_protocol_handler->shutdown_ssl(client_ssl);
+	this->_socket_handler->close_socket(socket);
+	spdlog::info("Client with socket {} has been disconnected and cleaned up.", socket);
+	_ssl_list.erase(it);
+}
+
+
+json AunthenticationServerFacade::make_auth_response(const std::string &status, const std::uint64_t ttl)
+{
+	json response;
+	response["status"] = status;
+	if (ttl > 0)
+	{
+		response["ttl"] = ttl;
+	}else{
+		return json();
+	}
+	return response;
 }

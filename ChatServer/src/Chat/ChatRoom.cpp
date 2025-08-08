@@ -1,4 +1,4 @@
-﻿#include "Chat/ChatRoom.h"
+﻿#include "Chat/ChatRoom.hpp"
 ChatRoom::ChatRoom()
 	:_chatroom_id{ "" },
 	_chatroom_name{ "" },

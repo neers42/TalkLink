@@ -1,4 +1,4 @@
-﻿#include "Network/MessageType004.h"
+﻿#include "Network/MessageType004.hpp"
 
 
 MessageType004::MessageType004(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id,

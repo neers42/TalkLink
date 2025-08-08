@@ -7,6 +7,7 @@ file(GLOB_RECURSE CHATSERVER_SRC
 add_executable(ChatServer ${CHATSERVER_SRC})
 
 # PkgConfigを使用して依存ライブラリを探す(Linuxのみ)
+# UUIDを使用するための設定
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(SECRET REQUIRED libsecret-1)
@@ -14,53 +15,22 @@ if(UNIX AND NOT APPLE)
 endif()
 
 # インクルードディレクトリを設定(プラットフォームごとに切り替えを実施)
-if(WIN32)
-    target_include_directories(ChatServer PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication/firebase_windows
-    )
-else()
-    target_include_directories(ChatServer PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/Authentication/firebase_linux
-        ${CMAKE_BINARY_DIR}/_deps/wolfssl-src
-        ${CMAKE_BINARY_DIR}/_deps/wolfssl-build
-        ${SECRET_INCLUDE_DIRS}
-        ${GLIB_INCLUDE_DIRS}
-    )
-endif()
+target_include_directories(ChatServer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${SECRET_INCLUDE_DIRS}
+    ${GLIB_INCLUDE_DIRS}
+    ${jwt-cpp_SOURCE_DIR}/include
+)
 
-# Firebaseライブラリのパスをfind_libraryで取得
-if(WIN32)
-    find_library(FIREBASE_AUTH_LIB
-        NAMES firebase_auth
-        PATHS ${CMAKE_CURRENT_SOURCE_DIR}/lib/firebase/windows/MD/x64/Release
-    )
-    find_library(FIREBASE_APP_LIB
-        NAMES firebase_app
-        PATHS ${CMAKE_CURRENT_SOURCE_DIR}/lib/firebase/windows/MD/x64/Release
-    )
-else()
-    find_library(FIREBASE_AUTH_LIB
-        NAMES firebase_auth
-        PATHS ${CMAKE_CURRENT_SOURCE_DIR}/lib/firebase/linux/x86_64/cxx11
-    )
-    find_library(FIREBASE_APP_LIB
-        NAMES firebase_app
-        PATHS ${CMAKE_CURRENT_SOURCE_DIR}/lib/firebase/linux/x86_64/cxx11
-    )
 
-    message(STATUS "FIREBASE_AUTH_LIB = ${FIREBASE_AUTH_LIB}")
-    message(STATUS "FIREBASE_APP_LIB = ${FIREBASE_APP_LIB}")
-endif()
+# マクロ定義
+target_compile_definitions(ChatServer PRIVATE CHAT_SERVER)
 
 # ChatServerにライブラリをリンク
 target_link_libraries(ChatServer PRIVATE 
     CommonLib
-    wolfssl     # 事前にtargetが定義されている必要あり
     hiredis
-    ${FIREBASE_AUTH_LIB}
-    ${FIREBASE_APP_LIB}
+    ${OPENSSL_LIBRARIES}
 )
 
 # Linux固有のリンク
