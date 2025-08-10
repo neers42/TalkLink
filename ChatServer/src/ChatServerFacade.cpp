@@ -13,16 +13,13 @@ ChatServerFacade::ChatServerFacade() : _server_ip{""}
 	spdlog::set_level(spdlog::level::info);
 
 #endif // DEBUG_MODE
-	std::string server_cert_path = "/app/ChatServer/certs/server-cert.pem";
-	std::string server_private_key_path = "/app/ChatServer/certs/server-key.pem";
-	std::string socket_config_file_pass = "/app/ChatServer/conf/socket_setting.ini";
 	////ログのフォーマット設定
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
 	spdlog::info("Starting MyChat server version 1.0.0!!");
-	_socket_handler = std::make_unique<SocketHandler>(socket_config_file_pass);
+	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_mysql_client = std::make_unique<MySQLClient>();
 	_redis_client = std::make_unique<RedisClient>();
-	_protocol_handler = std::make_unique<ProtocolHandler>(server_cert_path, server_private_key_path);
+	_protocol_handler = std::make_unique<ProtocolHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
 	_server_time = std::make_unique<ServerTime>();
 	_client_handler = std::make_unique<ClientHandler>();
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
@@ -84,6 +81,7 @@ void ChatServerFacade::run()
 	this->_mysql_client->create_database();
 	this->_mysql_client->create_table();
 	this->_thread_pool_handler->enqueue_task([this](){ heartbeat_check_process(); });
+	this->_thread_pool_handler->enqueue_task([this](){ _protocol_handler->hot_reload_certificates(60, SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH); });
 	spdlog::info("Start monitoring requests from clients.");
 	// ディスクリプション監視スタート
 	while (1)
@@ -132,6 +130,7 @@ void ChatServerFacade::allocate_process(const socket_t socket)
 	}
 	if (socket == this->_socket_handler->get_listen_socket())
 	{
+		//this->accept_client_socket_process();
 		this->_thread_pool_handler->enqueue_task([this]()
 												 { accept_client_socket_process(); });
 	}
@@ -618,7 +617,7 @@ void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004> &mt00
 void ChatServerFacade::mt101_process(
 	const socket_t socket,
 	const std::string &cid,
-	const bool login_result,
+	const bool verify_result,
 	const bool recv_flag)
 {
 	std::string error_msg = "";
@@ -635,9 +634,9 @@ void ChatServerFacade::mt101_process(
 	unsend_messages_json = this->_mysql_client->get_unsend_message_fromDB(this->_client_handler->get_client_id(socket), 20);
 
 	// MT101を送信する処理を記載する
-	auto mt101 = std::make_unique<MessageType101>(cid, login_result);
+	auto mt101 = std::make_unique<MessageType101>(cid, verify_result);
 
-	if(login_result == true){
+	if(verify_result == true){
 		error_msg = "Verification succeeded.";
 	}else{
 		error_msg = "Verification failed.";

@@ -29,7 +29,7 @@ bool TokenHandler::verify_token(const std::string &token, std::string &cid, std:
             return false; // Failed to read the PEM file
         }else{
             spdlog::debug("PEM file content read successfully for KID: {}", kid);
-            spdlog::debug("PEM file content: {}", rsa_pub_key);
+            spdlog::debug("PEM file content: \n{}", rsa_pub_key);
         }
         auto verify = jwt::verify()
                           .allow_algorithm(jwt::algorithm::rs256(rsa_pub_key, "", "", ""))

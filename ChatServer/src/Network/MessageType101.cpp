@@ -1,10 +1,10 @@
 ﻿#include "Network/MessageType101.hpp"
 
 
-MessageType101::MessageType101(const std::string& client_id, bool login_result)
+MessageType101::MessageType101(const std::string& client_id, bool verify_result)
 	:BaseMessage(ContentType::NOTIFICATION, "101"),
 	_client_id{ client_id },
-	_login_result{ login_result }
+	_verify_result{ verify_result }
 {
 }
 
@@ -23,21 +23,16 @@ json MessageType101::deserialize_message(const std::unique_ptr<MessageType101>& 
 	// nullptr チェックを追加
 	if (mt101 != nullptr) {
 		mt101_json["client_id"] = mt101->_client_id;
-		mt101_json["login_result"] = mt101->_login_result;
+		mt101_json["verify_result"] = mt101->_verify_result;
 	}
 	else {
 		// nullptr の場合のエラーハンドリング（例：空のクライアントIDなど）
 		mt101_json["client_id"] = "";
-		mt101_json["login_result"] = false;
+		mt101_json["verify_result"] = false;
 	}
 	mt101_json["unsend_messages"] = unsend_messages;
-
-	// login_result によってエラーメッセージを決定
-	if (mt101 != nullptr && mt101->_login_result == true) {
-		mt101_json["error_reason"] = "No Error";  // 変更: No Error. から No Error に
-	}
-	else {
-		mt101_json["error_reason"] = error_message;
+	if (mt101 != nullptr) {
+		mt101_json["error_reason"] = error_message; 
 	}
 		
     return mt101_json;

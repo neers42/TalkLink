@@ -4,14 +4,12 @@ AunthenticationServerFacade::AunthenticationServerFacade()
 {
 
     ////ログのフォーマット設定
+	spdlog::set_level(spdlog::level::debug);
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
 	spdlog::info("Starting MyChat Auth-server version 1.0.0!!");
-	std::string socket_config_file_pass = "/app/AuthenticationServer/conf/socket_setting.ini";
-	std::string server_cert_path = "/app/AuthenticationServer/certs/server-cert.pem";
-	std::string server_private_key_path = "/app/AuthenticationServer/certs/server-key.pem";
-	_socket_handler = std::make_unique<SocketHandler>(socket_config_file_pass);
+	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
-	_protocol_handler = std::make_unique<ProtocolHandler>(server_cert_path, server_private_key_path);
+	_protocol_handler = std::make_unique<ProtocolHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
 	_redis_client = std::make_unique<RedisClient>();
 	_token_handler = std::make_unique<TokenHandler>();
 	
@@ -43,6 +41,7 @@ void AunthenticationServerFacade::run() {
 		LOG_ERROR("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
+	this->_thread_pool_handler->enqueue_task([this](){ _protocol_handler->hot_reload_certificates(60, SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH); });
 	spdlog::info("Start monitoring requests from clients.");
 	//ディスクリプション監視スタート
 	while (true) {
@@ -62,6 +61,7 @@ void AunthenticationServerFacade::allocate_process(const socket_t socket) {
 	}
 	if (socket == this->_socket_handler->get_listen_socket())
 	{
+		//this->accept_client_socket_process();
 		this->_thread_pool_handler->enqueue_task([this]()
 												 { accept_client_socket_process(); });
 	}
@@ -178,25 +178,27 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 				//失敗メッセージを送信する
 				response = this->make_auth_response("error", 0);
 			}
-			if(response.empty())	//responseのjsonメッセージが空の場合は処理を中止
+			//レスポンスが空の場合はエラーをログに記録し、処理を終了する
+			if(response.empty())
 			{
 				LOG_ERROR("Failed to create response for client(socket : {}).", socket);
 				return;
 			}
-			// レスポンスをクライアントに送信する
-			if(this->_protocol_handler->send_message_json(client_ssl, response) == true)
-			{
-				spdlog::info("Sent response to client(socket : {}).", socket);
-			}
-			else
-			{
-				LOG_ERROR("Failed to send response to client(socket : {}).", socket);
-			}
+			
 		} else {
 			LOG_ERROR("Invalid token received from client(socket : {}).", socket);
-			return;
+			response = this->make_auth_response("error", 0);
 		}
 
+		// レスポンスをクライアントに送信する
+		if(this->_protocol_handler->send_message_json(client_ssl, response) == true)
+		{
+			spdlog::info("Sent response to client(socket : {}).", socket);
+		}
+		else
+		{
+			LOG_ERROR("Failed to send response to client(socket : {}).", socket);
+		}
 	}
 	catch (const std::exception &e)
 	{

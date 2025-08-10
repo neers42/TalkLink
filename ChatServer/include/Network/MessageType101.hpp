@@ -6,12 +6,12 @@ class MessageType101 :
 {
 private:
     std::string _client_id;
-	bool _login_result;
+	bool _verify_result;
 
 public:
 	//コンストラクタ
 	MessageType101() = delete;
-	MessageType101(const std::string& client_id, bool login_result);
+	MessageType101(const std::string& client_id, bool verify_result);
 		//デストラクタ
 	~MessageType101();
 	//各種アクセッサ(getter/setter)

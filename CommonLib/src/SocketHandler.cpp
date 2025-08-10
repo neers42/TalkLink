@@ -1425,7 +1425,7 @@ void SocketHandler::add_epoll_ctrl(socket_t socket)
 	struct epoll_event ev{};
 	memset(&ev, 0, sizeof(ev));
 	if(socket == _tcp_listen_socket){
-		ev.events = EPOLLIN;
+		ev.events = EPOLLIN | EPOLLET;
 	}else{
 		ev.events = EPOLL_EVENTS;
 	}

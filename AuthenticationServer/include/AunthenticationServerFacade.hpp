@@ -6,6 +6,9 @@
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
+#define SOCKET_CONFIG_FILE_PATH "/app/AuthenticationServer/conf/socket_setting.ini"
+#define SERVER_CERT_FILE_PATH "/app/AuthenticationServer/certs/server-cert.pem"
+#define SERVER_PRIVATEKEY_FILE_PATH "/app/AuthenticationServer/certs/server-key.pem"
 class AunthenticationServerFacade
 {
 //メンバー変数

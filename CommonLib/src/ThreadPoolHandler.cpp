@@ -32,9 +32,13 @@ void ThreadPoolHandler::process_task()
             std::unique_lock<std::mutex> lock(queue_mutex);
 
             //taskが追加されるまで待機する
-            condition.wait(lock, [this] { return !tasks.empty(); });
-
-            //tasuksからtaskを取り出す
+            condition.wait(lock, [this] { return stop || !tasks.empty(); });
+            if (stop && tasks.empty())
+            {
+                // 停止指示かつタスクがないならループを抜けてスレッド終了
+                return;
+            }
+            //tasksからtaskを取り出す
             task = tasks.front();
             tasks.pop();
         }

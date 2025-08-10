@@ -1,6 +1,6 @@
 ﻿#include "ProtocolHandler.hpp"
 
-ProtocolHandler::ProtocolHandler()
+ProtocolHandler::ProtocolHandler() : _running(true)
 {
 	std::string server_cert_path = "/app/ChatServer/certs/server-cert.pem";
 	std::string server_private_key_path = "/app/ChatServer/certs/server-key.pem";
@@ -21,7 +21,7 @@ ProtocolHandler::ProtocolHandler()
 
 }
 
-ProtocolHandler::ProtocolHandler(const std::string& cert_file_pass, const std::string& private_key_pass)
+ProtocolHandler::ProtocolHandler(const std::string& cert_file_pass, const std::string& private_key_pass) : _running(true)
 {
 	//SSLの初期化
 	SSL_library_init();
@@ -43,49 +43,54 @@ ProtocolHandler::ProtocolHandler(const std::string& cert_file_pass, const std::s
 
 ProtocolHandler::~ProtocolHandler()
 {
+	//hot_reloadを停止
+	this->stop_hot_reload();
 	//sslオブジェクトの解放
-	if (this->_server_w_ssl != NULL) {
-		SSL_shutdown(this->_server_w_ssl);
-		SSL_free(this->_server_w_ssl);
-	}
-
-	//SSLコンテキストの解放
-	if (this->_server_w_ctx != NULL) {
-		SSL_CTX_free(this->_server_w_ctx);
+	if (this->_server_ssl != nullptr) {
+		SSL_shutdown(this->_server_ssl);
+		SSL_free(this->_server_ssl);
+		this->_server_ssl = nullptr;
 	}
 }
 
 SSL* ProtocolHandler::get_ssl_object()
 {
-	return this->_server_w_ssl;
+	return this->_server_ssl;
 }
 
-SSL_CTX* ProtocolHandler::get_ssl_ctx()
+std::shared_ptr<SSL_CTX> ProtocolHandler::get_ssl_ctx()
 {
-	return this->_server_w_ctx;
+	return this->_server_ctx;
 }
 
 
 
 SSL* ProtocolHandler::generate_and_attach_ssl_object(socket_t client_socket)
 {
-	if (this->_server_w_ctx == nullptr) {
-    	LOG_ERROR("SSL_CTX is null.");
-    	return nullptr;
-	}
-	SSL* new_client_ssl = SSL_new(this->_server_w_ctx);
-	//クライアントのSSL生成が正常に処理されなかった場合
-	if (new_client_ssl == NULL) {
-		LOG_ERROR("new client ssl object creation failed.");
-		return nullptr;
-	}
-	//クライアントのSSL生成が正常に処理された場合
-	else {
-		spdlog::info("new client ssl object creation success!!.");
-		//SSLオブジェクトとクライアントソケットを関連付けする。
-		SSL_set_fd(new_client_ssl, static_cast<int>(client_socket));
-		return new_client_ssl;
-	}
+	std::shared_ptr<SSL_CTX> ctx_copy;
+
+    // ロックは shared_ptr をコピーする瞬間だけ
+    {
+        std::lock_guard<std::mutex> lock(this->_ctx_mutex);
+        ctx_copy = this->_server_ctx;
+    }
+
+    if (!ctx_copy) {
+        LOG_ERROR("SSL_CTX is null.");
+        return nullptr;
+    }
+
+    SSL* new_client_ssl = SSL_new(ctx_copy.get());
+    if (!new_client_ssl) {
+        LOG_ERROR("new client ssl object creation failed.");
+        return nullptr;
+    }
+
+    spdlog::info("new client ssl object creation success!!");
+    SSL_set_fd(new_client_ssl, static_cast<int>(client_socket));
+    return new_client_ssl;
+
+
 }
 
 
@@ -266,7 +271,6 @@ bool ProtocolHandler::send_message_json(SSL* client_ssl, const json& message)
 	size_t chunk_size = 16384;  // 最大TLSレコードサイズ
 	int ret = 0;
 
-	std::string mt = message["message_type"];
 	if (client_ssl == nullptr || SSL_is_init_finished(client_ssl) == false) {
 		LOG_ERROR("SSL is not initialized, cannot send message.");
 		return false;
@@ -299,7 +303,7 @@ bool ProtocolHandler::send_message_json(SSL* client_ssl, const json& message)
 		spdlog::error("Invalid JSON: message is either null or not an object.");
 	}
 	else {
-		spdlog::debug("MT{}_json : {}", mt, message.dump(4));
+		spdlog::debug("message json content : {}", message.dump(4));
 	}
 	return true;
 }
@@ -323,7 +327,7 @@ bool ProtocolHandler::shutdown_ssl(SSL* client_ssl)
 
 const std::string ProtocolHandler::get_cipher_suite(SSL* ssl)
 {
-	return std::string(SSL_get_cipher(this->_server_w_ssl));
+	return std::string(SSL_get_cipher(this->_server_ssl));
 }
 
 const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHandler::get_peer_cetificate(SSL* ssl)
@@ -410,9 +414,79 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 	return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 }
 
+void ProtocolHandler::print_json_message(const json &json_message)
+{
+	if (json_message.is_null() || json_message.empty())
+	{
+		LOG_ERROR("Invalid JSON object.");
+		return;
+	}
+	spdlog::debug("Receive JSON DATA :\n{:s}", json_message.dump(4));
+}
 
+void ProtocolHandler::print_received_message_info(const uint64_t message_id, const std::string &sender_id, const std::string &room_id, const std::string &sender_ipv4, const socket_t socket_num, const json &json_message)
+{
+	if (json_message.is_null() || json_message.empty())
+	{
+		LOG_ERROR("Invalid JSON object.");
+		return;
+	}
+	spdlog::debug("server received Message(message id:{}) from sender(id:{}, ip:{}, socket:{}).\nReceive JSON DATA :\n{}", message_id, sender_id, sender_ipv4, socket_num, json_message.dump(4));
+}
 
-//SSL通信で発生するエラーの表示
+void ProtocolHandler::hot_reload_certificates(int interval_seconds, const std::string& cert_file_pass, const std::string& private_key_file_pass)
+{
+	
+	spdlog::info("Starting certificate hot reload thread with interval: {} seconds", interval_seconds);
+	while (this->_running)  // サーバーが実行中の間ループ
+	{
+		std::unique_lock<std::mutex> lock(_reload_mutex);
+		// interval_seconds 秒待機（途中で停止通知があれば即座に戻る）
+		bool stopped = _reload_cv.wait_for(lock, std::chrono::seconds(interval_seconds), [this](){ return !_running.load(); });
+		if (stopped) {
+			// _running == false になったらループ終了
+			break;
+		}
+		lock.unlock(); // ロックを早期解除
+
+		bool cert_changed, key_changed;
+		{
+			std::lock_guard<std::mutex> mtime_lock(_mtime_mutex);
+			cert_changed = modify_file(cert_file_pass, _cert_mtime);
+			key_changed = modify_file(private_key_file_pass, _private_key_mtime);
+		}
+		if (cert_changed || key_changed)
+		{
+			spdlog::info("Certificate or private key file changed, reloading...");
+			auto new_ctx = std::shared_ptr<SSL_CTX>(SSL_CTX_new(TLS_server_method()), SSL_CTX_Deleter{});
+			if (!new_ctx)
+			{
+				LOG_ERROR("Failed to create new SSL_CTX.");
+				continue;
+			}
+			if (!reload_certificates(new_ctx.get(), cert_file_pass, private_key_file_pass))
+			{
+				LOG_ERROR("Failed to reload certificates.");
+				std::this_thread::sleep_for(std::chrono::seconds(5));  // 5秒待機してから再試行
+				continue;
+			}
+			{
+				std::lock_guard<std::mutex> lock(this->_ctx_mutex);
+				this->_server_ctx = std::move(new_ctx);	//新しいCTXを設定
+				spdlog::info("SSL_CTX reloaded successfully.");
+			}
+		}
+	}
+}
+
+void ProtocolHandler::stop_hot_reload()
+{
+	this->_running = false; // サーバーを停止するフラグを設定
+	_reload_cv.notify_all(); // 待機中のスレッドに通知して即座に終了させる
+	spdlog::info("Certificate hot reload thread stopped.");
+}
+
+// SSL通信で発生するエラーの表示
 void ProtocolHandler::print_ssl_error(SSL* client_ssl)
 {
 	int err = 0;
@@ -491,20 +565,19 @@ const SSL_METHOD* ProtocolHandler::set_server_method()
 
 void ProtocolHandler::generate_ssl_context(const SSL_METHOD* method)
 {
-
-	//SSL contextの確保
-	this->_server_w_ctx = SSL_CTX_new(method);
-	if (this->_server_w_ctx == NULL) {
-		spdlog::critical("SSL context, failed, context creation failed.");
-		exit(1);
-	}
+	SSL_CTX* raw_ctx = SSL_CTX_new(method);
+    if (!raw_ctx) {
+        spdlog::critical("SSL context creation failed.");
+        exit(1);
+    }
+    this->_server_ctx = std::shared_ptr<SSL_CTX>(raw_ctx, SSL_CTX_Deleter{});
 }
 
 
 void ProtocolHandler::load_cert_file(const std::string &cert_file_pass)
 {
 		//サーバ証明書のロード
-	if (SSL_CTX_use_certificate_file(_server_w_ctx, cert_file_pass.c_str(), SSL_FILETYPE_PEM) == 0) {
+	if (SSL_CTX_use_certificate_file(_server_ctx.get(), cert_file_pass.c_str(), SSL_FILETYPE_PEM) == 0) {
 		LOG_ERROR("Failed to load server certificate file: {}", cert_file_pass);
 		exit(1);
 	}
@@ -513,8 +586,52 @@ void ProtocolHandler::load_cert_file(const std::string &cert_file_pass)
 void ProtocolHandler::load_private_key(const std::string &private_key_pass)
 {
 		//プライベート鍵のロード
-	if (SSL_CTX_use_PrivateKey_file(_server_w_ctx, private_key_pass.c_str(), SSL_FILETYPE_PEM) == 0) {
+	if (SSL_CTX_use_PrivateKey_file(_server_ctx.get(), private_key_pass.c_str(), SSL_FILETYPE_PEM) == 0) {
 		LOG_ERROR("Failed to load server private key file: {}", private_key_pass);
 		exit(1);
 	}
+}
+
+//証明書の変更を監視
+bool ProtocolHandler::modify_file(const std::string& cert_file_pass, time_t &last_mtime)
+{ 
+	struct stat st;
+    if (stat(cert_file_pass.c_str(), &st) != 0) {
+        consecutive_errors++;
+        if (consecutive_errors > 3) {
+            LOG_ERROR("Persistent failure accessing certificate file '{}': errno={}, {}", cert_file_pass, errno, std::strerror(errno));
+        } else {
+            spdlog::warn("Temporary failure accessing certificate file '{}': errno={}, {}", cert_file_pass, errno, std::strerror(errno));
+        }
+        return false;
+    }
+    // 成功したら連続エラーカウントをリセット
+    consecutive_errors.store(0);
+
+    if (st.st_mtime > last_mtime) {
+        last_mtime = st.st_mtime;
+        return true;
+    }
+    return false;
+}
+
+bool ProtocolHandler::reload_certificates(SSL_CTX* ctx, const std::string &cert_file, const std::string &key_file)
+{
+	//証明書の再ロード
+    if (SSL_CTX_use_certificate_file(ctx, cert_file.c_str(), SSL_FILETYPE_PEM) <= 0){
+		LOG_ERROR("Failed to reload server certificate file: {}", cert_file);
+		return false;
+	}
+	//秘密鍵の再ロード
+    if (SSL_CTX_use_PrivateKey_file(ctx, key_file.c_str(), SSL_FILETYPE_PEM) <= 0) {
+		LOG_ERROR("Failed to reload server private key file: {}", key_file);
+		return false;
+	}
+	//秘密鍵とCTXにロードされた証明書との整合性をチェック
+    if (!SSL_CTX_check_private_key(ctx)) {
+		LOG_ERROR("Server private key does not match the certificate public key.");
+		return false;
+	}
+	spdlog::info("Server certificate and private key reloaded successfully.");
+    return true;
 }

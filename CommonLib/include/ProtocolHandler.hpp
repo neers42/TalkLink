@@ -14,6 +14,8 @@
 #include <errno.h>
 #include <random>
 #include <sstream>
+#include <atomic>
+#include <condition_variable>
 #include "ulid/ulid.hh"
 using json = nlohmann::json;
 #ifdef _WIN32
@@ -26,6 +28,7 @@ using socket_t = SOCKET;	//WindowsではSOCKETを使用
 using socket_t = int;		//Linuxではintを使用
 	#define SERVER_CERT_FILE_PASS "/app/ChatServer/certs/server-cert.pem"
 	#define SERVER_PRIVATEKEY_FILE_PASS "/app/ChatServer/certs/server-key.pem"
+	#include <sys/stat.h>
 #endif //_WIN32
 #include <openssl/err.h>
 #include <openssl/ssl.h>
@@ -43,9 +46,23 @@ using socket_t = int;		//Linuxではintを使用
 
 class ProtocolHandler
 {
+
+	struct SSL_CTX_Deleter
+	{
+		void operator()(SSL_CTX *ctx) const
+		{
+			SSL_CTX_free(ctx);
+		}
+	};
+
 private:
-	SSL* _server_w_ssl = NULL;
-	SSL_CTX* _server_w_ctx = NULL;
+	SSL* _server_ssl = nullptr;	//SSLオブジェクト
+	std::shared_ptr<SSL_CTX> _server_ctx = nullptr;	//SSLコンテキスト
+	time_t _cert_mtime = 0, _private_key_mtime = 0;
+	std::mutex _ctx_mutex, _reload_mutex, _mtime_mutex;	//証明書の変更を監視するためのミューテックス
+	std::atomic<bool> _running;	//サーバー実行中かを示すフラグ
+	std::condition_variable _reload_cv;
+	std::atomic<int> consecutive_errors = 0;
 
 public:
 	//コンストラクタ
@@ -58,7 +75,7 @@ public:
 
 	//各種アクセッサ(getter/setter)
 	SSL* get_ssl_object();
-	SSL_CTX* get_ssl_ctx();
+	std::shared_ptr<SSL_CTX> get_ssl_ctx();
 
 	//SSLオブジェクトの生成
 	SSL* generate_and_attach_ssl_object(socket_t client_socket);
@@ -77,35 +94,18 @@ public:
 	//サーバの証明書情報を取得
 	const std::tuple<std::string, std::string, std::string, std::string> get_peer_cetificate(SSL* ssl);
 
-	void print_json_message(const json& json_message) {
-		if (json_message.is_null() || json_message.empty()) {
-			LOG_ERROR("Invalid JSON object.");
-			return;
-		}
-		spdlog::debug("Receive JSON DATA :\n{:s}", json_message.dump(4));
-	}
+	void print_json_message(const json& json_message);
 
 	//メッセージの受信情報を表示
-	void print_received_message_info(
-	const uint64_t message_id,
-	const std::string& sender_id,
-	const std::string& room_id,
-	const std::string& sender_ipv4,
-	const socket_t socket_num,
-	const json& json_message)
-{
-	if (json_message.is_null() || json_message.empty()) {
-		LOG_ERROR("Invalid JSON object.");
-		return;
-	}
-	spdlog::debug("server received Message(message id:{}) from sender(id:{}, ip:{}, socket:{}).\nReceive JSON DATA :\n{}", message_id, sender_id, sender_ipv4, socket_num, json_message.dump(4));
-
-}
+	void print_received_message_info(const uint64_t message_id, const std::string& sender_id,
+	const std::string& room_id,const std::string& sender_ipv4, const socket_t socket_num, const json& json_message);
+	
+	//SSLの証明書の再ロード(スレッド用)
+	void hot_reload_certificates(int interval_seconds, const std::string& cert_file_pass, const std::string& private_key_file_pass);
+	void stop_hot_reload();
 
 
 private:
-
-
 	//SSLにおけるSSL通信での発生エラーを表示
 	void print_ssl_error(SSL* client_ssl);
 
@@ -121,10 +121,11 @@ private:
 	//サーバの秘密鍵をロード
 	void load_private_key(const std::string& private_key_pass);
 
+	bool modify_file(const std::string& cert_file_pass, time_t& last_mtime);
+
+	bool reload_certificates(SSL_CTX* ctx, const std::string& cert_file, const std::string& key_file);
+
 };
-
-
-
 #endif // !PROTOCOLHANDLER_HPP
 
 
