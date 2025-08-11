@@ -1,26 +1,5 @@
 ﻿#include "ProtocolHandler.hpp"
 
-ProtocolHandler::ProtocolHandler() : _running(true)
-{
-	std::string server_cert_path = "/app/ChatServer/certs/server-cert.pem";
-	std::string server_private_key_path = "/app/ChatServer/certs/server-key.pem";
-	SSL_library_init();
-	SSL_load_error_strings();
-
-	//TLS接続時のバージョン指定
-	auto server_method = this->set_server_method();
-
-	//コンテクストの生成
-	generate_ssl_context(server_method);
-
-	//サーバ証明書のロード
-	load_cert_file(server_cert_path);
-
-	//サーバの秘密鍵のロード
-	load_private_key(server_private_key_path);
-
-}
-
 ProtocolHandler::ProtocolHandler(const std::string& cert_file_pass, const std::string& private_key_pass) : _running(true)
 {
 	//SSLの初期化

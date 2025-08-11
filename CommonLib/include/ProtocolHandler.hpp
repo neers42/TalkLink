@@ -66,7 +66,7 @@ private:
 
 public:
 	//コンストラクタ
-	ProtocolHandler();
+	ProtocolHandler() = delete;
 	ProtocolHandler(const std::string& cert_file_pass, const std::string& private_key_pass);
 	ProtocolHandler(const ProtocolHandler&) = delete; // コピーコンストラクタを削除
 
