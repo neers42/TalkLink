@@ -3,11 +3,11 @@ services:
     image: mysql:8.0
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ***REMOVED***
-      MYSQL_DATABASE: MyChat
-      MYSQL_USER: chat_user
-      MYSQL_PASSWORD: chat_pass
-      
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
     ports:
       - "3307:3306"
     volumes:
@@ -50,14 +50,14 @@ services:
       - "50000:50000"       #TCPのリッスン用のポート
       - "50001:50001/udp"   #UDPポート(マルチキャスト送信用)
     environment:
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_USER: chat_user
-      DB_PASSWORD: chat_pass
-      DB_NAME: MyChat
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+
     networks:
       - mychat-net
   
@@ -74,8 +74,8 @@ services:
       - "50002:50002"       #TCPのリッスン用のポート
       - "50003:50003/udp"   #UDPポート(マルチキャスト送信用)
     environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     networks:
       - mychat-net
 

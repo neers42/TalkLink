@@ -376,3 +376,4 @@ AuthenticationServer/AuthenticationServer.vcxproj.filters
 .gitignore
 CommonLib/CommonLib.vcxproj
 .gitignore
+.env
