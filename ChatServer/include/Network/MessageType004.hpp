@@ -10,7 +10,7 @@ private:
 	std::vector<std::string> _mention_ids;	// メンションIDのリスト
 	std::string _sender_id;	// 送信者のクライアントID
 	std::string _send_time;	// 送信時間
-	std::string _content;	// メッセージ内容
+	std::string _content;	// メッセージ内容(JSON形式)
 
 public:
 	//コンストラクタ
@@ -29,7 +29,7 @@ public:
 	const std::vector<std::string>& get_mention_ids() const;
 	void set_mention_ids(const std::vector<std::string>& mention_ids);
 
-	std::string get_sender_id() const;
+	std::string get_sender_cid() const;
 	void set_sender_id(const std::string& src_id);
 
 	std::string get_send_time() const;

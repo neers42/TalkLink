@@ -2,14 +2,14 @@
 
 
 MessageType103A::MessageType103A(
-	const std::string& sender_id,
+	const std::string& sender_cid,
 	const std::string& room_id, 
 	const std::string& room_name, 
 	const std::string& room_icon_url, 
 	const std::vector<ClientInfo>& client_info_list, 
 	const MessageType003::RoomAction& room_action
 ):BaseMessage(MessageType103A::ContentType::NOTIFICATION, "103A", MessageIDGenerator::generate_message_id()),
-_sender_id{ sender_id },
+_sender_cid{ sender_cid },
 _room_id{ room_id },
 _room_name{ room_name },
 _room_icon_url{ room_icon_url },
@@ -22,9 +22,9 @@ MessageType103A::~MessageType103A()
 {
 }
 
-std::string MessageType103A::get_sender_id() const
+std::string MessageType103A::get_sender_cid() const
 {
-	return this->_sender_id;
+	return this->_sender_cid;
 }
 std::string MessageType103A::get_room_id() const
 {

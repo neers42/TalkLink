@@ -68,7 +68,10 @@ bool MySQLHelper::connect(const std::string& db_name) {
 		try
 		{
 			_connection = _driver->connect(_mysql_host, _mysql_user_name, _mysql_password);
+			_connection->setClientOption("characterEncoding", "utf8mb4");
+			_connection->setClientOption("characterSetResults", "utf8mb4");
 			_statement = _connection->createStatement();
+			_statement->execute("SET NAMES utf8mb4");
 			spdlog::debug("host: {}, username: {}, password: {}", _mysql_host, _mysql_user_name, _mysql_password);
 			spdlog::info("MySQL: Connection established successfully.");
 			_connection->setSchema(db_name);

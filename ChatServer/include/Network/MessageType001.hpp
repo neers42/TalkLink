@@ -18,15 +18,15 @@ private:
     std::string _jwt_token;
     std::string _client_name;
     std::string _client_mail_addr;
-    std::string _client_password;
+    uint64_t _last_received_message_id;
 
 public:
     //コンストラクタ
     MessageType001() = delete;
-    MessageType001(SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr);
-    MessageType001(int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr);
-    MessageType001(ContentType c_type, const std::string& mt, SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr);
-    MessageType001(int c_type, const std::string& mt, int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr);
+    MessageType001(SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
+    MessageType001(int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
+    MessageType001(ContentType c_type, const std::string& mt, SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
+    MessageType001(int c_type, const std::string& mt, int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
     //デストラクタ
     ~MessageType001();
 
@@ -44,6 +44,9 @@ public:
 
     std::string get_client_mail_addr() const;
     void set_client_mail_addr(const std::string& mail_addr);
+
+    uint64_t get_last_received_message_id() const;
+    void set_last_received_message_id(uint64_t last_received_message_id);
 
     bool is_valid() override;
     static std::unique_ptr<MessageType001> serialize_message(const json& json_message);

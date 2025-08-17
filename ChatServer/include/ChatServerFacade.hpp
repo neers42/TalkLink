@@ -1,4 +1,4 @@
-﻿#ifndef CHATSERVERFACADE_HPP
+#ifndef CHATSERVERFACADE_HPP
 #define CHATSERVERFACADE_HPP
 #include "Chat/ClientHandler.hpp"
 #include "Chat/ChatRoomHandler.hpp"
@@ -89,7 +89,7 @@ private:
 	bool mt001_process(const std::unique_ptr<MessageType001> &mt001, const socket_t socket, std::string& cid);
 	void mt003_process(const std::unique_ptr<MessageType003> &mt003, std::string *error_msg, bool *action_result);
 	void mt004_process(const std::unique_ptr<MessageType004> &mt004);
-	void mt101_process(const socket_t socket, const std::string &cid, const bool login_result, const bool recv_flag);
+	void mt101_process(const std::unique_ptr<MessageType001> &mt001, const socket_t socket, const std::string &cid, const bool login_result, const bool recv_flag);
 	void mt103_process(const std::unique_ptr<MessageType003> &mt003, const std::shared_ptr<Client> &client, socket_t socket);
 	const std::tuple<int, std::vector<std::string>> mt103A_process(const std::unique_ptr<MessageType003> &mt003, socket_t socket);
 	void mt103B_process(const std::unique_ptr<MessageType003> &mt003, const std::vector<std::string> &unsend_cids, const std::shared_ptr<Client> &client);
@@ -110,7 +110,7 @@ private:
 
 			if (socket == INVALID_SOCKET_FD)
 			{
-				LOG_ERROR("Sender with ID '{}' not found. Cannot send message.", message->get_sender_id());
+				LOG_ERROR("Sender with ID '{}' not found. Cannot send message.", message->get_sender_cid());
 				return std::make_tuple(0, std::vector<std::string>()); // 送信者が見つからない場合は処理を終了
 			}
 			// 送り先のclientの情報を取得する
@@ -134,19 +134,6 @@ private:
 					// 接続しているクライアントリストに送信先のクライアントが存在しない場合
 					if (receiver_list_num == NOT_EXIST_CLIENT_ID)
 					{
-						if constexpr (std::is_same<T, MessageType103A>::value)
-						{
-							this->_mysql_client->insert_unsend_control_message(message->get_message_id(), cid, message->get_room_id(), json_message, message->get_created_at());
-						}
-						else if constexpr (std::is_same<T, MessageType104A>::value)
-						{
-							this->_mysql_client->insert_unsend_message(message->get_send_message_id(), cid, message->get_room_id());
-						}
-						else
-						{
-							LOG_ERROR("Unsupported message type for unsend message insertion.");
-							return std::make_tuple(0, std::vector<std::string>());
-						}
 						unsend_cids.push_back(cid);
 						continue;
 					}
@@ -160,7 +147,6 @@ private:
 						}
 						auto send_socket = this->_client_handler->get_client_socket_by_cid(cid);
 						if(send_socket == INVALID_SOCKET_FD){
-							this->_mysql_client->insert_unsend_message(message->get_message_id(), cid, message->get_room_id());
 							unsend_cids.push_back(cid);
 							continue;
 						}
@@ -171,8 +157,7 @@ private:
 						}
 						else
 						{
-							LOG_ERROR("The MT{} message was not sent to the client(id:{}).", message->get_message_type(), cid);
-							this->_mysql_client->insert_unsend_message(message->get_message_id(), cid, message->get_room_id());
+							spdlog::warn("The MT{} message was not sent to the client(id:{}).", message->get_message_type(), cid);
 							unsend_cids.push_back(cid);
 						}
 					}
@@ -205,12 +190,10 @@ private:
 						// クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
 						if constexpr (std::is_same<T, MessageType103A>::value)
 						{
-							this->_mysql_client->insert_unsend_control_message(message->get_message_id(), receiver_cid, message->get_room_id(), json_message, message->get_created_at());
 							unsend_cids.push_back(receiver_cid);
 						}
 						else if constexpr (std::is_same<T, MessageType104A>::value)
 						{
-							this->_mysql_client->insert_unsend_message(message->get_send_message_id(), receiver_cid, message->get_room_id());
 							unsend_cids.push_back(receiver_cid);
 						}
 						continue;
@@ -230,8 +213,7 @@ private:
 						}
 						else
 						{
-							LOG_ERROR("The MT{} message was not sent to the client(id:{}).", message->get_message_type(), receiver_cid);
-							this->_mysql_client->insert_unsend_message(message->get_message_id(), receiver_cid, message->get_room_id());
+							spdlog::warn("The MT{} message was not sent to the client(id:{}).", message->get_message_type(), receiver_cid);
 							unsend_cids.push_back(receiver_cid);
 						}
 					}

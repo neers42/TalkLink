@@ -1,33 +1,38 @@
 ﻿#include "Network/MessageType001.hpp"
 
-MessageType001::MessageType001(SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr)
+MessageType001::MessageType001(SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
     :_sign_type{s_type},
     _jwt_token{jwt_token},
     _client_name{name},
-    _client_mail_addr{mail_addr}
+    _client_mail_addr{mail_addr},
+    _last_received_message_id{last_received_message_id}
 {
 }
-MessageType001::MessageType001(int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr)
+
+MessageType001::MessageType001(int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
     :_sign_type{exchange_sign_type_from_int(s_type)},
     _jwt_token{jwt_token},
     _client_name{name},
-    _client_mail_addr{mail_addr}
+    _client_mail_addr{mail_addr},
+    _last_received_message_id{last_received_message_id}
 {
 }
-MessageType001::MessageType001(ContentType c_type, const std::string& mt, SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr)
+MessageType001::MessageType001(ContentType c_type, const std::string& mt, SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
     :BaseMessage(c_type, mt),
     _sign_type{ s_type },
     _jwt_token{ jwt_token },
     _client_name{ name },
-    _client_mail_addr{ mail_addr }
+    _client_mail_addr{ mail_addr },
+    _last_received_message_id{ last_received_message_id }
 {
 }
-MessageType001::MessageType001(int c_type, const std::string& mt, int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr)
+MessageType001::MessageType001(int c_type, const std::string& mt, int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
     :BaseMessage(c_type, mt),
     _sign_type{ this->exchange_sign_type_from_int(s_type)},
     _jwt_token{ jwt_token },
-    _client_name{name}, 
-    _client_mail_addr{mail_addr}
+    _client_name{name},
+    _client_mail_addr{mail_addr},
+    _last_received_message_id{last_received_message_id}
 {
 }
 MessageType001::~MessageType001()
@@ -112,6 +117,14 @@ void MessageType001::set_client_mail_addr(const std::string& mail_addr)
     this->_client_mail_addr = mail_addr;
 }
 
+uint64_t MessageType001::get_last_received_message_id() const
+{
+    return this->_last_received_message_id;
+}
+void MessageType001::set_last_received_message_id(uint64_t last_received_message_id)
+{
+    this->_last_received_message_id = last_received_message_id;
+}
 bool MessageType001::is_valid()
 {
     if (is_valid_jwt_token(this->_jwt_token) == true &&
@@ -131,7 +144,7 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
         // 1. 必須キーがすべて存在するかチェック
         static const std::vector<std::string> required_keys = {
             "content_type", "message_type", "sign_type",
-            "jwt_token", "name", "mail_address"
+            "jwt_token", "name", "mail_address", "last_received_message_id"
         };
 
         for (const auto& key : required_keys) {
@@ -159,6 +172,9 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
 		if (!json_message["mail_address"].is_string()) {
 			throw std::runtime_error("Invalid type for 'mail_address'");
 		}
+        if (!json_message["last_received_message_id"].is_number_unsigned()) {
+            throw std::runtime_error("Invalid type for 'last_received_message_id'");
+        }
 		// 3. 各フィールドを読み取る
         std::string content_type_str = json_message["content_type"];
 		int content_type;
@@ -195,6 +211,7 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
         std::string jwt_token = json_message["jwt_token"];
         std::string client_name = json_message["name"];
         std::string client_mail_addr = json_message["mail_address"];
+        uint64_t last_received_message_id = json_message["last_received_message_id"];
 
         return std::make_unique<MessageType001>(
             content_type,
@@ -202,7 +219,8 @@ std::unique_ptr<MessageType001> MessageType001::serialize_message(const json& js
             sign_type,
             jwt_token,
             client_name,
-            client_mail_addr
+            client_mail_addr,
+            last_received_message_id
         );
     }
     catch (const std::exception& e) {
@@ -245,8 +263,9 @@ bool MessageType001::is_valid_mail_addr(const std::string& mail_addr)
 		LOG_ERROR("Client Mail Address is invalid by byte size error(mailAddress byte size : {:d}).", mail_addr.size());
         return false;
     }
-    return false;
+
 }
+ 
 
 MessageType001::SignType MessageType001::exchange_sign_type_from_int(const int value)
 {

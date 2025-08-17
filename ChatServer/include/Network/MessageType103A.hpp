@@ -23,7 +23,7 @@ public:
 		}
 	};
 private:
-	std::string _sender_id;	//送信者ID
+	std::string _sender_cid;	//送信者ID
 	std::string _room_id;
 	std::string _room_name;
 	std::string _room_icon_url;
@@ -33,7 +33,7 @@ private:
 public:
 	MessageType103A() = delete;
 	MessageType103A(
-		const std::string& sender_id,
+		const std::string& sender_cid,
 		const std::string& room_id,
 		const std::string& room_name,
 		const std::string& room_icon_url,
@@ -42,7 +42,7 @@ public:
 	~MessageType103A();
 
 	//各種アクセッサ(getter/setter)
-	std::string get_sender_id() const;
+	std::string get_sender_cid() const;
 	std::string get_room_id() const;
 	void set_room_id(const std::string& room_id);
 	std::string get_room_name() const;

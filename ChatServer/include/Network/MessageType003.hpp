@@ -2,7 +2,7 @@
 #define MESSAGE_TYPE003_HPP
 #include "Utils/common.hpp"
 #include "BaseMessage.hpp"
-#include "LogHandler.hpp"
+#include "Chat/MessageIDGenerator.hpp"
 
 class MessageType003 :
     public BaseMessage
@@ -20,7 +20,7 @@ public:
 	
 
 private:
-	std::string _sender_id;
+	std::string _sender_cid;
 	std::string _room_id;	//メンバーを追加するチャットルームID
 	std::vector<std::string> _add_member_list;	//追加メンバーリスト
 	std::vector<std::string> _remove_member_list;	//削除メンバーリスト
@@ -28,6 +28,7 @@ private:
 	std::string _room_image_url;	//チャットルームの画像
 	RoomAction _room_action;	//チャットルームのアクション
 	std::string _room_create_time;	//チャットルームの作成時間
+	std::string _message_content;	//メッセージ内容(JSON形式)
 
 
 
@@ -35,19 +36,21 @@ public:
 	//コンストラクタ
 	MessageType003() = delete;
 	MessageType003(
-		const std::string& sender_id,
+		const uint64_t mid,
+		const std::string& sender_cid,
 		const std::string& room_id_add_member,
 		const std::vector<std::string>& add_member_list,
 		const std::vector<std::string>& remove_member_list,
 		const std::string& room_name,
 		const std::string& room_image,
 		const RoomAction& room_action,
-		const std::string& room_create_time);
+		const std::string& room_create_time,
+		const std::string& message_content);
 	//デストラクタ
 	~MessageType003();
 
 	//各種アクセッサ
-	std::string get_sender_id() const;
+	std::string get_sender_cid() const;
 	std::string get_room_id() const;
 	std::vector<std::string> get_add_member_list() const;
 	std::vector<std::string> get_remove_member_list() const;
@@ -55,6 +58,7 @@ public:
 	std::string get_room_image_url() const;
 	RoomAction get_room_action() const;
 	std::string get_room_create_time() const;
+	std::string get_message_content() const;
 
 	//メッセージシリアライズ
 	static std::unique_ptr<MessageType003> serialize_message(const json& recv_json);

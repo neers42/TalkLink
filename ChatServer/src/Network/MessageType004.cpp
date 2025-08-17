@@ -44,7 +44,7 @@ void MessageType004::set_mention_ids(const std::vector<std::string>& mention_ids
 	this->_mention_ids = mention_ids;
 }
 
-std::string MessageType004::get_sender_id() const
+std::string MessageType004::get_sender_cid() const
 {
 	return this->_sender_id;
 }
@@ -102,7 +102,7 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 		// 1. 必須キーがすべて存在するかチェック
 		static const std::vector<std::string> required_keys = {
 			"content_type", "message_type", "room_id","mention_ids",
-			"sender_id", "send_time", "content"
+			"sender_cid", "send_time"
 		};
 		for(const auto& key : required_keys)
 		{
@@ -130,14 +130,11 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 				}
 			}
 		}
-		if (!json_message["sender_id"].is_string()) {
-			throw std::runtime_error("Invalid type for 'sender_id'");
+		if (!json_message["sender_cid"].is_string()) {
+			throw std::runtime_error("Invalid type for 'sender_cid'");
 		}
 		if (!json_message["send_time"].is_string()) {
 			throw std::runtime_error("Invalid type for 'send_time'");
-		}
-		if (!json_message["content"].is_string()) {
-			throw std::runtime_error("Invalid type for 'content'");
 		}
 		// 3. 各フィールドを読み取る
 		std::string content_type_str = json_message["content_type"];
@@ -154,6 +151,9 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 		else if (content_type_str == "NOTIFICATION") {
 			content_type = 3;
 		}
+		else if (content_type_str == "HEARTBEAT") {
+			content_type = 4;
+		}
 		else {
 			throw std::runtime_error("Invalid content type");
 		}
@@ -164,9 +164,9 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 		for (const auto& item : json_message["mention_ids"]) {
 			mention_ids.push_back(item.get<std::string>());
 		}
-		std::string sender_id = json_message["sender_id"];
+		std::string sender_cid = json_message["sender_cid"];
 		std::string send_time = json_message["send_time"];
-		std::string content = json_message["content"];
+		std::string content = json_message.dump();
 		uint64_t message_id = MessageIDGenerator::generate_message_id();
 
 		return std::make_unique<MessageType004>(
@@ -175,7 +175,7 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 			message_id,
 			room_id,
 			mention_ids,
-			sender_id,
+			sender_cid,
 			send_time,
 			content
 		);
@@ -227,7 +227,6 @@ bool MessageType004::is_valid_sender_id(const std::string& sender_id)
 
 bool MessageType004::is_valid_conent(const std::string& content)
 {
-	//dst_idが28byteではない場合
 	if (content.size() <= 0) {
 		LOG_ERROR("content is invalid. content byte size : {}", content.size());
 		return false;

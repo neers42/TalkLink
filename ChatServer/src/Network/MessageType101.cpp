@@ -1,4 +1,4 @@
-﻿#include "Network/MessageType101.hpp"
+#include "Network/MessageType101.hpp"
 
 
 MessageType101::MessageType101(const std::string& client_id, bool verify_result)
@@ -30,10 +30,18 @@ json MessageType101::deserialize_message(const std::unique_ptr<MessageType101>& 
 		mt101_json["client_id"] = "";
 		mt101_json["verify_result"] = false;
 	}
-	mt101_json["unsend_messages"] = unsend_messages;
+
+	// unreceived_messages 配列だけを代入
+	if(mt101->_verify_result == true){
+		mt101_json["unsend_messages"] = unsend_messages["unreceived_messages"];
+	}else{
+		mt101_json["unsend_messages"] = json::array();
+	}
+
 	if (mt101 != nullptr) {
 		mt101_json["error_reason"] = error_message; 
 	}
-		
+	spdlog::info("MT101 message deserialized successfully.");
+
     return mt101_json;
 }

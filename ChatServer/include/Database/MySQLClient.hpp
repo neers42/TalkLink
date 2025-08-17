@@ -15,7 +15,7 @@ private:
 	std::string _mysql_table_name_clients = "clients";
 	std::string _mysql_table_name_chatrooms = "chatrooms";
 	std::string _mysql_table_name_chat_members = "chat_members";
-	std::string _mysql_table_name_chat_messages = "chat_messages";
+	std::string _mysql_table_name_messages = "messages";
 	std::string _mysql_table_name_unsend_messages = "unsend_messages";
 	std::string _mysql_table_name_unsend_control_messages = "unsend_control_messages";
 
@@ -35,7 +35,8 @@ public:
 	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
 
 	//テーブル：chat_messages操作
-	bool insert_chat_message(const uint64_t mid, const std::string& room_id, const std::string& sender_id, const std::string& send_time, const std::string& content);
+	bool insert_message(const uint64_t mid, const std::string& room_id, const std::string& sender_cid, const std::string& send_time, const std::string& message_content);
+	json get_unreceived_messages(const std::string& cid, const uint64_t last_received_message_id);
 
 	//テーブル：chatrooms操作
 	bool is_room_id_exist(const std::string& room_id);
@@ -75,11 +76,12 @@ private:
 	bool create_table_clients();
 	bool create_table_chatrooms();
 	bool create_table_chat_members();
-	bool create_table_chat_messages();
+	bool create_table_messages();
 	bool create_table_unsend_messages();
 	bool create_table_unsend_control_messages();
 	std::vector<uint8_t> hex_to_binary(const std::string& hex_str);
-	
+	std::string to_hex_string(const std::string& bin_str);
+
 };
 
 

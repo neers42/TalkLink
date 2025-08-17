@@ -1,4 +1,4 @@
-﻿#include "Database/MySQLClient.hpp"
+#include "Database/MySQLClient.hpp"
 
 
 MySQLClient::MySQLClient()
@@ -99,13 +99,7 @@ bool MySQLClient::create_table()
 	else if (this->create_table_chat_members() == false) {
 		return false;
 	}
-	else if (this->create_table_chat_messages() == false) {
-		return false;
-	}
-	else if (this->create_table_unsend_messages() == false) {
-		return false;
-	}
-	else if (this->create_table_unsend_control_messages() == false) {
+	else if (this->create_table_messages() == false) {
 		return false;
 	}
 	else {
@@ -414,11 +408,10 @@ bool MySQLClient::is_room_id_hex_exist(const std::string& room_id_hex)
 	return false;
 }
 
-bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& room_id_hex, const std::string& sender_id, const std::string& send_time, const std::string& content)
+bool MySQLClient::insert_message(const uint64_t mid, const std::string& room_id_hex, const std::string& sender_cid, const std::string& send_time, const std::string& message_content)
 {
 	try
 	{
-	
 		// 16進数文字列をバイナリデータに変換
 		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
 
@@ -426,20 +419,20 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
 
 		// blob に設定
-		//std::string binary_str(reinterpret_cast<const char*>(vec.data()), vec.size());
 		std::istringstream blob_stream(binary_str);
 
 		//SQL文のセット
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
-			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_chat_messages +
-				"(mid, room_id, sender_id, send_time, `message`) "
+			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_messages +
+				"(mid, room_id, sender_cid, send_time, `message`) "
 				"VALUES(?, ?, ?, ?, ?);")
 		);
+
 		pre_stmt->setInt64(1, mid);
 		pre_stmt->setBlob(2, &blob_stream);
-		pre_stmt->setString(3, sender_id);
+		pre_stmt->setString(3, sender_cid);
 		pre_stmt->setString(4, send_time);
-		pre_stmt->setString(5, content);
+		pre_stmt->setString(5, message_content);
 
 		pre_stmt->executeUpdate();
 		spdlog::debug("MySQL:insert chat message success.");
@@ -462,7 +455,71 @@ bool MySQLClient::insert_chat_message(const uint64_t mid, const std::string& roo
 	}
 }
 
-bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id_hex)
+json MySQLClient::get_unreceived_messages(const std::string &cid, const uint64_t last_received_message_id)
+{
+    json result;
+	result["unreceived_messages"] = json::array();
+    try
+    {
+		// SQL: messages と chat_members を JOIN
+        std::string sql =
+    		"SELECT m.mid, m.room_id, m.sender_cid, m.send_time, m.message "
+    		"FROM " + _mysql_table_name_messages + " AS m "
+    		"JOIN " + _mysql_table_name_chat_members + " AS cm ON m.room_id = cm.room_id "
+    		"WHERE m.mid > ? AND cm.cid = ? AND BINARY m.sender_cid != ?;";
+        std::unique_ptr<sql::PreparedStatement> pre_stmt(
+            this->_mysql_helper->get_connection()->prepareStatement(sql)
+        );
+
+		pre_stmt->setInt64(1, last_received_message_id);
+        pre_stmt->setString(2, cid);
+        pre_stmt->setString(3, cid);
+
+        std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+
+        while (res != nullptr && res->next())
+        {
+            json message;
+            message["mid"] = res->getInt64("mid");
+
+			// room_idはそのままだとバイナリデータなので、jsonをdumpできないため、16進数文字列に変換
+            std::string room_id_bin = res->getString("room_id");
+            message["room_id"] = this->to_hex_string(room_id_bin);
+
+            message["sender_cid"] = res->getString("sender_cid");
+            message["send_time"] = res->getString("send_time");
+			try
+			{
+				// message カラムの JSON をパース
+				std::string message_str = static_cast<std::string>(res->getString("message"));
+				spdlog::debug("MySQL:message_str: {}", message_str);
+    			message["message"] = json::parse(message_str, nullptr, true);
+			}
+			catch (const json::parse_error &e)
+			{
+				LOG_ERROR("Invalid JSON in message (mid={}): {}", res->getInt64("mid"), e.what());
+				message["message"] = nullptr; // エラー時は null にする
+			}
+			
+			result["unreceived_messages"].push_back(message);
+			
+		}
+    }
+    catch (const sql::SQLException& e)
+    {
+        this->_mysql_helper->printError(e);
+    }
+    catch (const std::runtime_error& e)
+    {
+        LOG_ERROR("Runtime Error:{}", e.what());
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR("Exception:{}.", e.what());
+    }
+    return result;
+}
+bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string &cid, const std::string &room_id_hex)
 {
 	try
 	{
@@ -811,12 +868,12 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 				"SELECT " + _mysql_table_name_unsend_messages + ".mid, " +
 				_mysql_table_name_unsend_messages + ".cid, " +
 				_mysql_table_name_unsend_messages + ".room_id, " +
-				_mysql_table_name_chat_messages + ".message, " +
-				_mysql_table_name_chat_messages + ".send_time " +
+				_mysql_table_name_messages + ".message, " +
+				_mysql_table_name_messages + ".send_time " +
 				"FROM " + _mysql_table_name_unsend_messages + " " +
-				"JOIN " + _mysql_table_name_chat_messages + " ON " +
+				"JOIN " + _mysql_table_name_messages + " ON " +
 				_mysql_table_name_unsend_messages + ".mid = " +
-				_mysql_table_name_chat_messages + ".mid " +
+				_mysql_table_name_messages + ".mid " +
 				"WHERE " + _mysql_table_name_unsend_messages + ".cid = ?"
 			)
 		);
@@ -1175,22 +1232,22 @@ bool MySQLClient::create_table_chat_members()
 	}
 }
 
-bool MySQLClient::create_table_chat_messages()
+bool MySQLClient::create_table_messages()
 {
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
-			this->_mysql_helper->get_connection()->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_chat_messages +
+			this->_mysql_helper->get_connection()->prepareStatement("CREATE TABLE IF NOT EXISTS " + _mysql_table_name_messages +
 				"(mid BIGINT PRIMARY KEY,"
 				"room_id BINARY(16) NOT NULL,"
-				"sender_id VARCHAR(28) NOT NULL,"
+				"sender_cid VARCHAR(28) NOT NULL,"
 				"send_time DATETIME NOT NULL,"
-				"message TEXT NOT NULL,"
+				"message JSON NOT NULL,"
 				"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE,"
-				"FOREIGN KEY (sender_id) REFERENCES clients(cid) ON DELETE CASCADE);")
+				"FOREIGN KEY (sender_cid) REFERENCES clients(cid) ON DELETE CASCADE);")
 		);
 		pre_stmt->executeUpdate();
-		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_chat_messages);
+		spdlog::debug("MySQL:create table(table name:{}) success.", _mysql_table_name_messages);
 		return true;
 	}
 	catch (const sql::SQLException& e)
@@ -1214,7 +1271,7 @@ bool MySQLClient::create_table_unsend_messages()
 				"cid VARCHAR(28) NOT NULL,"
 				"room_id BINARY(16) NOT NULL,"
 				"PRIMARY KEY(mid, cid, room_id),"
-				"FOREIGN KEY (mid) REFERENCES chat_messages(mid) ON DELETE CASCADE ON UPDATE CASCADE,"
+				"FOREIGN KEY (mid) REFERENCES messages(mid) ON DELETE CASCADE ON UPDATE CASCADE,"
 				"FOREIGN KEY (cid) REFERENCES clients(cid) ON DELETE CASCADE,"
 				"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE);")
 		);
@@ -1245,7 +1302,7 @@ bool MySQLClient::create_table_unsend_control_messages()
 				"json_payload JSON NOT NULL,"
 				"request_time DATETIME NOT NULL,"
 				"PRIMARY KEY(mid, cid, room_id),"
-				"FOREIGN KEY (mid) REFERENCES chat_messages(mid) ON DELETE CASCADE ON UPDATE CASCADE,"
+				"FOREIGN KEY (mid) REFERENCES messages(mid) ON DELETE CASCADE ON UPDATE CASCADE,"
 				"FOREIGN KEY (cid) REFERENCES clients(cid) ON DELETE CASCADE,"
 				"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE);")
 		);
@@ -1278,3 +1335,11 @@ std::vector<uint8_t> MySQLClient::hex_to_binary(const std::string& hex_str)
 	return binary_data;
 }
 
+std::string MySQLClient::to_hex_string(const std::string &bin_str)
+{
+    std::ostringstream oss;
+    for (unsigned char c : bin_str) {
+        oss << std::hex << std::setw(2) << std::setfill('0') << (int)c;
+    }
+    return oss.str();
+}

@@ -5,19 +5,19 @@ MessageType104A::MessageType104A(
 	int c_type,
 	const std::string& mt,
 	const std::string& room_id,
-	const std::string& sender_id,
+	const std::string& sender_cid,
 	const uint64_t send_message_id,
 	const std::string& send_time,
 	const std::string& content)
 	:BaseMessage(exchange_content_type_from_int(c_type), mt),
 	_room_id(room_id),
-	_sender_id(sender_id),
+	_sender_cid(sender_cid),
 	_send_message_id(send_message_id),
 	_content(content),
 	_send_time(send_time)
 {
-	if (room_id.empty() || sender_id.empty() || content.empty() || send_time.empty()) {
-		throw std::invalid_argument("Invalid argument: room_id, sender_id, content, and send_time cannot be empty");
+	if (room_id.empty() || sender_cid.empty() || content.empty() || send_time.empty()) {
+		throw std::invalid_argument("Invalid argument: room_id, sender_cid, content, and send_time cannot be empty");
 	}
 	
 
@@ -32,9 +32,9 @@ std::string MessageType104A::get_room_id() const
 	return this->_room_id;
 }
 
-std::string MessageType104A::get_sender_id() const
+std::string MessageType104A::get_sender_cid() const
 {
-	return this->_sender_id;
+	return this->_sender_cid;
 }
 
 uint64_t MessageType104A::get_send_message_id() const
@@ -57,9 +57,9 @@ void MessageType104A::set_room_id(const std::string& room_id)
 	this->_room_id = room_id;
 }
 
-void MessageType104A::set_sender_id(const std::string& sender_id)
+void MessageType104A::set_sender_cid(const std::string& sender_cid)
 {
-	this->_sender_id = sender_id;
+	this->_sender_cid = sender_cid;
 }
 
 void MessageType104A::set_send_message_id(const uint64_t send_message_id)
@@ -87,7 +87,7 @@ json MessageType104A::deserialize_message(const std::unique_ptr<MessageType104A>
 			mt104A_json["message_type"] = mt104A->_message_type;
 			mt104A_json["message_id"] = mt104A->_send_message_id;
 			mt104A_json["room_id"] = mt104A->_room_id;
-			mt104A_json["sender_id"] = mt104A->_sender_id;
+			mt104A_json["sender_cid"] = mt104A->_sender_cid;
 			mt104A_json["content"] = mt104A->_content;
 			mt104A_json["send_time"] = mt104A->_send_time;
 			
