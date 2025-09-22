@@ -1,9 +1,9 @@
-﻿#ifndef MESSAGETYPE103A_HPP
-#define MESSAGETYPE103A_HPP
+﻿#ifndef CHATROOMCONTROLDELIVERYMESSAGE_HPP
+#define CHATROOMCONTROLDELIVERYMESSAGE_HPP
 #include "BaseMessage.hpp"
 #include "Chat/MessageIDGenerator.hpp"
-#include "MessageType003.hpp"
-class MessageType103A :
+#include "Messages/ChatRoomControlMessage.hpp"
+class ChatRoomControlDeliveryMessage :
     public BaseMessage
 {
 public:
@@ -28,18 +28,18 @@ private:
 	std::string _room_name;
 	std::string _room_icon_url;
 	std::vector<ClientInfo> _client_info_list;	//クライアントリスト
-	MessageType003::RoomAction _room_action;	//ルームアクション
+	ChatRoomControlMessage::RoomAction _room_action;	//ルームアクション
 
 public:
-	MessageType103A() = delete;
-	MessageType103A(
+	ChatRoomControlDeliveryMessage() = delete;
+	ChatRoomControlDeliveryMessage(
 		const std::string& sender_cid,
 		const std::string& room_id,
 		const std::string& room_name,
 		const std::string& room_icon_url,
 		const std::vector<ClientInfo>& client_info_list,
-		const MessageType003::RoomAction& room_action);
-	~MessageType103A();
+		const ChatRoomControlMessage::RoomAction& room_action);
+	~ChatRoomControlDeliveryMessage();
 
 	//各種アクセッサ(getter/setter)
 	std::string get_sender_cid() const;
@@ -51,10 +51,10 @@ public:
 	void set_room_icon_url(const std::string& room_icon_url);
 	std::vector<ClientInfo> get_client_info_list() const;
 	void set_client_info_list(const std::vector<ClientInfo>& client_info_list);
-	MessageType003::RoomAction get_room_action() const;
-	static json deserialize_message(const std::unique_ptr<MessageType103A>& mt103A);
+	ChatRoomControlMessage::RoomAction get_room_action() const;
+	static json deserialize_message(const std::unique_ptr<ChatRoomControlDeliveryMessage>& chatroom_delivery_message);
 
 
 };
-#endif // !MESSAGETYPE103A_HPP
+#endif // !CHATROOMCONTROLDELIVERYMESSAGE_HPP
 

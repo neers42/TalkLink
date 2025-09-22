@@ -1,7 +1,7 @@
-﻿#ifndef MESSAGETYPE104A_HPP
-#define MESSAGETYPE104A_HPP
+﻿#ifndef CHATDELIVERYMESSAGE_HPP
+#define CHATDELIVERYMESSAGE_HPP
 #include "BaseMessage.hpp"
-class MessageType104A :
+class ChatDeliveryMessage :
     public BaseMessage
 {
 private:
@@ -14,15 +14,15 @@ private:
 
 
 public:
-	MessageType104A() = delete;
-	MessageType104A(int c_type,
+	ChatDeliveryMessage() = delete;
+	ChatDeliveryMessage(int c_type,
 		const std::string& mt,
 		const std::string& room_id,
 		const std::string& sender_id,
 		const uint64_t send_message_id,
 		const std::string& send_time,
 		const std::string& content);
-	~MessageType104A();
+	~ChatDeliveryMessage();
 
 	//各種アクセッサ
 	std::string get_room_id() const;
@@ -38,10 +38,10 @@ public:
 	void content(const std::string& content);
 
 
-	static json deserialize_message(const std::unique_ptr<MessageType104A>& mt104A);
+	static json deserialize_message(const std::unique_ptr<ChatDeliveryMessage>& chat_delivery_message);
 	
 };
-#endif // !MESSAGETYPE104A_HPP
+#endif // !CHATDELIVERYMESSAGE_HPP
 
 
 

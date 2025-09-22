@@ -1,7 +1,7 @@
-﻿#include "Network/MessageType004.hpp"
+﻿#include "Messages/ChatMessage.hpp"
 
 
-MessageType004::MessageType004(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id,
+ChatMessage::ChatMessage(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id,
 	const std::string& room_id, const std::vector<std::string>& mention_ids, const std::string& sender_id, 
 	const std::string& send_time, const std::string& content)
 	:BaseMessage::BaseMessage(c_type, mt, m_id),
@@ -13,7 +13,7 @@ MessageType004::MessageType004(BaseMessage::ContentType c_type, const std::strin
 {
 }
 
-MessageType004::MessageType004(int c_type, 
+ChatMessage::ChatMessage(int c_type, 
 	const std::string& mt,
 	const uint64_t m_id,
 	const std::string& room_id, 
@@ -29,58 +29,58 @@ MessageType004::MessageType004(int c_type,
 }
 
 
-MessageType004::~MessageType004()
+ChatMessage::~ChatMessage()
 {
 }
 
 
-const std::vector<std::string>& MessageType004::get_mention_ids() const
+const std::vector<std::string>& ChatMessage::get_mention_ids() const
 {
 	return this->_mention_ids;
 }
 
-void MessageType004::set_mention_ids(const std::vector<std::string>& mention_ids)
+void ChatMessage::set_mention_ids(const std::vector<std::string>& mention_ids)
 {
 	this->_mention_ids = mention_ids;
 }
 
-std::string MessageType004::get_sender_cid() const
+std::string ChatMessage::get_sender_cid() const
 {
 	return this->_sender_id;
 }
 
-void MessageType004::set_sender_id(const std::string& src_id)
+void ChatMessage::set_sender_id(const std::string& src_id)
 {
 	this->_sender_id = src_id;
 }
 
-std::string MessageType004::get_send_time() const
+std::string ChatMessage::get_send_time() const
 {
 	return this->_send_time;
 }
 
-std::string MessageType004::get_content() const
+std::string ChatMessage::get_content() const
 {
 	return this->_content;
 }
 
-void MessageType004::set_content(const std::string& content)
+void ChatMessage::set_content(const std::string& content)
 {
 	this->_content = content;
 }
 
-std::string MessageType004::get_room_id()
+std::string ChatMessage::get_room_id()
 {
 	return this->_room_id;
 }
 
-void MessageType004::set_room_id(const std::string& id)
+void ChatMessage::set_room_id(const std::string& id)
 {
 	this->_room_id = id;
 }
 
 
-bool MessageType004::is_valid()
+bool ChatMessage::is_valid()
 {
 	if (is_valid_mesasge_type(this->_message_type) == true &&
 			is_valid_message_id(this->_message_id) == true &&
@@ -95,7 +95,7 @@ bool MessageType004::is_valid()
 		}
 }
 
-std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& json_message)
+std::unique_ptr<ChatMessage> ChatMessage::serialize_message(const json& json_message)
 {
 	try
 	{
@@ -169,7 +169,7 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 		std::string content = json_message.dump();
 		uint64_t message_id = MessageIDGenerator::generate_message_id();
 
-		return std::make_unique<MessageType004>(
+		return std::make_unique<ChatMessage>(
 			static_cast<int>(content_type),
 			message_type,
 			message_id,
@@ -184,12 +184,12 @@ std::unique_ptr<MessageType004> MessageType004::serialize_message(const json& js
 	}
 	catch (const std::exception& e)
 	{
-		LOG_ERROR("Error deserializing MessageType004: {}", e.what());
+		LOG_ERROR("Error deserializing ChatMessage: {}", e.what());
 		return nullptr;
 	}
 }
 
-bool MessageType004::is_valid_room_id(const std::string& room_id)
+bool ChatMessage::is_valid_room_id(const std::string& room_id)
 {
 	//dst_idが32byteではない場合
 	if (room_id.size() != 32) {
@@ -199,7 +199,7 @@ bool MessageType004::is_valid_room_id(const std::string& room_id)
 	return true;
 }
 
-bool MessageType004::is_valid_mention_ids(const std::vector<std::string>& mention_ids)
+bool ChatMessage::is_valid_mention_ids(const std::vector<std::string>& mention_ids)
 {
 	// mention_idsが空でないことを確認
 	if (mention_ids.empty()) {
@@ -215,7 +215,7 @@ bool MessageType004::is_valid_mention_ids(const std::vector<std::string>& mentio
 	return true;
 }
 
-bool MessageType004::is_valid_sender_id(const std::string& sender_id)
+bool ChatMessage::is_valid_sender_id(const std::string& sender_id)
 {
 	//dst_idが28byteではない場合
 	if (sender_id.size() != 28) {
@@ -225,7 +225,7 @@ bool MessageType004::is_valid_sender_id(const std::string& sender_id)
 	return true;
 }
 
-bool MessageType004::is_valid_conent(const std::string& content)
+bool ChatMessage::is_valid_conent(const std::string& content)
 {
 	if (content.size() <= 0) {
 		LOG_ERROR("content is invalid. content byte size : {}", content.size());

@@ -1,16 +1,16 @@
-﻿#include "Network/MessageType000.hpp"
+﻿#include "Messages/HeartBeatMessage.hpp"
 
 
-MessageType000::MessageType000(const std::string& client_id)
+HeartBeatMessage::HeartBeatMessage(const std::string& client_id)
 	:BaseMessage(BaseMessage::ContentType::HEARTBEAT, "000"), _client_id{client_id}
 {
 }
 
-MessageType000::~MessageType000()
+HeartBeatMessage::~HeartBeatMessage()
 {
 }
 
-std::unique_ptr<MessageType000> MessageType000::serialize_message(const json& json_message)
+std::unique_ptr<HeartBeatMessage> HeartBeatMessage::serialize_message(const json& json_message)
 {
 	try
 	{
@@ -42,7 +42,7 @@ std::unique_ptr<MessageType000> MessageType000::serialize_message(const json& js
 		{
 			throw std::runtime_error("Invalid client ID size");
 		}
-		return std::make_unique<MessageType000>(client_id);
+		return std::make_unique<HeartBeatMessage>(client_id);
 
 	}
 	catch (const std::exception& e)

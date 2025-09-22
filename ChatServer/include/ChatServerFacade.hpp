@@ -6,19 +6,18 @@
 #include "Utils/common.hpp"
 #include "Database/MySQLClient.hpp"
 #include "Database/RedisClient.hpp"
-#include "Network/BaseMessage.hpp"
-#include "Network/MessageType000.hpp"
-#include "Network/MessageType001.hpp"
-#include "Network/MessageType002.hpp"
-#include "Network/MessageType003.hpp"
-#include "Network/MessageType004.hpp"
-#include "Network/MessageType005.hpp"
-#include "Network/MessageType101.hpp"
-#include "Network/MessageType102.hpp"
-#include "Network/MessageType103A.hpp"
-#include "Network/MessageType103B.hpp"
-#include "Network/MessageType104A.hpp"
-#include "Network/MessageType104B.hpp"
+#include "Messages/BaseMessage.hpp"
+#include "Messages/HeartBeatMessage.hpp"
+#include "Messages/ClientSessionMessage.hpp"
+#include "Messages/ClientSettingControlMessage.hpp"
+#include "Messages/ChatRoomControlMessage.hpp"
+#include "Messages/ChatMessage.hpp"
+#include "Messages/ClientSessionResponseMessage.hpp"
+#include "Messages/ClientSettingControlResponseMessage.hpp"
+#include "Messages/ChatRoomControlDeliveryMessage.hpp"
+#include "Messages/ChatRoomControlAckMessage.hpp"
+#include "Messages/ChatDeliveryMessage.hpp"
+#include "Messages/ChatAckMessage.hpp"
 #ifdef _WIN32
 using socket_t = SOCKET;
 #define INVALID_SOCKET_FD INVALID_SOCKET
@@ -84,19 +83,19 @@ public:
 
 private:
 	// メッセージ処理関連
-	void mt000_process(const std::unique_ptr<MessageType000> &mt000, std::shared_ptr<Client> &client);
-	void mt000_process(const std::unique_ptr<MessageType000> &mt000, const socket_t socket);
-	bool mt001_process(const std::unique_ptr<MessageType001> &mt001, const socket_t socket, std::string& cid);
-	void mt003_process(const std::unique_ptr<MessageType003> &mt003, std::string *error_msg, bool *action_result);
-	void mt004_process(const std::unique_ptr<MessageType004> &mt004);
-	void mt101_process(const std::unique_ptr<MessageType001> &mt001, const socket_t socket, const std::string &cid, const bool login_result, const bool recv_flag);
-	void mt103_process(const std::unique_ptr<MessageType003> &mt003, const std::shared_ptr<Client> &client, socket_t socket);
-	const std::tuple<int, std::vector<std::string>> mt103A_process(const std::unique_ptr<MessageType003> &mt003, socket_t socket);
-	void mt103B_process(const std::unique_ptr<MessageType003> &mt003, const std::vector<std::string> &unsend_cids, const std::shared_ptr<Client> &client);
-	std::vector<MessageType103A::ClientInfo> generate_client_infos(const std::vector<std::string> &cids);
-	void mt104_process(const std::unique_ptr<MessageType004> &mt004, const socket_t socket);
-	const std::tuple<int, std::vector<std::string>> mt104A_process(const std::unique_ptr<MessageType004> &mt004, socket_t socket);
-	void mt104B_process(const std::unique_ptr<MessageType004> &mt004, const int send_cid_num, const std::vector<std::string> &unsend_cids, const socket_t socket);
+	void heartbeat_process(const std::unique_ptr<HeartBeatMessage> &heartbeat_message, std::shared_ptr<Client> &client);
+	void heartbeat_process(const std::unique_ptr<HeartBeatMessage> &heartbeat_message, const socket_t socket);
+	bool session_process(const std::unique_ptr<ClientSessionMessage> &session_message, const socket_t socket, std::string& cid);
+	void chatroom_control_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, std::string *error_msg, bool *action_result);
+	void chat_message_process(const std::unique_ptr<ChatMessage> &chat_message);
+	void session_response_process(const std::unique_ptr<ClientSessionMessage> &session_message, const socket_t socket, const std::string &cid, const bool login_result, const bool recv_flag);
+	void chatroom_control_response_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, const std::shared_ptr<Client> &client, socket_t socket);
+	const std::tuple<int, std::vector<std::string>> chatroom_control_delivery_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, socket_t socket);
+	void chatroom_control_ack_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, const std::vector<std::string> &unsend_cids, const std::shared_ptr<Client> &client);
+	std::vector<ChatRoomControlDeliveryMessage::ClientInfo> generate_client_infos(const std::vector<std::string> &cids);
+	void chat_message_response_process(const std::unique_ptr<ChatMessage> &chat_message, const socket_t socket);
+	const std::tuple<int, std::vector<std::string>> chat_message_delivery_process(const std::unique_ptr<ChatMessage> &chat_message, socket_t socket);
+	void chat_message_ack_process(const std::unique_ptr<ChatMessage> &chat_message, const int send_cid_num, const std::vector<std::string> &unsend_cids, const socket_t socket);
 	void resend_message_process(const json &message, const socket_t socket);
 
 	template <typename T>
@@ -188,11 +187,11 @@ private:
 						}
 
 						// クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-						if constexpr (std::is_same<T, MessageType103A>::value)
+						if constexpr (std::is_same<T, ChatRoomControlDeliveryMessage>::value)
 						{
 							unsend_cids.push_back(receiver_cid);
 						}
-						else if constexpr (std::is_same<T, MessageType104A>::value)
+						else if constexpr (std::is_same<T, ChatDeliveryMessage>::value)
 						{
 							unsend_cids.push_back(receiver_cid);
 						}

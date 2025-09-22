@@ -1,10 +1,10 @@
-﻿#ifndef MESSAGE_TYPE003_HPP
-#define MESSAGE_TYPE003_HPP
+﻿#ifndef CHATROOMCONTROLMESSAGE_HPP
+#define CHATROOMCONTROLMESSAGE_HPP
 #include "Utils/common.hpp"
 #include "BaseMessage.hpp"
 #include "Chat/MessageIDGenerator.hpp"
 
-class MessageType003 :
+class ChatRoomControlMessage :
     public BaseMessage
 {
 public:
@@ -34,8 +34,8 @@ private:
 
 public:
 	//コンストラクタ
-	MessageType003() = delete;
-	MessageType003(
+	ChatRoomControlMessage() = delete;
+	ChatRoomControlMessage(
 		const uint64_t mid,
 		const std::string& sender_cid,
 		const std::string& room_id_add_member,
@@ -47,7 +47,7 @@ public:
 		const std::string& room_create_time,
 		const std::string& message_content);
 	//デストラクタ
-	~MessageType003();
+	~ChatRoomControlMessage();
 
 	//各種アクセッサ
 	std::string get_sender_cid() const;
@@ -61,8 +61,8 @@ public:
 	std::string get_message_content() const;
 
 	//メッセージシリアライズ
-	static std::unique_ptr<MessageType003> serialize_message(const json& recv_json);
+	static std::unique_ptr<ChatRoomControlMessage> serialize_message(const json& recv_json);
 
 };
-#endif // MESSAGE_TYPE003_HPP
+#endif // CHATROOMCONTROLMESSAGE_HPP
 

@@ -1,8 +1,8 @@
-﻿#ifndef MESSAGETYPE004_HPP
-#define MESSAGETYPE004_HPP
+﻿#ifndef CHATMESSAGE_HPP
+#define CHATMESSAGE_HPP
 #include "BaseMessage.hpp"
 #include "Chat/MessageIDGenerator.hpp"
-class MessageType004 :
+class ChatMessage :
     public BaseMessage
 {
 private:
@@ -14,16 +14,16 @@ private:
 
 public:
 	//コンストラクタ
-    MessageType004() = delete;
-	MessageType004(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id,
+    ChatMessage() = delete;
+	ChatMessage(BaseMessage::ContentType c_type, const std::string& mt, const uint64_t m_id,
 		const std::string& room_id, const std::vector<std::string>& mention_ids, const std::string& sender_id, 
 		const std::string& send_time, const std::string& content);
-	MessageType004(int c_type, const std::string& mt, const uint64_t m_id,
+	ChatMessage(int c_type, const std::string& mt, const uint64_t m_id,
 		const std::string& room_id,const std::vector<std::string>& mention_ids, const std::string& sender_id,
 		const std::string& send_time ,const std::string& content);
 	
 	//デストラクタ
-	~MessageType004();
+	~ChatMessage();
 	
 	//各種アクセッサ(getter/setter)
 	const std::vector<std::string>& get_mention_ids() const;
@@ -43,7 +43,7 @@ public:
 
 	//メッセージ検証
 	bool is_valid() override;
-	static std::unique_ptr<MessageType004> serialize_message(const json& json_message);
+	static std::unique_ptr<ChatMessage> serialize_message(const json& json_message);
 
 
 private:
@@ -55,7 +55,7 @@ private:
 
 	
 };
-#endif // !MESSAGETYPE004_HPP
+#endif // !CHATMESSAGE_HPP
 
 
 

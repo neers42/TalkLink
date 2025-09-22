@@ -1,6 +1,7 @@
-﻿#pragma once
+﻿#ifndef CHATROOMCONTROLACKMESSAGE_HPP
+#define CHATROOMCONTROLACKMESSAGE_HPP
 #include "BaseMessage.hpp"
-class MessageType103B :
+class ChatRoomControlAckMessage :
     public BaseMessage
 {
 public:
@@ -19,8 +20,8 @@ private:
 
 public:
     //コンストラクタ
-    MessageType103B() = delete;
-    MessageType103B(
+    ChatRoomControlAckMessage() = delete;
+    ChatRoomControlAckMessage(
         int content_type,
         const std::string& mt,
         MessageSendStatus send_status,
@@ -29,14 +30,16 @@ public:
         const std::vector<std::string>& unsend_cid_list
     );
     //デストラクタ
-    ~MessageType103B();
+    ~ChatRoomControlAckMessage();
 
     //各種アクセッサ
 	MessageSendStatus get_send_status() const { return _send_status; }
     const std::string& get_room_id() const { return _room_id; }
     uint64_t get_send_message_id() const { return _send_message_id; }
     const std::vector<std::string>& get_unsend_cid_list() const { return _unsend_cid_list; }
-    static json deserialize_message(const std::unique_ptr<MessageType103B>& mt103B);
+    static json deserialize_message(const std::unique_ptr<ChatRoomControlAckMessage>& chatroom_control_ack_message);
 
 };
+
+#endif // !CHATROOMCONTROLACKMESSAGE_HPP
 

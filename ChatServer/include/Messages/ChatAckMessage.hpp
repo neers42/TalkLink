@@ -1,7 +1,7 @@
-﻿#ifndef MESSAGETYPE104_HPP
-#define MESSAGETYPE104_HPP
+﻿#ifndef CHATACKMESSAGE_HPP
+#define CHATACKMESSAGE_HPP
 #include "BaseMessage.hpp"
-class MessageType104B :
+class ChatAckMessage :
     public BaseMessage
 {
 public:
@@ -21,8 +21,8 @@ private:
 
 public:
     //コンストラクタ
-    MessageType104B() = delete;
-	MessageType104B(int c_type,
+    ChatAckMessage() = delete;
+	ChatAckMessage(int c_type,
 		const std::string& mt,
 		const MessageSendStatus status,
 		const std::string& room_id,
@@ -30,7 +30,7 @@ public:
 		const std::vector<std::string>& _unsend_cid_list);
 
     //デストラクタ
-	~MessageType104B();
+	~ChatAckMessage();
 
 	//各種アクセッサ(getter/setter)
 	int get_status() const;
@@ -39,8 +39,8 @@ public:
 	void set_room_id(const std::string& room_id);
 	uint64_t get_send_message_id() const;
 	void set_send_message_id(const uint64_t send_mid);
-	static json deserialize_message(const std::unique_ptr<MessageType104B>& mt104B);
+	static json deserialize_message(const std::unique_ptr<ChatAckMessage>& chatAckMessageRef);
 
 };
-#endif // !MESSAGETYPE104_HPP
+#endif // !CHATACKMESSAGE_HPP
 

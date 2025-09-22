@@ -248,50 +248,50 @@ void ChatServerFacade::message_handle_process(const socket_t socket)
 		}
 
 		mt = receive_json["message_type"];
-		// mt000 = ハートビートを受信した際の処理
-		if (mt == "000")
+		// heartbeat_message = ハートビートを受信した際の処理
+		if (mt == "HeartBeat")
 		{
-			auto mt000 = MessageType000::serialize_message(receive_json);
-			// this->mt000_process(mt000, client);
-			this->mt000_process(mt000, socket);
+			auto heartbeat_message = HeartBeatMessage::serialize_message(receive_json);
+			// this->heartbeat_process(heartbeat_message, client);
+			this->heartbeat_process(heartbeat_message, socket);
 		}
-		// MT001 = Auth認証メッセージの場合
-		else if (mt == "001")
+		// Session = Auth認証メッセージの場合
+		else if (mt == "Session")
 		{
-			auto mt001 = MessageType001::serialize_message(receive_json);
-			if (mt001 == nullptr)
+			auto session_message = ClientSessionMessage::serialize_message(receive_json);
+			if (session_message == nullptr)
 			{
 				return;
 			}
 			this->_protocol_handler->print_received_message_info(0, "", "", _client_handler->get_client_ipv4_address(socket), socket, receive_json);
-			auto verify_result = this->mt001_process(mt001, socket, cid);
-			this->mt101_process(mt001, socket, cid, verify_result, recv_flag);
+			auto verify_result = this->session_process(session_message, socket, cid);
+			this->session_response_process(session_message, socket, cid, verify_result, recv_flag);
 		}
 		// MT002 = Group or Friend追加のメッセージの場合
-		else if (mt == "002")
+		else if (mt == "SettingControl")
 		{
 		}
-		else if (mt == "003")
+		else if (mt == "ChatRoomControl")
 		{
-			auto mt003 = MessageType003::serialize_message(receive_json);
-			if (mt003 == nullptr)
+			auto chatroom_control_message = ChatRoomControlMessage::serialize_message(receive_json);
+			if (chatroom_control_message == nullptr)
 			{
 				return;
 			}
-			this->_protocol_handler->print_received_message_info(mt003->get_message_id(), mt003->get_sender_cid(), mt003->get_room_id(), this->_client_handler->get_client_ipv4_address(socket), socket, receive_json);
-			this->mt003_process(mt003, &error_msg, &result);
+			this->_protocol_handler->print_received_message_info(chatroom_control_message->get_message_id(), chatroom_control_message->get_sender_cid(), chatroom_control_message->get_room_id(), this->_client_handler->get_client_ipv4_address(socket), socket, receive_json);
+			this->chatroom_control_process(chatroom_control_message, &error_msg, &result);
 		}
-		// MT004 = 通常メッセージの場合
-		else if (mt == "004")
+		// ChatMessage = 通常メッセージの場合
+		else if (mt == "ChatMessage")
 		{
-			auto mt004 = MessageType004::serialize_message(receive_json);
-			if (mt004 == nullptr)
+			auto chat_message = ChatMessage::serialize_message(receive_json);
+			if (chat_message == nullptr)
 			{
 				return;
 			}
-			this->_protocol_handler->print_received_message_info(mt004->get_message_id(), mt004->get_sender_cid(), mt004->get_room_id(), this->_client_handler->get_client_ipv4_address(socket), socket, receive_json);
-			this->mt004_process(mt004);
-			this->mt104_process(mt004, socket);
+			this->_protocol_handler->print_received_message_info(chat_message->get_message_id(), chat_message->get_sender_cid(), chat_message->get_room_id(), this->_client_handler->get_client_ipv4_address(socket), socket, receive_json);
+			this->chat_message_process(chat_message);
+			this->chat_message_response_process(chat_message, socket);
 		}
 
 		else
@@ -306,22 +306,22 @@ void ChatServerFacade::message_handle_process(const socket_t socket)
 
 }
 
-void ChatServerFacade::mt000_process(const std::unique_ptr<MessageType000> &mt000, std::shared_ptr<Client> &client)
+void ChatServerFacade::heartbeat_process(const std::unique_ptr<HeartBeatMessage> &heartbeat_message, std::shared_ptr<Client> &client)
 {
 	try
 	{
-		if (mt000 == nullptr || mt000->is_valid() == false)
+		if (heartbeat_message == nullptr || heartbeat_message->is_valid() == false)
 		{
-			throw std::invalid_argument("The reception process was interrupted because the contents of MT000 were invalid.");
+			throw std::invalid_argument("The reception process was interrupted because the contents of HeartBeat Message were invalid.");
 		}
-		if (mt000->get_client_id() == client->get_id())
+		if (heartbeat_message->get_client_id() == client->get_id())
 		{
 			spdlog::info("client(ip:{:s}, client id:{:s}) send HeartBeat.", client->get_ipv4_address(), client->get_id());
 			this->_client_handler->incliment_heart_beat_count(client);
 		}
 		else
 		{
-			spdlog::error("The reception process was interrupted because the contents of MT000 were invalid.");
+			spdlog::error("The reception process was interrupted because the contents of HeartBeat Message were invalid.");
 			return;
 		}
 	}
@@ -331,23 +331,23 @@ void ChatServerFacade::mt000_process(const std::unique_ptr<MessageType000> &mt00
 	}
 }
 
-void ChatServerFacade::mt000_process(const std::unique_ptr<MessageType000> &mt000, const socket_t socket)
+void ChatServerFacade::heartbeat_process(const std::unique_ptr<HeartBeatMessage> &heartbeat_message, const socket_t socket)
 {
 	try
 	{
 		auto cid = this->_client_handler->get_client_id(socket);
-		if (mt000 == nullptr || mt000->is_valid() == false)
+		if (heartbeat_message == nullptr || heartbeat_message->is_valid() == false)
 		{
-			throw std::invalid_argument("The reception process was interrupted because the contents of MT000 were invalid.");
+			throw std::invalid_argument("The reception process was interrupted because the contents of HeartBeat Message were invalid.");
 		}
-		if (mt000->get_client_id() == cid)
+		if (heartbeat_message->get_client_id() == cid)
 		{
 			spdlog::info("client(ip:{:s}, client id:{:s}) send HeartBeat.", this->_client_handler->get_client_ipv4_address(socket), cid);
 			this->_client_handler->incliment_heart_beat_count(socket);
 		}
 		else
 		{
-			spdlog::error("The reception process was interrupted because the contents of MT000 were invalid.");
+			spdlog::error("The reception process was interrupted because the contents of HeartBeat Message were invalid.");
 			return;
 		}
 	}
@@ -358,16 +358,16 @@ void ChatServerFacade::mt000_process(const std::unique_ptr<MessageType000> &mt00
 }
 
 
-bool ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001> &mt001, const socket_t socket, std::string& cid)
+bool ChatServerFacade::session_process(const std::unique_ptr<ClientSessionMessage> &session_message, const socket_t socket, std::string& cid)
 {
 	try
 	{
-		if (mt001 == nullptr || mt001->is_valid() == false)
+		if (session_message == nullptr || session_message->is_valid() == false)
 		{
-			std::runtime_error("The reception process was interrupted because the contents of MT001 were invalid.");
+			std::runtime_error("The reception process was interrupted because the contents of ClientSessionMessage were invalid.");
 		}
 
-		auto decoded_token = jwt::decode(mt001->get_jwt_token());
+		auto decoded_token = jwt::decode(session_message->get_jwt_token());
 		if(decoded_token.has_subject())
 		{
 			cid = decoded_token.get_subject();
@@ -387,16 +387,16 @@ bool ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001> &mt00
 		}
 
 
-		switch (mt001->get_sign_type_int())
+		switch (session_message->get_sign_type_int())
 		{
 		case 0: // sign up
 			// メッセージがsign_upの場合の処理を追記
 			if (cid != "" && _client_handler->get_connect_clients_num() != 0)
 			{
 				// SIGN UPが成功した場合に、クライアント情報を登録する
-				this->_client_handler->set_authentication_info(socket, cid, mt001->get_client_name(), mt001->get_client_mail_addr());
+				this->_client_handler->set_authentication_info(socket, cid, session_message->get_client_name(), session_message->get_client_mail_addr());
 
-				if (this->_mysql_client->insert_client_data(cid, mt001->get_client_name(), mt001->get_client_mail_addr(), "", ServerTime::get_current_time_to_seconds(), "") == true)
+				if (this->_mysql_client->insert_client_data(cid, session_message->get_client_name(), session_message->get_client_mail_addr(), "", ServerTime::get_current_time_to_seconds(), "") == true)
 				{
 					spdlog::info("Client(ip:{:s}, socket num:{:d}) information has been successfully registered in the database.", _client_handler->get_client_ipv4_address(socket), socket);
 				}
@@ -435,7 +435,7 @@ bool ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001> &mt00
 			break;
 
 		default:
-			throw std::runtime_error("MT001 authentication data region is in violation.");
+			throw std::runtime_error("ClientSessionMessage authentication data region is in violation.");
 			break;
 		}
 	}
@@ -452,16 +452,16 @@ bool ChatServerFacade::mt001_process(const std::unique_ptr<MessageType001> &mt00
 	return true;
 }
 
-void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003> &mt003, std::string *error_msg, bool *action_result)
+void ChatServerFacade::chatroom_control_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, std::string *error_msg, bool *action_result)
 {
 
-	switch (mt003->get_room_action())
+	switch (chatroom_control_message->get_room_action())
 	{
 
-	case MessageType003::RoomAction::CREATE_ROOM:
+	case ChatRoomControlMessage::RoomAction::CREATE_ROOM:
 		// ルームの作成
 		{
-			auto new_room = this->_chat_room_handler->create_chatroom(mt003->get_room_name(), mt003->get_room_image_url(), mt003->get_add_member_list());
+			auto new_room = this->_chat_room_handler->create_chatroom(chatroom_control_message->get_room_name(), chatroom_control_message->get_room_image_url(), chatroom_control_message->get_add_member_list());
 			if (new_room == nullptr)
 			{
 				LOG_ERROR("The chat room was not created.");
@@ -478,7 +478,7 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003> &mt00
 				*error_msg = "The chat room was not saved in the database.";
 				return;
 			}
-			*action_result = this->_mysql_client->insert_chatroom_member(new_room->get_chatroom_id(), mt003->get_add_member_list(), ServerTime::get_current_time_to_seconds());
+			*action_result = this->_mysql_client->insert_chatroom_member(new_room->get_chatroom_id(), chatroom_control_message->get_add_member_list(), ServerTime::get_current_time_to_seconds());
 			if (*action_result == false)
 			{
 				LOG_ERROR("The chat room member was not saved in the database.");
@@ -504,73 +504,73 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003> &mt00
 			}
 		}
 
-	case MessageType003::RoomAction::ADD_MEMBER:
+	case ChatRoomControlMessage::RoomAction::ADD_MEMBER:
 		// ルームのメンバー追加
-		*action_result = this->_chat_room_handler->add_member_to_chatroom(mt003->get_room_id(), mt003->get_add_member_list());
+		*action_result = this->_chat_room_handler->add_member_to_chatroom(chatroom_control_message->get_room_id(), chatroom_control_message->get_add_member_list());
 
 		// データベースにメンバーを追加
-		*action_result = this->_mysql_client->insert_chatroom_member(mt003->get_room_id(), mt003->get_add_member_list(), ServerTime::get_current_time_to_seconds());
+		*action_result = this->_mysql_client->insert_chatroom_member(chatroom_control_message->get_room_id(), chatroom_control_message->get_add_member_list(), ServerTime::get_current_time_to_seconds());
 
 		if (*action_result == true)
 		{
-			spdlog::info("The chat room(ID:{}) was successfully added and saved in the database.", mt003->get_room_id());
+			spdlog::info("The chat room(ID:{}) was successfully added and saved in the database.", chatroom_control_message->get_room_id());
 			*error_msg = "No Error.";
 		}
 		else
 		{
-			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			*error_msg = "The chat room(ID:{}) was not created.", chatroom_control_message->get_room_id();
 			return;
 		}
 
 		break;
 
-	case MessageType003::RoomAction::REMOVE_MEMBER:
+	case ChatRoomControlMessage::RoomAction::REMOVE_MEMBER:
 		// ルームのメンバー削除
-		*action_result = this->_chat_room_handler->delete_member_from_chatroom(mt003->get_room_id(), mt003->get_remove_member_list());
+		*action_result = this->_chat_room_handler->delete_member_from_chatroom(chatroom_control_message->get_room_id(), chatroom_control_message->get_remove_member_list());
 
 		// データベースからメンバーを削除
-		*action_result = this->_mysql_client->delete_chatroom_member(mt003->get_room_id(), mt003->get_remove_member_list());
+		*action_result = this->_mysql_client->delete_chatroom_member(chatroom_control_message->get_room_id(), chatroom_control_message->get_remove_member_list());
 
 		if (*action_result == true)
 		{
-			spdlog::info("The chat room(ID:{}) was successfully removed and saved in the database.", mt003->get_room_id());
+			spdlog::info("The chat room(ID:{}) was successfully removed and saved in the database.", chatroom_control_message->get_room_id());
 			*error_msg = "No Error.";
 		}
 		else
 		{
-			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			*error_msg = "The chat room(ID:{}) was not created.", chatroom_control_message->get_room_id();
 			return;
 		}
 		break;
 
-	case MessageType003::RoomAction::ROOM_NAME_CHANGE:
+	case ChatRoomControlMessage::RoomAction::ROOM_NAME_CHANGE:
 		// ルーム名の変更
-		*action_result = this->_chat_room_handler->change_room_name(mt003->get_room_id(), mt003->get_room_name());
-		*action_result = this->_mysql_client->update_chatroom_name(mt003->get_room_id(), mt003->get_room_name());
+		*action_result = this->_chat_room_handler->change_room_name(chatroom_control_message->get_room_id(), chatroom_control_message->get_room_name());
+		*action_result = this->_mysql_client->update_chatroom_name(chatroom_control_message->get_room_id(), chatroom_control_message->get_room_name());
 		if (*action_result == true)
 		{
-			spdlog::info("The chat room(ID:{}) was successfully changed and saved in the database.", mt003->get_room_id());
+			spdlog::info("The chat room(ID:{}) was successfully changed and saved in the database.", chatroom_control_message->get_room_id());
 			*error_msg = "No Error.";
 		}
 		else
 		{
-			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			*error_msg = "The chat room(ID:{}) was not created.", chatroom_control_message->get_room_id();
 			return;
 		}
 		break;
 
-	case MessageType003::RoomAction::ROOM_ICON_CHANGE:
+	case ChatRoomControlMessage::RoomAction::ROOM_ICON_CHANGE:
 		// ルームアイコンの変更
-		*action_result = this->_chat_room_handler->change_room_icon(mt003->get_room_id(), mt003->get_room_image_url());
-		*action_result = this->_mysql_client->update_chatroom_icon(mt003->get_room_id(), mt003->get_room_image_url());
+		*action_result = this->_chat_room_handler->change_room_icon(chatroom_control_message->get_room_id(), chatroom_control_message->get_room_image_url());
+		*action_result = this->_mysql_client->update_chatroom_icon(chatroom_control_message->get_room_id(), chatroom_control_message->get_room_image_url());
 		if (*action_result == true)
 		{
-			spdlog::info("The chat room(ID:{}) was successfully changed and saved in the database.", mt003->get_room_id());
+			spdlog::info("The chat room(ID:{}) was successfully changed and saved in the database.", chatroom_control_message->get_room_id());
 			*error_msg = "No Error.";
 		}
 		else
 		{
-			*error_msg = "The chat room(ID:{}) was not created.", mt003->get_room_id();
+			*error_msg = "The chat room(ID:{}) was not created.", chatroom_control_message->get_room_id();
 			return;
 		}
 		break;
@@ -578,9 +578,9 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003> &mt00
 	default:
 		break;
 	}
-	if (this->_mysql_client->is_room_id_hex_exist(mt003->get_room_id())){
+	if (this->_mysql_client->is_room_id_hex_exist(chatroom_control_message->get_room_id())){
 		// メッセージをデータベースに保存する
-		if (this->_mysql_client->insert_message(mt003->get_message_id(), mt003->get_room_id(), mt003->get_sender_cid(), mt003->get_created_at(), mt003->get_message_content()) == true)
+		if (this->_mysql_client->insert_message(chatroom_control_message->get_message_id(), chatroom_control_message->get_room_id(), chatroom_control_message->get_sender_cid(), chatroom_control_message->get_created_at(), chatroom_control_message->get_message_content()) == true)
 		{
 			spdlog::info("The message was successfully saved in the database.");
 		}
@@ -594,20 +594,20 @@ void ChatServerFacade::mt003_process(const std::unique_ptr<MessageType003> &mt00
 	
 }
 
-void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004> &mt004)
+void ChatServerFacade::chat_message_process(const std::unique_ptr<ChatMessage> &chat_message)
 {
 	LOG_TRACE;
 	try
 	{
-		if (mt004 == nullptr || mt004->is_valid() == false)
+		if (chat_message == nullptr || chat_message->is_valid() == false)
 		{
 			// メッセージ処理
-			throw std::runtime_error("The reception process was interrupted because the contents of MT004 were invalid.");
+			throw std::runtime_error("The reception process was interrupted because the contents of ChatMessage were invalid.");
 		}
 		// メッセージをデータベースに保存する
-		if (this->_mysql_client->is_room_id_hex_exist(mt004->get_room_id()))
+		if (this->_mysql_client->is_room_id_hex_exist(chat_message->get_room_id()))
 		{
-			if (this->_mysql_client->insert_message(mt004->get_message_id(), mt004->get_room_id(), mt004->get_sender_cid(), mt004->get_send_time(), mt004->get_content()))
+			if (this->_mysql_client->insert_message(chat_message->get_message_id(), chat_message->get_room_id(), chat_message->get_sender_cid(), chat_message->get_send_time(), chat_message->get_content()))
 			{
 				spdlog::info("The message was successfully saved in the database.");
 			}
@@ -633,14 +633,14 @@ void ChatServerFacade::mt004_process(const std::unique_ptr<MessageType004> &mt00
 	}
 	catch (...)
 	{
-		LOG_ERROR("An unknown error occurred during MT004 processing.");
+		LOG_ERROR("An unknown error occurred during ChatMessage processing.");
 		return;
 	}
 }
 
 
-void ChatServerFacade::mt101_process(
-	const std::unique_ptr<MessageType001> &mt001,
+void ChatServerFacade::session_response_process(
+	const std::unique_ptr<ClientSessionMessage> &session_message,
 	const socket_t socket,
 	const std::string &cid,
 	const bool verify_result,
@@ -649,85 +649,85 @@ void ChatServerFacade::mt101_process(
 	std::string error_msg = "";
 	if (recv_flag == false)
 	{
-		LOG_ERROR("The reception process was interrupted because the MT001 message was not received properly.");
+		LOG_ERROR("The reception process was interrupted because the ClientSessionMessage was not received properly.");
 		return;
 	}
 
-	// MT101を送信する処理を記載する
-	auto mt101 = std::make_unique<MessageType101>(cid, verify_result);
+	// SessionResponseを送信する処理を記載する
+	auto session_response = std::make_unique<ClientSessionResponseMessage>(cid, verify_result);
 	
 	// TODO　ここでcidに関するメッセージをデータベースから取得する。
 	json unreceived_messages_json;
 	if(verify_result == true){
 		error_msg = "Verification succeeded.";
 		// 未受信メッセージを取得する
-		unreceived_messages_json = this->_mysql_client->get_unreceived_messages(cid, mt001->get_last_received_message_id());
+		unreceived_messages_json = this->_mysql_client->get_unreceived_messages(cid, session_message->get_last_received_message_id());
 	}else{
 		error_msg = "Verification failed.";
 	}
 
 	// メッセージのデシリアライズ
-	json mt101_json = MessageType101::deserialize_message(mt101, unreceived_messages_json, error_msg);
+	json session_response_json = ClientSessionResponseMessage::deserialize_message(session_response, unreceived_messages_json, error_msg);
 
 	// メッセージの送信
-	bool send_result = this->_client_handler->client_message_send(socket, mt101_json);
+	bool send_result = this->_client_handler->client_message_send(socket, session_response_json);
 
 	// メッセージ送信が成功の場合
 	if (send_result == true)
 	{
-		spdlog::info("The MT101 message was successfully sent to the client(ip:{}, id:{}).", this->_client_handler->get_client_ipv4_address(socket), cid);
+		spdlog::info("The SessionResponse message was successfully sent to the client(ip:{}, id:{}).", this->_client_handler->get_client_ipv4_address(socket), cid);
 	}
 	else
 	{
-		spdlog::error("The MT101 message was not sent to the client.");
-		// TODO MT101の送信に失敗した場合の処理を記載する⇒再送処理する
+		spdlog::error("The SessionResponse message was not sent to the client.");
+		// TODO SessionResponseの送信に失敗した場合の処理を記載する⇒再送処理する
 	}
 }
 
-void ChatServerFacade::mt103_process(const std::unique_ptr<MessageType003> &mt003, const std::shared_ptr<Client> &client, socket_t socket)
+void ChatServerFacade::chatroom_control_response_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, const std::shared_ptr<Client> &client, socket_t socket)
 {
 	int send_cid_num = 0;
 	std::vector<std::string> unsend_cids;
-	std::tie(send_cid_num, unsend_cids) = this->mt103A_process(mt003, socket);
+	std::tie(send_cid_num, unsend_cids) = this->chatroom_control_delivery_process(chatroom_control_message, socket);
 }
 
-const std::tuple<int, std::vector<std::string>> ChatServerFacade::mt103A_process(const std::unique_ptr<MessageType003> &mt003, socket_t socket)
+const std::tuple<int, std::vector<std::string>> ChatServerFacade::chatroom_control_delivery_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, socket_t socket)
 {
 	int send_cid_num = 0;
 	std::vector<std::string> unsend_cids;
-	std::vector<MessageType103A::ClientInfo> client_infos;
+	std::vector<ChatRoomControlDeliveryMessage::ClientInfo> client_infos;
 
-	// MT103Aを生成する
-	switch (mt003->get_room_action())
+	// ChatRoomControlDeliveryMessageを生成する
+	switch (chatroom_control_message->get_room_action())
 	{
-	case MessageType003::RoomAction::CREATE_ROOM:
-	case MessageType003::RoomAction::ADD_MEMBER:
-	case MessageType003::RoomAction::REMOVE_MEMBER:
-		client_infos = this->generate_client_infos(mt003->get_add_member_list());
+	case ChatRoomControlMessage::RoomAction::CREATE_ROOM:
+	case ChatRoomControlMessage::RoomAction::ADD_MEMBER:
+	case ChatRoomControlMessage::RoomAction::REMOVE_MEMBER:
+		client_infos = this->generate_client_infos(chatroom_control_message->get_add_member_list());
 		break;
 	default:
 		break;
 	}
-	auto mt103A = std::make_unique<MessageType103A>(
-		mt003->get_sender_cid(),
-		mt003->get_room_id(),
-		mt003->get_room_name(),
-		mt003->get_room_image_url(),
+	auto chatroom_control_delivery_message = std::make_unique<ChatRoomControlDeliveryMessage>(
+		chatroom_control_message->get_sender_cid(),
+		chatroom_control_message->get_room_id(),
+		chatroom_control_message->get_room_name(),
+		chatroom_control_message->get_room_image_url(),
 		client_infos,
-		mt003->get_room_action());
-	std::tie(send_cid_num, unsend_cids) = this->send_message_to_room<MessageType103A>(mt103A, socket, mt003->get_sender_cid());
+		chatroom_control_message->get_room_action());
+	std::tie(send_cid_num, unsend_cids) = this->send_message_to_room<ChatRoomControlDeliveryMessage>(chatroom_control_delivery_message, socket, chatroom_control_message->get_sender_cid());
 
 	return std::make_tuple(send_cid_num, unsend_cids);
 }
 
-void ChatServerFacade::mt103B_process(
-	const std::unique_ptr<MessageType003> &mt003,
+void ChatServerFacade::chatroom_control_ack_process(
+	const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message,
 	const std::vector<std::string> &unsend_cids,
 	const std::shared_ptr<Client> &client)
 {
-	std::string message_type = "103B";
-	MessageType103B::MessageSendStatus send_status;
-	std::string send_room_id = mt003->get_room_id();
+	std::string message_type = "ChatRoomControlAck";
+	ChatRoomControlAckMessage::MessageSendStatus send_status;
+	std::string send_room_id = chatroom_control_message->get_room_id();
 	// 送り先のclientの情報を取得する
 	auto receivers_infos = this->_chat_room_handler->get_client_infos_by_chatroom_id(send_room_id);
 	// ChatroomHandlerが保持しているクライアントリストからチャットルームを検出できない場合
@@ -738,22 +738,22 @@ void ChatServerFacade::mt103B_process(
 		if (client_list.size() == 0 && unsend_cids.size() == 0)
 		{
 			// LOG_ERROR("The Chatroom ID was not found in the database.");
-			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
+			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_FAILED;
 		}
 		else if (client_list.size() != 1 && client_list.size() - 1 == unsend_cids.size())
 		{
 			// 全てのクライアントにメッセージが送信できなかった場合
-			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
+			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_FAILED;
 		}
 		else if (client_list.size() > 0 && unsend_cids.size() == 0)
 		{
 			// クライアントにメッセージが送信できた場合
-			send_status = MessageType103B::MessageSendStatus::SEND_SUCCESS;
+			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_SUCCESS;
 		}
 
 		else
 		{ // 一部のクライアントにメッセージが送信できなかった場合
-			send_status = MessageType103B::MessageSendStatus::SEND_PARTICAL_SUCCESS;
+			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_PARTICAL_SUCCESS;
 		}
 	}
 	else
@@ -761,41 +761,41 @@ void ChatServerFacade::mt103B_process(
 		if (receivers_infos.size() == 0 && unsend_cids.size() == 0)
 		{
 			// 全てのクライアントにメッセージが送信できなかった場合
-			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
+			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_FAILED;
 		}
 		else if (receivers_infos.size() - 1 == unsend_cids.size())
 		{
 			// 全てのクライアントにメッセージが送信できなかった場合
-			send_status = MessageType103B::MessageSendStatus::SEND_FAILED;
+			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_FAILED;
 		}
 		else if (receivers_infos.size() > 0 && unsend_cids.size() == 0)
 		{
 			// クライアントにメッセージが送信できた場合
-			send_status = MessageType103B::MessageSendStatus::SEND_SUCCESS;
+			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_SUCCESS;
 		}
 		else
 		{ // 一部のクライアントにメッセージが送信できなかった場合
-			send_status = MessageType103B::MessageSendStatus::SEND_PARTICAL_SUCCESS;
+			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_PARTICAL_SUCCESS;
 		}
 	}
-	auto mt103B = std::make_unique<MessageType103B>(
+	auto chatroom_control_ack_message = std::make_unique<ChatRoomControlAckMessage>(
 		0,
 		message_type,
 		send_status,
 		send_room_id,
-		mt003->get_message_id(),
+		chatroom_control_message->get_message_id(),
 		unsend_cids);
 	try
 	{
-		// mt103Bをデシリアライズする
-		json mt103B_json = MessageType103B::deserialize_message(mt103B);
-		if (this->_protocol_handler->send_message_json(client->get_ssl(), mt103B_json))
+		// ChatRoomControlAckメッセージをデシリアライズする
+		json chatroom_control_ack_json = ChatRoomControlAckMessage::deserialize_message(chatroom_control_ack_message);
+		if (this->_protocol_handler->send_message_json(client->get_ssl(), chatroom_control_ack_json))
 		{
-			spdlog::info("The MT103B message was successfully sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
+			spdlog::info("The ChatRoomControlAck message was successfully sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
 		}
 		else
 		{
-			LOG_ERROR("The MT103B message was not sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
+			LOG_ERROR("The ChatRoomControlAck message was not sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
 		}
 	}
 	catch (const std::out_of_range &e)
@@ -805,30 +805,30 @@ void ChatServerFacade::mt103B_process(
 	}
 }
 
-std::vector<MessageType103A::ClientInfo> ChatServerFacade::generate_client_infos(const std::vector<std::string> &cids)
+std::vector<ChatRoomControlDeliveryMessage::ClientInfo> ChatServerFacade::generate_client_infos(const std::vector<std::string> &cids)
 {
-	std::vector<MessageType103A::ClientInfo> client_infos;
+	std::vector<ChatRoomControlDeliveryMessage::ClientInfo> client_infos;
 	if (cids.size() == 0)
 	{
-		return std::vector<MessageType103A::ClientInfo>();
+		return std::vector<ChatRoomControlDeliveryMessage::ClientInfo>();
 	}
 	for (const auto &cid : cids)
 	{
 		std::string client_name, client_mail_addr, client_icon_url;
 		std::make_tuple(client_name, client_mail_addr, client_icon_url) = this->_mysql_client->get_client_info_fromDB(cid);
-		MessageType103A::ClientInfo add_client_info(cid, client_name, client_mail_addr, client_icon_url);
+		ChatRoomControlDeliveryMessage::ClientInfo add_client_info(cid, client_name, client_mail_addr, client_icon_url);
 		client_infos.push_back(add_client_info);
 	}
 	return client_infos;
 }
 
 
-void ChatServerFacade::mt104_process(const std::unique_ptr<MessageType004> &mt004, const socket_t socket)
+void ChatServerFacade::chat_message_response_process(const std::unique_ptr<ChatMessage> &chat_message, const socket_t socket)
 {
 	int send_cid_num = 0;
 	std::vector<std::string> unsend_cids;
-	std::tie(send_cid_num, unsend_cids) = this->mt104A_process(mt004, socket);
-	this->mt104B_process(mt004, send_cid_num, unsend_cids, socket);
+	std::tie(send_cid_num, unsend_cids) = this->chat_message_delivery_process(chat_message, socket);
+	this->chat_message_ack_process(chat_message, send_cid_num, unsend_cids, socket);
 }
 
 void ChatServerFacade::heartbeat_check_process()
@@ -915,67 +915,66 @@ void ChatServerFacade::handle_disconnect_process(const socket_t socket)
 }
 
 
-const std::tuple<int, std::vector<std::string>> ChatServerFacade::mt104A_process(const std::unique_ptr<MessageType004> &mt004, socket_t socket)
+const std::tuple<int, std::vector<std::string>> ChatServerFacade::chat_message_delivery_process(const std::unique_ptr<ChatMessage> &chat_message, socket_t socket)
 {
-	// mt104Aを生成
-	std::string message_type = "104A";
+	// ChatDeliveryMessageを生成
+	std::string message_type = "ChatDelivery";
 	int send_cid_num = 0;
 	std::vector<std::string> unsend_cids;
 
-	// MT104Aを生成する
-	auto mt104A = std::make_unique<MessageType104A>(
+	// ChatDeliveryMessageを生成する
+	auto chat_delivery_message = std::make_unique<ChatDeliveryMessage>(
 		0,
 		message_type,
-		mt004->get_room_id(),
-		mt004->get_sender_cid(),
-		mt004->get_message_id(),
-		mt004->get_send_time(),
-		mt004->get_content());
+		chat_message->get_room_id(),
+		chat_message->get_sender_cid(),
+		chat_message->get_message_id(),
+		chat_message->get_send_time(),
+		chat_message->get_content());
 	
-	std::tie(send_cid_num, unsend_cids) = this->send_message_to_room<MessageType104A>(mt104A, socket, mt004->get_sender_cid());
-	//this->send_message_to_room<MessageType104A>(mt104A, &unsend_cids, socket, mt004->get_sender_cid());
+	std::tie(send_cid_num, unsend_cids) = this->send_message_to_room<ChatDeliveryMessage>(chat_delivery_message, socket, chat_message->get_sender_cid());
 
 	return std::make_tuple(send_cid_num, unsend_cids);
 }
 
 
-void ChatServerFacade::mt104B_process(const std::unique_ptr<MessageType004> &mt004, const int send_cid_num, const std::vector<std::string> &unsend_cids, const socket_t socket)
+void ChatServerFacade::chat_message_ack_process(const std::unique_ptr<ChatMessage> &chat_message, const int send_cid_num, const std::vector<std::string> &unsend_cids, const socket_t socket)
 {
 	LOG_TRACE;
-	// mt104Bを生成
-	std::string message_type = "104B";
-	MessageType104B::MessageSendStatus send_status;
-	std::string send_room_id = mt004->get_room_id();
+	// ChatAckMessageを生成
+	std::string message_type = "ChatAck";
+	ChatAckMessage::MessageSendStatus send_status;
+	std::string send_room_id = chat_message->get_room_id();
 
 	if(send_cid_num == 0 && unsend_cids.size() == 0){
 		// 送信先のクライアントがいない場合
-		send_status = MessageType104B::MessageSendStatus::SEND_FAILED;
+		send_status = ChatAckMessage::MessageSendStatus::SEND_FAILED;
 	}
 	//送信先のクライアント(room_idの中にいるcids-1(送信先のクライアントをカウントしない)が1以上で、未送信クライアントがいない場合)
 	else if(send_cid_num -1 >= 1 && unsend_cids.size() == 0){
 		// 送信先のクライアントが複数いて、未送信クライアントがいない場合
-		send_status = MessageType104B::MessageSendStatus::SEND_SUCCESS;
+		send_status = ChatAckMessage::MessageSendStatus::SEND_SUCCESS;
 	}else if(send_cid_num -1 == unsend_cids.size()){
 		//送信先のクライアントの数がunsend_cidsの数と同じ場合(全クライアントに送信できていない場合)
-		send_status = MessageType104B::MessageSendStatus::SEND_FAILED;
+		send_status = ChatAckMessage::MessageSendStatus::SEND_FAILED;
 	}
 	else{
 		// 一部のクライアントにメッセージが送信できなかった場合
-		send_status = MessageType104B::MessageSendStatus::SEND_PARTIAL_SUCCESS;
+		send_status = ChatAckMessage::MessageSendStatus::SEND_PARTIAL_SUCCESS;
 	}
 
-	auto mt104B = std::make_unique<MessageType104B>(
+	auto chat_ack_message = std::make_unique<ChatAckMessage>(
 		0,
 		message_type,
 		send_status,
 		send_room_id,
-		mt004->get_message_id(),
+		chat_message->get_message_id(),
 		unsend_cids);
 	try
 	{
-		// mt104Bをデシリアライズする
-		json mt104B_json = MessageType104B::deserialize_message(mt104B);
-		this->_client_handler->client_message_send(socket, mt104B_json);
+		// ChatAckMessageをデシリアライズする
+		json chat_ack_json = ChatAckMessage::deserialize_message(chat_ack_message);
+		this->_client_handler->client_message_send(socket, chat_ack_json);
 	}
 	catch (const std::out_of_range &e)
 	{
