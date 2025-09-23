@@ -83,36 +83,29 @@ std::string ClientHandler::generate_client_id()
 	
 }
 
-std::vector<std::shared_ptr<Client>>::iterator ClientHandler::find_client(const std::shared_ptr<Client>& client)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	for (auto it = this->connected_clients.begin(); it != this->connected_clients.end(); ++it) {
-		if ((*it) == client) { // 修正: ポインタの中身を比較
-			return it; // クライアントが見つかった場合、そのイテレータを返す
-		}
-	}
-	return this->connected_clients.end(); // クライアントが見つからなかった場合、endイテレータを返す
-}
 
 socket_t ClientHandler::get_client_socket_by_cid(const std::string &cid)
 {
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+
+	std::shared_lock<std::shared_mutex> lock(shared_mtx); // 読み取り用ロック
 	spdlog::debug("after locking shared lock. func : {}", __func__);
 
-    for (const auto client : connected_clients) {
-        if (client && client->get_id() == cid) {
-            return client->get_socket(); 
-        }
-    }
-    // 該当なしの場合
-    spdlog::error("No socket found for client ID: {}", cid);
-    return INVALID_SOCKET_FD;
+	for (const auto &[sock, ctx] : clients_map)
+	{
+		if (ctx.client && ctx.client->get_id() == cid)
+		{
+			return sock; // map のキーが socket なので直接返せる
+		}
+	}
+
+	// 該当なしの場合
+	spdlog::error("No socket found for client ID: {}", cid);
+	return INVALID_SOCKET_FD;
 }
+
+
 std::string ClientHandler::get_client_id(const socket_t socket)
 {
     std::shared_ptr<Client> client = nullptr;
@@ -317,312 +310,188 @@ Client::ConnectState ClientHandler::get_client_connect_state(const socket_t sock
 void ClientHandler::change_client_auth_status(std::shared_ptr<Client> client)
 {
 	LOG_TRACE;
-	client->change_auth_status();
-}
-
-std::shared_ptr < Client > ClientHandler::get_client_by_index(const uint32_t index)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	if (index < connected_clients.size()) {
-		return connected_clients[index];
-	}
-	return nullptr;
-}
-
-void ClientHandler::change_client_auth_status(socket_t socket)
-{
-	std::shared_ptr<Client> client = nullptr;
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
-
-	if (client == nullptr)
+	if (!client)
 	{
-		LOG_ERROR("Client not found for socket {}", socket);
+		LOG_ERROR("Client pointer is null.");
 		return;
 	}
 	client->change_auth_status();
+}
+
+
+void ClientHandler::change_client_auth_status(socket_t socket)
+{
+	LOG_TRACE;
+    spdlog::debug("before locking shared lock. func : {}", __func__);
+
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);  // 読み取り用ロック
+    spdlog::debug("after locking shared lock. func : {}", __func__);
+
+    auto it = clients_map.find(socket);
+    if (it == clients_map.end() || !it->second.client) {
+        LOG_ERROR("Client not found for socket {}", socket);
+        return;
+    }
+
+    it->second.client->change_auth_status();
 }
 
 std::shared_ptr<Client> ClientHandler::get_client_by_socket(const socket_t socket)
 {
 	std::shared_lock<std::shared_mutex> lock(this->shared_mtx);
-	for (const auto& client : connected_clients) {
-		
-		if (client != nullptr && client->get_socket() == socket) {
-			return client;
-		}
-	}
-	return nullptr; // 見つからなかった場合
+	auto it = clients_map.find(socket);
+    if (it != clients_map.end()) {
+        return it->second.client; // 見つかったら Client を返す
+    }
+
+    return nullptr; // 見つからなかった場合
 }
 
 
-std::vector<std::shared_ptr<Client>> ClientHandler::get_connected_clients_snapshot()
+std::unordered_map<socket_t, ClientContext> ClientHandler::get_connected_clients_snapshot()
 {
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	return this->connected_clients; // 共有ロックを使用してコピーを取得
+    LOG_TRACE;
+    spdlog::debug("before locking shared lock. func : {}", __func__);
+
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
+
+    return clients_map; // 共有ロックを使用してコピーを取得
 }
 
-
-void ClientHandler::set_client_id(std::string id, uint32_t list_num)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	this->connected_clients[list_num]->set_id(id);
-}
-
-void ClientHandler::set_client_id(const std::shared_ptr<Client>& client, const std::string& id)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-
-	for (auto& c : connected_clients) {
-		if (c == client) {
-			c->set_id(id); // クライアントのIDを更新
-			return;
-		}
-	}
-
-	LOG_ERROR("Failed to set Client ID. Client not found in the list.");
-	
-}
 
 void ClientHandler::set_client_id(const socket_t socket, const std::string &id)
 {
-	std::shared_ptr<Client> client = nullptr;
 	LOG_TRACE;
-	spdlog::debug("before locking unique lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking unique lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
+    spdlog::debug("before locking shared lock. func : {}", __func__);
 
-	if (client == nullptr)
-	{
-		LOG_ERROR("Client not found for socket {}", socket);
-		return;
-	}
-	{
-		spdlog::debug("before locking client lock. func : {}", __func__);
-		std::lock_guard<std::mutex> client_lock(client->mtx);
-		spdlog::debug("aftre locking client lock. func : {}", __func__);
-		client->set_id(id);
-	}
-	
-}
-void ClientHandler::set_client_name(std::string name, uint32_t list_num)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	this->connected_clients[list_num]->set_name(name);
-}
+    // 読み取り用ロック
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
 
-void ClientHandler::set_client_name(const std::shared_ptr<Client>& client, const std::string& name)
-{	
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
+    // map から ClientContext を取得
+    auto it = clients_map.find(socket);
+    if (it == clients_map.end() || !it->second.client) {
+        LOG_ERROR("Client not found for socket {}", socket);
+        return;
+    }
 
-	for (auto& c : connected_clients) {
-		if (c == client) {
-			c->set_name(name); // クライアントのIDを更新
-			return;
-		}
-	}
-		
+    auto& client = it->second.client;
+
+    // client 内部の mutex をロックして ID をセット
+    spdlog::debug("before locking client lock. func : {}", __func__);
+    std::lock_guard<std::mutex> client_lock(client->mtx);
+    spdlog::debug("after locking client lock. func : {}", __func__);
+    client->set_id(id);
 }
 
 void ClientHandler::set_client_name(const socket_t socket, const std::string &name)
 {
-	std::shared_ptr<Client> client = nullptr;
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
+    LOG_TRACE;
+    spdlog::debug("before locking shared lock. func : {}", __func__);
 
-	if (client == nullptr)
-	{
-		LOG_ERROR("Client not found for socket {}", socket);
-		return;
-	}
-	{
-		spdlog::debug("before locking client lock. func : {}", __func__);
-		std::lock_guard<std::mutex> client_lock(client->mtx);
-		spdlog::debug("aftre locking client lock. func : {}", __func__);
-		client->set_name(name);
-	}
+    // 読み取り用ロック
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
+
+    // map から ClientContext を取得
+    auto it = clients_map.find(socket);
+    if (it == clients_map.end() || !it->second.client) {
+        LOG_ERROR("Client not found for socket {}", socket);
+        return;
+    }
+
+    auto& client = it->second.client;
+
+    // client 内部の mutex をロックして名前をセット
+    spdlog::debug("before locking client lock. func : {}", __func__);
+    std::lock_guard<std::mutex> client_lock(client->mtx);
+    spdlog::debug("after locking client lock. func : {}", __func__);
+    client->set_name(name);
 	
 }
 
-void ClientHandler::set_client_mail_addr(std::string mail_addr, uint32_t list_num)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	this->connected_clients[list_num]->set_mail_address(mail_addr);
-}
-
-void ClientHandler::set_client_mail_addr(const std::shared_ptr<Client>& client, const std::string& mail_addr)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-
-	for (auto& c : connected_clients) {
-		if (c == client) {
-			c->set_mail_address(mail_addr); // クライアントのIDを更新
-			return;
-		}
-	}
-	
-}
 
 void ClientHandler::set_client_mail_addr(const socket_t socket, const std::string &mail_addr)
 {
-	std::shared_ptr<Client> client = nullptr;
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
+    LOG_TRACE;
+    spdlog::debug("before locking shared lock. func : {}", __func__);
 
-	if (client == nullptr)
-	{
-		LOG_ERROR("Client not found for socket {}", socket);
-		return;
-	}
-	{
-		spdlog::debug("before locking client lock. func : {}", __func__);
-		std::lock_guard<std::mutex> client_lock(client->mtx);
-		spdlog::debug("aftre locking client lock. func : {}", __func__);
-		client->set_mail_address(mail_addr);
-	}
-	
+    // 読み取り用ロック
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
+
+    // map から ClientContext を取得
+    auto it = clients_map.find(socket);
+    if (it == clients_map.end() || !it->second.client) {
+        LOG_ERROR("Client not found for socket {}", socket);
+        return;
+    }
+
+    auto& client = it->second.client;
+
+    // client 内部の mutex をロックしてメールアドレスをセット
+    spdlog::debug("before locking client lock. func : {}", __func__);
+    std::lock_guard<std::mutex> client_lock(client->mtx);
+    spdlog::debug("after locking client lock. func : {}", __func__);
+    client->set_mail_address(mail_addr);
+
 }
 
-void ClientHandler::set_client_password(const std::shared_ptr<Client>& client, const std::string& password)
-{
-
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-
-	for (auto& c : connected_clients) {
-		if (c == client) {
-			c->set_password(password); // クライアントのIDを更新
-			return;
-		}
-	}
-	
-}
-
-void ClientHandler::set_client_password(const socket_t socket, const std::string &password)
-{
-	std::shared_ptr<Client> client = nullptr;
-
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
-
-	if (client == nullptr)
-	{
-		LOG_ERROR("Client not found for socket {}", socket);
-		return;
-	}
-	{
-		spdlog::debug("before locking client lock. func : {}", __func__);
-		std::lock_guard<std::mutex> client_lock(client->mtx);
-		spdlog::debug("aftre locking client lock. func : {}", __func__);
-		client->set_password(password);
-	}
-	
-}
-
-
-void ClientHandler::set_client_sockaddr_in(sockaddr_in sock_in, uint32_t list_num)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	this->connected_clients[list_num]->set_sockaddr_in(sock_in);
-}
 
 void ClientHandler::set_client_sockaddr_in(const sockaddr_in sock_in, const socket_t socket)
 {
-	std::shared_ptr<Client> client = nullptr;
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
+    LOG_TRACE;
+    spdlog::debug("before locking shared lock. func : {}", __func__);
 
-	if (client == nullptr)
-	{
-		LOG_ERROR("Client not found for socket {}", socket);
-		return;
-	}
-	{
-		spdlog::debug("before locking client lock. func : {}", __func__);
-		std::lock_guard<std::mutex> client_lock(client->mtx);
-		spdlog::debug("aftre locking client lock. func : {}", __func__);
-		client->set_sockaddr_in(sock_in);
-	}
-	
+    // 読み取り用ロック
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
+
+    // map から ClientContext を取得
+    auto it = clients_map.find(socket);
+    if (it == clients_map.end() || !it->second.client) {
+        LOG_ERROR("Client not found for socket {}", socket);
+        return;
+    }
+
+    auto& client = it->second.client;
+
+    // client 内部の mutex をロックして sockaddr_in をセット
+    spdlog::debug("before locking client lock. func : {}", __func__);
+    std::lock_guard<std::mutex> client_lock(client->mtx);
+    spdlog::debug("after locking client lock. func : {}", __func__);
+    client->set_sockaddr_in(sock_in);
+
+
 }
 
 
-void ClientHandler::set_client_ipv4_addr(std::string ipv4_addr, uint32_t list_num)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	//std::unique_lock<std::mutex> lock(this->mtx);
-	this->connected_clients[list_num]->set_ipv4_address(ipv4_addr);
-}
 
 void ClientHandler::set_client_ipv4_addr(const std::string ipv4_addr, const socket_t socket)
 {
-	std::shared_ptr<Client> client = nullptr;
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
+    LOG_TRACE;
+    spdlog::debug("before locking shared lock. func : {}", __func__);
 
-	if (client == nullptr)
-	{
-		LOG_ERROR("Client not found for socket {}", socket);
-		return;
-	}
+    // 読み取り用ロック
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
 
-	{
-		spdlog::debug("before locking client lock. func : {}", __func__);
-		std::lock_guard<std::mutex> client_lock(client->mtx);
-		spdlog::debug("aftre locking client lock. func : {}", __func__);
-		client->set_ipv4_address(ipv4_addr);
-	}
+    // map から ClientContext を取得
+    auto it = clients_map.find(socket);
+    if (it == clients_map.end() || !it->second.client) {
+        LOG_ERROR("Client not found for socket {}", socket);
+        return;
+    }
+
+    auto& client = it->second.client;
+
+    // client 内部の mutex をロックして IPv4 アドレスをセット
+    spdlog::debug("before locking client lock. func : {}", __func__);
+    std::lock_guard<std::mutex> client_lock(client->mtx);
+    spdlog::debug("after locking client lock. func : {}", __func__);
+    client->set_ipv4_address(ipv4_addr);
+
 	
 }
 
@@ -630,26 +499,30 @@ void ClientHandler::set_client_ipv4_addr(const std::string ipv4_addr, const sock
 
 std::shared_ptr<Client> ClientHandler::get_client_by_cid(const std::string& cid)
 {
-	LOG_TRACE;	
-	if (cid.empty()) {
+	LOG_TRACE;
+
+	if (cid.empty())
+	{
 		LOG_ERROR("Client ID is empty.");
 		return nullptr;
 	}
+
 	LOG_TRACE;
 	spdlog::debug("before locking shared lock. func : {}", __func__);
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
-	if (connected_clients.empty()) {
-		return nullptr;
-	}
 
-	for (auto& client : connected_clients) {
-		if (client != nullptr && client->get_id() == cid) {
-			return client;
+	// clients_map をループして CID を検索
+	for (const auto &[sock, ctx] : clients_map)
+	{
+		if (ctx.client && ctx.client->get_id() == cid)
+		{
+			return ctx.client; // 見つかった場合は shared_ptr<Client> を返す
 		}
 	}
+
 	LOG_ERROR("Client with ID {:s} not found.", cid);
-	return nullptr; // クライアントが見つからない場合はnullptrを返す
+	return nullptr; // 見つからなければ nullptr
 }
 
 
@@ -658,45 +531,30 @@ std::shared_ptr<Client> ClientHandler::get_client_by_cid(const std::string& cid)
 size_t ClientHandler::get_connect_clients_num() const
 {
 	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	return this->connected_clients.size();
+    spdlog::debug("before locking shared lock. func : {}", __func__);
+
+    // 読み取り用ロック
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
+
+    return clients_map.size();
 }
 
-std::vector<std::shared_ptr<Client>>& ClientHandler::get_connected_client_list()
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	return this->connected_clients;
-}
+// const std::vector<socket_t> ClientHandler::get_all_connected_sockets() const
+// {
+// 	LOG_TRACE;
+// 	spdlog::debug("before locking shared lock. func : {}", __func__);
+// 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+// 	spdlog::debug("after locking shared lock. func : {}", __func__);
+// 	std::vector<socket_t> socket_list;  
+//     for (const auto& client : connected_clients) {  
+//         if (client != nullptr && client->get_socket() != INVALID_SOCKET_FD) {
+//             socket_list.push_back(client->get_socket());
+//         }  
+//     }  
 
-const std::vector<std::shared_ptr<Client>>& ClientHandler::get_connected_client_list() const
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	return this->connected_clients;
-}
-
-const std::vector<socket_t> ClientHandler::get_all_connected_sockets() const  
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	std::vector<socket_t> socket_list;  
-    for (const auto& client : connected_clients) {  
-        if (client != nullptr && client->get_socket() != INVALID_SOCKET_FD) {
-            socket_list.push_back(client->get_socket());
-        }  
-    }  
-
-    return socket_list;  
-}
+//     return socket_list;  
+// }
 
 const Client& ClientHandler::get_init_client()
 {
@@ -741,50 +599,46 @@ void ClientHandler::incliment_heart_beat_count(const socket_t socket)
 	client->incliment_heart_beat_count();
 }
 
-void ClientHandler::clear_heart_beat_count(uint32_t list_num)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	if(list_num < 0 || list_num >= this->connected_clients.size()) {
-		LOG_ERROR("Invalid list_num: {:d}", list_num);
-		return;
-	}
-	this->connected_clients[list_num]->clear_heart_beat_count();
-}
 
 void ClientHandler::clear_heart_beat_count(const socket_t socket)
 {
-	std::shared_ptr<Client> client = nullptr;
 	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	client = this->get_client_by_socket(socket);
+    spdlog::debug("before locking shared lock. func : {}", __func__);
 
-	if (client == nullptr)
-	{
-		LOG_ERROR("Client not found for socket {}", socket);
-		return;
-	}
-	client->clear_heart_beat_count();
+    // 読み取り用ロック
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
+
+    // map から ClientContext を取得
+    auto it = clients_map.find(socket);
+    if (it == clients_map.end() || !it->second.client) {
+        LOG_ERROR("Client not found for socket {}", socket);
+        return;
+    }
+
+    auto& client = it->second.client;
+    client->clear_heart_beat_count();
 }
 
 void ClientHandler::all_clear_heart_beat_count()
 {
 	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	if(this->connected_clients.size() == 0){
-		return;
-	}
-	for (auto& client : connected_clients) {
-		if (client != nullptr) {
-			client->clear_heart_beat_count();
-		}
-	}
+    spdlog::debug("before locking shared lock. func : {}", __func__);
+
+    // 読み取り用ロック
+    std::shared_lock<std::shared_mutex> lock(shared_mtx);
+    spdlog::debug("after locking shared lock. func : {}", __func__);
+
+    if (clients_map.empty()) {
+        return;
+    }
+
+    for (auto& [sock, ctx] : clients_map) {
+        auto& client = ctx.client;
+        if (client) {
+            client->clear_heart_beat_count();
+        }
+    }
 }
 
 void ClientHandler::set_conncet_status(const socket_t socket, Client::ConnectState status)
@@ -830,80 +684,31 @@ void ClientHandler::set_authentication_info(const socket_t socket, const std::st
 		client->set_mail_address(mail_addr);
 	}
 }
-bool ClientHandler::add_client(std::shared_ptr<Client> client)
-{  
-    LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-    try  
-    {  
-        if (this->connected_clients.size() >= MAX_CONNECT_NUM) {  
-            THROW_APP_EXCEPTION("The maximum number of client connections has been reached and the connection will be abandoned");  
-        }  
-		this->connected_clients.push_back(std::move(client));
-		return true;  
-    }  
-    catch (const exception::ExceptionBase& ex)  
-    {  
-        LOG_ERROR(ex.what_for_str());  
-        return false;  
-    }  
-}
 
-
-void ClientHandler::delete_client(const uint32_t delete_num)
+bool ClientHandler::add_client(const socket_t socket, SSL *ssl, std::shared_ptr<Client> client)
 {
 	LOG_TRACE;
 	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
 	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	if (!this->connected_clients.empty() && delete_num >= 0 && delete_num < this->get_connect_clients_num() ){
-		auto it = this->connected_clients.begin() + delete_num;
-		this->connected_clients.erase(it);
+	try
+	{
+		if (clients_map.size() >= MAX_CONNECT_NUM)
+		{
+			throw std::runtime_error("The maximum number of client connections has been reached and the connection will be abandoned.");
+		}
+
+		// map に追加
+		this->clients_map[socket] = ClientContext{client, socket, ssl};
+		return true;
 	}
-	else {
-		LOG_ERROR("Invalid delete_num: {:d}", delete_num);
+	catch (const std::exception &e)
+	{
+		LOG_ERROR("Runtime Error: {}", e.what());
+		return false;
 	}
 }
 
-void ClientHandler::delete_client(std::vector<std::shared_ptr<Client>>::iterator it)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	if (this->connected_clients.empty() == true) {
-		LOG_ERROR("Client list is empty.");
-		return;
-	}
-	else {
-		this->connected_clients.erase(it);
-	}
-}
-
-void ClientHandler::delete_client(const std::shared_ptr<Client> client)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
-	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
-	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	if (this->connected_clients.empty()) {
-		LOG_ERROR("Client list is empty.");
-		return;
-	}
-	auto it = std::find_if(this->connected_clients.begin(), this->connected_clients.end(),
-		[&](const std::shared_ptr<Client>& c) {
-			return c && c->get_id() == client->get_id();
-		});
-	if (it != this->connected_clients.end()) {
-		spdlog::info("Deleted Client(ID : {}).", client->get_id());
-		this->connected_clients.erase(it);
-	}
-	else {
-		LOG_ERROR("Client(ID : {}) not found in connected_clients.", client->get_id());
-	}
-}
 
 void ClientHandler::delete_client(const socket_t socket)
 {
@@ -911,65 +716,44 @@ void ClientHandler::delete_client(const socket_t socket)
 	spdlog::debug("before locking unique_lock(shared). func : {}", __func__);
 	std::unique_lock<std::shared_mutex> lock(shared_mtx);  // 書き込み用ロック
 	spdlog::debug("after locking unique_lock(shared). func : {}", __func__);
-	auto it = std::find_if(this->connected_clients.begin(), this->connected_clients.end(),
-		[&](const std::shared_ptr<Client>& c) {
-			return c && c->get_socket() == socket;
-		});
-	if (it != this->connected_clients.end()) {
-	    if (*it) {
-            spdlog::info("Deleted Client (ID: {}).", (*it)->get_id());
-        } else {
-            spdlog::info("Deleted nullptr Client.");
+
+	auto it = clients_map.find(socket);
+	if (it != clients_map.end())
+	{
+		// 削除前にログ出力
+		if (it->second.client)
+		{
+			spdlog::info("Deleted Client (ID: {}).", it->second.client->get_id());
+		}
+		else
+		{
+			spdlog::info("Deleted nullptr Client.");
+		}
+
+		clients_map.erase(it); // map から削除
+	}
+	else
+	{
+		LOG_ERROR("Client(socket: {}) not found in clients_map.", socket);
+	}
+}
+
+std::shared_ptr<Client> ClientHandler::search_cid_from_clients(const std::string& search_client_id) const
+{
+	LOG_TRACE;
+	spdlog::debug("before locking shared lock. func : {}", __func__);
+	std::shared_lock<std::shared_mutex> lock(shared_mtx);
+	spdlog::debug("after locking shared lock. func : {}", __func__);
+
+	for (const auto& [sock, ctx] : clients_map) {
+        if (ctx.client && ctx.client->get_id() == search_client_id) {
+            return ctx.client; // 見つかった場合は shared_ptr<Client> を返す
         }
-        this->connected_clients.erase(it);
-	}else {
-		LOG_ERROR("Client(ID : {}) not found in connected_clients.", (*it)->get_id());
-	}
-}
+    }
 
-int ClientHandler::search_cid_from_clients(const std::string& search_client_id)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
-
-		if (this->connected_clients[search_result]->get_id() == search_client_id) {
-			return search_result;
-		}
-	}
-	
-	return NOT_EXIST_CLIENT_ID;
-}
-
-int ClientHandler::search_socket_from_clients(const socket_t search_socket)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
-		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->get_socket() == search_socket) {
-			return search_result;
-		}
-	}
-	return -1;
-}
-
-SSL* ClientHandler::search_client_ssl_from_clients(const std::string& cid)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	for (int search_result = 0; search_result < this->connected_clients.size(); search_result++) {
-		if (this->connected_clients[search_result] != nullptr && this->connected_clients[search_result]->get_id() == cid) {
-			return this->connected_clients[search_result]->get_ssl();
-		}
-	}
 	return nullptr;
 }
+
 
 void ClientHandler::show_client_info(const std::shared_ptr<Client>& client)
 {
@@ -984,42 +768,34 @@ void ClientHandler::show_client_info(const std::shared_ptr<Client>& client)
 	spdlog::debug("Client  Password : {:s}", client->get_password());
 }
 
-std::vector<SSL*> ClientHandler::get_client_ssl_list(const std::vector<std::shared_ptr<Client>> clients)
-{
-	LOG_TRACE;
-	spdlog::debug("before locking shared lock. func : {}", __func__);
-	std::shared_lock<std::shared_mutex> lock(shared_mtx);
-	spdlog::debug("after locking shared lock. func : {}", __func__);
-	std::vector<SSL*> client_ssl_list;
-	for (const auto& client : clients) {
-		if (client != nullptr && client->get_ssl() != nullptr) {
-			client_ssl_list.push_back(client->get_ssl());
-		}
-	}
-	return client_ssl_list;
-}
 
 std::vector<socket_t> ClientHandler::monitor_heartbeat()
 {
+
 	LOG_TRACE;
-    std::vector<socket_t> unresponsive_sockets;
+	std::vector<socket_t> unresponsive_sockets;
 
-
-    spdlog::debug("before locking shared lock. func : {}", __func__);
+	spdlog::debug("before locking shared lock. func : {}", __func__);
 	std::shared_lock<std::shared_mutex> lock(shared_mtx);
 	spdlog::debug("after locking shared lock. func : {}", __func__);
 
-	if(connected_clients.size() == 0){
-		return std::vector<socket_t>();
+	if (clients_map.empty())
+	{
+		return unresponsive_sockets;
 	}
-    for (const auto& client : connected_clients)
-    {
-        if (client != nullptr && client->get_heart_beat_count() == 0)
-        {
-            unresponsive_sockets.push_back(client->get_socket());
 
-        }
-    }
+	for (auto &[sock, ctx] : clients_map)
+	{
+		auto &client = ctx.client;
+		if (client)
+		{
+			if (client->get_heart_beat_count() == 0)
+			{
+				unresponsive_sockets.push_back(sock);
+			}
+		}
+	}
+
 	return unresponsive_sockets;
 }
 

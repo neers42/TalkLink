@@ -91,13 +91,34 @@ void ChatServerFacade::run()
 		_socket_handler->monitor_socket_descriptor([this](socket_t changed_socket)
 												   { allocate_process(changed_socket); });
 #elif defined(USE_SELECT)
+		// auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
+		// this->_socket_handler->initialize_select_param();
+		// this->prepare_client_fd_set();
+		// std::vector<socket_t> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
+		// _socket_handler->monitor_socket_descriptor(changed_client_sockets,
+		// 										   [this](socket_t changed_socket)
+		// 										   { allocate_process(changed_socket); });
+		// std::this_thread::sleep_until(abs_time);
+
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
 		this->_socket_handler->initialize_select_param();
 		this->prepare_client_fd_set();
-		std::vector<socket_t> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
-		_socket_handler->monitor_socket_descriptor(changed_client_sockets,
-												   [this](socket_t changed_socket)
-												   { allocate_process(changed_socket); });
+
+		// vector を使わず map を直接ループ
+		{
+			std::shared_lock<std::shared_mutex> lock(this->_client_handler->shared_mtx);
+			for (const auto &[sock, ctx] : this->_client_handler->clients_map)
+			{
+				auto &client = ctx.client;
+				if (client && client->get_socket() != INVALID_SOCKET_FD)
+				{
+					_socket_handler->monitor_socket_descriptor({client->get_socket()},
+															   [this](socket_t changed_socket)
+															   { allocate_process(changed_socket); });
+				}
+			}
+		}
+
 		std::this_thread::sleep_until(abs_time);
 #endif
 	}
@@ -190,7 +211,7 @@ bool ChatServerFacade::accept_client_socket_process()
 	// 新規クライアントのインスタンスを生成
 	auto new_client = std::make_unique<Client>(new_client_socket, new_client_sockaddr_in, new_client_socklen_t, new_client_ipv4_addr, new_client_ssl);
 	spdlog::info("client ip : {:s} , success, server accept client(socket:{:d}).", new_client->get_ipv4_address(), new_client->get_socket());
-	if (_client_handler->add_client(std::move(new_client)) == true)
+	if (_client_handler->add_client(new_client_socket, new_client_ssl, std::move(new_client)) == true)
 	{
 #ifdef USE_POLL
 		//アクセプトしたクライアントの通知を検知できるようにepollの設定を実施
@@ -856,14 +877,16 @@ void ChatServerFacade::heartbeat_check_process()
 void ChatServerFacade::prepare_client_fd_set()
 {
 	auto clients_snapshot = this->_client_handler->get_connected_clients_snapshot();
-	for (auto &client : clients_snapshot)
+
+	for (auto &[socket_fd, ctx] : clients_snapshot)
 	{
-		// 有効なソケットにFDSETを実行する
-		if (client != nullptr && client->get_socket() != INVALID_SOCKET_FD)
+		auto &client = ctx.client;
+		if (client && client->get_socket() != INVALID_SOCKET_FD)
 		{
 			FD_SET(client->get_socket(), &_socket_handler->get_fd_read());
 		}
 	}
+
 	this->_socket_handler->copy_fd_read_to_fds(&(_socket_handler->get_fds()), &(_socket_handler->get_fd_read()));
 }
 

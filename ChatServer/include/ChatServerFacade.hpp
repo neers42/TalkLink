@@ -129,9 +129,9 @@ private:
 
 				for (const auto &cid : send_cids)
 				{
-					int receiver_list_num = this->_client_handler->search_cid_from_clients(cid);
+					auto search_client = this->_client_handler->search_cid_from_clients(cid);
 					// 接続しているクライアントリストに送信先のクライアントが存在しない場合
-					if (receiver_list_num == NOT_EXIST_CLIENT_ID)
+					if (search_client != nullptr)
 					{
 						unsend_cids.push_back(cid);
 						continue;
@@ -176,8 +176,8 @@ private:
 			{
 				for (const auto &receiver_cid : receivers_cids)
 				{
-					int receiver_list_num = this->_client_handler->search_cid_from_clients(receiver_cid);
-					if (receiver_list_num == NOT_EXIST_CLIENT_ID)
+					auto receiver = this->_client_handler->search_cid_from_clients(receiver_cid);
+					if (receiver == nullptr)
 					{
 						// データベースにcidが存在するか確認
 						if (!this->_mysql_client->is_client_id_exist(receiver_cid))

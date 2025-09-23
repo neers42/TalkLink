@@ -12,10 +12,6 @@ BaseMessage::BaseMessage(ContentType c_type, const std::string& mt)
 	if (mt.empty()) {
 		throw std::invalid_argument("Message Type is empty.");
 	}
-
-	//if (mt.size() != 3 || mt.size() != 4) {
-	//	throw std::invalid_argument("Message Type is not 3 byte.");
-	//}
 }
 
 BaseMessage::BaseMessage(int c_type, const std::string& mt)
@@ -107,7 +103,7 @@ bool BaseMessage::is_valid()
 void BaseMessage::print_received_message_info(const json& recv_json, const std::string& ip_addr)
 {
 	std::string mt = recv_json["message_type"];
-	spdlog::info("\033[33mMT{:s}\033[m receive, server received message from client(IP : {:s})", mt, ip_addr);
+	spdlog::info("\033[33mMT : {}\033[m receive, server received message from client(IP : {:s})", mt, ip_addr);
 	spdlog::debug("Recevive JSON DATA (MT{:s}): {:s}", mt, recv_json.dump(4));
 }
 
@@ -140,8 +136,8 @@ BaseMessage::ContentType BaseMessage::exchange_content_type_from_int(int value)
 bool BaseMessage::is_valid_mesasge_type(const std::string& mt)
 {
 	//Messagge_typeが3byteではない場合
-	if (mt.size() != 3) {
-		LOG_ERROR("Message Type is invalid. Message Type byte size : {:d}", mt.size());
+	if (mt.size() == 0) {
+		LOG_ERROR("Message Type is invalid. Message Type byte size : {}", mt.size());
 		return false;
 	}
 	return true;
