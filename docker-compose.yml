@@ -58,6 +58,11 @@ services:
       DB_NAME: ${MYSQL_DATABASE}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      TZ: Asia/Tokyo
+    
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
 
     networks:
       - mychat-net
@@ -77,6 +82,10 @@ services:
     environment:
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+      TZ: Asia/Tokyo
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - mychat-net
 

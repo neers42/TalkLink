@@ -258,7 +258,7 @@ void ChatServerFacade::message_handle_process(const socket_t socket)
 		// クライアントの切断を検知した場合
 		else
 		{
-			spdlog::info("client(ip:{:s}, client id:{:s}) is disconnected, server initialize client info.", _client_handler->get_client_ipv4_address(socket), _client_handler->get_client_id(socket));
+			spdlog::info("client(ip:{:s}, client id:{:s}) disconnection detected.", _client_handler->get_client_ipv4_address(socket), _client_handler->get_client_id(socket));
 			this->handle_disconnect_process(socket);
 			return;
 		}

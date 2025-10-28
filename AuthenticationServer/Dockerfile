@@ -35,17 +35,23 @@ FROM ubuntu:22.04
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    libssl3 \
-    libpq-dev \
-    libcurl4 \
-    dbus \
-    ca-certificates \
-    python3 \
-    python3-pip \
-    python3-cryptography \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+ENV TZ=Asia/Tokyo
+RUN apt-get update && \
+    apt-get install -y tzdata && \
+    ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && \
+    echo "Asia/Tokyo" > /etc/timezone && \
+    DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata && \
+    apt-get install -y \
+        libssl3 \
+        libpq-dev \
+        libcurl4 \
+        dbus \
+        ca-certificates \
+        python3 \
+        python3-pip \
+        python3-cryptography \
+        curl && \
+    rm -rf /var/lib/apt/lists/*
 
 # ビルド成果物と必要ファイルコピー
 COPY --from=builder /app/build/bin/AuthenticationServer ./AuthenticationServer/bin/AuthenticationServer

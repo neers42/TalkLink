@@ -1051,7 +1051,7 @@ void SocketHandler::close_socket(const socket_t client_socket)
 		}
 		else
 		{
-			spdlog::debug("client socket({}) is closed.", client_socket);
+			spdlog::debug("client socket({}) closure complete!!", client_socket);
 		}
 	}
 	catch (const std::runtime_error &e)

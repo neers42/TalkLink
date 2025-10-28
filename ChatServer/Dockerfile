@@ -39,16 +39,22 @@ FROM ubuntu:22.04
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    libhiredis-dev \
-    libssl3 \
-    libglib2.0-0 \
-    libsecret-1-0 \
-    libcurl4 \
-    dbus \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+ENV TZ=Asia/Tokyo
+RUN apt-get update && \
+    apt-get install -y tzdata && \
+    ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && \
+    echo "Asia/Tokyo" > /etc/timezone && \
+    DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata && \
+    apt-get install -y \
+        libpq-dev \
+        libhiredis-dev \
+        libssl3 \
+        libglib2.0-0 \
+        libsecret-1-0 \
+        libcurl4 \
+        dbus \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # ビルド成果物と必要ファイルコピー
 COPY --from=builder /app/build/bin/ChatServer ./ChatServer/bin/ChatServer
