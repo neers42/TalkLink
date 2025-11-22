@@ -1,17 +1,28 @@
 ﻿#include "Messages/ChatAckMessage.hpp"
 
+ChatAckMessage::ChatAckMessage() 
+{
 
+}
+ChatAckMessage::ChatAckMessage(
+	MessageBase::ContentType c_type, 
+	const std::string &mt, 
+	const uint64_t _send_mid, 
+	const MessageSendStatus status, 
+	const std::string &room_id, 
+	const std::vector<std::string> &_unsend_cid_list)
+	: MessageBase(c_type, mt, _send_mid),
+	 _send_status(status), _room_id(room_id), _unsend_cid_list(_unsend_cid_list)
+{
+}
 ChatAckMessage::ChatAckMessage(int c_type,
-	const std::string& mt,
+	const std::string &mt, 
+	const uint64_t _send_mid, 
 	const MessageSendStatus status,
-	const std::string& room_id,
-	const uint64_t _send_mid,
-	const std::vector<std::string>& _unsend_cids)
-	:BaseMessage(exchange_content_type_from_int(c_type), mt),
-	_send_status(status),
-	_room_id(room_id),
-	_send_message_id(_send_mid),
-	_unsend_cid_list(_unsend_cids)
+	const std::string &room_id, 
+	const std::vector<std::string> &_unsend_cids)
+    : MessageBase(static_cast<MessageBase::ContentType>(c_type), mt, _send_mid),
+	 _send_status(status), _room_id(room_id), _unsend_cid_list(_unsend_cids)
 {
 }
 
@@ -19,7 +30,7 @@ ChatAckMessage::~ChatAckMessage()
 {
 }
 
-int ChatAckMessage::get_status() const
+int ChatAckMessage::get_send_status() const
 {
 	switch (this->_send_status)
 	{
@@ -38,7 +49,7 @@ int ChatAckMessage::get_status() const
 	}
 }
 
-void ChatAckMessage::set_status(const int status)
+void ChatAckMessage::set_send_status(const int status)
 {
 	switch (status)
 	{
@@ -60,7 +71,6 @@ void ChatAckMessage::set_status(const int status)
 
 std::string ChatAckMessage::get_room_id() const
 {
-	// TODO: return ステートメントをここに挿入します
 	return this->_room_id;
 }
 
@@ -69,26 +79,16 @@ void ChatAckMessage::set_room_id(const std::string& room_id)
 	this->_room_id = room_id;
 }
 
-uint64_t ChatAckMessage::get_send_message_id() const
-{
-	return this->_send_message_id;
-}
 
-void ChatAckMessage::set_send_message_id(const uint64_t send_mid)
-{
-	this->_send_message_id = send_mid;
-}
 
-json ChatAckMessage::deserialize_message(const std::unique_ptr<ChatAckMessage>& chatAckMessageRef)
+json ChatAckMessage::serialize_specific_message_fields() const
 {
 	json chat_ack_message, unsend_cids = json::array();
 	try
 	{
-		
-		if (chatAckMessageRef != nullptr) {
-			chat_ack_message["content_type"] = "NOTIFICATION";
-			chat_ack_message["message_type"] = chatAckMessageRef->_message_type;	
-			switch (chatAckMessageRef->_send_status)
+		if (validate_specific_message_fields() != false) {
+
+			switch (this->_send_status)
 			{
 			case ChatAckMessage::MessageSendStatus::SEND_SUCCESS:
 				chat_ack_message["send_status"] = "SEND_SUCCESS";
@@ -103,24 +103,44 @@ json ChatAckMessage::deserialize_message(const std::unique_ptr<ChatAckMessage>& 
 				chat_ack_message["send_status"] = "SEND_FAILED";
 				break;
 			}
-			chat_ack_message["room_id"] = chatAckMessageRef->get_room_id();
-			chat_ack_message["send_message_id"] = chatAckMessageRef->get_send_message_id();
-			if (chatAckMessageRef->_unsend_cid_list.size() > 0) {
-				chat_ack_message["unsend_cid_list"] = chatAckMessageRef->_unsend_cid_list;
+			chat_ack_message["room_id"] = this->get_room_id();
+			if (this->_unsend_cid_list.size() > 0) {
+				chat_ack_message["unsend_cid_list"] = this->_unsend_cid_list;
 			}
 			else {
 				chat_ack_message["unsend_cid_list"] = json::array();
 			}
 		}
 		else {
-			throw std::runtime_error("ChatAckMessage is null");
+			throw std::runtime_error("ChatAckMessage specific fields validation failed during serialization.");
 		}
 		
+	}catch (const std::runtime_error& re)
+	{
+		LOG_ERROR("Runtime error serializing ChatAckMessage: {}.", re.what());
+		return json();
 	}
 	catch (const std::exception& e)
 	{
 		LOG_ERROR("Error deserializing ChatAckMessage: {}.", e.what());
+		return json();
 	}
 
 	return chat_ack_message;
+}
+
+bool ChatAckMessage::validate_specific_message_fields() const
+{
+	try
+	{
+		if(this->_room_id.empty()){
+			throw std::runtime_error("Invalid ChatAckMessage: room_id is empty.");
+		}
+		return true;
+	}
+	catch(const std::exception& e)
+	{
+		LOG_ERROR("Error validating ChatAckMessage specific fields: {}.", e.what());
+		return false;
+	}
 }

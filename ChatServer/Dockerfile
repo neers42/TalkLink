@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y \
 COPY CMakeLists.txt ./
 COPY CommonLib ./CommonLib
 COPY ChatServer ./ChatServer
+COPY ThirdParty ./ThirdParty
 
 
 # ビルド
@@ -60,7 +61,7 @@ RUN apt-get update && \
 COPY --from=builder /app/build/bin/ChatServer ./ChatServer/bin/ChatServer
 COPY ChatServer/conf ./ChatServer/conf
 COPY ChatServer/certs ./ChatServer/certs
-COPY CommonLib/external_lib/lib/mysql-connector-c++-9.1.0/linux/lib64/libmysqlcppconn.so.10 /usr/local/lib/libmysqlcppconn.so.10
+COPY ThirdParty/lib/mysql-connector-c++-9.1.0/linux/lib64/libmysqlcppconn.so.10 /usr/local/lib/libmysqlcppconn.so.10
 
 # certs ディレクトリの確認用ログを出すようにしてもよい
 RUN ls -l ./ChatServer/certs

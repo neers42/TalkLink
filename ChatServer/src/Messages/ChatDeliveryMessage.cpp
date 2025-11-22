@@ -1,26 +1,40 @@
 ﻿#include "Messages/ChatDeliveryMessage.hpp"
 
+ChatDeliveryMessage::ChatDeliveryMessage() 
+{
+
+} 
+ChatDeliveryMessage::ChatDeliveryMessage(
+    int c_type,
+    const std::string &mt,
+    const std::string &room_id,
+    const std::string &sender_cid,
+    const uint64_t send_message_id,
+    const std::string &send_time,
+    const std::string &content)
+    : MessageBase(static_cast<ContentType>(c_type), mt, send_message_id, send_time),
+      _room_id(room_id),
+      _sender_cid(sender_cid),
+      _content(content)
+{
+	if (room_id.empty() || sender_cid.empty() || content.empty()) {
+		throw std::invalid_argument("Invalid argument: room_id, sender_cid, and content cannot be empty");
+	}
+}
 
 ChatDeliveryMessage::ChatDeliveryMessage(
-	int c_type,
-	const std::string& mt,
-	const std::string& room_id,
-	const std::string& sender_cid,
-	const uint64_t send_message_id,
-	const std::string& send_time,
-	const std::string& content)
-	:BaseMessage(exchange_content_type_from_int(c_type), mt),
-	_room_id(room_id),
-	_sender_cid(sender_cid),
-	_send_message_id(send_message_id),
-	_content(content),
-	_send_time(send_time)
+	MessageBase::ContentType c_type, 
+	const std::string &mt, 
+	const std::string &room_id, 
+	const std::string &sender_id, 
+	const uint64_t send_message_id, 
+	const std::string &send_time, 
+	const std::string &content)
+	: MessageBase(c_type, mt, send_message_id, send_time),
+	  _room_id(room_id),
+	  _sender_cid(sender_id),
+	  _content(content)
 {
-	if (room_id.empty() || sender_cid.empty() || content.empty() || send_time.empty()) {
-		throw std::invalid_argument("Invalid argument: room_id, sender_cid, content, and send_time cannot be empty");
-	}
-	
-
 }
 
 ChatDeliveryMessage::~ChatDeliveryMessage()
@@ -37,15 +51,6 @@ std::string ChatDeliveryMessage::get_sender_cid() const
 	return this->_sender_cid;
 }
 
-uint64_t ChatDeliveryMessage::get_send_message_id() const
-{
-	return this->_send_message_id;
-}
-
-std::string ChatDeliveryMessage::get_send_time() const
-{
-	return this->_send_time;
-}
 
 std::string ChatDeliveryMessage::get_content() const
 {
@@ -62,45 +67,64 @@ void ChatDeliveryMessage::set_sender_cid(const std::string& sender_cid)
 	this->_sender_cid = sender_cid;
 }
 
-void ChatDeliveryMessage::set_send_message_id(const uint64_t send_message_id)
-{
-	this->_send_message_id = send_message_id;
-}
-
-void ChatDeliveryMessage::set_send_time(const std::string& send_time)
-{
-	this->_send_time = send_time;
-}
-
-void ChatDeliveryMessage::content(const std::string& content)
+void ChatDeliveryMessage::set_content(const std::string& content)
 {
 	this->_content = content;
 }
 
-json ChatDeliveryMessage::deserialize_message(const std::unique_ptr<ChatDeliveryMessage>& chat_delivery_message)
+json ChatDeliveryMessage::serialize_specific_message_fields() const
 {
-	json chat_delivery_json;
+	json specific_fields;
 	try
 	{
-		if (chat_delivery_message != nullptr) {
-			chat_delivery_json["content_type"] = "TEXT";
-			chat_delivery_json["message_type"] = chat_delivery_message->_message_type;
-			chat_delivery_json["message_id"] = chat_delivery_message->_send_message_id;
-			chat_delivery_json["room_id"] = chat_delivery_message->_room_id;
-			chat_delivery_json["sender_cid"] = chat_delivery_message->_sender_cid;
-			chat_delivery_json["content"] = chat_delivery_message->_content;
-			chat_delivery_json["send_time"] = chat_delivery_message->_send_time;
-			
-			return chat_delivery_json;
+		if (validate_specific_message_fields() == false)
+		{
+			specific_fields["room_id"] = this->_room_id;
+			specific_fields["sender_cid"] = this->_sender_cid;
+			specific_fields["content"] = this->_content;
+			return specific_fields;
 		}
 		else {
-			throw std::runtime_error("ChatDeliveryMessage is null");
+			throw std::runtime_error("ChatDeliveryMessage specific fields validation failed during serialization.");
 		}
 		
 	}
+	catch(const std::runtime_error& re)
+	{
+		LOG_ERROR("Runtime error serializing ChatDeliveryMessage: {}", re.what());
+		return json();
+	}
 	catch (const std::exception& e)
 	{
-		LOG_ERROR("Error deserializing ChatDeliveryMessage: {}", e.what());
-		return nullptr;
+		LOG_ERROR("Error serializing ChatDeliveryMessage: {}", e.what());
+		return json();
 	}
 }
+
+bool ChatDeliveryMessage::validate_specific_message_fields() const
+{
+	try
+	{
+		if (this->_room_id.empty()) {
+			throw std::runtime_error("Invalid ChatDeliveryMessage: room_id is empty.");
+		}
+		if (this->_sender_cid.empty()) {
+			throw std::runtime_error("Invalid ChatDeliveryMessage: sender_cid is empty.");
+		}
+		if (this->_content.empty()) {
+			throw std::runtime_error("Invalid ChatDeliveryMessage: content is empty.");
+		}
+		return true;
+	}
+	catch(const std::runtime_error& re)
+	{
+		LOG_ERROR("Runtime error validating ChatDeliveryMessage specific fields: {}", re.what());
+		return false;
+	}
+	catch(const std::exception& e)
+	{
+		LOG_ERROR("Error validating ChatDeliveryMessage specific fields: {}", e.what());
+		return false;
+	}
+}
+

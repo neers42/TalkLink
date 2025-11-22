@@ -1,3 +1,7 @@
+#-----------------------------------------
+# ChatServer CMakeLists.txt
+#-----------------------------------------
+
 # ChatServerのソースコードを集める
 file(GLOB_RECURSE CHATSERVER_SRC
     src/*.cpp

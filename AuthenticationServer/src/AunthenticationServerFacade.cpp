@@ -129,7 +129,10 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 	std::uint64_t expire = 0, ttl = 0;
 	bool disconnect_flag = false;
 	bool recv_flag = false;
+	bool verify_result = false;
 	json response;
+	json receive_json;
+	std::string message_type = "";
 
 	try
 	{
@@ -145,7 +148,8 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 		}
 
 		// メッセージの受信
-		std::tie(receive_token, disconnect_flag, recv_flag) = this->_protocol_handler->receive_message_str(client_ssl);
+		//std::tie(receive_token, disconnect_flag, recv_flag) = this->_protocol_handler->receive_message_str(client_ssl);
+		std::tie(receive_json, disconnect_flag, recv_flag) = this->_protocol_handler->receive_message_json(client_ssl);
 
 		//disconnect_flagがfalseの場合、epoll_ctrlにONESHOTを登録する。
 		if (disconnect_flag == false)
@@ -162,43 +166,43 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 			return;
 		}
 
-		if(receive_token.empty()) {
+		if(receive_json.empty() == true){
 			LOG_ERROR("Received empty message from client.");
 			return;
 		}
-
-		//検証を実施し、トークンが有効な場合の処理
-		if(this->_token_handler->verify_token(receive_token, cid, expire) == true){
-			spdlog::info("Received valid token from client(CID: {} / Expire: {}).", cid, expire);
-			if(this->_redis_client->save_session(cid, receive_token, expire, ttl) == true) {
-				//成功メッセージを送信する(statusとttlを送信する)
-				response = this->make_auth_response("ok", ttl);
-
-			} else {
-				//失敗メッセージを送信する
-				response = this->make_auth_response("error", 0);
-			}
-			//レスポンスが空の場合はエラーをログに記録し、処理を終了する
-			if(response.empty())
-			{
-				LOG_ERROR("Failed to create response for client(socket : {}).", socket);
-				return;
-			}
-			
-		} else {
-			LOG_ERROR("Invalid token received from client(socket : {}).", socket);
-			response = this->make_auth_response("error", 0);
-		}
-
-		// レスポンスをクライアントに送信する
-		if(this->_protocol_handler->send_message_json(client_ssl, response) == true)
+		// JSONメッセージの処理
+		message_type = receive_json["message_type"];
+		if (message_type == "AuthRequest")
 		{
-			spdlog::info("Sent response to client(socket : {}).", socket);
+			receive_token = receive_json["jwt"];
+			verify_result = this->verify_auth_process(receive_token, cid, expire, ttl);
+			auto response_instance = std::make_unique<AuthResponseMessage>(verify_result, expire);
+			if(response_instance == nullptr) {
+					LOG_ERROR("Failed to create AuthResponseMessage instance for failure response.");
+					return;
+			}
+			response = MessageBase::serialize_message(response_instance);
+
+			// レスポンスをクライアントに送信する
+			if (this->_protocol_handler->send_message_json(client_ssl, response) == true)
+			{
+				spdlog::info("Sent response to client(socket : {}).", socket);
+			}
+			else
+			{
+				LOG_ERROR("Failed to send response to client(socket : {}).", socket);
+			}
 		}
 		else
 		{
-			LOG_ERROR("Failed to send response to client(socket : {}).", socket);
+			LOG_ERROR("Invalid message type received: {}. Expected 'AuthRequest'.", message_type);
+			return;
 		}
+		
+	}
+	catch (const std::runtime_error &re)
+	{
+		LOG_ERROR("Runtime error: {}", re.what());
 	}
 	catch (const std::exception &e)
 	{
@@ -247,4 +251,27 @@ json AunthenticationServerFacade::make_auth_response(const std::string &status, 
 		return json();
 	}
 	return response;
+}
+
+bool AunthenticationServerFacade::verify_auth_process(const std::string &token, std::string &cid, std::uint64_t &expire, std::uint64_t& ttl)
+{
+	// 検証を実施し、トークンが有効な場合の処理
+	if (this->_token_handler->verify_token(token, cid, expire) == true)
+	{
+		if (this->_redis_client->save_session(cid, token, expire, ttl) == true)
+		{
+			spdlog::info("Session saved in Redis for CID: {} with TTL: {}.", cid, ttl);
+			return true;
+		}
+		else
+		{
+			LOG_ERROR("Failed to save session in Redis for CID: {}.", cid);
+			return false;
+		}
+	}
+	else
+	{
+		LOG_ERROR("Invalid token received from client(socket : {}).", socket);
+		return false;
+	}
 }

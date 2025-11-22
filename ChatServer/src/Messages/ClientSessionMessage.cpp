@@ -1,44 +1,45 @@
 ﻿#include "Messages/ClientSessionMessage.hpp"
 
-ClientSessionMessage::ClientSessionMessage(SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
-    :_sign_type{s_type},
-    _jwt_token{jwt_token},
-    _client_name{name},
-    _client_mail_addr{mail_addr},
-    _last_received_message_id{last_received_message_id}
+ClientSessionMessage::ClientSessionMessage(){}
+ClientSessionMessage::ClientSessionMessage(SignType s_type, const std::string &jwt, const std::string &name, const std::string &mail_addr, const uint64_t last_received_message_id)    
+    : _sign_type{s_type},
+      _jwt{jwt},
+      _client_name{name},
+      _client_mail_addr{mail_addr},
+      _last_received_message_id{last_received_message_id}
 {
 }
 
-ClientSessionMessage::ClientSessionMessage(int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
+ClientSessionMessage::ClientSessionMessage(int s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
     :_sign_type{exchange_sign_type_from_int(s_type)},
-    _jwt_token{jwt_token},
+    _jwt{jwt},
     _client_name{name},
     _client_mail_addr{mail_addr},
     _last_received_message_id{last_received_message_id}
 {
 }
-ClientSessionMessage::ClientSessionMessage(ContentType c_type, const std::string& mt, SignType s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
-    :BaseMessage(c_type, mt),
+ClientSessionMessage::ClientSessionMessage(ContentType c_type, const std::string& mt, SignType s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
+    :MessageBase(c_type, mt),
     _sign_type{ s_type },
-    _jwt_token{ jwt_token },
+    _jwt{ jwt },
     _client_name{ name },
     _client_mail_addr{ mail_addr },
     _last_received_message_id{ last_received_message_id }
 {
 }
-ClientSessionMessage::ClientSessionMessage(int c_type, const std::string& mt, int s_type, const std::string& jwt_token, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
-    :BaseMessage(c_type, mt),
+ClientSessionMessage::ClientSessionMessage(int c_type, const std::string& mt, int s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id)
+    :MessageBase(c_type, mt),
     _sign_type{ this->exchange_sign_type_from_int(s_type)},
-    _jwt_token{ jwt_token },
+    _jwt{ jwt },
     _client_name{name},
     _client_mail_addr{mail_addr},
     _last_received_message_id{last_received_message_id}
 {
 }
+
 ClientSessionMessage::~ClientSessionMessage()
 {
 }
-
 
 ClientSessionMessage::SignType ClientSessionMessage::get_sign_type() const
 {
@@ -88,13 +89,13 @@ void ClientSessionMessage::set_sign_type(int s_type)
     }
 }
 
-std::string ClientSessionMessage::get_jwt_token() const
+std::string ClientSessionMessage::get_jwt() const
 {
-    return this->_jwt_token;
+    return this->_jwt;
 }
-void ClientSessionMessage::set_jwt_token(const std::string &jwt_token)
+void ClientSessionMessage::set_jwt(const std::string &jwt)
 {
-    this->_jwt_token = jwt_token;
+    this->_jwt = jwt;
 }
 
 std::string ClientSessionMessage::get_client_name() const
@@ -125,58 +126,61 @@ void ClientSessionMessage::set_last_received_message_id(uint64_t last_received_m
 {
     this->_last_received_message_id = last_received_message_id;
 }
-bool ClientSessionMessage::is_valid()
+bool ClientSessionMessage::validate_specific_fields(const json& message) const
 {
-    if (is_valid_jwt_token(this->_jwt_token) == true &&
-        is_valid_name(this->_client_name) == true &&
-        is_valid_mail_addr(this->_client_mail_addr) == true) {
-        return true;
-    }
-    else
+    try
     {
-        return false;
-    }
-}
-
-std::unique_ptr<ClientSessionMessage> ClientSessionMessage::serialize_message(const json& json_message)
-{
-    try {
         // 1. 必須キーがすべて存在するかチェック
         static const std::vector<std::string> required_keys = {
-            "content_type", "message_type", "sign_type",
-            "jwt_token", "name", "mail_address", "last_received_message_id"
+            "sign_type",
+            "jwt",
+            "name", 
+            "mail_address", 
+            "last_received_message_id"
         };
 
         for (const auto& key : required_keys) {
-            if (!json_message.contains(key)) {
+            if (!message.contains(key)) {
                 throw std::runtime_error("Missing key: " + key);
             }
         }
 
-        // 2. 各フィールドの型を検証しながら読み取る
-        if (!json_message["content_type"].is_string()) {
-            throw std::runtime_error("Invalid type for 'content_type'");
-        }
-        if (!json_message["message_type"].is_string()) {
-            throw std::runtime_error("Invalid type for 'message_type'");
-        }
-        if (!json_message["sign_type"].is_string()) {
+        if (!message["sign_type"].is_string()) {
 			throw std::runtime_error("Invalid type for 'sign_type'");
         }
-        if (!json_message["jwt_token"].is_string()) {
-            throw std::runtime_error("Invalid type for 'jwt_token'");
+        if (!message["jwt"].is_string()) {
+            throw std::runtime_error("Invalid type for 'jwt'");
         }
-		if (!json_message["name"].is_string()) {
+		if (!message["name"].is_string()) {
 			throw std::runtime_error("Invalid type for 'name'");
 		}
-		if (!json_message["mail_address"].is_string()) {
+		if (!message["mail_address"].is_string()) {
 			throw std::runtime_error("Invalid type for 'mail_address'");
 		}
-        if (!json_message["last_received_message_id"].is_number_unsigned()) {
+        if (!message["last_received_message_id"].is_number_unsigned()) {
             throw std::runtime_error("Invalid type for 'last_received_message_id'");
         }
-		// 3. 各フィールドを読み取る
-        std::string content_type_str = json_message["content_type"];
+    }
+    catch(const std::runtime_error& re)
+    {
+        LOG_ERROR("Runtime error : {}", re.what());
+        return false;
+    }
+    catch(const std::exception& e)
+    {
+        LOG_ERROR("Key check failed: {}", e.what());
+        return false;
+    }
+
+    return true;
+}
+
+std::unique_ptr<MessageBase> ClientSessionMessage::create_instance(const json &message) const
+{
+    try
+    {
+		// 各フィールドを読み取る
+        std::string content_type_str = message["content_type"];
 		int content_type;
 		if (content_type_str == "TEXT") {
 			content_type = 0;
@@ -193,8 +197,8 @@ std::unique_ptr<ClientSessionMessage> ClientSessionMessage::serialize_message(co
 		else {
 			throw std::runtime_error("Invalid content type");
 		}
-        std::string message_type = json_message["message_type"];
-        std::string sign_type_str = json_message["sign_type"];
+        std::string message_type = message["message_type"];
+        std::string sign_type_str = message["sign_type"];
 		int sign_type;
 		if (sign_type_str == "SIGN UP") {
 			sign_type = 0;
@@ -208,40 +212,61 @@ std::unique_ptr<ClientSessionMessage> ClientSessionMessage::serialize_message(co
 		else {
 			throw std::runtime_error("Invalid sign type");
 		}
-        std::string jwt_token = json_message["jwt_token"];
-        std::string client_name = json_message["name"];
-        std::string client_mail_addr = json_message["mail_address"];
-        uint64_t last_received_message_id = json_message["last_received_message_id"];
+        std::string jwt = message["jwt"];
+        std::string client_name = message["name"];
+        std::string client_mail_addr = message["mail_address"];
+        uint64_t last_received_message_id = message["last_received_message_id"];
 
         return std::make_unique<ClientSessionMessage>(
             content_type,
             message_type,
             sign_type,
-            jwt_token,
+            jwt,
             client_name,
             client_mail_addr,
             last_received_message_id
         );
     }
-    catch (const std::exception& e) {
-		LOG_ERROR("Error deserializing ClientSessionMessage: {}", e.what());
-        return nullptr;
+    catch(const std::runtime_error& re)
+    {
+        LOG_ERROR("Runtime error : {}", re.what());
+        return std::unique_ptr<MessageBase>();
     }
-
+    catch(const std::exception& e)
+    {
+        LOG_ERROR("Error creating ClientSessionMessage instance: {}", e.what());
+        return std::unique_ptr<MessageBase>();
+    }
+    
+    
 }
 
-bool ClientSessionMessage::is_valid_jwt_token(const std::string &jwt_token)
+
+bool ClientSessionMessage::validate_value() const
 {
-    if (jwt_token.size() > 0) {
+    if (is_valid_jwt(this->_jwt) == true &&
+        is_valid_name(this->_client_name) == true &&
+        is_valid_mail_addr(this->_client_mail_addr) == true) {
         return true;
     }
-    else {
-        LOG_ERROR("JWT token is invalid by byte size error(jwt token byte size : {:d}).", jwt_token.size());
+    else
+    {
         return false;
     }
 }
 
-bool ClientSessionMessage::is_valid_name(const std::string &name)
+bool ClientSessionMessage::is_valid_jwt(const std::string &jwt) const
+{
+    if (jwt.size() > 0) {
+        return true;
+    }
+    else {
+        LOG_ERROR("JWT is invalid by byte size error(jwt byte size : {:d}).", jwt.size());
+        return false;
+    }
+}
+
+bool ClientSessionMessage::is_valid_name(const std::string &name) const
 {
     //Client nameが0byteより大きい場合
     if (name.size() > 0) {
@@ -253,7 +278,7 @@ bool ClientSessionMessage::is_valid_name(const std::string &name)
     }
 }
 
-bool ClientSessionMessage::is_valid_mail_addr(const std::string& mail_addr)
+bool ClientSessionMessage::is_valid_mail_addr(const std::string& mail_addr) const
 {
     //Client mail addressが0byteより大きい場合
     if (mail_addr.size() > 0) {

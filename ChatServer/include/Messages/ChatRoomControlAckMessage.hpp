@@ -1,8 +1,9 @@
 ﻿#ifndef CHATROOMCONTROLACKMESSAGE_HPP
 #define CHATROOMCONTROLACKMESSAGE_HPP
-#include "BaseMessage.hpp"
+#include "MessageBase.hpp"
+#include "ISendMessage.hpp"
 class ChatRoomControlAckMessage :
-    public BaseMessage
+    public MessageBase, public ISendMessage
 {
 public:
     enum class MessageSendStatus
@@ -15,12 +16,11 @@ public:
 private:
     MessageSendStatus _send_status;
     std::string _room_id;
-    uint64_t _send_message_id;
     std::vector<std::string> _unsend_cid_list;
 
 public:
     //コンストラクタ
-    ChatRoomControlAckMessage() = delete;
+    ChatRoomControlAckMessage();
     ChatRoomControlAckMessage(
         int content_type,
         const std::string& mt,
@@ -35,10 +35,13 @@ public:
     //各種アクセッサ
 	MessageSendStatus get_send_status() const { return _send_status; }
     const std::string& get_room_id() const { return _room_id; }
-    uint64_t get_send_message_id() const { return _send_message_id; }
     const std::vector<std::string>& get_unsend_cid_list() const { return _unsend_cid_list; }
-    static json deserialize_message(const std::unique_ptr<ChatRoomControlAckMessage>& chatroom_control_ack_message);
 
+    //ISendMessageの実装
+    json serialize_specific_message_fields() const override;
+    bool validate_specific_message_fields() const override;
+private:
+    bool is_valid_room_id(const std::string& room_id) const;
 };
 
 #endif // !CHATROOMCONTROLACKMESSAGE_HPP

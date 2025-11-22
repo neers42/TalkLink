@@ -22,6 +22,7 @@
 #include <shared_mutex>
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include <tuple>
 using json = nlohmann::json;
 
 #endif // COMMON_HPP

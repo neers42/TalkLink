@@ -1,11 +1,12 @@
 ﻿#ifndef CHATROOMCONTROLMESSAGE_HPP
 #define CHATROOMCONTROLMESSAGE_HPP
 #include "Utils/common.hpp"
-#include "BaseMessage.hpp"
+#include "MessageBase.hpp"
 #include "Chat/MessageIDGenerator.hpp"
+#include "IReceiveMessage.hpp"
 
 class ChatRoomControlMessage :
-    public BaseMessage
+    public MessageBase, public IReceiveMessage
 {
 public:
 	enum class RoomAction
@@ -27,16 +28,16 @@ private:
 	std::string _room_name;	//チャットルーム名
 	std::string _room_image_url;	//チャットルームの画像
 	RoomAction _room_action;	//チャットルームのアクション
-	std::string _room_create_time;	//チャットルームの作成時間
 	std::string _message_content;	//メッセージ内容(JSON形式)
 
 
 
 public:
 	//コンストラクタ
-	ChatRoomControlMessage() = delete;
+	ChatRoomControlMessage();
 	ChatRoomControlMessage(
 		const uint64_t mid,
+		const std::string& time_stamp,
 		const std::string& sender_cid,
 		const std::string& room_id_add_member,
 		const std::vector<std::string>& add_member_list,
@@ -44,7 +45,6 @@ public:
 		const std::string& room_name,
 		const std::string& room_image,
 		const RoomAction& room_action,
-		const std::string& room_create_time,
 		const std::string& message_content);
 	//デストラクタ
 	~ChatRoomControlMessage();
@@ -57,11 +57,18 @@ public:
 	std::string get_room_name() const;
 	std::string get_room_image_url() const;
 	RoomAction get_room_action() const;
-	std::string get_room_create_time() const;
 	std::string get_message_content() const;
 
-	//メッセージシリアライズ
-	static std::unique_ptr<ChatRoomControlMessage> serialize_message(const json& recv_json);
+	//IReceiveMessageの実装
+	bool validate_specific_fields(const json& message) const override;
+	std::unique_ptr<MessageBase> create_instance(const json& message) const override;
+	bool validate_value() const override;
+
+private:
+	RoomAction parse_room_action(const std::string& action_str) const;
+	bool is_valid_room_id(const std::string& room_id) const;
+	bool is_valid_room_name(const std::string& room_name) const;
+	bool is_valid_room_image_url(const std::string& room_image_url) const;
 
 };
 #endif // CHATROOMCONTROLMESSAGE_HPP

@@ -1,10 +1,11 @@
 ﻿#ifndef CHATROOMCONTROLDELIVERYMESSAGE_HPP
 #define CHATROOMCONTROLDELIVERYMESSAGE_HPP
-#include "BaseMessage.hpp"
+#include "MessageBase.hpp"
+#include "ISendMessage.hpp"
 #include "Chat/MessageIDGenerator.hpp"
 #include "Messages/ChatRoomControlMessage.hpp"
 class ChatRoomControlDeliveryMessage :
-    public BaseMessage
+    public MessageBase, public ISendMessage
 {
 public:
 	struct ClientInfo {
@@ -31,8 +32,10 @@ private:
 	ChatRoomControlMessage::RoomAction _room_action;	//ルームアクション
 
 public:
-	ChatRoomControlDeliveryMessage() = delete;
+	ChatRoomControlDeliveryMessage();
 	ChatRoomControlDeliveryMessage(
+		const uint64_t& mid,
+		const std::string& time_stamp,
 		const std::string& sender_cid,
 		const std::string& room_id,
 		const std::string& room_name,
@@ -52,7 +55,16 @@ public:
 	std::vector<ClientInfo> get_client_info_list() const;
 	void set_client_info_list(const std::vector<ClientInfo>& client_info_list);
 	ChatRoomControlMessage::RoomAction get_room_action() const;
-	static json deserialize_message(const std::unique_ptr<ChatRoomControlDeliveryMessage>& chatroom_delivery_message);
+
+	//ISendMessageの実装
+	json serialize_specific_message_fields() const override;
+	bool validate_specific_message_fields() const override;
+
+private:
+	ChatRoomControlMessage::RoomAction parse_room_action(const std::string& action_str) const;
+	bool is_valid_room_id(const std::string& room_id) const;
+	bool is_valid_room_name(const std::string& room_name) const;
+	bool is_valid_room_icon_url(const std::string& room_icon_url) const;
 
 
 };

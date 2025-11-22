@@ -1,10 +1,12 @@
 #include "Messages/ClientSessionResponseMessage.hpp"
 
 
-ClientSessionResponseMessage::ClientSessionResponseMessage(const std::string& client_id, bool verify_result)
-	:BaseMessage(ContentType::NOTIFICATION, "SessionResponse"),
+ClientSessionResponseMessage::ClientSessionResponseMessage(const std::string& client_id, bool verify_result, const std::string& error_message, const json& unsend_messages)
+	:MessageBase(ContentType::NOTIFICATION, "SessionResponse"),
 	_client_id{ client_id },
-	_verify_result{ verify_result }
+	_verify_result{ verify_result },
+	_error_message{ error_message },
+	_unsend_messages{ unsend_messages }
 {
 }
 
@@ -13,48 +15,80 @@ ClientSessionResponseMessage::~ClientSessionResponseMessage()
 {
 }
 
-json ClientSessionResponseMessage::deserialize_message(const std::unique_ptr<ClientSessionResponseMessage>& session_response_message, const json& unsend_messages, const std::string& error_message)
+
+json ClientSessionResponseMessage::serialize_specific_message_fields() const
 {
-	json session_response_json;
+	json specific_fields;
 	try
 	{
-		session_response_json["content_type"] = "NOTIFICATION";
-		session_response_json["message_type"] = "SessionResponse";
-		session_response_json["notification_time"] = ServerTime::get_current_time_to_milliseconds();
-		// nullptr チェックを追加
-		if (session_response_message != nullptr)
+		if (validate_specific_message_fields() == false)
 		{
-			session_response_json["client_id"] = session_response_message->_client_id;
-			session_response_json["verify_result"] = session_response_message->_verify_result;
+			throw std::runtime_error("ClientSessionResponseMessage specific fields validation failed during serialization.");
 		}
-		else
-		{
-			// nullptr の場合のエラーハンドリング（例：空のクライアントIDなど）
-			session_response_json["client_id"] = "";
-			session_response_json["verify_result"] = false;
-		}
-
+		specific_fields["client_id"] = this->_client_id;
+		specific_fields["verify_result"] = this->_verify_result;
+		specific_fields["error_reason"] = this->_error_message;
 		// unreceived_messages 配列だけを代入
-		if (session_response_message->_verify_result == true)
+		if (this->_verify_result == true)
 		{
-			session_response_json["unsend_messages"] = unsend_messages["unreceived_messages"];
+			if (_unsend_messages.is_array())
+            {
+                // そのまま配列を代入
+                specific_fields["unsend_messages"] = _unsend_messages;
+            }
+            else if (_unsend_messages.is_object() && _unsend_messages.contains("unreceived_messages"))
+            {
+                // オブジェクトの場合は "unreceived_messages" 配列を取り出す
+                specific_fields["unsend_messages"] = _unsend_messages["unreceived_messages"];
+            }
+            else
+            {
+                specific_fields["unsend_messages"] = json::array();
+            }
 		}
 		else
 		{
-			session_response_json["unsend_messages"] = json::array();
+			specific_fields["unsend_messages"] = json::array();
 		}
 
-		if (session_response_message != nullptr)
-		{
-			session_response_json["error_reason"] = error_message;
-		}
-		spdlog::info("SessionResponse message deserialized successfully.");
 	}
-	catch(const std::exception& e)
+	catch (const std::exception &e)
 	{
-		LOG_ERROR("Error deserializing SessionResponse message: {}", e.what());
+		LOG_ERROR("Error serializing ClientSessionResponseMessage specific fields: {}", e.what());
 		return json(); // 空のJSONオブジェクトを返す
 	}
-
-    return session_response_json;
+	return specific_fields;
 }
+
+bool ClientSessionResponseMessage::validate_specific_message_fields() const
+{
+	try
+	{
+		//_verify_resultがtreueの場合、_client_idが空でないことを確認
+		if (this->_verify_result == true)
+		{
+			if (this->_client_id.empty())
+			{
+				throw std::runtime_error("[ClientSessionResponse]Client ID is empty despite verification success.");
+			}
+		}
+		if (this->_error_message.empty())
+		{
+			throw std::runtime_error("[ClientSessionResponse]Error message is empty.");
+		}
+		return true;
+	}
+	catch (const std::runtime_error &re)
+	{
+		LOG_ERROR("Runtime error : {}", re.what());
+		return false;
+	}
+	catch (const std::exception &e)
+	{
+		LOG_ERROR("Validate failed: {}", e.what());
+		return false;
+	}
+
+	return false;
+}
+

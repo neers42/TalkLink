@@ -11,6 +11,7 @@ option(BUILD_CHAT_SERVER "Build the chat server" OFF)
 #サブディレクトリを追加
 # 共通ライブラリは常にビルド
 add_subdirectory(CommonLib)
+add_subdirectory(ThirdParty)
 
 # ChatServer をビルドする場合
 if (BUILD_CHAT_SERVER)

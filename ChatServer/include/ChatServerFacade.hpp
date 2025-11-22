@@ -6,7 +6,6 @@
 #include "Utils/common.hpp"
 #include "Database/MySQLClient.hpp"
 #include "Database/RedisClient.hpp"
-#include "Messages/BaseMessage.hpp"
 #include "Messages/HeartBeatMessage.hpp"
 #include "Messages/ClientSessionMessage.hpp"
 #include "Messages/ClientSettingControlMessage.hpp"
@@ -18,6 +17,7 @@
 #include "Messages/ChatRoomControlAckMessage.hpp"
 #include "Messages/ChatDeliveryMessage.hpp"
 #include "Messages/ChatAckMessage.hpp"
+#include "MessageBase.hpp"
 #ifdef _WIN32
 using socket_t = SOCKET;
 #define INVALID_SOCKET_FD INVALID_SOCKET
@@ -105,7 +105,7 @@ private:
 		try
 		{
 			// メッセージをデシリアライズする
-			json json_message = T::deserialize_message(message);
+			json json_message = MessageBase::serialize_message<T>(message);
 
 			if (socket == INVALID_SOCKET_FD)
 			{

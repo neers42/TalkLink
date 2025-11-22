@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
 COPY CMakeLists.txt ./
 COPY CommonLib ./CommonLib
 COPY AuthenticationServer ./AuthenticationServer
+COPY ThirdParty ./ThirdParty
 
 # ビルド
 RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_AUTH_SERVER=ON && \

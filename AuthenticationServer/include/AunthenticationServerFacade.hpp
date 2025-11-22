@@ -3,6 +3,8 @@
 #include "common.h"
 #include "RedisClient.hpp"
 #include "TokenHandler.hpp"
+#include "Messages/AuthRequestMessage.hpp"
+#include "Messages/AuthResponseMessage.hpp"
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
@@ -38,6 +40,7 @@ private:
 	void auth_handle_process(const socket_t socket);
 	void handle_disconnect_process(const socket_t socket);
 	json make_auth_response(const std::string& status, const std::uint64_t ttl);
+	bool verify_auth_process(const std::string& token, std::string& cid, std::uint64_t& expire, std::uint64_t& ttl);
 };
 
 
