@@ -6,7 +6,7 @@ AunthenticationServerFacade::AunthenticationServerFacade()
     ////ログのフォーマット設定
 	spdlog::set_level(spdlog::level::debug);
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
-	spdlog::info("Starting MyChat Auth-server version 1.0.0!!");
+	spdlog::info("Starting TalkLink Auth-server version 1.0.0!!");
 	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
 	_protocol_handler = std::make_unique<ProtocolHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
@@ -132,7 +132,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 	bool verify_result = false;
 	json response;
 	json receive_json;
-	std::string message_type = "";
+	std::string _message_type = "";
 
 	try
 	{
@@ -148,7 +148,6 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 		}
 
 		// メッセージの受信
-		//std::tie(receive_token, disconnect_flag, recv_flag) = this->_protocol_handler->receive_message_str(client_ssl);
 		std::tie(receive_json, disconnect_flag, recv_flag) = this->_protocol_handler->receive_message_json(client_ssl);
 
 		//disconnect_flagがfalseの場合、epoll_ctrlにONESHOTを登録する。
@@ -171,12 +170,23 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 			return;
 		}
 		// JSONメッセージの処理
-		message_type = receive_json["message_type"];
-		if (message_type == "AuthRequest")
+		auto mt = MessageBase::parse_message_type(receive_json.at("message_type").get<std::string>());
+		_message_type = receive_json["message_type"];
+		if (mt == MessageBase::MessageType::AUTHENTICATION_REQUEST)
 		{
-			receive_token = receive_json["jwt"];
+			auto auth_request_instance = MessageBase::deserialize_message<AuthRequestMessage>(receive_json);
+			if (auth_request_instance == nullptr) {
+				LOG_ERROR("Failed to deserialize AuthRequestMessage from received JSON.");
+				return;
+			}
+			receive_token = auth_request_instance->get_jwt();
 			verify_result = this->verify_auth_process(receive_token, cid, expire, ttl);
-			auto response_instance = std::make_unique<AuthResponseMessage>(verify_result, expire);
+			if(verify_result == true){
+				spdlog::info("Authentication succeeded for client(socket : {}). CID: {}, Expire: {}, TTL: {}.", socket, cid, expire, ttl);
+			}else{
+				LOG_ERROR("Authentication failed for client(socket : {}).", socket);
+			}
+			auto response_instance = std::make_unique<AuthResponseMessage>(MessageBase::CommonField(MessageBase::MessageType::AUTHENTICATION_RESPONSE, auth_request_instance->get_correlation_id()), verify_result, expire);
 			if(response_instance == nullptr) {
 					LOG_ERROR("Failed to create AuthResponseMessage instance for failure response.");
 					return;
@@ -195,7 +205,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 		}
 		else
 		{
-			LOG_ERROR("Invalid message type received: {}. Expected 'AuthRequest'.", message_type);
+			LOG_ERROR("Invalid message type received.");
 			return;
 		}
 		

@@ -3,7 +3,7 @@
 #include "Utils/common.hpp"
 #include "MessageBase.hpp"
 #include "IReceiveMessage.hpp"
-class ClientSessionMessage :
+class SessionRequestMessage :
     public MessageBase, public IReceiveMessage
 {
 public:
@@ -23,13 +23,10 @@ private:
 
 public:
     //コンストラクタ
-    ClientSessionMessage();
-    ClientSessionMessage(SignType s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
-    ClientSessionMessage(int s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
-    ClientSessionMessage(ContentType c_type, const std::string& mt, SignType s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
-    ClientSessionMessage(int c_type, const std::string& mt, int s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
+    SessionRequestMessage();
+    SessionRequestMessage(const MessageBase::CommonField& common_fields, SignType s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
     //デストラクタ
-    ~ClientSessionMessage();
+    ~SessionRequestMessage();
 
     //各種アクセッサ(getter/setter)
     SignType get_sign_type() const;
@@ -50,7 +47,7 @@ public:
     void set_last_received_message_id(uint64_t last_received_message_id);
 
     //メッセージインスタンスの内容検証
-    bool validate_specific_fields(const json& message) const override;
+    bool validate_payload(const json& message) const override;
     std::unique_ptr<MessageBase> create_instance(const json& message) const override;
     bool validate_value() const override;
 
@@ -61,7 +58,7 @@ private:
 
     SignType exchange_sign_type_from_int(const int value);
 };
-#endif // !MESSAGETYPE001_HPP
+#endif // !SESSION_REQUEST_MESSAGE_HPP
 
 
 

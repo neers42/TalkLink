@@ -1,56 +1,34 @@
 ﻿#include "Messages/ChatMessage.hpp"
 
-ChatMessage::ChatMessage() {}
+ChatMessage::ChatMessage() 
+	: MessageBase(MessageBase::MessageType::CHAT_MESSAGE),_message_id(0), _room_id(""), _mention_ids(), _sender_cid(""), _content("")
+{
+}
 
-ChatMessage::ChatMessage(MessageBase::ContentType c_type, 
-						const std::string &mt, 
+ChatMessage::ChatMessage(const MessageBase::CommonField& common_fields,
 						const uint64_t m_id,
 						const std::string &room_id, 
 						const std::vector<std::string> &mention_ids, 
 						const std::string &sender_id, 
 						const std::string &content)
-    : MessageBase(c_type, mt, m_id), 
+    : MessageBase(common_fields, MessageBase::MessageType::CHAT_MESSAGE),
+	_message_id{m_id}, 
 	_room_id{room_id}, 
 	_mention_ids{mention_ids}, 
-	_sender_id{sender_id}, 
+	_sender_cid{sender_id}, 
 	_content{content}
 {
 }
 
-ChatMessage::ChatMessage(int c_type, 
-	const std::string& mt,
-	const uint64_t m_id,
-	const std::string& room_id, 
-	const std::vector<std::string>& mention_ids, 
-	const std::string& sender_id, 
-	const std::string& content)	
-	:MessageBase(static_cast<MessageBase::ContentType>(c_type), mt, m_id),
-	_room_id{room_id},
-	_mention_ids{mention_ids},
-	_sender_id{sender_id},
-	_content{content}
-{
-}
 
-ChatMessage::ChatMessage(int c_type, 
-	const std::string &mt, 
-	const uint64_t m_id, 
-	const std::string &time_stamp, 
-	const std::string &room_id, 
-	const std::vector<std::string> &mention_ids, 
-	const std::string &sender_id, 
-	const std::string &content)
-	:MessageBase(static_cast<MessageBase::ContentType>(c_type), mt, m_id, time_stamp),
-	_room_id{room_id},
-	_mention_ids{mention_ids},
-	_sender_id{sender_id},
-	_content{content}
-{
-}
 ChatMessage::~ChatMessage()
 {
 }
 
+uint64_t ChatMessage::get_message_id() const
+{
+	return this->_message_id;
+}
 
 const std::vector<std::string>& ChatMessage::get_mention_ids() const
 {
@@ -64,12 +42,12 @@ void ChatMessage::set_mention_ids(const std::vector<std::string>& mention_ids)
 
 std::string ChatMessage::get_sender_cid() const
 {
-	return this->_sender_id;
+	return this->_sender_cid;
 }
 
-void ChatMessage::set_sender_id(const std::string& src_id)
+void ChatMessage::set_sender_cid(const std::string& sender_cid)
 {
-	this->_sender_id = src_id;
+	this->_sender_cid = sender_cid;
 }
 
 
@@ -83,7 +61,7 @@ void ChatMessage::set_content(const std::string& content)
 	this->_content = content;
 }
 
-std::string ChatMessage::get_room_id()
+std::string ChatMessage::get_room_id() const
 {
 	return this->_room_id;
 }
@@ -100,27 +78,21 @@ std::unique_ptr<MessageBase> ChatMessage::create_instance(const json &message) c
 	{
 		// 各フィールドを読み取る
 		auto common_fields = this->parse_common_fields(message);
-		MessageBase::ContentType content_type = std::get<0>(common_fields);
-		std::string message_type = std::get<1>(common_fields);
-		std::string room_id = message["room_id"];
+		std::string room_id = message["payload"]["room_id"];
 		// mention_ids を vector に変換
 		std::vector<std::string> mention_ids;
-		for (const auto& item : message["mention_ids"]) {
+		for (const auto& item : message["payload"]["mention_ids"]) {
 			mention_ids.push_back(item.get<std::string>());
 		}
-		std::string sender_cid = message["sender_cid"];
-		std::string content = message.dump();
+		std::string sender_cid = message["payload"]["sender_cid"];
+
+		//メッセージの実際の内容のみ抽出
+		std::string content = message["payload"]["content"];
 		uint64_t message_id = MessageIDGenerator::generate_message_id();
-		std::string time_stamp;
-		if(message.contains("time_stamp") == true){
-			time_stamp = message["time_stamp"];
-		}
 
 		return std::make_unique<ChatMessage>(
-			static_cast<int>(content_type),
-			message_type,
+			common_fields,
 			message_id,
-			time_stamp,
 			room_id,
 			mention_ids,
 			sender_cid,
@@ -140,40 +112,53 @@ std::unique_ptr<MessageBase> ChatMessage::create_instance(const json &message) c
 		return nullptr;
 	}
 }
-bool ChatMessage::validate_specific_fields(const json &message) const
+bool ChatMessage::validate_payload(const json &message) const
 {
 	try
 	{
+		// payloadキーの存在をチェック
+		if (!message.contains("payload"))
+		{
+			throw std::runtime_error("Missing key: payload");
+		}
+
+		const auto& payload = message["payload"];
+
 		// 必須キーがすべて存在するかチェック
 		static const std::vector<std::string> required_keys = {
 			"room_id",
 			"mention_ids",
-			"sender_cid"};
+			"sender_cid",
+			"content"};
 		for (const auto &key : required_keys)
 		{
-			if (!message.contains(key))
+			if (!payload.contains(key))
 			{
-				throw std::runtime_error("Missing key: " + key);
+				throw std::runtime_error("Missing key in payload: " + key);
 			}
 		}
 
 		// 各フィールドの型をチェック
-		if (!message["room_id"].is_string())
+		if (!payload["room_id"].is_string())
 		{
 			throw std::runtime_error("Invalid type for 'room_id'");
 		}
-		if (!message["sender_cid"].is_string())
+		if (!payload["sender_cid"].is_string())
 		{
 			throw std::runtime_error("Invalid type for 'sender_cid'");
 		}
-		if (!message["mention_ids"].is_array())
+		if (!payload["content"].is_string())
+		{
+			throw std::runtime_error("Invalid type for 'content'");
+		}
+		if (!payload["mention_ids"].is_array())
 		{
 			throw std::runtime_error("Invalid type for 'mention_ids'");
 		}
 		else
 		{
 			// mention_idsの各要素が文字列であることを確認
-			for (const auto &item : message["mention_ids"])
+			for (const auto &item : payload["mention_ids"])
 			{
 				if (!item.is_string())
 				{
@@ -202,7 +187,7 @@ bool ChatMessage::validate_value() const
 	{
 		if (is_valid_room_id(this->_room_id) == true &&
 			is_valid_mention_ids(this->_mention_ids) == true &&
-			is_valid_sender_id(this->_sender_id) == true &&
+			is_valid_sender_id(this->_sender_cid) == true &&
 			is_valid_content(this->_content) == true)
 		{
 			spdlog::debug("ChatMessage value validation succeeded.");

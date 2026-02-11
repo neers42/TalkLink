@@ -7,11 +7,11 @@
 #include "Database/MySQLClient.hpp"
 #include "Database/RedisClient.hpp"
 #include "Messages/HeartBeatMessage.hpp"
-#include "Messages/ClientSessionMessage.hpp"
+#include "Messages/SessionRequestMessage.hpp"
 #include "Messages/ClientSettingControlMessage.hpp"
 #include "Messages/ChatRoomControlMessage.hpp"
 #include "Messages/ChatMessage.hpp"
-#include "Messages/ClientSessionResponseMessage.hpp"
+#include "Messages/SessionResponseMessage.hpp"
 #include "Messages/ClientSettingControlResponseMessage.hpp"
 #include "Messages/ChatRoomControlDeliveryMessage.hpp"
 #include "Messages/ChatRoomControlAckMessage.hpp"
@@ -85,10 +85,10 @@ private:
 	// メッセージ処理関連
 	void heartbeat_process(const std::unique_ptr<HeartBeatMessage> &heartbeat_message, std::shared_ptr<Client> &client);
 	void heartbeat_process(const std::unique_ptr<HeartBeatMessage> &heartbeat_message, const socket_t socket);
-	bool session_process(const std::unique_ptr<ClientSessionMessage> &session_message, const socket_t socket, std::string& cid);
+	bool session_process(const std::unique_ptr<SessionRequestMessage> &session_message, const socket_t socket, std::string& cid);
 	void chatroom_control_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, std::string *error_msg, bool *action_result);
-	void chat_message_process(const std::unique_ptr<ChatMessage> &chat_message);
-	void session_response_process(const std::unique_ptr<ClientSessionMessage> &session_message, const socket_t socket, const std::string &cid, const bool login_result, const bool recv_flag);
+	void chat_message_process(const std::unique_ptr<ChatMessage> &chat_message, const json& chat_message_json);
+	void session_response_process(const std::unique_ptr<SessionRequestMessage> &session_message, const socket_t socket, const std::string &cid, const bool login_result, const bool recv_flag);
 	void chatroom_control_response_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, const std::shared_ptr<Client> &client, socket_t socket);
 	const std::tuple<int, std::vector<std::string>> chatroom_control_delivery_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, socket_t socket);
 	void chatroom_control_ack_process(const std::unique_ptr<ChatRoomControlMessage> &chatroom_control_message, const std::vector<std::string> &unsend_cids, const std::shared_ptr<Client> &client);
@@ -131,9 +131,9 @@ private:
 				{
 					auto search_client = this->_client_handler->search_cid_from_clients(cid);
 					// 接続しているクライアントリストに送信先のクライアントが存在しない場合
-					if (search_client != nullptr)
+					if (search_client == nullptr)
 					{
-						unsend_cids.push_back(cid);
+						//接続されていない場合はスキップする。
 						continue;
 					}
 					else
@@ -146,28 +146,28 @@ private:
 						}
 						auto send_socket = this->_client_handler->get_client_socket_by_cid(cid);
 						if(send_socket == INVALID_SOCKET_FD){
-							unsend_cids.push_back(cid);
+							//unsend_cids.push_back(cid);
 							continue;
 						}
 						bool send_result = this->_client_handler->client_message_send(this->_client_handler->get_client_socket_by_cid(cid), json_message);
 						if (send_result == true)
 						{
-							spdlog::info("The MT{} message was successfully sent to the client(id:{}).", message->get_message_type(), cid);
+							spdlog::info("The {}  was successfully sent to the client(id:{}).", message->message_type_to_string(message->get_common_fields()._message_type), cid);
 						}
 						else
 						{
-							spdlog::warn("The MT{} message was not sent to the client(id:{}).", message->get_message_type(), cid);
+							spdlog::warn("The {}  was not sent to the client(id:{}).", message->message_type_to_string(message->get_common_fields()._message_type), cid);
 							unsend_cids.push_back(cid);
 						}
 					}
 				}
 				if (unsend_cids.size() == 0)
 				{
-					spdlog::info("The MT{} message was successfully sent to all clients.", message->get_message_type());
+					spdlog::info("The {} was successfully sent to all clients.", message->message_type_to_string(message->get_common_fields()._message_type));
 				}
 				else if (unsend_cids.size() > 0)
 				{
-					spdlog::warn("The MT{} message was not sent to all clients.", message->get_message_type());
+					spdlog::warn("The {} was not sent to all clients.", message->message_type_to_string(message->get_common_fields()._message_type));
 				}
 				return std::make_tuple(send_cids.size(), unsend_cids);
 			}
@@ -183,17 +183,6 @@ private:
 						if (!this->_mysql_client->is_client_id_exist(receiver_cid))
 						{ // cidがデータベースに存在しない場合
 							LOG_ERROR("The client ID '{}' does not exist in the database. Skipping unsend message insertion.", receiver_cid);
-							continue;
-						}
-
-						// クライアントの情報が見つからない場合、unsendメッセージをデータベースに保存する
-						if constexpr (std::is_same<T, ChatRoomControlDeliveryMessage>::value)
-						{
-							unsend_cids.push_back(receiver_cid);
-						}
-						else if constexpr (std::is_same<T, ChatDeliveryMessage>::value)
-						{
-							unsend_cids.push_back(receiver_cid);
 						}
 						continue;
 					}
@@ -208,22 +197,22 @@ private:
 						bool send_result = this->_client_handler->client_message_send(this->_client_handler->get_client_socket_by_cid(receiver_cid), json_message);
 						if (send_result == true)	//送信が成功した場合
 						{
-							spdlog::info("The MT{} message was successfully sent to the client(id:{}).", message->get_message_type(), receiver_cid);
+							spdlog::info("The MT{} message was successfully sent to the client(id:{}).", message->message_type_to_string(message->get_common_fields()._message_type), receiver_cid);
 						}
 						else
 						{
-							spdlog::warn("The MT{} message was not sent to the client(id:{}).", message->get_message_type(), receiver_cid);
+							spdlog::warn("The MT{} message was not sent to the client(id:{}).", message->message_type_to_string(message->get_common_fields()._message_type), receiver_cid);
 							unsend_cids.push_back(receiver_cid);
 						}
 					}
 				}
 				if (unsend_cids.size() == 0)
 				{
-					spdlog::info("The MT{} message was successfully sent to all clients.", message->get_message_type());
+					spdlog::info("The MT{} message was successfully sent to all clients.", message->message_type_to_string(message->get_common_fields()._message_type));
 				}
 				else if (unsend_cids.size() > 0)
 				{
-					spdlog::warn("The MT{} message was not sent to all clients.", message->get_message_type());
+					spdlog::warn("The MT{} message was not sent to all clients.", message->message_type_to_string(message->get_common_fields()._message_type));
 				}
 				return std::make_tuple(receivers_cids.size(), unsend_cids);
 			}

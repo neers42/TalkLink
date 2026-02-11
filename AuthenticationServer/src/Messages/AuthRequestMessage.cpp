@@ -3,14 +3,16 @@
 
 // コンストラクタ
 AuthRequestMessage::AuthRequestMessage()
-    : MessageBase(MessageBase::ContentType::AUTHENTICATION, "AuthRequest"), jwt("")
+    : MessageBase(MessageBase::MessageType::AUTHENTICATION_REQUEST), jwt("")
 {
-
 }
-AuthRequestMessage::AuthRequestMessage(const std::string &jwt)
-    : MessageBase(MessageBase::ContentType::AUTHENTICATION, "AuthRequest"), jwt(jwt)
+AuthRequestMessage::AuthRequestMessage(const MessageBase::CommonField& common_fields, const std::string &jwt)
+    : MessageBase(common_fields, MessageBase::MessageType::AUTHENTICATION_REQUEST), jwt(jwt)
 {
-
+}
+AuthRequestMessage::AuthRequestMessage(const std::string &jwt, const std::string& correlation_id)
+    : MessageBase(MessageBase::MessageType::AUTHENTICATION_REQUEST, correlation_id), jwt(jwt)
+{
 }
 
 std::string AuthRequestMessage::get_jwt() const {
@@ -18,42 +20,49 @@ std::string AuthRequestMessage::get_jwt() const {
 }
 
 
-bool AuthRequestMessage::validate_specific_fields(const json &message) const
+bool AuthRequestMessage::validate_payload(const json &message) const
 {
     try
     {
-        static const std::vector<std::string> required_keys = {
-            "jwt"
-        };
-
-        for (const auto& key : required_keys) {
-            if (!message.contains(key)) {
-                throw std::runtime_error("Missing key: " + key);
-            }
+        // payloadキーの存在確認
+        if (!message.contains("payload")) {
+            throw std::runtime_error("Missing key: payload");
+        }
+        
+        if (!message["payload"].is_object()) {
+            throw std::runtime_error("Key 'payload' is not an object.");
+        }
+        
+        // payload内のjwtキーの存在確認
+        if (!message["payload"].contains("jwt")) {
+            throw std::runtime_error("Missing key: jwt in payload");
         }
 
-        if(!message["jwt"].is_string()) {
-            throw std::runtime_error("Key 'jwt' has invalid type.");
+        if(!message["payload"]["jwt"].is_string()) {
+            throw std::runtime_error("Key 'jwt' in payload has invalid type.");
         }
+        
+        return true;
     }
     catch(const std::runtime_error& re)
     {
         LOG_ERROR("Runtime error : {}", re.what());
+        return false;
     }
     catch(const std::exception& e)
     {
         LOG_ERROR("Exception : {}", e.what());
+        return false;
     }
-    
-    return false;
 }
 
 std::unique_ptr<MessageBase> AuthRequestMessage::create_instance(const json &message) const
 {
     try
     {
-        std::string jwt = message["jwt"];
-        return std::make_unique<AuthRequestMessage>(jwt);
+        MessageBase::CommonField common_fields = parse_common_fields(message);
+        std::string jwt = message.at("payload").at("jwt").get<std::string>();
+        return std::make_unique<AuthRequestMessage>(common_fields, jwt);
     }
     catch(const std::runtime_error& re)
     {

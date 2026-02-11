@@ -2,6 +2,7 @@
 #define MYSQLCLIENT_HPP
 #include "Utils/common.hpp"
 #include "MySQLHelper.hpp"
+#include "ServerTime.hpp"
 
 using ChatRoomID = std::array<uint8_t, 16>;
 class MySQLClient

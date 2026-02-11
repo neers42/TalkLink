@@ -22,14 +22,8 @@ private:
 public:
     //コンストラクタ
     ChatAckMessage();
-	ChatAckMessage(MessageBase::ContentType c_type,
-		const std::string& mt,
-		const uint64_t _send_mid,
-		const MessageSendStatus status,
-		const std::string& room_id,
-		const std::vector<std::string>& _unsend_cid_list);
-	ChatAckMessage(int c_type,
-		const std::string& mt,
+	ChatAckMessage(
+		const MessageBase::CommonField& common_fields,
 		const uint64_t _send_mid,
 		const MessageSendStatus status,
 		const std::string& room_id,
@@ -45,8 +39,8 @@ public:
 	void set_room_id(const std::string& room_id);
 
 	//ISendMessageの実装
-	json serialize_specific_message_fields() const override;
-	bool validate_specific_message_fields() const override;
+	json serialize_payload() const override;
+	bool validate_payload() const override;
 
 };
 #endif // !CHATACKMESSAGE_HPP

@@ -4,61 +4,80 @@
 
 using json = nlohmann::json;
 
+
 class MessageBase
 {
 public :
-    enum class ContentType
+    enum class MessageType
     {
-        TEXT,         // テキスト
-        IMAGE,        // 画像
-        VIDEO,        // 動画
-        NOTIFICATION, // 通知
-        HEARTBEAT,    // ハートビート
-        AUTHENTICATION // 認証リクエスト
+        CHAT_MESSAGE,
+        CHAT_ACK,
+        CHAT_DELIVERY,
+        CHATROOM_CONTROL,
+        CHATROOM_CONTROL_ACK,
+        CHATROOM_CONTROL_DELIVERY,
+        HEARTBEAT_MESSAGE,
+        AUTHENTICATION_REQUEST,
+        AUTHENTICATION_RESPONSE,
+        SESSION_REQUEST,
+        SESSION_RESPONSE,
+        INCLIMENTAL_SEARCH,
+        SETTING_CONTROL
     };
+
+    struct CommonField
+    {
+        MessageBase::MessageType _message_type;  //メッセージタイプ
+        std::string _correlation_id; //クライアントメッセージの識別ID
+        std::string _timestamp;	//タイムスタンプ
+
+        //コンストラクタ
+        CommonField() : _message_type(MessageBase::MessageType::CHAT_MESSAGE), 
+        _timestamp(ServerTime::get_current_time_to_milliseconds()),
+         _correlation_id("") {}
+        CommonField(const MessageBase::MessageType mt, const std::string& id)
+        : _message_type(mt), _timestamp(ServerTime::get_current_time_to_milliseconds()), _correlation_id(id) {}
+    };
+
+    
 
 protected:
     //変数宣言
-    ContentType _content_type;	//メッセージコンテンツの内容
-	std::string _message_type;	//メッセージタイプ
-	std::string _time_stamp;	//タイムスタンプ
-	uint64_t _id;	//メッセージID
+    CommonField _common_fields;  // 共通フィールド
 
 public:
     
 
     MessageBase();
-    MessageBase(ContentType c_type, const std::string &mt);
-    MessageBase(int c_type, const std::string &mt);
-    MessageBase(ContentType c_type, const std::string &m_type, const uint64_t id);
-    MessageBase(ContentType c_type, const std::string &m_type, const uint64_t id, const std::string &time_stamp);
-    MessageBase(int c_type, const std::string &m_type, const uint64_t id, const std::string &time_stamp);
+    MessageBase(const MessageBase::MessageType mt);
+    MessageBase(const MessageBase::MessageType mt, const std::string &id);
+    MessageBase(const CommonField& common_fields);
+    MessageBase(const CommonField& common_fields, const MessageBase::MessageType mt);
     virtual ~MessageBase();
+    
 
     //アクセッサ
-    ContentType get_content_type() const {
-        return this->_content_type;
+    MessageBase::CommonField get_common_fields() const {
+        return this->_common_fields;
     }
-    void set_content_type(ContentType c_type) {
-        this->_content_type = c_type;
+
+    MessageBase::MessageType get_message_type() const {
+        return this->_common_fields._message_type;
     }
-    std::string get_message_type() const {
-        return this->_message_type;
-    }
-    void set_message_type(const std::string &mt) {
-        this->_message_type = mt;
+    void set_message_type(const MessageBase::MessageType &mt) {
+        this->_common_fields._message_type = mt;
     }
     std::string get_time_stamp() const {
-        return this->_time_stamp;
+        return this->_common_fields._timestamp;
     }
     void set_time_stamp(const std::string &ts) {
-        this->_time_stamp = ts;
+        this->_common_fields._timestamp = ts;
     }
-    uint64_t get_message_id() const {
-        return this->_id;
+    std::string get_correlation_id() const {
+        return this->_common_fields._correlation_id;
     }
-    void set_message_id(const uint64_t id) {
-        this->_id = id;
+    void set_correlation_id(const std::string &id) {
+        this->_common_fields._correlation_id = id;
     }
 
     // デシリアライズメソッド
@@ -77,7 +96,7 @@ public:
 
             // 2. 派生クラス固有のバリデーション（仮想関数）
             T message_instance;
-            if (!message_instance.validate_specific_fields(json_message))
+            if (!message_instance.validate_payload(json_message))
             {
                 throw std::runtime_error("Specific field validation failed.");
             }
@@ -137,8 +156,8 @@ public:
                 throw std::runtime_error("Failed to serialize common message fields");
             }
             
-            // 2. 派生クラス固有のフィールド変換（仮想関数）
-            json specific_fields = message_ptr->serialize_specific_message_fields();
+            // 2. 派生クラス固有のフィールド変換
+            json specific_fields = message_ptr->serialize_payload();
             if (specific_fields.is_null()) {
                 throw std::runtime_error("Failed to serialize specific message fields");
             }
@@ -158,6 +177,8 @@ public:
             return json{};
         }
     }
+    static MessageBase::MessageType parse_message_type(const std::string& message_type_str);
+    std::string message_type_to_string(const MessageBase::MessageType& message_type) const;
 
 private:
     // 共通フィールドのバリデーション
@@ -169,7 +190,11 @@ private:
     static bool validate_common_message_fields(const MessageBase& message);
 
 protected:
-    std::tuple<MessageBase::ContentType, std::string, uint64_t, std::string> parse_common_fields(const json& message) const;
+    CommonField parse_common_fields(const json& message) const;
+    
+    // タイムスタンプの正規化機能
+    static std::string normalize_timestamp(const std::string& timestamp);
+    static bool is_iso8601_format(const std::string& timestamp);
 
 };
 

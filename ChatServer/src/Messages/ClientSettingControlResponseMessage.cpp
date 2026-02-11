@@ -8,12 +8,12 @@ ClientSettingControlResponseMessage::~ClientSettingControlResponseMessage()
 {
 }
 
-json ClientSettingControlResponseMessage::serialize_specific_message_fields() const
+json ClientSettingControlResponseMessage::serialize_payload() const
 {
     return json();
 }
 
-bool ClientSettingControlResponseMessage::validate_specific_message_fields() const
+bool ClientSettingControlResponseMessage::validate_payload() const
 {
     return false;
 }

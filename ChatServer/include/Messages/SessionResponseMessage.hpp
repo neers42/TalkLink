@@ -2,7 +2,7 @@
 #define CLIENTSESSIONRESPONSEMESSAGE_HPP
 #include "MessageBase.hpp"
 #include "ISendMessage.hpp"
-class ClientSessionResponseMessage :
+class SessionResponseMessage :
     public MessageBase, public ISendMessage
 {
 private:
@@ -13,10 +13,10 @@ private:
 
 public:
 	//コンストラクタ
-	ClientSessionResponseMessage() = delete;
-	ClientSessionResponseMessage(const std::string& client_id, bool verify_result, const std::string& error_message, const json& unsend_messages);
+	SessionResponseMessage() = delete;
+	SessionResponseMessage(const MessageBase::CommonField& common_fields, const std::string& client_id, bool verify_result, const std::string& error_message, const json& unsend_messages);
 		//デストラクタ
-	~ClientSessionResponseMessage();
+	~SessionResponseMessage();
 	//各種アクセッサ(getter/setter)
 	std::string get_client_id() const {
 		return this->_client_id;
@@ -27,8 +27,8 @@ public:
 	}
 
 	//ISendMessageの実装
-	json serialize_specific_message_fields() const override;
-	bool validate_specific_message_fields() const override;
+	json serialize_payload() const override;
+	bool validate_payload() const override;
 };
 #endif // !CLIENTSESSIONRESPONSEMESSAGE_HPP
 

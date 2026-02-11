@@ -41,7 +41,7 @@ MySQLClient::MySQLClient()
     _mysql_host = std::string("tcp://") + (env_host ? env_host : "127.0.0.1") + ":3306";
     _mysql_user_name = env_user ? env_user : "chat_user";
     _mysql_password = env_pass ? env_pass : "chat_pass";
-    _mysql_db_name = env_db ? env_db : "MyChat";
+    _mysql_db_name = env_db ? env_db : "TalkLinkDB";
 	spdlog::debug("MySQL: host: {}, user: {}, password: {}, db_name: {}", _mysql_host, _mysql_user_name, _mysql_password, _mysql_db_name);
 #ifdef _WIN32
 	free(env_host);
@@ -487,7 +487,9 @@ json MySQLClient::get_unreceived_messages(const std::string &cid, const uint64_t
             message["room_id"] = this->to_hex_string(room_id_bin);
 
             message["sender_cid"] = res->getString("sender_cid");
-            message["send_time"] = res->getString("send_time");
+            // MySQL DATETIME形式をISO 8601形式に変換
+            std::string mysql_timestamp = res->getString("send_time");
+            message["send_time"] = ServerTime::mysql_datetime_to_iso8601(mysql_timestamp);
 			try
 			{
 				// message カラムの JSON をパース
@@ -800,7 +802,9 @@ json MySQLClient::get_unsend_control_message_fromDB(const std::string& cid)
 				message["room_id"] = "";
 			}
 			message["json_payload"] = res->getString("json_payload");
-			message["request_time"] = res->getString("request_time");
+			// MySQL DATETIME形式をISO 8601形式に変換
+			std::string mysql_timestamp = res->getString("request_time");
+			message["request_time"] = ServerTime::mysql_datetime_to_iso8601(mysql_timestamp);
 			unsend_control_messages_json.push_back(message);
 		}
 		return unsend_control_messages_json;
@@ -899,7 +903,9 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& cid, int limit)
 			else {
 				message["send_room_id"] = "";
 			}
-			message["send_time"] = res->getString("send_time");
+			// MySQL DATETIME形式をISO 8601形式に変換
+			std::string mysql_timestamp = res->getString("send_time");
+			message["send_time"] = ServerTime::mysql_datetime_to_iso8601(mysql_timestamp);
 			message["message"] = res->getString("message");
 			unsend_messages_json.push_back(message);
 

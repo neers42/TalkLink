@@ -1,12 +1,22 @@
 ﻿#include "Messages/ChatRoomControlMessage.hpp"
 
-ChatRoomControlMessage::ChatRoomControlMessage() {
-
+ChatRoomControlMessage::ChatRoomControlMessage()
+	:MessageBase(MessageBase::MessageType::CHATROOM_CONTROL),
+	 _message_id{0},
+	 _sender_cid{""},
+	 _room_id{""},
+	 _add_member_list{},
+	 _remove_member_list{},
+	 _room_name{""},
+	 _room_image_url{""},
+	 _room_action{RoomAction::CREATE_ROOM},
+	 _message_content{""}
+{
 } 
 
 ChatRoomControlMessage::ChatRoomControlMessage(
+	const MessageBase::CommonField& common_fields,
     const uint64_t mid,
-    const std::string &time_stamp,
     const std::string &sender_cid,
     const std::string &room_id,
     const std::vector<std::string> &add_member_list,
@@ -14,20 +24,27 @@ ChatRoomControlMessage::ChatRoomControlMessage(
     const std::string &room_name,
     const std::string &room_image,
     const RoomAction &room_action,
-    const std::string &message_content) : MessageBase(MessageBase::ContentType::NOTIFICATION, "ChatRoomControl", mid, time_stamp),
-                                          _sender_cid(sender_cid),
-                                          _room_id(room_id),
-                                          _add_member_list(add_member_list),
-                                          _remove_member_list(remove_member_list),
-                                          _room_name(room_name),
-                                          _room_image_url(room_image),
-                                          _room_action(room_action),
-                                          _message_content(message_content)
+    const std::string &message_content) 
+	: MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL),
+	_message_id(mid),
+	_sender_cid(sender_cid),
+    _room_id(room_id),
+    _add_member_list(add_member_list),
+    _remove_member_list(remove_member_list),
+    _room_name(room_name),
+    _room_image_url(room_image),
+    _room_action(room_action),
+	_message_content(message_content)
 {
 }
 
 ChatRoomControlMessage::~ChatRoomControlMessage()
 {
+}
+
+uint64_t ChatRoomControlMessage::get_message_id() const
+{
+	return this->_message_id;
 }
 
 std::string ChatRoomControlMessage::get_sender_cid() const
@@ -74,11 +91,18 @@ std::string ChatRoomControlMessage::get_message_content() const
 }
 
 
-bool ChatRoomControlMessage::validate_specific_fields(const json &message) const
+bool ChatRoomControlMessage::validate_payload(const json &message) const
 {
 	RoomAction room_action = RoomAction::CREATE_ROOM;
 	try
 	{
+		// payloadキーの存在をチェック
+		if (!message.contains("payload"))
+		{
+			throw std::runtime_error("Missing key: payload");
+		}
+
+		const auto& payload = message["payload"];
 		static const std::vector<std::string> required_keys = {
 			"sender_cid", 
 			"room_id",
@@ -91,36 +115,36 @@ bool ChatRoomControlMessage::validate_specific_fields(const json &message) const
 
 		for(const auto& key : required_keys)
 		{
-			if (!message.contains(key)) {
+			if (!payload.contains(key)) {
 				throw std::runtime_error("Missing key: " + key);
 			}
 		}
 
-		if(!message["sender_cid"].is_string())
+		if(!payload["sender_cid"].is_string())
 		{
 			throw std::runtime_error("Invalid type for sender_cid");
 		}
-		if(!message["room_id"].is_string())
+		if(!payload["room_id"].is_string())
 		{
 			throw std::runtime_error("Invalid type for room_id");
 		}
-		if(!message["room_add_member_list"].is_array())
+		if(!payload["room_add_member_list"].is_array())
 		{
 			throw std::runtime_error("Invalid type for room_add_member_list");
 		}
-		if(!message["room_remove_member_list"].is_array())
+		if(!payload["room_remove_member_list"].is_array())
 		{
 			throw std::runtime_error("Invalid type for room_remove_member_list");
 		}
-		if(!message["room_name"].is_string())
+		if(!payload["room_name"].is_string())
 		{
 			throw std::runtime_error("Invalid type for room_name");
 		}
-		if(!message["room_image_url"].is_string())
+		if(!payload["room_image_url"].is_string())
 		{
 			throw std::runtime_error("Invalid type for room_image_url");
 		}
-		if(!message["room_action"].is_string())
+		if(!payload["room_action"].is_string())
 		{
 			throw std::runtime_error("Invalid type for room_action");
 		}
@@ -150,21 +174,20 @@ std::unique_ptr<MessageBase> ChatRoomControlMessage::create_instance(const json 
 	RoomAction room_action;
 
 	try
-    {
-		uint64_t message_id = MessageIDGenerator::generate_message_id();
-        std::string time_stamp = message["time_stamp"].get<std::string>();
-        std::string sender_cid = message["sender_cid"].get<std::string>();
-        std::string room_id = message["room_id"].get<std::string>();
-        std::vector<std::string> add_member_list = message["room_add_member_list"].get<std::vector<std::string>>();
-        std::vector<std::string> remove_member_list = message["room_remove_member_list"].get<std::vector<std::string>>();
-        std::string room_name = message["room_name"].get<std::string>();
-        std::string room_image_url = message["room_image_url"].get<std::string>();   
-        RoomAction room_action = parse_room_action(message["room_action"].get<std::string>());
+    {	
+		auto common_fields = this->parse_common_fields(message);
+        std::string sender_cid = message["payload"]["sender_cid"].get<std::string>();
+        std::string room_id = message["payload"]["room_id"].get<std::string>();
+        std::vector<std::string> add_member_list = message["payload"]["room_add_member_list"].get<std::vector<std::string>>();
+        std::vector<std::string> remove_member_list = message["payload"]["room_remove_member_list"].get<std::vector<std::string>>();
+        std::string room_name = message["payload"]["room_name"].get<std::string>();
+        std::string room_image_url = message["payload"]["room_image_url"].get<std::string>();   
+        RoomAction room_action = parse_room_action(message["payload"]["room_action"].get<std::string>());
         std::string message_content = message.dump();
 
         return std::make_unique<ChatRoomControlMessage>(
-            message_id,
-            time_stamp,
+			common_fields,
+            MessageIDGenerator::generate_message_id(),
             sender_cid,
             room_id,
             add_member_list,
@@ -184,7 +207,7 @@ std::unique_ptr<MessageBase> ChatRoomControlMessage::create_instance(const json 
 
 bool ChatRoomControlMessage::validate_value() const
 {
-	if(is_valid_room_id(this->_room_id) == false ||
+	if(is_valid_room_id(this->_room_id, this->_room_action) == false ||
 	   is_valid_room_name(this->_room_name) == false ||
 	   is_valid_room_image_url(this->_room_image_url) == false){
 		LOG_ERROR("ChatRoomControlMessage value validation failed.");
@@ -208,12 +231,27 @@ ChatRoomControlMessage::RoomAction ChatRoomControlMessage::parse_room_action(con
     throw std::runtime_error("Unknown room action: " + action_str);
 }
 
-bool ChatRoomControlMessage::is_valid_room_id(const std::string &room_id) const
+bool ChatRoomControlMessage::is_valid_room_id(const std::string &room_id, RoomAction room_action) const
 {
-	if (room_id.size() != 32) {
-		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {}", room_id.size());
-		return false;
+	if(room_action == RoomAction::CREATE_ROOM) {
+		// ルーム作成の場合、room_idは空文字列であることを許容
+		if (room_id.empty()) {
+			return true;
+		} else {
+			LOG_ERROR("For CREATE_ROOM action, room_id should be empty. Provided room_id size: {}", room_id.size());
+			return false;
+		}
 	}
+	else
+	{
+		// その他のアクションの場合、room_idは32文字の16進数文字列であることを期待
+		if (room_id.size() != 32)
+		{
+			LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {}", room_id.size());
+			return false;
+		}
+	}
+
 	return true;
 }
 

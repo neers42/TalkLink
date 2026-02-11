@@ -7,7 +7,7 @@ public:
     virtual ~IReceiveMessage() = default;
 
     //各メッセージの特有のバリデーション(overrideで実装)
-    virtual bool validate_specific_fields(const json& message) const = 0;
+    virtual bool validate_payload(const json& message) const = 0;
     //メッセージインスタンスの生成
     virtual std::unique_ptr<MessageBase> create_instance(const json& message) const = 0;
     //メッセージキーのチェック

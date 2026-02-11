@@ -8,7 +8,7 @@ ClientSettingControlMessage::~ClientSettingControlMessage()
 {
 }
 
-bool ClientSettingControlMessage::validate_specific_fields(const json &message) const
+bool ClientSettingControlMessage::validate_payload(const json &message) const
 {
     return false;
 }

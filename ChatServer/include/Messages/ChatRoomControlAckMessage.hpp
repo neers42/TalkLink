@@ -14,6 +14,7 @@ public:
 	};
  
 private:
+    uint64_t _message_id;
     MessageSendStatus _send_status;
     std::string _room_id;
     std::vector<std::string> _unsend_cid_list;
@@ -22,8 +23,7 @@ public:
     //コンストラクタ
     ChatRoomControlAckMessage();
     ChatRoomControlAckMessage(
-        int content_type,
-        const std::string& mt,
+        const MessageBase::CommonField& common_fields,
         MessageSendStatus send_status,
         const std::string& room_id,
         uint64_t send_message_id,
@@ -33,13 +33,14 @@ public:
     ~ChatRoomControlAckMessage();
 
     //各種アクセッサ
+    uint64_t get_message_id() const { return _message_id; }
 	MessageSendStatus get_send_status() const { return _send_status; }
     const std::string& get_room_id() const { return _room_id; }
     const std::vector<std::string>& get_unsend_cid_list() const { return _unsend_cid_list; }
 
     //ISendMessageの実装
-    json serialize_specific_message_fields() const override;
-    bool validate_specific_message_fields() const override;
+    json serialize_payload() const override;
+    bool validate_payload() const override;
 private:
     bool is_valid_room_id(const std::string& room_id) const;
 };

@@ -78,8 +78,6 @@ void ChatServerFacade::run()
 		exit(1);
 	}
 
-	this->_mysql_client->create_database();
-	this->_mysql_client->create_table();
 	this->_thread_pool_handler->enqueue_task([this](){ heartbeat_check_process(); });
 	this->_thread_pool_handler->enqueue_task([this](){ _protocol_handler->hot_reload_certificates(60, SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH); });
 	spdlog::info("Start monitoring requests from clients.");
@@ -91,15 +89,6 @@ void ChatServerFacade::run()
 		_socket_handler->monitor_socket_descriptor([this](socket_t changed_socket)
 												   { allocate_process(changed_socket); });
 #elif defined(USE_SELECT)
-		// auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
-		// this->_socket_handler->initialize_select_param();
-		// this->prepare_client_fd_set();
-		// std::vector<socket_t> changed_client_sockets = this->_client_handler->get_all_connected_sockets();
-		// _socket_handler->monitor_socket_descriptor(changed_client_sockets,
-		// 										   [this](socket_t changed_socket)
-		// 										   { allocate_process(changed_socket); });
-		// std::this_thread::sleep_until(abs_time);
-
 		auto abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
 		this->_socket_handler->initialize_select_param();
 		this->prepare_client_fd_set();
@@ -229,7 +218,7 @@ bool ChatServerFacade::accept_client_socket_process()
 // メッセージの処理を行う
 void ChatServerFacade::message_handle_process(const socket_t socket)
 {
-	std::string mt, cid = "";
+	std::string cid = "";
 	json receive_json;
 	bool disconnect_flag = false;
 	bool recv_flag = false;
@@ -268,20 +257,20 @@ void ChatServerFacade::message_handle_process(const socket_t socket)
 			return;
 		}
 
-		mt = receive_json["message_type"];
+		auto mt = MessageBase::parse_message_type(receive_json.at("message_type").get<std::string>());
 		// heartbeat_message = ハートビートを受信した際の処理
-		if (mt == "HeartBeat")
+		if (mt == MessageBase::MessageType::HEARTBEAT_MESSAGE)
 		{
 			auto heartbeat_message = MessageBase::deserialize_message<HeartBeatMessage>(receive_json);
 			this->heartbeat_process(heartbeat_message, socket);
 		}
 		// Session = Auth認証メッセージの場合
-		else if (mt == "Session")
+		else if (mt == MessageBase::MessageType::SESSION_REQUEST)
 		{
-			auto session_message = MessageBase::deserialize_message<ClientSessionMessage>(receive_json);
+			auto session_message = MessageBase::deserialize_message<SessionRequestMessage>(receive_json);
 			if (session_message == nullptr)
 			{
-				throw std::runtime_error("ClientSessionMessage deserialization failed.");
+				throw std::runtime_error("SessionRequestMessage deserialization failed.");
 			}
 			spdlog::debug("session message last_receive : {}", session_message->get_last_received_message_id());
 			this->_protocol_handler->print_received_message_info(0, "", "", _client_handler->get_client_ipv4_address(socket), socket, receive_json);
@@ -289,13 +278,12 @@ void ChatServerFacade::message_handle_process(const socket_t socket)
 			this->session_response_process(session_message, socket, cid, verify_result, recv_flag);
 		}
 		// MT002 = Group or Friend追加のメッセージの場合
-		else if (mt == "SettingControl")
+		else if (mt == MessageBase::MessageType::SETTING_CONTROL)
 		{
 		}
-		else if (mt == "ChatRoomControl")
+		else if (mt == MessageBase::MessageType::CHATROOM_CONTROL)
 		{
 			auto chatroom_control_message = MessageBase::deserialize_message<ChatRoomControlMessage>(receive_json);
-			//auto chatroom_control_message = ChatRoomControlMessage::serialize_message(receive_json);
 			if (chatroom_control_message == nullptr)
 			{
 				return;
@@ -304,7 +292,7 @@ void ChatServerFacade::message_handle_process(const socket_t socket)
 			this->chatroom_control_process(chatroom_control_message, &error_msg, &result);
 		}
 		// ChatMessage = 通常メッセージの場合
-		else if (mt == "ChatMessage")
+		else if (mt == MessageBase::MessageType::CHAT_MESSAGE)
 		{
 			auto chat_message = MessageBase::deserialize_message<ChatMessage>(receive_json);
 			if (chat_message == nullptr)
@@ -312,7 +300,7 @@ void ChatServerFacade::message_handle_process(const socket_t socket)
 				throw std::runtime_error("ChatMessage deserialization failed.");
 			}
 			this->_protocol_handler->print_received_message_info(chat_message->get_message_id(), chat_message->get_sender_cid(), chat_message->get_room_id(), this->_client_handler->get_client_ipv4_address(socket), socket, receive_json);
-			this->chat_message_process(chat_message);
+			this->chat_message_process(chat_message, receive_json);
 			this->chat_message_response_process(chat_message, socket);
 		}
 		else
@@ -385,13 +373,13 @@ void ChatServerFacade::heartbeat_process(const std::unique_ptr<HeartBeatMessage>
 }
 
 
-bool ChatServerFacade::session_process(const std::unique_ptr<ClientSessionMessage> &session_message, const socket_t socket, std::string& cid)
+bool ChatServerFacade::session_process(const std::unique_ptr<SessionRequestMessage> &session_message, const socket_t socket, std::string& cid)
 {
 	try
 	{
 		if (session_message == nullptr || session_message->validate_value() == false)
 		{
-			throw std::runtime_error("The reception process was interrupted because the contents of ClientSessionMessage were invalid.");
+			throw std::runtime_error("The reception process was interrupted because the contents of SessionRequestMessage were invalid.");
 		}
 
 		auto decoded_token = jwt::decode(session_message->get_jwt());
@@ -403,15 +391,7 @@ bool ChatServerFacade::session_process(const std::unique_ptr<ClientSessionMessag
 			LOG_ERROR("JWT token is invalid.");
 			return false;
 		}
-		//Redisからクライアントのsession idを取得する。有効期限を確認する。
-		std::string session_key = "session:" + cid;
-		if(this->_redis_client->is_client_session_key(session_key) == false)
-		{
-			LOG_ERROR("Client session key is not found in Redis.");
-			return false;
-		}else{
-			spdlog::info("Client session(cid : {}) key is found in Redis.", cid);
-		}
+		
 
 
 		switch (session_message->get_sign_type_int())
@@ -443,6 +423,17 @@ bool ChatServerFacade::session_process(const std::unique_ptr<ClientSessionMessag
 		case 1: // sign in
 			if (cid != "" && _client_handler->get_connect_clients_num() != 0)
 			{
+				// Redisからクライアントのsession idを取得する。有効期限を確認する。
+				std::string session_key = "session:" + cid;
+				if (this->_redis_client->is_client_session_key(session_key) == false)
+				{
+					LOG_ERROR("Client session key is not found in Redis.");
+					return false;
+				}
+				else
+				{
+					spdlog::info("Client session(cid : {}) key is found in Redis.", cid);
+				}
 				// データベースからユーザ情報を読み取る。
 				std::string client_name, client_mail_addr, client_icon_url;
 				std::tie(client_name, client_mail_addr, client_icon_url) = this->_mysql_client->get_client_info_fromDB(cid);
@@ -462,7 +453,7 @@ bool ChatServerFacade::session_process(const std::unique_ptr<ClientSessionMessag
 			break;
 
 		default:
-			throw std::runtime_error("ClientSessionMessage authentication data region is in violation.");
+			throw std::runtime_error("SessionRequestMessage authentication data region is in violation.");
 			break;
 		}
 	}
@@ -606,8 +597,9 @@ void ChatServerFacade::chatroom_control_process(const std::unique_ptr<ChatRoomCo
 		break;
 	}
 	if (this->_mysql_client->is_room_id_hex_exist(chatroom_control_message->get_room_id())){
-		// メッセージをデータベースに保存する
-		if (this->_mysql_client->insert_message(chatroom_control_message->get_message_id(), chatroom_control_message->get_room_id(), chatroom_control_message->get_sender_cid(), chatroom_control_message->get_time_stamp(), chatroom_control_message->get_message_content()) == true)
+		// メッセージをデータベースに保存する（ISO 8601からMySQL形式に変換）
+		std::string mysql_timestamp = ServerTime::iso8601_to_mysql_datetime(chatroom_control_message->get_time_stamp());
+		if (this->_mysql_client->insert_message(chatroom_control_message->get_message_id(), chatroom_control_message->get_room_id(), chatroom_control_message->get_sender_cid(), mysql_timestamp, chatroom_control_message->get_message_content()) == true)
 		{
 			spdlog::info("The message was successfully saved in the database.");
 		}
@@ -621,7 +613,7 @@ void ChatServerFacade::chatroom_control_process(const std::unique_ptr<ChatRoomCo
 	
 }
 
-void ChatServerFacade::chat_message_process(const std::unique_ptr<ChatMessage> &chat_message)
+void ChatServerFacade::chat_message_process(const std::unique_ptr<ChatMessage> &chat_message, const json& chat_message_json)
 {
 	LOG_TRACE;
 	try
@@ -634,7 +626,9 @@ void ChatServerFacade::chat_message_process(const std::unique_ptr<ChatMessage> &
 		// メッセージをデータベースに保存する
 		if (this->_mysql_client->is_room_id_hex_exist(chat_message->get_room_id()))
 		{
-			if (this->_mysql_client->insert_message(chat_message->get_message_id(), chat_message->get_room_id(), chat_message->get_sender_cid(), chat_message->get_time_stamp(), chat_message->get_content()))
+			// ISO 8601からMySQL形式に変換してデータベースに保存
+			std::string mysql_timestamp = ServerTime::iso8601_to_mysql_datetime(chat_message->get_time_stamp());
+			if (this->_mysql_client->insert_message(chat_message->get_message_id(), chat_message->get_room_id(), chat_message->get_sender_cid(), mysql_timestamp, chat_message_json.dump()))
 			{
 				spdlog::info("The message was successfully saved in the database.");
 			}
@@ -667,7 +661,7 @@ void ChatServerFacade::chat_message_process(const std::unique_ptr<ChatMessage> &
 
 
 void ChatServerFacade::session_response_process(
-	const std::unique_ptr<ClientSessionMessage> &session_message,
+	const std::unique_ptr<SessionRequestMessage> &session_message,
 	const socket_t socket,
 	const std::string &cid,
 	const bool verify_result,
@@ -676,12 +670,10 @@ void ChatServerFacade::session_response_process(
 	std::string error_msg = "";
 	if (recv_flag == false)
 	{
-		LOG_ERROR("The reception process was interrupted because the ClientSessionMessage was not received properly.");
+		LOG_ERROR("The reception process was interrupted because the SessionRequestMessage was not received properly.");
 		return;
 	}
 
-	
-	
 	// TODO　ここでcidに関するメッセージをデータベースから取得する。
 	json unreceived_messages_json;
 	if(verify_result == true){
@@ -699,10 +691,10 @@ void ChatServerFacade::session_response_process(
 	}
 
 	// SessionResponseを送信する処理を記載する
-	auto session_response = std::make_unique<ClientSessionResponseMessage>(cid, verify_result, error_msg, unreceived_messages_json);
+	auto session_response = std::make_unique<SessionResponseMessage>(session_message->get_common_fields(), cid, verify_result, error_msg, unreceived_messages_json);
 	// メッセージのデシリアライズ
 	json session_response_json = MessageBase::serialize_message(session_response);
-	//json session_response_json = ClientSessionResponseMessage::deserialize_message(session_response, unreceived_messages_json, error_msg);
+	//json session_response_json = SessionResponseMessage::deserialize_message(session_response, unreceived_messages_json, error_msg);
 	if(session_response_json.empty() == true)
 	{
 		LOG_ERROR("The SessionResponse message serialization failed.");
@@ -749,8 +741,8 @@ const std::tuple<int, std::vector<std::string>> ChatServerFacade::chatroom_contr
 		break;
 	}
 	auto chatroom_control_delivery_message = std::make_unique<ChatRoomControlDeliveryMessage>(
+		chatroom_control_message->get_common_fields(),
 		chatroom_control_message->get_message_id(),
-		chatroom_control_message->get_time_stamp(),
 		chatroom_control_message->get_sender_cid(),
 		chatroom_control_message->get_room_id(),
 		chatroom_control_message->get_room_name(),
@@ -767,7 +759,7 @@ void ChatServerFacade::chatroom_control_ack_process(
 	const std::vector<std::string> &unsend_cids,
 	const std::shared_ptr<Client> &client)
 {
-	std::string message_type = "ChatRoomControlAck";
+	std::string _message_type = "ChatRoomControlAck";
 	ChatRoomControlAckMessage::MessageSendStatus send_status;
 	std::string send_room_id = chatroom_control_message->get_room_id();
 	// 送り先のclientの情報を取得する
@@ -779,7 +771,6 @@ void ChatServerFacade::chatroom_control_ack_process(
 		auto client_list = this->_mysql_client->get_client_list_from_chatroom(send_room_id);
 		if (client_list.size() == 0 && unsend_cids.size() == 0)
 		{
-			// LOG_ERROR("The Chatroom ID was not found in the database.");
 			send_status = ChatRoomControlAckMessage::MessageSendStatus::SEND_FAILED;
 		}
 		else if (client_list.size() != 1 && client_list.size() - 1 == unsend_cids.size())
@@ -821,8 +812,7 @@ void ChatServerFacade::chatroom_control_ack_process(
 		}
 	}
 	auto chatroom_control_ack_message = std::make_unique<ChatRoomControlAckMessage>(
-		0,
-		message_type,
+		chatroom_control_message->get_common_fields(),
 		send_status,
 		send_room_id,
 		chatroom_control_message->get_message_id(),
@@ -831,7 +821,6 @@ void ChatServerFacade::chatroom_control_ack_process(
 	{
 		// ChatRoomControlAckメッセージをデシリアライズする
 		json chatroom_control_ack_json = MessageBase::serialize_message(chatroom_control_ack_message);
-		//json chatroom_control_ack_json = ChatRoomControlAckMessage::deserialize_message(chatroom_control_ack_message);
 		if (this->_protocol_handler->send_message_json(client->get_ssl(), chatroom_control_ack_json))
 		{
 			spdlog::info("The ChatRoomControlAck message was successfully sent to the client(ip:{}, id:{}).", client->get_ipv4_address(), client->get_id());
@@ -963,18 +952,15 @@ void ChatServerFacade::handle_disconnect_process(const socket_t socket)
 const std::tuple<int, std::vector<std::string>> ChatServerFacade::chat_message_delivery_process(const std::unique_ptr<ChatMessage> &chat_message, socket_t socket)
 {
 	// ChatDeliveryMessageを生成
-	std::string message_type = "ChatDelivery";
 	int send_cid_num = 0;
 	std::vector<std::string> unsend_cids;
 
 	// ChatDeliveryMessageを生成する
 	auto chat_delivery_message = std::make_unique<ChatDeliveryMessage>(
-		MessageBase::ContentType::TEXT,
-		message_type,
+		chat_message->get_common_fields(),
+		chat_message->get_message_id(),
 		chat_message->get_room_id(),
 		chat_message->get_sender_cid(),
-		chat_message->get_message_id(),
-		chat_message->get_time_stamp(),
 		chat_message->get_content()
 	);
 	
@@ -988,7 +974,6 @@ void ChatServerFacade::chat_message_ack_process(const std::unique_ptr<ChatMessag
 {
 	LOG_TRACE;
 	// ChatAckMessageを生成
-	std::string message_type = "ChatAck";
 	ChatAckMessage::MessageSendStatus send_status;
 	std::string send_room_id = chat_message->get_room_id();
 
@@ -1000,6 +985,7 @@ void ChatServerFacade::chat_message_ack_process(const std::unique_ptr<ChatMessag
 	else if(send_cid_num -1 >= 1 && unsend_cids.size() == 0){
 		// 送信先のクライアントが複数いて、未送信クライアントがいない場合
 		send_status = ChatAckMessage::MessageSendStatus::SEND_SUCCESS;
+		
 	}else if(send_cid_num -1 == unsend_cids.size()){
 		//送信先のクライアントの数がunsend_cidsの数と同じ場合(全クライアントに送信できていない場合)
 		send_status = ChatAckMessage::MessageSendStatus::SEND_FAILED;
@@ -1010,12 +996,12 @@ void ChatServerFacade::chat_message_ack_process(const std::unique_ptr<ChatMessag
 	}
 
 	auto chat_ack_message = std::make_unique<ChatAckMessage>(
-		MessageBase::ContentType::NOTIFICATION,
-		message_type,
+		chat_message->get_common_fields(),
 		chat_message->get_message_id(),
 		send_status,
 		send_room_id,
 		unsend_cids);
+
 	try
 	{
 		// ChatAckMessageをデシリアライズする

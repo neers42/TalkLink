@@ -12,8 +12,8 @@ public:
     ~ClientSettingControlResponseMessage();
 
     //ISendMessageの実装
-    json serialize_specific_message_fields() const override;
-    bool validate_specific_message_fields() const override;
+    json serialize_payload() const override;
+    bool validate_payload() const override;
 };
 
 #endif // !CLIENTSETTINGCONTROLMESSAGE_HPP

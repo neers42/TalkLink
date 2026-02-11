@@ -34,8 +34,8 @@ private:
 public:
 	ChatRoomControlDeliveryMessage();
 	ChatRoomControlDeliveryMessage(
+		const MessageBase::CommonField& common_fields,
 		const uint64_t& mid,
-		const std::string& time_stamp,
 		const std::string& sender_cid,
 		const std::string& room_id,
 		const std::string& room_name,
@@ -57,8 +57,8 @@ public:
 	ChatRoomControlMessage::RoomAction get_room_action() const;
 
 	//ISendMessageの実装
-	json serialize_specific_message_fields() const override;
-	bool validate_specific_message_fields() const override;
+	json serialize_payload() const override;
+	bool validate_payload() const override;
 
 private:
 	ChatRoomControlMessage::RoomAction parse_room_action(const std::string& action_str) const;

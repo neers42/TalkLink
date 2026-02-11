@@ -5,8 +5,8 @@ public:
     //デストラクタ
     virtual ~ISendMessage() = default;
     //各メッセージの特有のシリアライズ(overrideで実装)
-    virtual json serialize_specific_message_fields() const = 0;
+    virtual json serialize_payload() const = 0;
     //メッセージインスタンスの内容検証(overrideで実装)
-    virtual bool validate_specific_message_fields() const = 0;
+    virtual bool validate_payload() const = 0;
 };
 #endif // ISENDMESSAGE_HPP

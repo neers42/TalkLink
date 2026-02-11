@@ -1,8 +1,8 @@
-#include "Messages/ClientSessionResponseMessage.hpp"
+#include "Messages/SessionResponseMessage.hpp"
 
 
-ClientSessionResponseMessage::ClientSessionResponseMessage(const std::string& client_id, bool verify_result, const std::string& error_message, const json& unsend_messages)
-	:MessageBase(ContentType::NOTIFICATION, "SessionResponse"),
+SessionResponseMessage::SessionResponseMessage(const MessageBase::CommonField& common_fields, const std::string& client_id, bool verify_result, const std::string& error_message, const json& unsend_messages)
+	:MessageBase(common_fields, MessageBase::MessageType::SESSION_RESPONSE),
 	_client_id{ client_id },
 	_verify_result{ verify_result },
 	_error_message{ error_message },
@@ -11,19 +11,19 @@ ClientSessionResponseMessage::ClientSessionResponseMessage(const std::string& cl
 }
 
 
-ClientSessionResponseMessage::~ClientSessionResponseMessage()
+SessionResponseMessage::~SessionResponseMessage()
 {
 }
 
 
-json ClientSessionResponseMessage::serialize_specific_message_fields() const
+json SessionResponseMessage::serialize_payload() const
 {
-	json specific_fields;
+	json payload, specific_fields;
 	try
 	{
-		if (validate_specific_message_fields() == false)
+		if (validate_payload() == false)
 		{
-			throw std::runtime_error("ClientSessionResponseMessage specific fields validation failed during serialization.");
+			throw std::runtime_error("SessionResponseMessage specific fields validation failed during serialization.");
 		}
 		specific_fields["client_id"] = this->_client_id;
 		specific_fields["verify_result"] = this->_verify_result;
@@ -50,17 +50,18 @@ json ClientSessionResponseMessage::serialize_specific_message_fields() const
 		{
 			specific_fields["unsend_messages"] = json::array();
 		}
+		payload["payload"] = specific_fields;
+		return payload;
 
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR("Error serializing ClientSessionResponseMessage specific fields: {}", e.what());
+		LOG_ERROR("Error serializing SessionResponseMessage specific fields: {}", e.what());
 		return json(); // 空のJSONオブジェクトを返す
 	}
-	return specific_fields;
 }
 
-bool ClientSessionResponseMessage::validate_specific_message_fields() const
+bool SessionResponseMessage::validate_payload() const
 {
 	try
 	{

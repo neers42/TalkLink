@@ -6,6 +6,7 @@ class ChatDeliveryMessage :
     public MessageBase, public ISendMessage
 {
 private:
+	uint64_t _send_message_id; //送信メッセージID
 	std::string _room_id;	//チャットルームID
 	std::string _sender_cid;	//送信者ID
 	std::string _content;	//メッセージ内容
@@ -14,23 +15,16 @@ private:
 
 public:
 	ChatDeliveryMessage();
-	ChatDeliveryMessage(int c_type,
-		const std::string& mt,
+	ChatDeliveryMessage(
+		const MessageBase::CommonField& common_fields,
+		const uint64_t send_message_id,
 		const std::string& room_id,
 		const std::string& sender_id,
-		const uint64_t send_message_id,
-		const std::string& send_time,
-		const std::string& content);
-	ChatDeliveryMessage(MessageBase::ContentType c_type,
-		const std::string& mt,
-		const std::string& room_id,
-		const std::string& sender_id,
-		const uint64_t send_message_id,
-		const std::string& send_time,
 		const std::string& content);
 	~ChatDeliveryMessage();
 
 	//各種アクセッサ
+	uint64_t get_send_message_id() const;
 	std::string get_room_id() const;
 	std::string get_sender_cid() const;
 	std::string get_content() const;
@@ -40,8 +34,8 @@ public:
 	void set_content(const std::string& content);
 
 	//ISendMessageの実装
-	json serialize_specific_message_fields() const override;
-	bool validate_specific_message_fields() const override;
+	json serialize_payload() const override;
+	bool validate_payload() const override;
 	
 };
 #endif // !CHATDELIVERYMESSAGE_HPP

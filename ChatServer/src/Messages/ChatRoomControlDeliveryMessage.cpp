@@ -1,23 +1,32 @@
 ﻿#include "Messages/ChatRoomControlDeliveryMessage.hpp"
 
-ChatRoomControlDeliveryMessage::ChatRoomControlDeliveryMessage() {
-
+ChatRoomControlDeliveryMessage::ChatRoomControlDeliveryMessage() 
+	:MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_DELIVERY),
+	 _sender_cid{""},
+	 _room_id{""},
+	 _room_name{""},
+	 _room_icon_url{""},
+	 _client_info_list{},
+	 _room_action{ChatRoomControlMessage::RoomAction::CREATE_ROOM}
+{
 }
+
 ChatRoomControlDeliveryMessage::ChatRoomControlDeliveryMessage(
+	const MessageBase::CommonField& common_fields,
 	const std::uint64_t& mid,
-	const std::string& time_stamp,
     const std::string &sender_cid,
     const std::string &room_id,
     const std::string &room_name,
     const std::string &room_icon_url,
     const std::vector<ClientInfo> &client_info_list,
-    const ChatRoomControlMessage::RoomAction &room_action) : MessageBase(MessageBase::ContentType::NOTIFICATION, "ChatRoomControlDelivery", mid, time_stamp),
-                                                             _sender_cid{sender_cid},
-                                                             _room_id{room_id},
-                                                             _room_name{room_name},
-                                                             _room_icon_url{room_icon_url},
-                                                             _client_info_list{client_info_list},
-                                                             _room_action{room_action}
+    const ChatRoomControlMessage::RoomAction &room_action) 
+	: MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL_DELIVERY),
+	 _sender_cid{sender_cid},
+	 _room_id{room_id},
+	 _room_name{room_name},
+	 _room_icon_url{room_icon_url},
+	 _client_info_list{client_info_list},
+	 _room_action{room_action}
 {
 }
 
@@ -76,12 +85,12 @@ ChatRoomControlMessage::RoomAction ChatRoomControlDeliveryMessage::get_room_acti
 
 
 
-json ChatRoomControlDeliveryMessage::serialize_specific_message_fields() const
+json ChatRoomControlDeliveryMessage::serialize_payload() const
 {
-	json specific_fields, member = json::array();
+	json payload, specific_fields, member = json::array();
 	try
 	{
-		if(validate_specific_message_fields() == false){
+		if(validate_payload() == false){
 			throw std::runtime_error("Specific message fields validation failed.");
 		}
 		specific_fields["sender_cid"] = this->_sender_cid;
@@ -106,9 +115,13 @@ json ChatRoomControlDeliveryMessage::serialize_specific_message_fields() const
 				members_json.push_back(m);
 			}
 			specific_fields["members"] = members_json;
+			payload["payload"] = specific_fields;
+			return payload;
 			break;
 		}
 		default:
+			throw std::runtime_error("Unknown room action during serialization.");
+			return json();
 			break;
 		}
 	}
@@ -122,10 +135,9 @@ json ChatRoomControlDeliveryMessage::serialize_specific_message_fields() const
 		LOG_ERROR("Error serializing ChatRoomControlDeliveryMessage: {}", e.what());
 		return json();
 	}
-    return specific_fields;
 }
 
-bool ChatRoomControlDeliveryMessage::validate_specific_message_fields() const
+bool ChatRoomControlDeliveryMessage::validate_payload() const
 {
 	try
 	{

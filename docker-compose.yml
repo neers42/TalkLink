@@ -7,20 +7,30 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./mysql/conf.d/mychat.cnf:/etc/mysql/conf.d/mychat.cnf:ro
+      - ./mysql/conf.d/talklink.cnf:/etc/mysql/conf.d/talklink.cnf:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    
     networks:
-      - mychat-net
+      - talklink-net
+
+  flyway:
+    image: flyway/flyway:latest
+    container_name: flyway
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: -url=jdbc:mysql://${DB_HOST}:${DB_PORT}/${MYSQL_DATABASE} -user=${MYSQL_USER} -password=${MYSQL_PASSWORD} -baselineOnMigrate=true migrate
+    volumes:
+      - ./mysql/migrations:/flyway/sql
+    networks:
+      - talklink-net
 
   redis:
     image: redis:latest
@@ -33,7 +43,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - mychat-net
+      - talklink-net
 
   chat-server:
     build:
@@ -65,7 +75,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
 
     networks:
-      - mychat-net
+      - talklink-net
   
   auth-server:
     build:
@@ -87,10 +97,10 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     networks:
-      - mychat-net
+      - talklink-net
 
 volumes:
   db_data:
 
 networks:
-  mychat-net:
+  talklink-net:

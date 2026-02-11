@@ -33,8 +33,8 @@ bool TokenHandler::verify_token(const std::string &token, std::string &cid, std:
         }
         auto verify = jwt::verify()
                           .allow_algorithm(jwt::algorithm::rs256(rsa_pub_key, "", "", ""))
-                          .with_issuer("https://securetoken.google.com/mychat-e2542")
-                          .with_audience("mychat-e2542");
+                          .with_issuer("https://securetoken.google.com/talklink-8b0d0")
+                          .with_audience("talklink-8b0d0");
 
         verify.verify(decoded_token); // Verify the token
 

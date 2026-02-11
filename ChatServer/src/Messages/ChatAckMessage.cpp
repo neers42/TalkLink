@@ -1,28 +1,17 @@
 ﻿#include "Messages/ChatAckMessage.hpp"
 
 ChatAckMessage::ChatAckMessage() 
+	: MessageBase(MessageBase::MessageType::CHAT_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_cid_list()
 {
-
 }
+
 ChatAckMessage::ChatAckMessage(
-	MessageBase::ContentType c_type, 
-	const std::string &mt, 
-	const uint64_t _send_mid, 
+	const MessageBase::CommonField& common_fields,
+	const uint64_t mid,
 	const MessageSendStatus status, 
 	const std::string &room_id, 
 	const std::vector<std::string> &_unsend_cid_list)
-	: MessageBase(c_type, mt, _send_mid),
-	 _send_status(status), _room_id(room_id), _unsend_cid_list(_unsend_cid_list)
-{
-}
-ChatAckMessage::ChatAckMessage(int c_type,
-	const std::string &mt, 
-	const uint64_t _send_mid, 
-	const MessageSendStatus status,
-	const std::string &room_id, 
-	const std::vector<std::string> &_unsend_cids)
-    : MessageBase(static_cast<MessageBase::ContentType>(c_type), mt, _send_mid),
-	 _send_status(status), _room_id(room_id), _unsend_cid_list(_unsend_cids)
+	: MessageBase(common_fields, MessageBase::MessageType::CHAT_ACK),_send_status(status), _room_id(room_id), _unsend_cid_list(_unsend_cid_list)
 {
 }
 
@@ -81,35 +70,22 @@ void ChatAckMessage::set_room_id(const std::string& room_id)
 
 
 
-json ChatAckMessage::serialize_specific_message_fields() const
+json ChatAckMessage::serialize_payload() const
 {
-	json chat_ack_message, unsend_cids = json::array();
+	json payload, specific_fields, unsend_cids = json::array();
 	try
 	{
-		if (validate_specific_message_fields() != false) {
-
-			switch (this->_send_status)
-			{
-			case ChatAckMessage::MessageSendStatus::SEND_SUCCESS:
-				chat_ack_message["send_status"] = "SEND_SUCCESS";
-				break;
-			case ChatAckMessage::MessageSendStatus::SEND_PARTIAL_SUCCESS:
-				chat_ack_message["send_status"] = "SEND_PARTIAL_SUCCESS";
-				break;
-			case ChatAckMessage::MessageSendStatus::SEND_FAILED:
-				chat_ack_message["send_status"] = "SEND_FAILED";
-				break;
-			default:
-				chat_ack_message["send_status"] = "SEND_FAILED";
-				break;
-			}
-			chat_ack_message["room_id"] = this->get_room_id();
+		if (validate_payload() != false) {
+			specific_fields["send_status"] = this->get_send_status();
+			specific_fields["room_id"] = this->get_room_id();
 			if (this->_unsend_cid_list.size() > 0) {
-				chat_ack_message["unsend_cid_list"] = this->_unsend_cid_list;
+				specific_fields["unsend_cid_list"] = this->_unsend_cid_list;
 			}
 			else {
-				chat_ack_message["unsend_cid_list"] = json::array();
+				specific_fields["unsend_cid_list"] = json::array();
 			}
+			payload["payload"] = specific_fields;
+			return payload;
 		}
 		else {
 			throw std::runtime_error("ChatAckMessage specific fields validation failed during serialization.");
@@ -126,10 +102,10 @@ json ChatAckMessage::serialize_specific_message_fields() const
 		return json();
 	}
 
-	return chat_ack_message;
+	return json();
 }
 
-bool ChatAckMessage::validate_specific_message_fields() const
+bool ChatAckMessage::validate_payload() const
 {
 	try
 	{

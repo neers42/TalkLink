@@ -1,13 +1,10 @@
 #include "Messages/AuthResponseMessage.hpp"
 
 AuthResponseMessage::AuthResponseMessage()
-    :MessageBase(MessageBase::ContentType::AUTHENTICATION, "AuthResponse"),
-     _verify_status(false), ttl(0){
+    :MessageBase(MessageBase::MessageType::AUTHENTICATION_RESPONSE),_verify_status(false), ttl(0){
 }
-AuthResponseMessage::AuthResponseMessage(bool _verify_status, const std::uint64_t ttl)
-    :MessageBase(MessageBase::ContentType::AUTHENTICATION, "AuthResponse"),
-      _verify_status(_verify_status),
-      ttl(ttl)
+AuthResponseMessage::AuthResponseMessage(const MessageBase::CommonField& common_fields, bool _verify_status, const std::uint64_t ttl)
+    :MessageBase(common_fields, MessageBase::MessageType::AUTHENTICATION_RESPONSE), _verify_status(_verify_status), ttl(ttl)
 {
 }
 
@@ -21,18 +18,19 @@ std::uint64_t AuthResponseMessage::get_ttl() const
     return this->ttl;
 }
 
-json AuthResponseMessage::serialize_specific_message_fields() const
+json AuthResponseMessage::serialize_payload() const
 {
-    json specific_fields;
+    json payload, specific_fields;
     try
     {
-        if(validate_specific_message_fields() == false)
+        if(validate_payload() == false)
         {
             throw std::runtime_error("AuthResponseMessage specific fields validation failed during serialization.");
         }
         specific_fields["verify_result"] = this->_verify_status;
         specific_fields["ttl"] = this->ttl;
-        return specific_fields;
+        payload["payload"] = specific_fields;
+        return payload;
     }
     catch(const std::runtime_error& re)
     {
@@ -45,7 +43,7 @@ json AuthResponseMessage::serialize_specific_message_fields() const
     return json();
 }
 
-bool AuthResponseMessage::validate_specific_message_fields() const
+bool AuthResponseMessage::validate_payload() const
 {
     try
     {

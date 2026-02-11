@@ -1,14 +1,17 @@
 ﻿#include "Messages/ChatRoomControlAckMessage.hpp"
 
-ChatRoomControlAckMessage::ChatRoomControlAckMessage() {} 
+ChatRoomControlAckMessage::ChatRoomControlAckMessage() 
+	: MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_cid_list()
+{
+} 
 ChatRoomControlAckMessage::ChatRoomControlAckMessage(
-    int content_type,
-    const std::string &mt,
+    const MessageBase::CommonField& common_fields,
     MessageSendStatus send_status,
     const std::string &room_id,
     uint64_t send_message_id,
     const std::vector<std::string> &unsend_cid_list)
-    : MessageBase(static_cast<MessageBase::ContentType>(content_type), mt, send_message_id),
+    : MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL_ACK),
+	  _message_id(send_message_id),
       _send_status(send_status),
       _room_id(room_id),
       _unsend_cid_list(unsend_cid_list)
@@ -20,41 +23,45 @@ ChatRoomControlAckMessage::~ChatRoomControlAckMessage()
 }
 
 
-json ChatRoomControlAckMessage::serialize_specific_message_fields() const
+json ChatRoomControlAckMessage::serialize_payload() const
 {
-	json chatroom_control_ack_json, unsend_cids = json::array();
+	json payload, specific_fields, unsend_cids = json::array();
 
 	try
 	{
-		if(validate_specific_message_fields() == false) {
+		if(validate_payload() == false) {
 			throw std::runtime_error("ChatRoomControlAckMessage specific fields validation failed during serialization.");
 		}else{
-			chatroom_control_ack_json["content_type"] = "NOTIFICATION";
-			chatroom_control_ack_json["mt"] = this->get_message_type();
+			specific_fields["content_type"] = "NOTIFICATION";
+			specific_fields["mt"] = this->get_message_type();
 			switch (this->_send_status)
 			{
 				case MessageSendStatus::SEND_SUCCESS:
-					chatroom_control_ack_json["send_status"] = "SEND_SUCCESS";
+					specific_fields["send_status"] = "SEND_SUCCESS";
 					break;
 				case MessageSendStatus::SEND_PARTICAL_SUCCESS:
-					chatroom_control_ack_json["send_status"] = "SEND_PARTICAL_SUCCESS";
+					specific_fields["send_status"] = "SEND_PARTICAL_SUCCESS";
 					break;
 				case MessageSendStatus::SEND_FAILED:
-					chatroom_control_ack_json["send_status"] = "SEND_FAILED";
+					specific_fields["send_status"] = "SEND_FAILED";
 					break;
 			default:
-				chatroom_control_ack_json["send_status"] = "SEND_FAILED";
+				specific_fields["send_status"] = "SEND_FAILED";
 				break;
 			}
-			chatroom_control_ack_json["room_id"] = this->_room_id;
-			chatroom_control_ack_json["send_message_id"] = this->get_message_id();
+			specific_fields["room_id"] = this->_room_id;
+			specific_fields["send_message_id"] = this->get_message_id();
 			if (this->_unsend_cid_list.size() > 0) {
-				chatroom_control_ack_json["unsend_cid_list"] = this->_unsend_cid_list;
+				specific_fields["unsend_cid_list"] = this->_unsend_cid_list;
 			}else if(this->_unsend_cid_list.size() == 0){
-				chatroom_control_ack_json["unsend_cid_list"] = json::array();
+				specific_fields["unsend_cid_list"] = json::array();
 			}else{
 				throw std::runtime_error("Unsend CID list size is invalid.");
+				return json();
 			}
+			payload["payload"] = specific_fields;
+			return payload;
+
 		}
 	}
 	catch (const std::runtime_error& re)
@@ -67,10 +74,9 @@ json ChatRoomControlAckMessage::serialize_specific_message_fields() const
 		LOG_ERROR("Error deserializing ChatRoomControlAck message: {}", e.what());
 		return json();
 	}
-	return chatroom_control_ack_json;
 }
 
-bool ChatRoomControlAckMessage::validate_specific_message_fields() const
+bool ChatRoomControlAckMessage::validate_payload() const
 {
 	try
 	{

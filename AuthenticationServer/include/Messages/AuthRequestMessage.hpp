@@ -10,11 +10,12 @@ private:
 
 public:
     AuthRequestMessage();
-    AuthRequestMessage(const std::string& jwt);
+    AuthRequestMessage(const MessageBase::CommonField& common_fields, const std::string& jwt);
+    AuthRequestMessage(const std::string& jwt, const std::string& correlation_id);
     std::string get_jwt() const;
 
     // IReceiveMessageの実装
-    bool validate_specific_fields(const json& message) const override;
+    bool validate_payload(const json& message) const override;
     std::unique_ptr<MessageBase> create_instance(const json& message) const override;
     bool validate_value() const override;
 

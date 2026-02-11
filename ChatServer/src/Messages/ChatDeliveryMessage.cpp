@@ -1,18 +1,22 @@
 ﻿#include "Messages/ChatDeliveryMessage.hpp"
 
 ChatDeliveryMessage::ChatDeliveryMessage() 
+    : MessageBase(MessageBase::MessageType::CHAT_DELIVERY),
+      _send_message_id(0),
+      _room_id(""),
+      _sender_cid(""),
+      _content("")
 {
 
 } 
 ChatDeliveryMessage::ChatDeliveryMessage(
-    int c_type,
-    const std::string &mt,
+	const MessageBase::CommonField& common_fields,
+	const uint64_t send_message_id,
     const std::string &room_id,
     const std::string &sender_cid,
-    const uint64_t send_message_id,
-    const std::string &send_time,
     const std::string &content)
-    : MessageBase(static_cast<ContentType>(c_type), mt, send_message_id, send_time),
+    : MessageBase(common_fields, MessageBase::MessageType::CHAT_DELIVERY),
+      _send_message_id(send_message_id),
       _room_id(room_id),
       _sender_cid(sender_cid),
       _content(content)
@@ -22,23 +26,14 @@ ChatDeliveryMessage::ChatDeliveryMessage(
 	}
 }
 
-ChatDeliveryMessage::ChatDeliveryMessage(
-	MessageBase::ContentType c_type, 
-	const std::string &mt, 
-	const std::string &room_id, 
-	const std::string &sender_id, 
-	const uint64_t send_message_id, 
-	const std::string &send_time, 
-	const std::string &content)
-	: MessageBase(c_type, mt, send_message_id, send_time),
-	  _room_id(room_id),
-	  _sender_cid(sender_id),
-	  _content(content)
-{
-}
 
 ChatDeliveryMessage::~ChatDeliveryMessage()
 {
+}
+
+uint64_t ChatDeliveryMessage::get_send_message_id() const
+{
+	return this->_send_message_id;
 }
 
 std::string ChatDeliveryMessage::get_room_id() const
@@ -72,17 +67,18 @@ void ChatDeliveryMessage::set_content(const std::string& content)
 	this->_content = content;
 }
 
-json ChatDeliveryMessage::serialize_specific_message_fields() const
+json ChatDeliveryMessage::serialize_payload() const
 {
-	json specific_fields;
+	json payload, specific_fields;
 	try
 	{
-		if (validate_specific_message_fields() == false)
+		if (validate_payload() == true)
 		{
 			specific_fields["room_id"] = this->_room_id;
 			specific_fields["sender_cid"] = this->_sender_cid;
 			specific_fields["content"] = this->_content;
-			return specific_fields;
+			payload["payload"] = specific_fields;
+			return payload;
 		}
 		else {
 			throw std::runtime_error("ChatDeliveryMessage specific fields validation failed during serialization.");
@@ -101,7 +97,7 @@ json ChatDeliveryMessage::serialize_specific_message_fields() const
 	}
 }
 
-bool ChatDeliveryMessage::validate_specific_message_fields() const
+bool ChatDeliveryMessage::validate_payload() const
 {
 	try
 	{
