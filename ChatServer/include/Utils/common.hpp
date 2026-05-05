@@ -15,6 +15,13 @@
 #include <random>
 #include <sstream>
 #include <map>
+#include <unordered_map>
+// ネットワーク関連のヘッダー
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "ulid/ulid.hh"
 #include "AppException.h"
 #include "StringFormat.h"
@@ -30,9 +37,15 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include <jwt-cpp/jwt.h>
+#include <unordered_map>
+#include <functional>
+#include <algorithm>
+#include <iomanip>
 using json = nlohmann::json;
 
-
+// ソケット関連の型定義
+typedef int socket_t;
+#define INVALID_SOCKET_FD -1
 
 namespace random_utils {
 	//乱数生成

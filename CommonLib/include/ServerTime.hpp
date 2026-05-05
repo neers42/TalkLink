@@ -141,6 +141,9 @@ public:
             return get_current_time_to_milliseconds();
         }
     }
+
+    // Unix時刻を取得
+    time_t get_current_unix_time() const;
 	
 };
 

@@ -14,6 +14,9 @@
 #define ASCII_CODE 0
 #define UTF_8_CODE 1
 #define SHIFT_JIS_CODE 2
+#define LOG_INFO(fmt_str, ...) spdlog::info(fmt_str, ##__VA_ARGS__)
+#define LOG_WARNING(fmt_str, ...) spdlog::warn(fmt_str, ##__VA_ARGS__)
+#define LOG_DEBUG(fmt_str, ...) spdlog::debug(fmt_str, ##__VA_ARGS__)
 #define LOG_TRACE spdlog::trace("LOG TRACE=>Function:{} FIle:{} LINE:{}", __func__,__FILE__, __LINE__);
 #define LOG_ERROR(fmt_str, ...) \
     spdlog::error("{}({}:L.{} => function:{}())", \

@@ -1,0 +1,129 @@
+#ifndef CHATROOMSERVICE_HPP
+#define CHATROOMSERVICE_HPP
+
+#include "Utils/common.hpp"
+#include "Domain/Entity/Messages/ChatroomControlMessage.hpp"
+#include "Domain/Entity/Messages/ChatroomControlDeliveryMessage.hpp"
+#include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
+#include "Infrastructure/MySQLClient.hpp"
+#include "Infrastructure/RedisClient.hpp"
+#include "Application/Services/IMessageDeliveryService.hpp"
+#include "Domain/ChatroomRepositoryHandler.hpp"
+#include "Domain/ChatroomIDGenerator.hpp"
+
+// チャットルーム操作結果
+struct ChatroomOperationResult {
+    bool success;
+    std::string error_message;
+    int affected_members;
+    std::vector<std::string> unsent_notifications;
+};
+
+// ルーム作成結果
+struct RoomCreationResult {
+    bool success;
+    std::string room_id;
+    std::string error_message;
+    int initial_members;
+};
+
+// メンバー管理結果
+struct MemberManagementResult {
+    bool success;
+    std::string error_message;
+    std::vector<std::string> affected_member_ids;
+    std::vector<std::string> failed_member_ids;
+};
+
+class ChatroomManagementService {
+private:
+    // 依存関係
+    std::shared_ptr<MySQLClient> _mysql_client;
+    std::shared_ptr<RedisClient> _redis_client;
+    std::shared_ptr<IMessageDeliveryService> _message_delivery_service;
+    std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
+
+public:
+    // コンストラクタ・デストラクタ
+    explicit ChatroomManagementService(
+        std::shared_ptr<MySQLClient> mysql_client,
+        std::shared_ptr<RedisClient> redis_client,
+        std::shared_ptr<IMessageDeliveryService> message_delivery_service,
+        std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler
+    );
+    ~ChatroomManagementService();
+    
+    // ==================== チャットルーム操作 ====================
+    
+    // チャットルーム操作処理（統合）
+    ChatroomOperationResult process_chatroom_operation(const json& control_message_json);
+    
+    // チャットルーム作成
+    RoomCreationResult create_chatroom(
+        const std::string& room_name,
+        const std::string& icon_url,
+        const std::vector<std::string>& initial_members,
+        const std::string& creator_id
+    );
+    
+    // チャットルームメンバー管理
+    MemberManagementResult add_members(const std::string& room_id, const std::vector<std::string>& member_ids);
+    MemberManagementResult remove_members(const std::string& room_id, const std::vector<std::string>& member_ids);
+    
+    // チャットルーム削除
+    ChatroomOperationResult delete_chatroom(const std::string& room_id, const std::string& requester_id);
+    
+    // ==================== 通知配信 ====================
+    
+    // チャットルーム操作通知の配信
+    ChatroomOperationResult deliver_chatroom_notification(
+        const std::unique_ptr<ChatroomControlMessage>& control_message,
+        socket_t sender_socket
+    );
+    
+    // チャットルーム操作の確認応答
+    bool send_chatroom_acknowledgment(
+        const std::unique_ptr<ChatroomControlMessage>& control_message,
+        const ChatroomOperationResult& operation_result
+    );
+    
+    // ==================== ユーティリティメソッド ====================
+    
+    // クライアント情報生成
+    std::vector<ChatroomControlDeliveryMessage::ClientInfo> generate_client_infos(const std::vector<std::string>& client_ids);
+    
+    // ルーム権限チェック
+    bool check_room_permission(const std::string& room_id, const std::string& client_id, const std::string& operation);
+    
+    // ルーム存在チェック
+    bool room_exists(const std::string& room_id);
+    
+    // ルームメンバー取得
+    std::vector<std::string> get_room_members(const std::string& room_id);
+    
+private:
+    // ==================== 内部ヘルパーメソッド ====================
+    
+    // バリデーション
+    bool validate_chatroom_control_message(const std::unique_ptr<ChatroomControlMessage>& control_message);
+    bool validate_room_name(const std::string& room_name);
+    bool validate_member_ids(const std::vector<std::string>& member_ids);
+    
+    // データベース操作
+    bool save_room_operation_to_database(const std::unique_ptr<ChatroomControlMessage>& control_message, const json& message_json);
+    
+    // エラーハンドリング
+    void handle_operation_error(const std::exception& e, const std::string& operation_context);
+    
+    // 通知メッセージ生成
+    std::unique_ptr<ChatroomControlDeliveryMessage> create_notification_message(
+        const std::unique_ptr<ChatroomControlMessage>& control_message,
+        const ChatroomOperationResult& result
+    );
+
+    // プライベートヘルパーメソッド
+    static std::string issue_chatroom_id();
+    static std::string issue_chatroom_id_unhex();
+};
+
+#endif // CHATROOMMANAGEMENTSERVICE_HPP

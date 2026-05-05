@@ -114,8 +114,7 @@ std::tuple<std::string, bool, bool> ProtocolHandler::receive_message_str(SSL *cl
 			//受信したメッセージを文字列に変換
 			std::string recv_msg(message_buffer.begin(), message_buffer.end());
 			//完全なメッセージが解析された場合は中身を表示
-			spdlog::debug("message receive success, received message size : {}.", bytes_read);
-			spdlog::debug("message content : {}", recv_msg);
+			LOG_DEBUG("[ProtocolHandler] message receive success, received message size : {} message_content : {}", bytes_read, recv_msg);
 			recv_flag = true;
 			return std::make_tuple(recv_msg, disconnect_flag, recv_flag);
 
@@ -142,17 +141,17 @@ std::tuple<std::string, bool, bool> ProtocolHandler::receive_message_str(SSL *cl
 			//システムコール関連のエラーが発生した場合
 			else if (recv_error == SSL_ERROR_SYSCALL) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
-					LOG_ERROR("message receive failed, SSL read timeout occured.");
+					LOG_ERROR("[ProtocolHandler] message receive failed, SSL read timeout occured.");
 					return std::make_tuple(std::string(), disconnect_flag, recv_flag);
 				}
 				else {
-					LOG_ERROR("message receive failed, SSL read syscall error occured.");
+					LOG_ERROR("[ProtocolHandler] message receive failed, SSL read syscall error occured.");
 					return std::make_tuple(std::string(), disconnect_flag, recv_flag);
 				}
 			}
 			//それ以外の理由
 			else {
-				LOG_ERROR("message receive failed. error code : {}", recv_error);
+				LOG_ERROR("[ProtocolHandler] message receive failed. error code : {}", recv_error);
 				return std::make_tuple(std::string(), disconnect_flag, recv_flag);
 			}
 
@@ -190,15 +189,22 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_json(SSL *client_s
 				//jsonメッセージの解析
 				recv_msg_json = json::from_msgpack(message_buffer);
 				//完全なメッセージが解析された場合は中身を表示
-				spdlog::debug("message receive success, received message size : {}.", bytes_read);
+				LOG_DEBUG("[ProtocolHandler] message receive success, received message size : {} message content : {}", message_size, recv_msg_json.dump(4));
+				
+				// JSON解析が成功したので即座にreturn
+				recv_flag = true;
+				disconnect_flag = false;  // 明示的にfalse設定
+				LOG_DEBUG("[ProtocolHandler] Returning SUCCESS: recv_flag=true, disconnect_flag=false, json_size={}", recv_msg_json.dump().length());
+				return std::make_tuple(recv_msg_json, disconnect_flag, recv_flag);
 			}
 			catch (const json::parse_error& e)
 			{
 				//jsonが完全ではない場合、再度受信を繰り返す
 				continue;
 			}
-			recv_flag = true;
-			return std::make_tuple(recv_msg_json, disconnect_flag, recv_flag);
+			// この行は削除：JSON解析成功時は上でreturnされるため到達しない
+			// recv_flag = true;
+			// return std::make_tuple(recv_msg_json, disconnect_flag, recv_flag);
 
 		}
 		//受信したバイト数が0の場合はクライアントを切断する処理に移行する
@@ -223,17 +229,17 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_json(SSL *client_s
 			//システムコール関連のエラーが発生した場合
 			else if (recv_error == SSL_ERROR_SYSCALL) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
-					LOG_ERROR("message receive failed, SSL read timeout occured.");
+					LOG_ERROR("[ProtocolHandler] message receive failed, SSL read timeout occured.");
 					return std::make_tuple(json(), disconnect_flag, recv_flag);
 				}
 				else {
-					LOG_ERROR("message receive failed, SSL read syscall error occured.");
+					LOG_ERROR("[ProtocolHandler] message receive failed, SSL read syscall error occured.");
 					return std::make_tuple(json(), disconnect_flag, recv_flag);
 				}
 			}
 			//それ以外の理由
 			else {
-				LOG_ERROR("message receive failed. error code : {}", recv_error);
+				LOG_ERROR("[ProtocolHandler] message receive failed. error code : {}", recv_error);
 				return std::make_tuple(json(), disconnect_flag, recv_flag);
 			}
 
@@ -436,23 +442,23 @@ void ProtocolHandler::hot_reload_certificates(int interval_seconds, const std::s
 		}
 		if (cert_changed || key_changed)
 		{
-			spdlog::info("Certificate or private key file changed, reloading...");
+			LOG_DEBUG("[ProtocolHandler] Certificate or private key file changed, reloading...");
 			auto new_ctx = std::shared_ptr<SSL_CTX>(SSL_CTX_new(TLS_server_method()), SSL_CTX_Deleter{});
 			if (!new_ctx)
 			{
-				LOG_ERROR("Failed to create new SSL_CTX.");
+				LOG_ERROR("[ProtocolHandler] Failed to create new SSL_CTX.");
 				continue;
 			}
 			if (!reload_certificates(new_ctx.get(), cert_file_pass, private_key_file_pass))
 			{
-				LOG_ERROR("Failed to reload certificates.");
+				LOG_ERROR("[ProtocolHandler] Failed to reload certificates.");
 				std::this_thread::sleep_for(std::chrono::seconds(5));  // 5秒待機してから再試行
 				continue;
 			}
 			{
 				std::lock_guard<std::mutex> lock(this->_ctx_mutex);
 				this->_server_ctx = std::move(new_ctx);	//新しいCTXを設定
-				spdlog::info("SSL_CTX reloaded successfully.");
+				LOG_DEBUG("[ProtocolHandler] SSL_CTX reloaded successfully.");
 			}
 		}
 	}
@@ -462,7 +468,7 @@ void ProtocolHandler::stop_hot_reload()
 {
 	this->_running = false; // サーバーを停止するフラグを設定
 	_reload_cv.notify_all(); // 待機中のスレッドに通知して即座に終了させる
-	spdlog::info("Certificate hot reload thread stopped.");
+	LOG_DEBUG("[ProtocolHandler] Certificate hot reload thread stopped.");
 }
 
 // SSL通信で発生するエラーの表示
@@ -472,7 +478,7 @@ void ProtocolHandler::print_ssl_error(SSL* client_ssl)
 	char buffer[80];
 	err = SSL_get_error(client_ssl, 0);
 	ERR_error_string(err, buffer);
-	LOG_ERROR("SSL error content : {:s} (code : {:d}.)", std::string(buffer), err);
+	LOG_ERROR("[ProtocolHandler] SSL error content : {:s} (code : {:d}.)", std::string(buffer), err);
 }
 
 
@@ -482,12 +488,12 @@ const SSL_METHOD* ProtocolHandler::set_server_method()
 	//TLS接続時のバージョン指定(v23＝サーバー及びクライアントがサポートする最も高いバージョンを指定)
 	const auto server_method = TLS_server_method();
 	if (server_method == NULL) {
-		spdlog::critical("TLS server method, failed, unable to get method.");
+		LOG_ERROR("[ProtocolHandler] TLS server method, failed, unable to get method.");
 		exit(1);
 	}
 	else
 	{
-		spdlog::debug("server_method set v23 for TLS context.");
+		LOG_DEBUG("[ProtocolHandler] server_method set v23 for TLS context.");
 		return server_method;
 	}
 #endif // SERVER_METHOD_SSLV23
@@ -496,12 +502,12 @@ const SSL_METHOD* ProtocolHandler::set_server_method()
 	//TLS接続時のバージョン指定(v23＝サーバー及びクライアントがサポートする最も高いバージョンを指定)
 	const auto server_method = TLSv1_3_server_method();
 	if (server_method == NULL) {
-		spdlog::critical("TLS v1.3 server method, failed, unable to get method.");
+		LOG_ERROR("[ProtocolHandler] TLS v1.3 server method, failed, unable to get method.");
 		exit(1);
 	}
 	else
 	{
-		spdlog::debug("server_method set TLS 1.3  context.");
+		LOG_DEBUG("[ProtocolHandler] server_method set TLS 1.3  context.");
 		return server_method;
 	}
 
@@ -511,12 +517,12 @@ const SSL_METHOD* ProtocolHandler::set_server_method()
 	//TLS接続時のバージョン指定(v23＝サーバー及びクライアントがサポートする最も高いバージョンを指定)
 	const auto server_method = TLSv1_2_server_method();
 	if (server_method == NULL) {
-		spdlog::critical("TLS v1.2 server method, failed, unable to get method.");
+		LOG_ERROR("[ProtocolHandler] TLS v1.2 server method, failed, unable to get method.");
 		exit(1);
 	}
 	else
 	{
-		spdlog::debug("server_method set TLS 1.2 context.");
+		LOG_DEBUG("[ProtocolHandler] server_method set TLS 1.2 context.");
 		return server_method;
 	}
 
@@ -526,18 +532,18 @@ const SSL_METHOD* ProtocolHandler::set_server_method()
 	//TLS接続時のバージョン指定(v23＝サーバー及びクライアントがサポートする最も高いバージョンを指定)
 	const auto server_method = TLSv1_1_server_method();
 	if (server_method == NULL) {
-		spdlog::critical("TLS v1.1 server method, failed, unable to get method.");
+		LOG_ERROR("[ProtocolHandler] TLS v1.1 server method, failed, unable to get method.");
 		exit(1);
 	}
 	else
 	{
-		spdlog::debug("server_method set TLS 1.1 context.");
+		LOG_DEBUG("[ProtocolHandler] server_method set TLS 1.1 context.");
 		return server_method;
 	}
 #endif // SERVER_METHOD_TLS_1_1
 
 	//どれも定義されていない場合の安全対策
-	spdlog::critical("No valid TLS method defined. Please define SERVER_METHOD_* macro.");
+	LOG_ERROR("[ProtocolHandler] No valid TLS method defined. Please define SERVER_METHOD_* macro.");
 	exit(1);  // 明示的に終了して UB を防ぐ
 	return nullptr;  // これは念のため
 }
@@ -546,7 +552,7 @@ void ProtocolHandler::generate_ssl_context(const SSL_METHOD* method)
 {
 	SSL_CTX* raw_ctx = SSL_CTX_new(method);
     if (!raw_ctx) {
-        spdlog::critical("SSL context creation failed.");
+        LOG_ERROR("[ProtocolHandler] SSL context creation failed.");
         exit(1);
     }
     this->_server_ctx = std::shared_ptr<SSL_CTX>(raw_ctx, SSL_CTX_Deleter{});
@@ -557,7 +563,7 @@ void ProtocolHandler::load_cert_file(const std::string &cert_file_pass)
 {
 		//サーバ証明書のロード
 	if (SSL_CTX_use_certificate_file(_server_ctx.get(), cert_file_pass.c_str(), SSL_FILETYPE_PEM) == 0) {
-		LOG_ERROR("Failed to load server certificate file: {}", cert_file_pass);
+		LOG_ERROR("[ProtocolHandler] Failed to load server certificate file: {}", cert_file_pass);
 		exit(1);
 	}
 }
@@ -566,7 +572,7 @@ void ProtocolHandler::load_private_key(const std::string &private_key_pass)
 {
 		//プライベート鍵のロード
 	if (SSL_CTX_use_PrivateKey_file(_server_ctx.get(), private_key_pass.c_str(), SSL_FILETYPE_PEM) == 0) {
-		LOG_ERROR("Failed to load server private key file: {}", private_key_pass);
+		LOG_ERROR("[ProtocolHandler] Failed to load server private key file: {}", private_key_pass);
 		exit(1);
 	}
 }
@@ -578,9 +584,9 @@ bool ProtocolHandler::modify_file(const std::string& cert_file_pass, time_t &las
     if (stat(cert_file_pass.c_str(), &st) != 0) {
         consecutive_errors++;
         if (consecutive_errors > 3) {
-            LOG_ERROR("Persistent failure accessing certificate file '{}': errno={}, {}", cert_file_pass, errno, std::strerror(errno));
+            LOG_ERROR("[ProtocolHandler] Persistent failure accessing certificate file '{}': errno={}, {}", cert_file_pass, errno, std::strerror(errno));
         } else {
-            spdlog::warn("Temporary failure accessing certificate file '{}': errno={}, {}", cert_file_pass, errno, std::strerror(errno));
+            LOG_WARNING("[ProtocolHandler] Temporary failure accessing certificate file '{}': errno={}, {}", cert_file_pass, errno, std::strerror(errno));
         }
         return false;
     }
@@ -598,19 +604,19 @@ bool ProtocolHandler::reload_certificates(SSL_CTX* ctx, const std::string &cert_
 {
 	//証明書の再ロード
     if (SSL_CTX_use_certificate_file(ctx, cert_file.c_str(), SSL_FILETYPE_PEM) <= 0){
-		LOG_ERROR("Failed to reload server certificate file: {}", cert_file);
+		LOG_ERROR("[ProtocolHandler] Failed to reload server certificate file: {}", cert_file);
 		return false;
 	}
 	//秘密鍵の再ロード
     if (SSL_CTX_use_PrivateKey_file(ctx, key_file.c_str(), SSL_FILETYPE_PEM) <= 0) {
-		LOG_ERROR("Failed to reload server private key file: {}", key_file);
+		LOG_ERROR("[ProtocolHandler] Failed to reload server private key file: {}", key_file);
 		return false;
 	}
 	//秘密鍵とCTXにロードされた証明書との整合性をチェック
     if (!SSL_CTX_check_private_key(ctx)) {
-		LOG_ERROR("Server private key does not match the certificate public key.");
+		LOG_ERROR("[ProtocolHandler] Server private key does not match the certificate public key.");
 		return false;
 	}
-	spdlog::info("Server certificate and private key reloaded successfully.");
+	LOG_DEBUG("[ProtocolHandler] Server certificate and private key reloaded successfully.");
     return true;
 }
