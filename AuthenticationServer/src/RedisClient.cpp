@@ -36,10 +36,10 @@ RedisClient::~RedisClient()
     }
 }
 
-bool RedisClient::save_session(const std::string &cid, const std::string &jwt_token, std::uint64_t expire, std::uint64_t& ttl)
+bool RedisClient::save_session(const std::string &uid, const std::string &jwt_token, std::uint64_t expire, std::uint64_t& ttl)
 {
    
-    std::string session_key = "session:" + cid;
+    std::string session_key = "session:" + uid;
     std::unordered_map<std::string, std::string> fields = {
         {"expire", std::to_string(expire)},
         {"jwt_token", jwt_token}};
@@ -47,32 +47,32 @@ bool RedisClient::save_session(const std::string &cid, const std::string &jwt_to
     {
         //TTL設定
         if (this->_redis_helper->expire(session_key, expire, ttl) == true) {
-            spdlog::info("Session data for CID: {} has been stored in Redis.", cid);
+            spdlog::info("Session data for CID: {} has been stored in Redis.", uid);
         }else{
-            spdlog::warn("Failed to set TTL for session data for CID: {} in Redis.", cid);
+            spdlog::warn("Failed to set TTL for session data for CID: {} in Redis.", uid);
             if (_redis_helper->delete_key({session_key}) == true) {
-                spdlog::info("Session data for CID: {} has been deleted from Redis.", cid);
+                spdlog::info("Session data for CID: {} has been deleted from Redis.", uid);
             }else{
                 //keyの削除に失敗しセッションが残り続けてしまう可能性がある
-                spdlog::critical("Failed to delete session data for CID: {} from Redis.", cid);
+                spdlog::critical("Failed to delete session data for CID: {} from Redis.", uid);
             }
             return false;
         }
     }
     else
     {
-        LOG_ERROR("Failed to store session data for CID: {} in Redis.", cid);
+        LOG_ERROR("Failed to store session data for CID: {} in Redis.", uid);
         return false;
     }
     return true;
 }
 
-bool RedisClient::get_session(const std::string &cid, std::string &jwt_token, std::uint64_t &expire)
+bool RedisClient::get_session(const std::string &uid, std::string &jwt_token, std::uint64_t &expire)
 {
     return false;
 }
 
-bool RedisClient::delete_session(const std::string &cid)
+bool RedisClient::delete_session(const std::string &uid)
 {
     return false;
 }

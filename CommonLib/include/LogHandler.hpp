@@ -6,6 +6,15 @@
 #include <mutex>
 #include "ServerTime.hpp"
 #include "StringFormat.h"
+#include <thread>
+
+// スレッドローカルタスクID管理（CommonLib内で定義）
+extern thread_local std::string g_current_task_id;
+
+// タスクID取得関数（ヘルパー）
+inline std::string get_task_id_format() {
+    return g_current_task_id.empty() ? "" : "[task id : " + g_current_task_id + "] ";
+}
 #define NC "\e[0m"
 #define RED "\e[0;31m"
 #define GRN "\e[0;32m"
@@ -14,12 +23,12 @@
 #define ASCII_CODE 0
 #define UTF_8_CODE 1
 #define SHIFT_JIS_CODE 2
-#define LOG_INFO(fmt_str, ...) spdlog::info(fmt_str, ##__VA_ARGS__)
-#define LOG_WARNING(fmt_str, ...) spdlog::warn(fmt_str, ##__VA_ARGS__)
-#define LOG_DEBUG(fmt_str, ...) spdlog::debug(fmt_str, ##__VA_ARGS__)
-#define LOG_TRACE spdlog::trace("LOG TRACE=>Function:{} FIle:{} LINE:{}", __func__,__FILE__, __LINE__);
+#define LOG_INFO(fmt_str, ...) spdlog::info("{}" fmt_str, get_task_id_format(), ##__VA_ARGS__)
+#define LOG_WARNING(fmt_str, ...) spdlog::warn("{}" fmt_str, get_task_id_format(), ##__VA_ARGS__)
+#define LOG_DEBUG(fmt_str, ...) spdlog::debug("{}" fmt_str, get_task_id_format(), ##__VA_ARGS__)
+#define LOG_TRACE spdlog::trace("{}LOG TRACE=>Function:{} File:{} LINE:{}", get_task_id_format(), __func__,__FILE__, __LINE__);
 #define LOG_ERROR(fmt_str, ...) \
-    spdlog::error("{}({}:L.{} => function:{}())", \
+    spdlog::error("{}{}({}:L.{} => function:{}())", get_task_id_format(), \
     fmt::format(fmt::runtime(fmt_str), ##__VA_ARGS__), \
     (std::string(__FILE__).find_last_of("/\\") != std::string::npos ? \
         std::string(__FILE__).substr(std::string(__FILE__).find_last_of("/\\") + 1) : std::string(__FILE__)), \

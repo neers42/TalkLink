@@ -9,7 +9,7 @@ class InclimentalSearchMessage :
 public:
     enum class SearchType
     {
-        BY_CLIENT,  //ユーザ名検索
+        BY_USER,  //ユーザ名検索
         BY_CHATROOM,    //チャットルーム名検索
         BOTH    //両方検索
     };

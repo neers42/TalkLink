@@ -4,7 +4,7 @@ ChatDeliveryMessage::ChatDeliveryMessage()
     : MessageBase(MessageBase::MessageType::CHAT_DELIVERY),
       _send_message_id(0),
       _room_id(""),
-      _sender_cid(""),
+      _sender_uid(""),
       _content("")
 {
 
@@ -13,16 +13,16 @@ ChatDeliveryMessage::ChatDeliveryMessage(
 	const MessageBase::CommonField& common_fields,
 	const uint64_t send_message_id,
     const std::string &room_id,
-    const std::string &sender_cid,
+    const std::string &sender_uid,
     const std::string &content)
     : MessageBase(common_fields, MessageBase::MessageType::CHAT_DELIVERY),
       _send_message_id(send_message_id),
       _room_id(room_id),
-      _sender_cid(sender_cid),
+      _sender_uid(sender_uid),
       _content(content)
 {
-	if (room_id.empty() || sender_cid.empty() || content.empty()) {
-		throw std::invalid_argument("Invalid argument: room_id, sender_cid, and content cannot be empty");
+	if (room_id.empty() || sender_uid.empty() || content.empty()) {
+		throw std::invalid_argument("Invalid argument: room_id, sender_uid, and content cannot be empty");
 	}
 }
 
@@ -41,9 +41,9 @@ std::string ChatDeliveryMessage::get_room_id() const
 	return this->_room_id;
 }
 
-std::string ChatDeliveryMessage::get_sender_cid() const
+std::string ChatDeliveryMessage::get_sender_uid() const
 {
-	return this->_sender_cid;
+	return this->_sender_uid;
 }
 
 
@@ -57,9 +57,9 @@ void ChatDeliveryMessage::set_room_id(const std::string& room_id)
 	this->_room_id = room_id;
 }
 
-void ChatDeliveryMessage::set_sender_cid(const std::string& sender_cid)
+void ChatDeliveryMessage::set_sender_uid(const std::string& sender_uid)
 {
-	this->_sender_cid = sender_cid;
+	this->_sender_uid = sender_uid;
 }
 
 void ChatDeliveryMessage::set_content(const std::string& content)
@@ -75,7 +75,7 @@ json ChatDeliveryMessage::serialize_payload() const
 		if (validate_payload() == true)
 		{
 			specific_fields["room_id"] = this->_room_id;
-			specific_fields["sender_cid"] = this->_sender_cid;
+			specific_fields["sender_uid"] = this->_sender_uid;
 			specific_fields["content"] = this->_content;
 			payload["payload"] = specific_fields;
 			return payload;
@@ -104,8 +104,8 @@ bool ChatDeliveryMessage::validate_payload() const
 		if (this->_room_id.empty()) {
 			throw std::runtime_error("Invalid ChatDeliveryMessage: room_id is empty.");
 		}
-		if (this->_sender_cid.empty()) {
-			throw std::runtime_error("Invalid ChatDeliveryMessage: sender_cid is empty.");
+		if (this->_sender_uid.empty()) {
+			throw std::runtime_error("Invalid ChatDeliveryMessage: sender_uid is empty.");
 		}
 		if (this->_content.empty()) {
 			throw std::runtime_error("Invalid ChatDeliveryMessage: content is empty.");

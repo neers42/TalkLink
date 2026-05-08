@@ -1,5 +1,8 @@
 #include "Application/Services/TaskManagementService.hpp"
 
+// CommonLibのスレッドローカル変数を使用
+extern thread_local std::string g_current_task_id;
+
 TaskManagementService::TaskManagementService(std::shared_ptr<ThreadPoolHandler> thread_pool)
     : _thread_pool(thread_pool)
 {
@@ -7,7 +10,7 @@ TaskManagementService::TaskManagementService(std::shared_ptr<ThreadPoolHandler> 
         throw std::runtime_error("ThreadPoolHandler is null");
     }
     
-    spdlog::info("TaskManagementService initialized as infrastructure layer (no service dependencies)");
+    LOG_INFO("[TaskManagementService] TaskManagementService initialized as infrastructure layer (no service dependencies)");
 }
 
 TaskManagementService::~TaskManagementService() {
@@ -17,7 +20,7 @@ TaskManagementService::~TaskManagementService() {
         _active_tasks.clear();
     }
     
-    spdlog::info("TaskManagementService shutting down - Total tasks executed: {}, Failed: {}", 
+    LOG_INFO("[TaskManagementService] TaskManagementService shutting down - Total tasks executed: {}, Failed: {}", 
                 _total_tasks_executed.load(), _failed_tasks.load());
 }
 
@@ -26,6 +29,9 @@ TaskManagementService::~TaskManagementService() {
 void TaskManagementService::execute_managed_task(const std::string& task_id, std::function<void()> task)
 {
     auto start_time = std::chrono::steady_clock::now();
+    
+    // スレッドローカルタスクIDを設定
+    set_current_task_id(task_id);
     
     // アクティブタスクを登録
     {
@@ -37,7 +43,8 @@ void TaskManagementService::execute_managed_task(const std::string& task_id, std
     try {
         // 過負荷保護をチェック
         if (_overload_protection && _active_tasks.size() > 150) {
-            spdlog::warn("Task {} skipped due to overload protection", task_id);
+            LOG_WARNING("[TaskManagementService] Task {} skipped due to overload protection", task_id);
+            clear_current_task_id();
             return;
         }
         
@@ -46,7 +53,7 @@ void TaskManagementService::execute_managed_task(const std::string& task_id, std
         success = true;
         
     } catch (const std::exception& e) {
-        spdlog::error("Task {} execution failed: {}", task_id, e.what());
+        LOG_ERROR("[TaskManagementService] Task {} execution failed: {}", task_id, e.what());
         _failed_tasks++;
     }
     
@@ -56,7 +63,7 @@ void TaskManagementService::execute_managed_task(const std::string& task_id, std
     // メトリクスを更新
     _total_tasks_executed++;
     if (success) {
-        spdlog::trace("Task {} completed in {}ms", task_id, execution_time.count());
+        LOG_TRACE("[TaskManagementService] Task {} completed in {}ms", task_id, execution_time.count());
     }
     
     // アクティブタスクから削除
@@ -64,6 +71,9 @@ void TaskManagementService::execute_managed_task(const std::string& task_id, std
         std::lock_guard<std::mutex> lock(_active_tasks_mutex);
         _active_tasks.erase(task_id);
     }
+    
+    // スレッドローカルタスクIDをクリア
+    clear_current_task_id();
 }
 
 void TaskManagementService::enqueue_by_priority(ManagedTask managed_task)
@@ -126,20 +136,20 @@ bool TaskManagementService::cancel_task(const std::string& task_id)
         auto it = _active_tasks.find(task_id);
         if (it != _active_tasks.end()) {
             _active_tasks.erase(it);
-            spdlog::debug("Task {} cancelled", task_id);
+            LOG_DEBUG("[TaskManagementService] Task {} cancelled", task_id);
             return true;
         }
         
-        spdlog::warn("Attempted to cancel non-existent task: {}", task_id);
+        LOG_WARNING("[TaskManagementService] Attempted to cancel non-existent task: {}", task_id);
         return false;
         
     } catch (const std::exception& e) {
-        spdlog::error("Exception while cancelling task {}: {}", task_id, e.what());
+        LOG_ERROR("[TaskManagementService] Exception while cancelling task {}: {}", task_id, e.what());
         return false;
     }
 }
 
-void TaskManagementService::cancel_client_tasks(socket_t socket)
+void TaskManagementService::cancel_user_tasks(socket_t socket)
 {
     try {
         std::lock_guard<std::mutex> lock(_active_tasks_mutex);
@@ -160,15 +170,15 @@ void TaskManagementService::cancel_client_tasks(socket_t socket)
         }
         
         if (cancelled_count > 0) {
-            spdlog::info("Cancelled {} tasks for client socket: {}", cancelled_count, socket);
+            LOG_INFO("[TaskManagementService] Cancelled {} tasks for user socket: {}", cancelled_count, socket);
         }
         
     } catch (const std::exception& e) {
-        spdlog::error("Exception while cancelling client tasks for socket {}: {}", socket, e.what());
+        LOG_ERROR("[TaskManagementService] Exception while cancelling user tasks for socket {}: {}", socket, e.what());
     }
 }
 
-uint32_t TaskManagementService::get_client_task_count(socket_t socket) const
+uint32_t TaskManagementService::get_user_task_count(socket_t socket) const
 {
     try {
         std::lock_guard<std::mutex> lock(_active_tasks_mutex);
@@ -184,7 +194,7 @@ uint32_t TaskManagementService::get_client_task_count(socket_t socket) const
         return count;
         
     } catch (const std::exception& e) {
-        spdlog::error("Exception while getting client task count for socket {}: {}", socket, e.what());
+        LOG_ERROR("[TaskManagementService] Exception while getting user task count for socket {}: {}", socket, e.what());
         return 0;
     }
 }
@@ -194,7 +204,7 @@ void TaskManagementService::enable_overload_protection(bool enabled)
     _overload_protection.store(enabled);
     
     if (enabled) {
-        spdlog::info("Task overload protection enabled");
+        LOG_INFO("[TaskManagementService] Task overload protection enabled");
         
         // 定期的な過負荷チェックをスケジュールする
         schedule_task(
@@ -206,7 +216,7 @@ void TaskManagementService::enable_overload_protection(bool enabled)
             }
         );
     } else {
-        spdlog::info("Task overload protection disabled");
+        LOG_INFO("[TaskManagementService] Task overload protection disabled");
     }
 }
 
@@ -216,28 +226,28 @@ void TaskManagementService::update_metrics(const TaskMetadata& metadata, bool su
     try {
         if (success) {
             _total_tasks_executed++;
-            spdlog::trace("Task {} ({}) completed successfully in {}ms", 
+            LOG_TRACE("[TaskManagementService] Task {} ({}) completed successfully in {}ms", 
                          metadata.task_id, metadata.description, execution_time.count());
         } else {
             _failed_tasks++;
-            spdlog::warn("Task {} ({}) failed", metadata.task_id, metadata.description);
+            LOG_WARNING("[TaskManagementService] Task {} ({}) failed", metadata.task_id, metadata.description);
         }
         
         // タイムアウトをチェック
         if (execution_time > metadata.max_execution_time) {
             _timeout_tasks++;
-            spdlog::warn("Task {} exceeded timeout: {}ms > {}ms", 
+            LOG_WARNING("[TaskManagementService] Task {} exceeded timeout: {}ms > {}ms", 
                         metadata.task_id, execution_time.count(), 
                         metadata.max_execution_time.count());
         }
         
         // 過負荷保護を必要に応じて更新
         if (_overload_protection && execution_time > _overload_threshold) {
-            spdlog::warn("Task execution time exceeds overload threshold");
+            LOG_WARNING("[TaskManagementService] Task execution time exceeds overload threshold");
         }
         
     } catch (const std::exception& e) {
-        spdlog::error("Exception while updating metrics: {}", e.what());
+        LOG_ERROR("[TaskManagementService] Exception while updating metrics: {}", e.what());
     }
 }
 
@@ -256,7 +266,7 @@ void TaskManagementService::check_system_overload()
         
         if (active_count > MAX_ACTIVE_TASKS) {
             _overload_protection.store(true);
-            spdlog::warn("System overload detected: {} active tasks", active_count);
+            LOG_WARNING("[TaskManagementService] System overload detected: {} active tasks", active_count);
         } else if (active_count < MAX_ACTIVE_TASKS * 0.7) { // 70% 以下で過負荷解除
             _overload_protection.store(false);
         }
@@ -265,7 +275,7 @@ void TaskManagementService::check_system_overload()
         for (const auto& [task_id, start_time] : this->_active_tasks) {
             auto duration = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time);
             if (duration > std::chrono::seconds(60)) { // 60秒以上実行中のタスクを警告
-                spdlog::warn("Long-running task detected: {} running for {}s", task_id, duration.count());
+                LOG_WARNING("[TaskManagementService] Long-running task detected: {} running for {}s", task_id, duration.count());
             }
         }
         
@@ -283,7 +293,31 @@ void TaskManagementService::check_system_overload()
         }
         
     } catch (const std::exception& e) {
-        spdlog::error("Exception during overload check: {}", e.what());
+        LOG_ERROR("[TaskManagementService] Exception during overload check: {}", e.what());
     }
 }
 
+// ==================== スレッドローカルタスク管理 ====================
+
+std::string TaskManagementService::get_current_task_id()
+{
+    return g_current_task_id;
+}
+
+std::string TaskManagementService::get_current_task_id_format()
+{
+    if (g_current_task_id.empty()) {
+        return "";
+    }
+    return "[" + g_current_task_id + "]";
+}
+
+void TaskManagementService::set_current_task_id(const std::string& task_id)
+{
+    g_current_task_id = task_id;
+}
+
+void TaskManagementService::clear_current_task_id()
+{
+    g_current_task_id.clear();
+}

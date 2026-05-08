@@ -1,5 +1,5 @@
-#ifndef CLIENTAGGREGATESTORE_HPP
-#define CLIENTAGGREGATESTORE_HPP
+#ifndef USERAGGREGATESTORE_HPP
+#define USERAGGREGATESTORE_HPP
 
 // ネットワーク関連のヘッダーを最初に読み込み
 #include <sys/socket.h>
@@ -9,44 +9,44 @@
 #include <shared_mutex>
 
 #include "Utils/common.hpp"
-#include "Domain/Entity/Client.hpp"
-class ClientAggregateStore {
+#include "Domain/Entity/User.hpp"
+class UserAggregateStore {
 public:
-    struct ClientAggregate {
-        std::shared_ptr<Client> client;
+    struct UserAggregate {
+        std::shared_ptr<User> user;
         socket_t socket;
         SSL* ssl;
         struct sockaddr_in address;
         std::string ipv4_address;
         std::chrono::steady_clock::time_point last_activity;
         
-        ClientAggregate(std::shared_ptr<Client> client_ptr,
+        UserAggregate(std::shared_ptr<User> user_ptr,
                         socket_t sock, SSL* ssl_ptr, const sockaddr_in& addr, 
                         const std::string& ip)
-            : client(client_ptr), socket(sock), ssl(ssl_ptr), 
+            : user(user_ptr), socket(sock), ssl(ssl_ptr), 
               address(addr), ipv4_address(ip),
               last_activity(std::chrono::steady_clock::now()) {}
         
-        ClientAggregate(socket_t sock, SSL* ssl_ptr, const sockaddr_in& addr, 
+        UserAggregate(socket_t sock, SSL* ssl_ptr, const sockaddr_in& addr, 
                         const std::string& ip)
-            : client(std::make_shared<Client>()), socket(sock), ssl(ssl_ptr), 
+            : user(std::make_shared<User>()), socket(sock), ssl(ssl_ptr), 
               address(addr), ipv4_address(ip),
               last_activity(std::chrono::steady_clock::now()) {}
     };
 
 private:
-    std::unordered_map<socket_t, ClientAggregate> _aggregates;
-    std::unordered_map<std::string, socket_t> _client_id_to_socket;
+    std::unordered_map<socket_t, UserAggregate> _aggregates;
+    std::unordered_map<std::string, socket_t> _user_id_to_socket;
     mutable std::shared_mutex _shared_mutex;
     mutable std::mutex _id_map_mutex; // IDマッピング用の個別ミューテックス
     
-    // ClientRepositoryHandlerとClientCommunicationHandlerのみフレンド
-    friend class ClientRepositoryHandler;
-    friend class ClientCommunicationHandler;
+    // UserRepositoryHandlerとCommunicationHandlerのみフレンド
+    friend class UserRepositoryHandler;
+    friend class CommunicationHandler;
     
 public:
-    ClientAggregateStore() = default;
-    ~ClientAggregateStore() = default;
+    UserAggregateStore() = default;
+    ~UserAggregateStore() = default;
     
     // 外部からは基本的な統計情報のみ公開
     size_t size() const;
@@ -54,14 +54,14 @@ public:
     
 private:
     // 内部操作（フレンドクラスのみアクセス可能）
-    bool insert(socket_t socket, ClientAggregate&& aggregate);
+    bool insert(socket_t socket, UserAggregate&& aggregate);
     bool erase(socket_t socket);
-    ClientAggregate* find(socket_t socket);
-    const ClientAggregate* find(socket_t socket) const;
+    UserAggregate* find(socket_t socket);
+    const UserAggregate* find(socket_t socket) const;
     
     std::shared_mutex& get_mutex() { return _shared_mutex; }
     auto& get_aggregates() { return _aggregates; }
-    auto& get_id_to_socket_map() { return _client_id_to_socket; }
+    auto& get_id_to_socket_map() { return _user_id_to_socket; }
     std::mutex& get_id_map_mutex() { return _id_map_mutex; }
 };
-#endif // CLIENTAGGREGATESTORE_HPP
+#endif // USERAGGREGATESTORE_HPP

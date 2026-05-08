@@ -35,7 +35,7 @@ RedisClient::~RedisClient() {
     }
 }
 
-bool RedisClient::is_client_session_key(const std::string &session_key)
+bool RedisClient::is_user_session_key(const std::string &session_key)
 {
     return _redis_helper->is_key_exists(session_key);
 }

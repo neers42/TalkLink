@@ -3,7 +3,7 @@
 RequestDispatcherService::RequestDispatcherService(
     std::shared_ptr<SocketHandler> socket_handler,
     std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
-    std::shared_ptr<ClientCommunicationHandler> communication_handler
+    std::shared_ptr<CommunicationHandler> communication_handler
 ) : _socket_handler(socket_handler), 
     _thread_pool_handler(thread_pool_handler),
     _communication_handler(communication_handler)
@@ -43,7 +43,7 @@ void RequestDispatcherService::allocate_process(socket_t socket) {
         }
     } else {
         // 既存クライアントからのメッセージ
-        LOG_DEBUG("[RequestDispatcherService] Client socket detected - processing message for socket: {}", socket);
+        LOG_DEBUG("[RequestDispatcherService] User socket detected - processing message for socket: {}", socket);
         if (_message_handle_callback) {
             auto result = receive_and_dispatch_message(socket);
             LOG_DEBUG("[RequestDispatcherService] Dispatching message result for socket: {} - type: {}, success: {}", 
@@ -104,20 +104,15 @@ MessageDispatchResult RequestDispatcherService::receive_and_dispatch_message(soc
 #endif
         
         // メッセージタイプの判定
-        LOG_DEBUG("[RequestDispatcherService] Determining message type for socket: {}", socket);
         result.type = determine_message_type(receive_json);
         result.message_data = receive_json;
         result.success = true;
-        
-        LOG_INFO("[RequestDispatcherService] Message dispatch prepared for socket: {} - type: {}, success: {}", 
-                 socket, static_cast<int>(result.type), result.success);
         
     } catch (const std::exception& e) {
         LOG_ERROR("[RequestDispatcherService] Exception in receive_and_dispatch_message for socket {}: {}", socket, e.what());
         result.type = MessageDispatchResult::Type::ERROR;
         result.success = false;
         result.error_message = e.what();
-        LOG_ERROR("[RequestDispatcherService] Error in receive_and_dispatch_message: {}", e.what());
     }
     
     return result;

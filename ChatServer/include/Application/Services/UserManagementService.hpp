@@ -1,13 +1,13 @@
-#ifndef CLIENTMANAGEMENTSERVICE_HPP
-#define CLIENTMANAGEMENTSERVICE_HPP
+#ifndef USERMANAGEMENTSERVICE_HPP
+#define USERMANAGEMENTSERVICE_HPP
 #include "Utils/common.hpp"
 #include "Infrastructure/MySQLClient.hpp"
 #include "Infrastructure/RedisClient.hpp"
-#include "Domain/ClientCommunicationHandler.hpp"
-#include "Domain/ClientRepositoryHandler.hpp"
+#include "Domain/CommunicationHandler.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
 #include "Domain/SessionHandler.hpp"
-#include "Domain/Entity/Client.hpp"
-#include "Domain/ClientAggregateStore.hpp"
+#include "Domain/Entity/User.hpp"
+#include "Domain/UserAggregateStore.hpp"
 #include "Domain/Entity/Messages/SessionRequestMessage.hpp"
 #include "Domain/Entity/Messages/SessionResponseMessage.hpp"
 
@@ -18,11 +18,11 @@ struct SessionResult {
     json unreceived_messages;
 };
 
-class ClientManagementService {
+class UserManagementService {
 private:
     // データアクセス制御層のみ
-    std::shared_ptr<ClientRepositoryHandler> _repository;
-    std::shared_ptr<ClientCommunicationHandler> _communication;
+    std::shared_ptr<UserRepositoryHandler> _repository;
+    std::shared_ptr<CommunicationHandler> _communication;
     std::shared_ptr<SessionHandler> _session_handler;
     
     // ビジネス層のインフラのみ
@@ -32,24 +32,24 @@ private:
     
     
 public:
-    ClientManagementService(
+    UserManagementService(
         std::shared_ptr<MySQLClient> mysql_client,
         std::shared_ptr<RedisClient> redis_client,
         std::shared_ptr<ServerTime> server_time,
         std::shared_ptr<SessionHandler> session_handler,
-        std::shared_ptr<ClientRepositoryHandler> repository_handler,
-        std::shared_ptr<ClientCommunicationHandler> communication_handler
+        std::shared_ptr<UserRepositoryHandler> repository_handler,
+        std::shared_ptr<CommunicationHandler> communication_handler
         );
-    ~ClientManagementService();
+    ~UserManagementService();
 
 
     // High-level business operations（通信の詳細を知らない）
-    bool process_accept_new_client();
-    void process_client_disconnection(socket_t socket);
-    void update_client_session(socket_t socket, const std::unique_ptr<SessionRequestMessage>& session_message);
+    bool process_accept_new_user();
+    void process_user_disconnection(socket_t socket);
+    void update_user_session(socket_t socket, const std::unique_ptr<SessionRequestMessage>& session_message);
     void process_heartbeat(socket_t socket);
     void start_heartbeat_monitoring();
-    void cleanup_inactive_clients();
+    void cleanup_inactive_users();
     
     // Session management operations (ChatServiceから移行)
     SessionResult authenticate_session(const std::unique_ptr<SessionRequestMessage>& session_message, socket_t socket);
@@ -57,15 +57,15 @@ public:
         const std::unique_ptr<SessionRequestMessage>& session_message,
         const SessionResult& session_result,
         socket_t socket,
-        const std::string& client_id
+        const std::string& uid
     );
 
     bool process_session_request(const json& session_data, socket_t socket);
     
 private:
     bool can_accept_new_connection();  // ビジネスルールのみ
-    void log_connection_event(const std::string& client_id, const std::string& event);
+    void log_connection_event(const std::string& uid, const std::string& event);
     
 
 };
-#endif // CLIENTMANAGEMENTSERVICE_HPP
+#endif // USERMANAGEMENTSERVICE_HPP

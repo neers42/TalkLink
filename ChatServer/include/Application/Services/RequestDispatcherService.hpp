@@ -4,7 +4,7 @@
 #include "Utils/common.hpp"
 #include "SocketHandler.hpp"
 #include "ThreadPoolHandler.hpp"
-#include "Domain/ClientCommunicationHandler.hpp"
+#include "Domain/CommunicationHandler.hpp"
 #include "MessageBase.hpp"
 #include <functional>
 #include <memory>
@@ -41,7 +41,7 @@ public:
     RequestDispatcherService(
         std::shared_ptr<SocketHandler> socket_handler,
         std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
-        std::shared_ptr<ClientCommunicationHandler> communication_handler
+        std::shared_ptr<CommunicationHandler> communication_handler
     );
     
     ~RequestDispatcherService() = default;
@@ -62,7 +62,7 @@ public:
 private:
     std::shared_ptr<SocketHandler> _socket_handler;
     std::shared_ptr<ThreadPoolHandler> _thread_pool_handler;
-    std::shared_ptr<ClientCommunicationHandler> _communication_handler;
+    std::shared_ptr<CommunicationHandler> _communication_handler;
     
     AcceptCallback _accept_callback;
     MessageHandleCallback _message_handle_callback;

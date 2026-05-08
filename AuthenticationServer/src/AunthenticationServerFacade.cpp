@@ -5,7 +5,8 @@ AunthenticationServerFacade::AunthenticationServerFacade()
 
     ////ログのフォーマット設定
 	spdlog::set_level(spdlog::level::debug);
-	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
+	// Use fixed-width level field so info/debug align visually.
+	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%-5l%$] %v");
 	spdlog::info("Starting TalkLink Auth-server version 1.0.0!!");
 	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
@@ -81,7 +82,7 @@ bool AunthenticationServerFacade::accept_client_socket_process() {
 	std::string new_client_ipv4_addr;
 
 	// TCPソケットのアクセプト処理
-	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_client_socket(sizeof(new_client_sockaddr_in));
+	std::tie(new_client_socket, new_client_sockaddr_in) = _socket_handler->accept_user_socket(sizeof(new_client_sockaddr_in));
 	if (new_client_socket == INVALID_SOCKET_FD)
 	{
 		LOG_ERROR("The accepted socket for message could not be added to the list because it was an INVALID SOCKET");
@@ -90,7 +91,7 @@ bool AunthenticationServerFacade::accept_client_socket_process() {
 	else
 	{
 		spdlog::info("accept success!! client socket :{}", new_client_socket);
-		new_client_ipv4_addr = this->_socket_handler->extraction_client_ip(new_client_sockaddr_in, sizeof(new_client_ipv4_addr));
+		new_client_ipv4_addr = this->_socket_handler->extraction_user_ip_address(new_client_sockaddr_in, sizeof(new_client_ipv4_addr));
 	}
 #ifdef USE_POLL
 	// ノンブロッキング設定（fcntl利用例）
@@ -125,7 +126,7 @@ bool AunthenticationServerFacade::accept_client_socket_process() {
 
 void AunthenticationServerFacade::auth_handle_process(const socket_t socket) 
 {
-	std::string receive_token = "", cid = "";
+	std::string receive_token = "", uid = "";
 	std::uint64_t expire = 0, ttl = 0;
 	bool disconnect_flag = false;
 	bool recv_flag = false;
@@ -143,7 +144,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 		}
 		SSL* client_ssl = it->second;
 		if (client_ssl == nullptr) {
-			LOG_ERROR("Client SSL is null, cannot process message.");
+			LOG_ERROR("User SSL is null, cannot process message.");
 			return;
 		}
 
@@ -180,9 +181,9 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 				return;
 			}
 			receive_token = auth_request_instance->get_jwt();
-			verify_result = this->verify_auth_process(receive_token, cid, expire, ttl);
+			verify_result = this->verify_auth_process(receive_token, uid, expire, ttl);
 			if(verify_result == true){
-				spdlog::info("Authentication succeeded for client(socket : {}). CID: {}, Expire: {}, TTL: {}.", socket, cid, expire, ttl);
+				spdlog::info("Authentication succeeded for client(socket : {}). CID: {}, Expire: {}, TTL: {}.", socket, uid, expire, ttl);
 			}else{
 				LOG_ERROR("Authentication failed for client(socket : {}).", socket);
 			}
@@ -230,7 +231,7 @@ void AunthenticationServerFacade::handle_disconnect_process(const socket_t socke
 		}
 		SSL *client_ssl = it->second;
 		if(client_ssl == nullptr) {
-			LOG_ERROR("Client SSL is null, cannot process message.");
+			LOG_ERROR("User SSL is null, cannot process message.");
 			return;
 		}
 
@@ -245,7 +246,7 @@ void AunthenticationServerFacade::handle_disconnect_process(const socket_t socke
 #endif
 	this->_protocol_handler->shutdown_ssl(client_ssl);
 	this->_socket_handler->close_socket(socket);
-	spdlog::info("Client with socket {} has been disconnected and cleaned up.", socket);
+	spdlog::info("User with socket {} has been disconnected and cleaned up.", socket);
 	_ssl_list.erase(it);
 }
 
@@ -263,19 +264,19 @@ json AunthenticationServerFacade::make_auth_response(const std::string &status, 
 	return response;
 }
 
-bool AunthenticationServerFacade::verify_auth_process(const std::string &token, std::string &cid, std::uint64_t &expire, std::uint64_t& ttl)
+bool AunthenticationServerFacade::verify_auth_process(const std::string &token, std::string &uid, std::uint64_t &expire, std::uint64_t& ttl)
 {
 	// 検証を実施し、トークンが有効な場合の処理
-	if (this->_token_handler->verify_token(token, cid, expire) == true)
+	if (this->_token_handler->verify_token(token, uid, expire) == true)
 	{
-		if (this->_redis_client->save_session(cid, token, expire, ttl) == true)
+		if (this->_redis_client->save_session(uid, token, expire, ttl) == true)
 		{
-			spdlog::info("Session saved in Redis for CID: {} with TTL: {}.", cid, ttl);
+			spdlog::info("Session saved in Redis for CID: {} with TTL: {}.", uid, ttl);
 			return true;
 		}
 		else
 		{
-			LOG_ERROR("Failed to save session in Redis for CID: {}.", cid);
+			LOG_ERROR("Failed to save session in Redis for CID: {}.", uid);
 			return false;
 		}
 	}

@@ -23,7 +23,7 @@ public:
 
 private:
 	uint64_t _message_id;	// メッセージID
-	std::string _sender_cid;
+	std::string _sender_uid;
 	std::string _room_id;	//メンバーを追加するチャットルームID
 	std::vector<std::string> _add_member_list;	//追加メンバーリスト
 	std::vector<std::string> _remove_member_list;	//削除メンバーリスト
@@ -40,7 +40,7 @@ public:
 	ChatroomControlMessage(
 		const MessageBase::CommonField& common_fields,
 		const uint64_t mid,
-		const std::string& sender_cid,
+		const std::string& sender_uid,
 		const std::string& room_id_add_member,
 		const std::vector<std::string>& add_member_list,
 		const std::vector<std::string>& remove_member_list,
@@ -53,7 +53,7 @@ public:
 
 	//各種アクセッサ
 	uint64_t get_message_id() const;
-	std::string get_sender_cid() const;
+	std::string get_sender_uid() const;
 	std::string get_room_id() const;
 	std::vector<std::string> get_add_member_list() const;
 	std::vector<std::string> get_remove_member_list() const;

@@ -1,7 +1,7 @@
 ﻿#include "Domain/Entity/Messages/ChatAckMessage.hpp"
 
 ChatAckMessage::ChatAckMessage() 
-	: MessageBase(MessageBase::MessageType::CHAT_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_cid_list()
+	: MessageBase(MessageBase::MessageType::CHAT_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list()
 {
 }
 
@@ -10,8 +10,8 @@ ChatAckMessage::ChatAckMessage(
 	const uint64_t mid,
 	const MessageSendStatus status, 
 	const std::string &room_id, 
-	const std::vector<std::string> &_unsend_cid_list)
-	: MessageBase(common_fields, MessageBase::MessageType::CHAT_ACK),_send_status(status), _room_id(room_id), _unsend_cid_list(_unsend_cid_list)
+	const std::vector<std::string> &_unsend_uid_list)
+	: MessageBase(common_fields, MessageBase::MessageType::CHAT_ACK),_send_status(status), _room_id(room_id), _unsend_uid_list(_unsend_uid_list)
 {
 }
 
@@ -72,17 +72,17 @@ void ChatAckMessage::set_room_id(const std::string& room_id)
 
 json ChatAckMessage::serialize_payload() const
 {
-	json payload, specific_fields, unsend_cids = json::array();
+	json payload, specific_fields, unsend_uids = json::array();
 	try
 	{
 		if (validate_payload() != false) {
 			specific_fields["send_status"] = this->get_send_status();
 			specific_fields["room_id"] = this->get_room_id();
-			if (this->_unsend_cid_list.size() > 0) {
-				specific_fields["unsend_cid_list"] = this->_unsend_cid_list;
+			if (this->_unsend_uid_list.size() > 0) {
+				specific_fields["unsend_uid_list"] = this->_unsend_uid_list;
 			}
 			else {
-				specific_fields["unsend_cid_list"] = json::array();
+				specific_fields["unsend_uid_list"] = json::array();
 			}
 			payload["payload"] = specific_fields;
 			return payload;

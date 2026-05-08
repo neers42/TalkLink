@@ -1,21 +1,21 @@
 ﻿#include "Domain/Entity/Messages/ChatMessage.hpp"
 
 ChatMessage::ChatMessage() 
-	: MessageBase(MessageBase::MessageType::CHAT_MESSAGE),_message_id(0), _room_id(""), _mention_ids(), _sender_cid(""), _content("")
+	: MessageBase(MessageBase::MessageType::CHAT_MESSAGE),_message_id(0), _room_id(""), _mention_ids(), _sender_uid(""), _content("")
 {
 }
 
 ChatMessage::ChatMessage(const MessageBase::CommonField& common_fields,
-						const uint64_t m_id,
+						const uint64_t mid,
 						const std::string &room_id, 
 						const std::vector<std::string> &mention_ids, 
-						const std::string &sender_id, 
+						const std::string &sender_uid, 
 						const std::string &content)
     : MessageBase(common_fields, MessageBase::MessageType::CHAT_MESSAGE),
-	_message_id{m_id}, 
+	_message_id{mid}, 
 	_room_id{room_id}, 
 	_mention_ids{mention_ids}, 
-	_sender_cid{sender_id}, 
+	_sender_uid{sender_uid}, 
 	_content{content}
 {
 }
@@ -40,14 +40,14 @@ void ChatMessage::set_mention_ids(const std::vector<std::string>& mention_ids)
 	this->_mention_ids = mention_ids;
 }
 
-std::string ChatMessage::get_sender_cid() const
+std::string ChatMessage::get_sender_uid() const
 {
-	return this->_sender_cid;
+	return this->_sender_uid;
 }
 
-void ChatMessage::set_sender_cid(const std::string& sender_cid)
+void ChatMessage::set_sender_uid(const std::string& sender_uid)
 {
-	this->_sender_cid = sender_cid;
+	this->_sender_uid = sender_uid;
 }
 
 
@@ -84,7 +84,7 @@ std::unique_ptr<MessageBase> ChatMessage::create_instance(const json &message) c
 		for (const auto& item : message["payload"]["mention_ids"]) {
 			mention_ids.push_back(item.get<std::string>());
 		}
-		std::string sender_cid = message["payload"]["sender_cid"];
+		std::string sender_uid = message["payload"]["sender_uid"];
 
 		//メッセージの実際の内容のみ抽出
 		std::string content = message["payload"]["content"];
@@ -95,7 +95,7 @@ std::unique_ptr<MessageBase> ChatMessage::create_instance(const json &message) c
 			message_id,
 			room_id,
 			mention_ids,
-			sender_cid,
+			sender_uid,
 			content
 		);
 			
@@ -128,7 +128,7 @@ bool ChatMessage::validate_payload(const json &message) const
 		static const std::vector<std::string> required_keys = {
 			"room_id",
 			"mention_ids",
-			"sender_cid",
+			"sender_uid",
 			"content"};
 		for (const auto &key : required_keys)
 		{
@@ -143,9 +143,9 @@ bool ChatMessage::validate_payload(const json &message) const
 		{
 			throw std::runtime_error("Invalid type for 'room_id'");
 		}
-		if (!payload["sender_cid"].is_string())
+		if (!payload["sender_uid"].is_string())
 		{
-			throw std::runtime_error("Invalid type for 'sender_cid'");
+			throw std::runtime_error("Invalid type for 'sender_uid'");
 		}
 		if (!payload["content"].is_string())
 		{
@@ -187,7 +187,7 @@ bool ChatMessage::validate_value() const
 	{
 		if (is_valid_room_id(this->_room_id) == true &&
 			is_valid_mention_ids(this->_mention_ids) == true &&
-			is_valid_sender_id(this->_sender_cid) == true &&
+			is_valid_sender_uid(this->_sender_uid) == true &&
 			is_valid_content(this->_content) == true)
 		{
 			spdlog::debug("ChatMessage value validation succeeded.");
@@ -230,11 +230,11 @@ bool ChatMessage::is_valid_mention_ids(const std::vector<std::string>& mention_i
 	return true;
 }
 
-bool ChatMessage::is_valid_sender_id(const std::string& sender_id) const
+bool ChatMessage::is_valid_sender_uid(const std::string& sender_uid) const
 {
 	//dst_idが28byteではない場合
-	if (sender_id.size() != 28) {
-		LOG_ERROR("sender id is invalid. src client id byte size : {}", sender_id.size());
+	if (sender_uid.size() != 28) {
+		LOG_ERROR("sender id is invalid. src user id byte size : {}", sender_uid.size());
 		return false;
 	}
 	return true;

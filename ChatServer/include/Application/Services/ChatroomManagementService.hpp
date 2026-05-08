@@ -90,10 +90,10 @@ public:
     // ==================== ユーティリティメソッド ====================
     
     // クライアント情報生成
-    std::vector<ChatroomControlDeliveryMessage::ClientInfo> generate_client_infos(const std::vector<std::string>& client_ids);
+    std::vector<ChatroomControlDeliveryMessage::UserInfo> generate_user_infos(const std::vector<std::string>& uids);
     
     // ルーム権限チェック
-    bool check_room_permission(const std::string& room_id, const std::string& client_id, const std::string& operation);
+    bool check_room_permission(const std::string& room_id, const std::string& uid, const std::string& operation);
     
     // ルーム存在チェック
     bool room_exists(const std::string& room_id);

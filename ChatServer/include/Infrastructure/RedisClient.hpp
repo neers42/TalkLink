@@ -11,7 +11,7 @@ private:
 public:
     RedisClient();
     ~RedisClient();
-    bool is_client_session_key(const std::string &session_key); // クライアントのセッションキーが存在するか確認
+    bool is_user_session_key(const std::string &session_key); // ユーザーのセッションキーが存在するか確認
 
 };
 

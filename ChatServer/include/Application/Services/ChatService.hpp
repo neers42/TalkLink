@@ -5,7 +5,7 @@
 #include "Domain/Entity/Messages/ChatMessage.hpp"
 #include "Domain/Entity/Messages/ChatDeliveryMessage.hpp"
 #include "Domain/Entity/Messages/ChatAckMessage.hpp"
-#include "Domain/ClientRepositoryHandler.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
 #include "Infrastructure/MySQLClient.hpp"
 #include "Infrastructure/RedisClient.hpp"
 #include "Application/Services/IMessageDeliveryService.hpp"
@@ -14,7 +14,7 @@
 struct ChatMessageResult {
     bool success;
     int sent_count;
-    std::vector<std::string> unsent_client_ids;
+    std::vector<std::string> unsent_uids;
     std::string error_message;
 };
 
@@ -24,7 +24,7 @@ private:
     std::shared_ptr<MySQLClient> _mysql_client;
     std::shared_ptr<RedisClient> _redis_client;
     std::shared_ptr<IMessageDeliveryService> _message_delivery_service;
-    std::shared_ptr<ClientRepositoryHandler> _client_repository_handler;
+    std::shared_ptr<UserRepositoryHandler> _user_repository_handler;
     
     // 設定
     static constexpr int MAX_RESEND_COUNT = 3;
@@ -36,7 +36,7 @@ public:
         std::shared_ptr<MySQLClient> mysql_client,
         std::shared_ptr<RedisClient> redis_client,
         std::shared_ptr<IMessageDeliveryService> message_delivery_service,
-        std::shared_ptr<ClientRepositoryHandler> client_repository_handler
+        std::shared_ptr<UserRepositoryHandler> user_repository_handler
     );
     ~ChatService();
     
@@ -64,7 +64,7 @@ public:
     // ==================== ユーティリティメソッド ====================
     
     // ユーティリティメソッド
-    json get_unreceived_messages(const std::string& client_id, uint64_t last_received_message_id);
+    json get_unreceived_messages(const std::string& uid, uint64_t last_received_message_id);
     
     
 private:
@@ -77,7 +77,7 @@ private:
     bool save_message_to_database(const std::unique_ptr<ChatMessage>& chat_message, const json& original_json);
     
     // 再送処理の詳細実装
-    bool execute_message_resend(const json& message_json, const std::vector<std::string>& target_client_ids);
+    bool execute_message_resend(const json& message_json, const std::vector<std::string>& target_uids);
     
     // エラーハンドリング
     void handle_processing_error(const std::exception& e, const std::string& operation_context);

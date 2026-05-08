@@ -1,9 +1,9 @@
 #include "Domain/Entity/Messages/SessionResponseMessage.hpp"
 
 
-SessionResponseMessage::SessionResponseMessage(const MessageBase::CommonField& common_fields, const std::string& client_id, bool verify_result, const std::string& error_message, const json& unsend_messages)
+SessionResponseMessage::SessionResponseMessage(const MessageBase::CommonField& common_fields, const std::string& uid, bool verify_result, const std::string& error_message, const json& unsend_messages)
 	:MessageBase(common_fields, MessageBase::MessageType::SESSION_RESPONSE),
-	_client_id{ client_id },
+	_uid{ uid },
 	_verify_result{ verify_result },
 	_error_message{ error_message },
 	_unsend_messages{ unsend_messages }
@@ -25,7 +25,7 @@ json SessionResponseMessage::serialize_payload() const
 		{
 			throw std::runtime_error("SessionResponseMessage specific fields validation failed during serialization.");
 		}
-		specific_fields["client_id"] = this->_client_id;
+		specific_fields["uid"] = this->_uid;
 		specific_fields["verify_result"] = this->_verify_result;
 		specific_fields["error_reason"] = this->_error_message;
 		// unreceived_messages 配列だけを代入
@@ -65,17 +65,17 @@ bool SessionResponseMessage::validate_payload() const
 {
 	try
 	{
-		//_verify_resultがtreueの場合、_client_idが空でないことを確認
+		//_verify_resultがtrueの場合、_uidが空でないことを確認
 		if (this->_verify_result == true)
 		{
-			if (this->_client_id.empty())
+			if (this->_uid.empty())
 			{
-				throw std::runtime_error("[ClientSessionResponse]Client ID is empty despite verification success.");
+				throw std::runtime_error("[SessionResponseMessage]User ID is empty despite verification success.");
 			}
 		}
 		if (this->_error_message.empty())
 		{
-			throw std::runtime_error("[ClientSessionResponse]Error message is empty.");
+			throw std::runtime_error("[SessionResponseMessage]Error message is empty.");
 		}
 		return true;
 	}

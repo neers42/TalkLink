@@ -1,7 +1,7 @@
 #include "Application/Services/StartupService.hpp"
 #include "Application/Services/TaskManagementService.hpp"
 #include "Application/Services/RequestDispatcherService.hpp"
-#include "Application/Services/ClientManagementService.hpp"
+#include "Application/Services/UserManagementService.hpp"
 #include "Application/Services/ChatService.hpp"
 
 StartupService::StartupService(
@@ -10,18 +10,18 @@ StartupService::StartupService(
     std::shared_ptr<ProtocolHandler> protocol_handler,
     std::shared_ptr<TaskManagementService> task_management_service,
     std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
-    std::shared_ptr<ClientManagementService> client_management_service,
+    std::shared_ptr<UserManagementService> user_management_service,
     std::shared_ptr<ChatService> chat_service)
     : _socket_handler(socket_handler),
       _thread_pool_handler(thread_pool_handler),
       _protocol_handler(protocol_handler),
       _task_management_service(task_management_service),
       _request_dispatcher_service(request_dispatcher_service),
-      _client_management_service(client_management_service),
+      _user_management_service(user_management_service),
       _chat_service(chat_service)
 {
     if (!_socket_handler || !_thread_pool_handler || !_protocol_handler || 
-        !_task_management_service || !_request_dispatcher_service || !_client_management_service || !_chat_service) {
+        !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service) {
         throw std::runtime_error("Failed to initialize StartupService dependencies");
     }
     
@@ -239,21 +239,21 @@ bool StartupService::configure_request_dispatching()
     
     try {
         auto dispatcher = _request_dispatcher_service;
-        auto client_mgmt = _client_management_service;
+        auto user_mgmt = _user_management_service;
         
-        if (!dispatcher || !client_mgmt) {
+        if (!dispatcher || !user_mgmt) {
             LOG_ERROR("[StartupService] Required services not available");
             return false;
         }
         
         // Accept callback設定
-        dispatcher->set_accept_callback([client_mgmt]() {
-            client_mgmt->process_accept_new_client();
+        dispatcher->set_accept_callback([user_mgmt]() {
+            user_mgmt->process_accept_new_user();
         });
         
         // Message handle callback設定 - TaskManagementService経由でマルチスレッド処理
         dispatcher->set_message_handle_callback([this](const MessageDispatchResult& result) {
-            LOG_DEBUG("[StartupService] Message dispatch callback triggered - socket: {}, type: {}, success: {}", 
+            LOG_DEBUG("[RequestDispatcherService] Message dispatch callback triggered - socket: {}, type: {}, success: {}", 
                      result.socket, static_cast<int>(result.type), result.success);
             
             // メッセージタイプに応じて適切な優先度でタスクスケジューリング
@@ -262,9 +262,9 @@ bool StartupService::configure_request_dispatching()
                     _task_management_service->schedule_task(
                         TaskPriority::CRITICAL,
                         TaskCategory::HEARTBEAT,
-                        "Process client heartbeat",
+                        "Process user heartbeat",
                         [this, socket = result.socket]() {
-                            _client_management_service->process_heartbeat(socket);
+                            _user_management_service->process_heartbeat(socket);
                         }
                     );
                     break;
@@ -275,7 +275,7 @@ bool StartupService::configure_request_dispatching()
                         TaskCategory::AUTHENTICATION,
                         "Process session request",
                         [this, message_data = result.message_data, socket = result.socket]() {
-                            _client_management_service->process_session_request(message_data, socket);
+                            _user_management_service->process_session_request(message_data, socket);
                         }
                     );
                     break;
@@ -298,29 +298,27 @@ bool StartupService::configure_request_dispatching()
                         "Process chatroom control",
                         [this, message_data = result.message_data, socket = result.socket]() {
                             // TODO: ChatroomManagementServiceでルーム制御処理を実装
-                            LOG_DEBUG("[StartupService] CHATROOM_CONTROL handling not yet implemented - socket: {}", socket);
+                            LOG_DEBUG("[RequestDispatcherService] CHATROOM_CONTROL handling not yet implemented - socket: {}", socket);
                         }
                     );
                     break;
                     
                 case MessageDispatchResult::Type::DISCONNECT:
-                    LOG_WARNING("[StartupService] Processing DISCONNECT for socket: {} (reason: {})", 
-                               result.socket, result.error_message.empty() ? "normal disconnect" : result.error_message);
                     _task_management_service->schedule_task(
                         TaskPriority::CRITICAL,
-                        TaskCategory::CLIENT_MANAGEMENT,
-                        "Process client disconnection",
+                        TaskCategory::USER_MANAGEMENT,
+                        "Process user disconnection",
                         [this, socket = result.socket]() {
-                            _client_management_service->process_client_disconnection(socket);
+                            _user_management_service->process_user_disconnection(socket);
                         }
                     );
                     break;
                     
                 default:
-                    LOG_ERROR("[StartupService] Unknown message type ({}) or error occurred for socket: {}", 
+                    LOG_ERROR("[RequestDispatcherService] Unknown message type ({}) or error occurred for socket: {}", 
                              static_cast<int>(result.type), result.socket);
                     if (!result.success) {
-                        LOG_ERROR("[StartupService] Error message: {}", result.error_message);
+                        LOG_ERROR("[RequestDispatcherService] Error message: {}", result.error_message);
                     }
                     break;
             }
@@ -351,7 +349,7 @@ SystemResourceStatus StartupService::get_system_status() const
     status.udp_socket_ready = _udp_socket_ready.load();
     status.background_tasks_running = _background_services_running.load();
     status.request_dispatcher_configured = _request_dispatcher_configured.load();
-    status.active_connections = 0; // TODO: ClientManagementServiceから取得
+    status.active_connections = 0; // TODO: UserManagementServiceから取得
     status.cpu_usage_percent = 0.0; // TODO: システム監視実装
     status.memory_usage_percent = 0.0; // TODO: システム監視実装
     status.startup_time = _startup_begin_time;

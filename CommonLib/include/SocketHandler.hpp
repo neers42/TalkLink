@@ -43,7 +43,7 @@
 #include "LogHandler.hpp"
 #include "spdlog/spdlog.h"
 #define SELECT_TIME_OUT -2
-#define REQUEST_ACCEPT_CLIENT_DETECTION -3
+#define REQUEST_ACCEPT_USER_DETECTION -3
 #define NOT_EXIST_IP_ADDRESS -1
 
 class SocketHandler
@@ -182,11 +182,11 @@ public:
 	//メッセージ用のリッスンソケットをアクティブにする
 	bool open_tcp_listen_socket();
 	//クライアントのIPアドレスを抽出する
-	std::string extraction_client_ip(struct sockaddr_in& client_sockaddr_in, size_t ipv4_addr_size);
+	std::string extraction_user_ip_address(struct sockaddr_in& user_sockaddr_in, size_t ipv4_addr_size);
 	//accept処理(メッセージ用のソケット)
-	std::tuple<socket_t, sockaddr_in> accept_client_socket(socklen_t client_sockaddr_in_length);
-	//接続中のクライアントソケットをクローズする
-	void close_socket(const socket_t client_socket);
+	std::tuple<socket_t, sockaddr_in> accept_user_socket(socklen_t user_sockaddr_in_length);
+	//接続中のユーザーソケットをクローズする
+	void close_socket(const socket_t user_socket);
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(socket_t request_socket);
 

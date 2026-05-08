@@ -3,7 +3,7 @@
 ChatroomControlMessage::ChatroomControlMessage()
 	:MessageBase(MessageBase::MessageType::CHATROOM_CONTROL),
 	 _message_id{0},
-	 _sender_cid{""},
+	 _sender_uid{""},
 	 _room_id{""},
 	 _add_member_list{},
 	 _remove_member_list{},
@@ -17,7 +17,7 @@ ChatroomControlMessage::ChatroomControlMessage()
 ChatroomControlMessage::ChatroomControlMessage(
 	const MessageBase::CommonField& common_fields,
     const uint64_t mid,
-    const std::string &sender_cid,
+    const std::string &sender_uid,
     const std::string &room_id,
     const std::vector<std::string> &add_member_list,
     const std::vector<std::string> &remove_member_list,
@@ -27,7 +27,7 @@ ChatroomControlMessage::ChatroomControlMessage(
     const std::string &message_content) 
 	: MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL),
 	_message_id(mid),
-	_sender_cid(sender_cid),
+	_sender_uid(sender_uid),
     _room_id(room_id),
     _add_member_list(add_member_list),
     _remove_member_list(remove_member_list),
@@ -47,9 +47,9 @@ uint64_t ChatroomControlMessage::get_message_id() const
 	return this->_message_id;
 }
 
-std::string ChatroomControlMessage::get_sender_cid() const
+std::string ChatroomControlMessage::get_sender_uid() const
 {
-	return this->_sender_cid;
+	return this->_sender_uid;
 }
 
 std::string ChatroomControlMessage::get_room_id() const
@@ -104,7 +104,7 @@ bool ChatroomControlMessage::validate_payload(const json &message) const
 
 		const auto& payload = message["payload"];
 		static const std::vector<std::string> required_keys = {
-			"sender_cid", 
+			"sender_uid", 
 			"room_id",
 			"room_add_member_list",
 			"room_remove_member_list",
@@ -120,9 +120,9 @@ bool ChatroomControlMessage::validate_payload(const json &message) const
 			}
 		}
 
-		if(!payload["sender_cid"].is_string())
+		if(!payload["sender_uid"].is_string())
 		{
-			throw std::runtime_error("Invalid type for sender_cid");
+			throw std::runtime_error("Invalid type for sender_uid");
 		}
 		if(!payload["room_id"].is_string())
 		{
@@ -165,7 +165,7 @@ bool ChatroomControlMessage::validate_payload(const json &message) const
 
 std::unique_ptr<MessageBase> ChatroomControlMessage::create_instance(const json &message) const
 {
-	std::string sender_cid;
+	std::string sender_uid;
 	std::string room_id;
 	std::vector<std::string> add_member_list;
 	std::vector<std::string> remove_member_list;
@@ -176,7 +176,7 @@ std::unique_ptr<MessageBase> ChatroomControlMessage::create_instance(const json 
 	try
     {	
 		auto common_fields = this->parse_common_fields(message);
-        std::string sender_cid = message["payload"]["sender_cid"].get<std::string>();
+        std::string sender_uid = message["payload"]["sender_uid"].get<std::string>();
         std::string room_id = message["payload"]["room_id"].get<std::string>();
         std::vector<std::string> add_member_list = message["payload"]["room_add_member_list"].get<std::vector<std::string>>();
         std::vector<std::string> remove_member_list = message["payload"]["room_remove_member_list"].get<std::vector<std::string>>();
@@ -188,7 +188,7 @@ std::unique_ptr<MessageBase> ChatroomControlMessage::create_instance(const json 
         return std::make_unique<ChatroomControlMessage>(
 			common_fields,
             MessageIDGenerator::generate_message_id(),
-            sender_cid,
+            sender_uid,
             room_id,
             add_member_list,
             remove_member_list,

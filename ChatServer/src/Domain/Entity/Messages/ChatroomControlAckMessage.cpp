@@ -1,7 +1,7 @@
 ﻿#include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
 
 ChatroomControlAckMessage::ChatroomControlAckMessage() 
-	: MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_cid_list()
+	: MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list()
 {
 } 
 ChatroomControlAckMessage::ChatroomControlAckMessage(
@@ -9,12 +9,12 @@ ChatroomControlAckMessage::ChatroomControlAckMessage(
     MessageSendStatus send_status,
     const std::string &room_id,
     uint64_t send_message_id,
-    const std::vector<std::string> &unsend_cid_list)
+    const std::vector<std::string> &unsend_uid_list)
     : MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL_ACK),
 	  _message_id(send_message_id),
       _send_status(send_status),
       _room_id(room_id),
-      _unsend_cid_list(unsend_cid_list)
+      _unsend_uid_list(unsend_uid_list)
 {
 }
 
@@ -25,7 +25,7 @@ ChatroomControlAckMessage::~ChatroomControlAckMessage()
 
 json ChatroomControlAckMessage::serialize_payload() const
 {
-	json payload, specific_fields, unsend_cids = json::array();
+	json payload, specific_fields, unsend_uids = json::array();
 
 	try
 	{
@@ -39,8 +39,8 @@ json ChatroomControlAckMessage::serialize_payload() const
 				case MessageSendStatus::SEND_SUCCESS:
 					specific_fields["send_status"] = "SEND_SUCCESS";
 					break;
-				case MessageSendStatus::SEND_PARTICAL_SUCCESS:
-					specific_fields["send_status"] = "SEND_PARTICAL_SUCCESS";
+				case MessageSendStatus::SEND_PARTIAL_SUCCESS:
+					specific_fields["send_status"] = "SEND_PARTIAL_SUCCESS";
 					break;
 				case MessageSendStatus::SEND_FAILED:
 					specific_fields["send_status"] = "SEND_FAILED";
@@ -51,12 +51,12 @@ json ChatroomControlAckMessage::serialize_payload() const
 			}
 			specific_fields["room_id"] = this->_room_id;
 			specific_fields["send_message_id"] = this->get_message_id();
-			if (this->_unsend_cid_list.size() > 0) {
-				specific_fields["unsend_cid_list"] = this->_unsend_cid_list;
-			}else if(this->_unsend_cid_list.size() == 0){
-				specific_fields["unsend_cid_list"] = json::array();
+			if (this->_unsend_uid_list.size() > 0) {
+				specific_fields["unsend_uid_list"] = this->_unsend_uid_list;
+			}else if(this->_unsend_uid_list.size() == 0){
+				specific_fields["unsend_uid_list"] = json::array();
 			}else{
-				throw std::runtime_error("Unsend CID list size is invalid.");
+				throw std::runtime_error("Unsend UID list size is invalid.");
 				return json();
 			}
 			payload["payload"] = specific_fields;

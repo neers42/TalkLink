@@ -14,9 +14,9 @@ public:
     RedisClient();
     ~RedisClient();
 
-    bool save_session(const std::string& cid, const std::string& jwt_token, std::uint64_t expire, std::uint64_t& ttl);
-    bool get_session(const std::string& cid, std::string& jwt_token, std::uint64_t& expire);
-    bool delete_session(const std::string& cid);
+    bool save_session(const std::string& uid, const std::string& jwt_token, std::uint64_t expire, std::uint64_t& ttl);
+    bool get_session(const std::string& uid, std::string& jwt_token, std::uint64_t& expire);
+    bool delete_session(const std::string& uid);
 
 };
 

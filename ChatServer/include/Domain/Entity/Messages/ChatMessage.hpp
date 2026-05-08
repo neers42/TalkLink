@@ -10,7 +10,7 @@ private:
 	uint64_t _message_id;	// メッセージID
 	std::string _room_id;	// チャットルームID
 	std::vector<std::string> _mention_ids;	// メンションIDのリスト
-	std::string _sender_cid;	// 送信者のクライアントID
+	std::string _sender_uid;	// 送信者のユーザーID
 	std::string _content;	// メッセージ内容(JSON形式)
 
 public:
@@ -19,7 +19,7 @@ public:
 	ChatMessage(
 		const MessageBase::CommonField& common_fields,
 		const uint64_t m_id,
-		const std::string& room_id, const std::vector<std::string>& mention_ids, const std::string& sender_cid, 
+		const std::string& room_id, const std::vector<std::string>& mention_ids, const std::string& sender_uid, 
 		const std::string& content);
 	
 	//デストラクタ
@@ -31,8 +31,8 @@ public:
 	const std::vector<std::string>& get_mention_ids() const;
 	void set_mention_ids(const std::vector<std::string>& mention_ids);
 
-	std::string get_sender_cid() const;
-	void set_sender_cid(const std::string& sender_id);
+	std::string get_sender_uid() const;
+	void set_sender_uid(const std::string& sender_uid);
 
 
 	std::string get_content() const;
@@ -51,7 +51,7 @@ public:
 private:
 	bool is_valid_room_id(const std::string& room_id) const;
 	bool is_valid_mention_ids(const std::vector<std::string>& mention_ids) const;
-	bool is_valid_sender_id(const std::string& sender_id) const;
+	bool is_valid_sender_uid(const std::string& sender_uid) const;
 	bool is_valid_content(const std::string& content) const;
 
 	

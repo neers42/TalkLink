@@ -1,18 +1,18 @@
 #include "Application/Services/MessageDeliveryService.hpp"
 
 MessageDeliveryService::MessageDeliveryService(
-    std::shared_ptr<ClientCommunicationHandler> client_communication_handler,
+    std::shared_ptr<CommunicationHandler> communication_handler,
     std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
-    std::shared_ptr<ClientRepositoryHandler> client_repository_handler,
+    std::shared_ptr<UserRepositoryHandler> user_repository_handler,
     std::shared_ptr<MySQLClient> mysql_client
 ) :
-    _client_communication_handler(std::move(client_communication_handler)),
+    _communication_handler(std::move(communication_handler)),
     _chatroom_repository_handler(std::move(chatroom_repository_handler)),
-    _client_repository_handler(std::move(client_repository_handler)),
+    _user_repository_handler(std::move(user_repository_handler)),
     _mysql_client(std::move(mysql_client))
 {
-    if (!_client_communication_handler || !_chatroom_repository_handler || 
-        !_client_repository_handler || !_mysql_client) {
+    if (!_communication_handler || !_chatroom_repository_handler || 
+        !_user_repository_handler || !_mysql_client) {
         throw std::invalid_argument("All dependencies must be non-null for MessageDeliveryService");
     }
     
@@ -23,60 +23,60 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
     const json& message_json,
     const std::string& room_id,
     socket_t sender_socket,
-    const std::string& sender_client_id
+    const std::string& sender_uid
 ) {
     DeliveryResult result;
     
     try {
         if (sender_socket == INVALID_SOCKET_FD) {
-            LOG_ERROR("Sender with ID '{}' not found. Cannot send message.", sender_client_id);
+            LOG_ERROR("Sender with ID '{}' not found. Cannot send message.", sender_uid);
             result.success = false;
             result.error_message = "Sender not found";
             return result;
         }
         
         // ルームメンバー取得
-        auto receivers_cids = _chatroom_repository_handler->get_client_infos_by_chatroom_id(room_id);
+        auto receivers_uids = _chatroom_repository_handler->get_user_infos_by_chatroom_id(room_id);
         
-        if (receivers_cids.empty()) {
+        if (receivers_uids.empty()) {
             LOG_WARNING("No members found in room: {}", room_id);
             result.success = true; // エラーではない
             return result;
         }
         
         // 各メンバーにメッセージ送信
-        for (const auto& cid : receivers_cids) {
-            auto search_client = _client_repository_handler->get_client_by_id(cid);
+        for (const auto& uid : receivers_uids) {
+            auto search_user = _user_repository_handler->get_user_by_id(uid);
             
-            if (search_client == nullptr) {
+            if (search_user == nullptr) {
                 // 接続していないクライアントはスキップ
-                result.unsent_client_ids.push_back(cid);
+                result.unsent_uids.push_back(uid);
                 continue;
             }
             
-            if (cid == sender_client_id) {
+            if (uid == sender_uid) {
                 // 送信者自身はスキップ
                 continue;
             }
             
             // メッセージ送信
-            bool send_success = _client_communication_handler->send_message(_client_repository_handler->get_socket_by_client_id(cid), message_json);
+            bool send_success = _communication_handler->send_message(_user_repository_handler->get_socket_by_uid(uid), message_json);
             
             if (send_success) {
                 result.sent_count++;
-                LOG_DEBUG("[ChatService] Message sent successfully to client: {}", cid);
+                LOG_DEBUG("[ChatService] Message sent successfully to user: {}", uid);
             } else {
-                result.unsent_client_ids.push_back(cid);
-                LOG_WARNING("[ChatService] Failed to send message to client: {}", cid);
+                result.unsent_uids.push_back(uid);
+                LOG_WARNING("[ChatService] Failed to send message to user: {}", uid);
             }
         }
-        if(result.unsent_client_ids.size() > 0){
+        if(result.unsent_uids.size() > 0){
             result.success = false;
-            result.error_message = "Failed to send message to some clients, unsent_client_ids: " + std::to_string(result.unsent_client_ids.size());
-            LOG_WARNING("[ChatService] Message delivery completed with some failures. Sent: {}, Unsent: {}", result.sent_count, result.unsent_client_ids.size());
+            result.error_message = "Failed to send message to some users, unsent_uids: " + std::to_string(result.unsent_uids.size());
+            LOG_WARNING("[ChatService] Message delivery completed with some failures. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
         } else {
             result.success = true;
-            LOG_INFO("[ChatService] Message delivery completed. Sent: {}, Unsent: {}", result.sent_count, result.unsent_client_ids.size());
+            LOG_INFO("[ChatService] Message delivery completed. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
         }
         
         
@@ -93,30 +93,30 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
 
 IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_p2p(
     const json& message_json,
-    const std::string& target_client_id
+    const std::string& target_uid
 ) {
     DeliveryResult result;
     
     try {
-        // ターゲットクライアント取得
-        auto target_client = _client_repository_handler->get_client_by_id(target_client_id);
+        // ターゲットユーザー取得
+        auto target_user = _user_repository_handler->get_user_by_id(target_uid);
         
-        if (target_client == nullptr) {
-            LOG_WARNING("Target client '{}' not found for P2P message", target_client_id);
-            result.unsent_client_ids.push_back(target_client_id);
+        if (target_user == nullptr) {
+            LOG_WARNING("Target user '{}' not found for P2P message", target_uid);
+            result.unsent_uids.push_back(target_uid);
             result.success = false;
             return result;
         }
         
         // メッセージ送信
-        bool send_success = _client_communication_handler->send_message(_client_repository_handler->get_socket_by_client_id(target_client_id), message_json);
+        bool send_success = _communication_handler->send_message(_user_repository_handler->get_socket_by_uid(target_uid), message_json);
         
         if (send_success) {
             result.sent_count = 1;
-            LOG_DEBUG("P2P message sent successfully to client: {}", target_client_id);
+            LOG_DEBUG("P2P message sent successfully to user: {}", target_uid);
         } else {
-            result.unsent_client_ids.push_back(target_client_id);
-            LOG_WARNING("Failed to send P2P message to client: {}", target_client_id);
+            result.unsent_uids.push_back(target_uid);
+            LOG_WARNING("Failed to send P2P message to user: {}", target_uid);
         }
         
         result.success = send_success;
@@ -132,38 +132,38 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_p2p(
 
 IMessageDeliveryService::DeliveryResult MessageDeliveryService::broadcast(
     const json& message_json,
-    const std::string& sender_client_id,
+    const std::string& sender_uid,
     bool exclude_sender
 ) {
     DeliveryResult result;
     
     try {
-        // 全クライアント取得
-        auto all_clients = _client_repository_handler->get_all_clients();
+        // 全ユーザー取得
+        auto all_users = _user_repository_handler->get_all_users();
         
-        // 各クライアントにメッセージ送信
-        for (const auto& client : all_clients) {
-            const auto& cid = _client_repository_handler->get_client_id(client.first);
+        // 各ユーザーにメッセージ送信
+        for (const auto& user : all_users) {
+            const auto& uid = _user_repository_handler->get_uid_by_socket(user.first);
             
             // 送信者除外チェック
-            if (exclude_sender && cid == sender_client_id) {
+            if (exclude_sender && uid == sender_uid) {
                 continue;
             }
             
             // メッセージ送信
-            bool send_success = _client_communication_handler->send_message(_client_repository_handler->get_socket_by_client_id(cid), message_json);
+            bool send_success = _communication_handler->send_message(_user_repository_handler->get_socket_by_uid(uid), message_json);
             
             if (send_success) {
                 result.sent_count++;
-                LOG_DEBUG("Broadcast message sent successfully to client: {}", cid);
+                LOG_DEBUG("Broadcast message sent successfully to user: {}", uid);
             } else {
-                result.unsent_client_ids.push_back(cid);
-                LOG_WARNING("Failed to send broadcast message to client: {}", cid);
+                result.unsent_uids.push_back(uid);
+                LOG_WARNING("Failed to send broadcast message to user: {}", uid);
             }
         }
         
-        result.success = (result.unsent_client_ids.empty());
-        LOG_INFO("Broadcast delivery completed. Sent: {}, Unsent: {}", result.sent_count, result.unsent_client_ids.size());
+        result.success = (result.unsent_uids.empty());
+        LOG_INFO("Broadcast delivery completed. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
         return result;
         
     } catch (const std::exception& e) {

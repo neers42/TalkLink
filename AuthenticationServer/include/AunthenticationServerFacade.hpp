@@ -40,7 +40,7 @@ private:
 	void auth_handle_process(const socket_t socket);
 	void handle_disconnect_process(const socket_t socket);
 	json make_auth_response(const std::string& status, const std::uint64_t ttl);
-	bool verify_auth_process(const std::string& token, std::string& cid, std::uint64_t& expire, std::uint64_t& ttl);
+	bool verify_auth_process(const std::string& token, std::string& uid, std::uint64_t& expire, std::uint64_t& ttl);
 };
 
 

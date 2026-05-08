@@ -3,16 +3,16 @@
 #include "Utils/common.hpp"
 #include "Application/Services/ChatService.hpp"
 #include "Application/Services/ChatroomManagementService.hpp"
-#include "Application/Services/ClientManagementService.hpp"
+#include "Application/Services/UserManagementService.hpp"
 #include "Application/Services/RequestDispatcherService.hpp"
 #include "Application/Services/TaskManagementService.hpp"
 #include "Application/Services/StartupService.hpp"
 #include "Application/Services/MessageDeliveryService.hpp"
-#include "Domain/ClientCommunicationHandler.hpp"
-#include "Domain/ClientRepositoryHandler.hpp"
+#include "Domain/CommunicationHandler.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
 #include "Domain/ChatroomRepositoryHandler.hpp"
 #include "Domain/SessionHandler.hpp"
-#include "Domain/ClientAggregateStore.hpp"
+#include "Domain/UserAggregateStore.hpp"
 
 // Forward declarations
 class SocketHandler;
@@ -41,14 +41,14 @@ public:
     std::shared_ptr<ThreadPoolHandler> get_thread_pool_handler();
     
     // ドメイン層のゲッター
-    std::shared_ptr<ClientAggregateStore> get_client_store();
-    std::shared_ptr<ClientRepositoryHandler> get_client_repository_handler();
+    std::shared_ptr<UserAggregateStore> get_user_store();
+    std::shared_ptr<UserRepositoryHandler> get_user_repository_handler();
     std::shared_ptr<ChatroomRepositoryHandler> get_chatroom_repository_handler();
-    std::shared_ptr<ClientCommunicationHandler> get_client_communication_handler();
+    std::shared_ptr<CommunicationHandler> get_communication_handler();
     std::shared_ptr<SessionHandler> get_session_handler();
     
     // アプリケーションサービスのゲッター
-    std::shared_ptr<ClientManagementService> get_client_management_service();
+    std::shared_ptr<UserManagementService> get_user_management_service();
     std::shared_ptr<ChatroomManagementService> get_chatroom_management_service();
     std::shared_ptr<ChatService> get_chat_service();
     std::shared_ptr<RequestDispatcherService> get_request_dispatcher_service();
@@ -72,14 +72,14 @@ private:
     
     
     // ドメイン層
-    std::shared_ptr<ClientAggregateStore> _client_store;
-    std::shared_ptr<ClientRepositoryHandler> _client_repository_handler;
+    std::shared_ptr<UserAggregateStore> _user_store;
+    std::shared_ptr<UserRepositoryHandler> _user_repository_handler;
     std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
-    std::shared_ptr<ClientCommunicationHandler> _client_communication_handler;
+    std::shared_ptr<CommunicationHandler> _communication_handler;
     std::shared_ptr<SessionHandler> _session_handler;
     
     // アプリケーションサービス層(サービス)
-    std::shared_ptr<ClientManagementService> _client_management_service;
+    std::shared_ptr<UserManagementService> _user_management_service;
     std::shared_ptr<ChatroomManagementService> _chatroom_management_service;
     std::shared_ptr<ChatService> _chat_service;
     std::shared_ptr<RequestDispatcherService> _request_dispatcher_service;

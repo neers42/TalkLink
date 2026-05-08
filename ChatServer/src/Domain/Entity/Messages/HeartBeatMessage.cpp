@@ -2,8 +2,8 @@
 
 
 HeartBeatMessage::HeartBeatMessage(){}
-HeartBeatMessage::HeartBeatMessage(const MessageBase::CommonField& common_fields, const std::string &client_id)
-    : MessageBase(common_fields, MessageBase::MessageType::HEARTBEAT_MESSAGE), _client_id{client_id}
+HeartBeatMessage::HeartBeatMessage(const MessageBase::CommonField& common_fields, const std::string &uid)
+    : MessageBase(common_fields, MessageBase::MessageType::HEARTBEAT_MESSAGE), _uid{uid}
 {
 }
 
@@ -16,8 +16,8 @@ std::unique_ptr<MessageBase> HeartBeatMessage::create_instance(const json &messa
 {
 	try
 	{
-		std::string client_id = message["payload"]["client_id"];
-		return std::make_unique<HeartBeatMessage>(this->parse_common_fields(message), client_id);
+		std::string uid = message["payload"]["uid"];
+		return std::make_unique<HeartBeatMessage>(this->parse_common_fields(message), uid);
 	}
 	catch(const std::runtime_error& re)
 	{
@@ -46,7 +46,7 @@ bool HeartBeatMessage::validate_payload(const json &message) const
 		const auto& payload = message["payload"];
 		
 		static const std::vector<std::string> required_keys = {
-			"client_id"
+			"uid"
 		};
 		for (const auto& key : required_keys)
 		{
@@ -55,10 +55,10 @@ bool HeartBeatMessage::validate_payload(const json &message) const
 				throw std::runtime_error("Missing key: " + key);
 			}
 		}
-		std::string client_id = payload["client_id"];
-		if (client_id.size() != 28)
+		std::string uid = payload["uid"];
+		if (uid.size() != 28)
 		{
-			throw std::runtime_error("Invalid client ID size");
+			throw std::runtime_error("Invalid user ID size");
 		}
 		return true;
 	}
@@ -76,7 +76,7 @@ bool HeartBeatMessage::validate_payload(const json &message) const
 
 bool HeartBeatMessage::validate_value() const
 {
-	if (this->_client_id.size() == 28) {
+	if (this->_uid.size() == 28) {
 		return true;
 	}
     return false;

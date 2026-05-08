@@ -39,7 +39,7 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
         
         auto operation_type = control_message->get_room_action();
         auto room_id = control_message->get_room_id();
-        auto requester_id = control_message->get_sender_cid();
+        auto requester_id = control_message->get_sender_uid();
         
         // 権限チェック
         if (!check_room_permission(room_id, requester_id, "manage")) {
@@ -323,22 +323,22 @@ ChatroomOperationResult ChatroomManagementService::deliver_chatroom_notification
         
         // ルームメンバーに配信
         auto room_members = get_room_members(control_message->get_room_id());
-        auto sender_cid = control_message->get_sender_cid();
+        auto sender_uid = control_message->get_sender_uid();
         
         // 送信者以外のメンバーをフィルタリング
         std::vector<std::string> target_members;
         for (const auto& member_id : room_members) {
-            if (member_id != sender_cid) {
+            if (member_id != sender_uid) {
                 target_members.push_back(member_id);
             }
         }
         
         if (!target_members.empty()) {
             json notification_json = MessageBase::serialize_message(notification_message);
-            auto delivery_result = _message_delivery_service->deliver_to_room(notification_json, control_message->get_room_id(), sender_socket, control_message->get_sender_cid());
+            auto delivery_result = _message_delivery_service->deliver_to_room(notification_json, control_message->get_room_id(), sender_socket, control_message->get_sender_uid());
             
             result.affected_members = delivery_result.sent_count;
-            result.unsent_notifications = std::move(delivery_result.unsent_client_ids);
+            result.unsent_notifications = std::move(delivery_result.unsent_uids);
             result.success = delivery_result.success;
         } else {
             result.success = true; // 配信対象がいない場合は成功とする
@@ -365,7 +365,7 @@ bool ChatroomManagementService::send_chatroom_acknowledgment(
             if (operation_result.unsent_notifications.empty()) {
                 status = ChatroomControlAckMessage::MessageSendStatus::SEND_SUCCESS;
             } else {
-                status = ChatroomControlAckMessage::MessageSendStatus::SEND_PARTICAL_SUCCESS;
+                status = ChatroomControlAckMessage::MessageSendStatus::SEND_PARTIAL_SUCCESS;
             }
         } else {
             status = ChatroomControlAckMessage::MessageSendStatus::SEND_FAILED;
@@ -384,14 +384,14 @@ bool ChatroomManagementService::send_chatroom_acknowledgment(
         auto ack_json = MessageBase::serialize_message(ack_message);
         auto delivery_result = _message_delivery_service->deliver_p2p(
             ack_json, 
-            control_message->get_sender_cid()
+            control_message->get_sender_uid()
         );
         
         if (delivery_result.success && delivery_result.sent_count > 0) {
-            LOG_DEBUG("Chatroom operation acknowledgment sent to client: {}", control_message->get_sender_cid());
+            LOG_DEBUG("Chatroom operation acknowledgment sent to user: {}", control_message->get_sender_uid());
             return true;
         } else {
-            LOG_ERROR("Failed to send chatroom operation acknowledgment to client: {}", control_message->get_sender_cid());
+            LOG_ERROR("Failed to send chatroom operation acknowledgment to user: {}", control_message->get_sender_uid());
             return false;
         }
         
@@ -403,32 +403,32 @@ bool ChatroomManagementService::send_chatroom_acknowledgment(
 
 // ==================== ユーティリティメソッド ====================
 
-std::vector<ChatroomControlDeliveryMessage::ClientInfo> ChatroomManagementService::generate_client_infos(const std::vector<std::string>& client_ids)
+std::vector<ChatroomControlDeliveryMessage::UserInfo> ChatroomManagementService::generate_user_infos(const std::vector<std::string>& uids)
 {
-    std::vector<ChatroomControlDeliveryMessage::ClientInfo> client_infos;
+    std::vector<ChatroomControlDeliveryMessage::UserInfo> user_infos;
     
     try {
-        for (const auto& cid : client_ids) {
-            std::string client_name, client_mail, client_icon;
-            std::tie(client_name, client_mail, client_icon) = _mysql_client->get_client_info_fromDB(cid);
+        for (const auto& uid : uids) {
+            std::string user_name, user_mail, user_icon;
+            std::tie(user_name, user_mail, user_icon) = _mysql_client->get_user_info_fromDB(uid);
             
-            ChatroomControlDeliveryMessage::ClientInfo info(cid, client_name, client_mail, client_icon);
-            client_infos.push_back(info);
+            ChatroomControlDeliveryMessage::UserInfo info(uid, user_name, user_mail, user_icon);
+            user_infos.push_back(info);
         }
         
     } catch (const std::exception& e) {
-        handle_operation_error(e, "generate_client_infos");
+        handle_operation_error(e, "generate_user_infos");
     }
     
-    return client_infos;
+    return user_infos;
 }
 
-bool ChatroomManagementService::check_room_permission(const std::string& room_id, const std::string& client_id, const std::string& operation)
+bool ChatroomManagementService::check_room_permission(const std::string& room_id, const std::string& uid, const std::string& operation)
 {
     try {
         // 基本的な権限チェック: ルームメンバーかどうか
         auto members = get_room_members(room_id);
-        return std::find(members.begin(), members.end(), client_id) != members.end();
+        return std::find(members.begin(), members.end(), uid) != members.end();
         
     } catch (const std::exception& e) {
         handle_operation_error(e, "check_room_permission");
@@ -450,7 +450,7 @@ bool ChatroomManagementService::room_exists(const std::string& room_id)
 std::vector<std::string> ChatroomManagementService::get_room_members(const std::string& room_id)
 {
     try {
-        return _chatroom_repository_handler->get_client_infos_by_chatroom_id(room_id);
+        return _chatroom_repository_handler->get_user_infos_by_chatroom_id(room_id);
         
     } catch (const std::exception& e) {
         handle_operation_error(e, "get_room_members");
@@ -504,7 +504,7 @@ bool ChatroomManagementService::save_room_operation_to_database(const std::uniqu
         return _mysql_client->insert_message(
             control_message->get_message_id(),
             control_message->get_room_id(),
-            control_message->get_sender_cid(),
+            control_message->get_sender_uid(),
             mysql_timestamp,
             message_json.dump()
         );
@@ -525,16 +525,16 @@ std::unique_ptr<ChatroomControlDeliveryMessage> ChatroomManagementService::creat
     const ChatroomOperationResult& result)
 {
     try {
-        auto client_infos = generate_client_infos(control_message->get_add_member_list());
+        auto user_infos = generate_user_infos(control_message->get_add_member_list());
         
         return std::make_unique<ChatroomControlDeliveryMessage>(
             control_message->get_common_fields(),
             control_message->get_message_id(),
-            control_message->get_sender_cid(),
+            control_message->get_sender_uid(),
             control_message->get_room_id(),
             control_message->get_room_name(),
             control_message->get_room_image_url(),
-            client_infos,
+            user_infos,
             control_message->get_room_action()
         );
         

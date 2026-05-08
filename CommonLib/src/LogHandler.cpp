@@ -1,5 +1,11 @@
 ﻿#include "LogHandler.hpp"
+#include <thread>
+#include <functional>
+
 std::mutex LogHandler::cout_mutex;
+
+// グローバルスレッドローカルタスクID
+thread_local std::string g_current_task_id = "";
 
 LogHandler::LogHandler() : log_level{10}
 {
@@ -14,34 +20,38 @@ void LogHandler::logging(LogType log_type, std::ostream& os, const std::string& 
 {
 	{
 		std::unique_lock<std::mutex> lock(cout_mutex);
+		// スレッドIDをstd::thread::idから数値に変換
+		std::hash<std::thread::id> hasher;
+		uint32_t thread_id = hasher(std::this_thread::get_id()) % 100000; // 5桁に制限
+
 		switch (log_type)
 		{
 		case LogHandler::LogType::INFO:
-			os << StringFormat("[%s][INFO]", ServerTime::get_current_time_to_milliseconds()) << log_message << std::endl;
+			os << StringFormat("[%-8s][%s][%5u] %s", "INFO", ServerTime::get_current_time_to_milliseconds(), thread_id, log_message.c_str()) << std::endl;
 			break;
 		case LogHandler::LogType::SERVER_ERROR:
-			os << StringFormat("[%s]\033[31m[ERROR]\033[m", ServerTime::get_current_time_to_milliseconds()) << log_message << std::endl;
+			os << StringFormat("\033[31m[%-8s][%s][%5u] %s\033[m", "ERROR", ServerTime::get_current_time_to_milliseconds(), thread_id, log_message.c_str()) << std::endl;
 			break;
 		case LogHandler::LogType::RECEIVE:
-		os << StringFormat("[%s]\033[32m[RECEIVE]\033[m", ServerTime::get_current_time_to_milliseconds()) << log_message << std::endl;
+			os << StringFormat("\033[32m[%-8s][%s][%5u] %s\033[m", "RECEIVE", ServerTime::get_current_time_to_milliseconds(), thread_id, log_message.c_str()) << std::endl;
 			break;
 		case LogHandler::LogType::SEND:
-			os << StringFormat("[%s]\033[32m[SEND]\033[m", ServerTime::get_current_time_to_milliseconds()) << log_message << std::endl;
+			os << StringFormat("\033[32m[%-8s][%s][%5u] %s\033[m", "SEND", ServerTime::get_current_time_to_milliseconds(), thread_id, log_message.c_str()) << std::endl;
 			break;
 
 		case LogHandler::LogType::SIGN_UP:
-			os << StringFormat("[%s][SIGN UP]", ServerTime::get_current_time_to_milliseconds()) << log_message << std::endl;
+			os << StringFormat("[%-8s][%s][%5u] %s", "SIGN UP", ServerTime::get_current_time_to_milliseconds(), thread_id, log_message.c_str()) << std::endl;
 			break;
 	
 		case LogHandler::LogType::SIGN_IN:
-			os << StringFormat("[%s][SIGN IN]", ServerTime::get_current_time_to_milliseconds()) << log_message << std::endl;
+			os << StringFormat("[%-8s][%s][%5u] %s", "SIGN IN", ServerTime::get_current_time_to_milliseconds(), thread_id, log_message.c_str()) << std::endl;
 			break;
 
 		case LogType::SIGN_OUT:
-			os << StringFormat("[%s][SIGN OUT]", ServerTime::get_current_time_to_milliseconds()) << log_message << std::endl;
+			os << StringFormat("[%-8s][%s][%5u] %s", "SIGN OUT", ServerTime::get_current_time_to_milliseconds(), thread_id, log_message.c_str()) << std::endl;
 			break;
 		case LogType::DEBUG_INFO:
-			os << StringFormat("[%s][DEBUG INFO]", ServerTime::get_current_time_to_milliseconds()) << log_message << std::endl;
+			os << StringFormat("[%-8s][%s][%5u] %s", "DEBUG", ServerTime::get_current_time_to_milliseconds(), thread_id, log_message.c_str()) << std::endl;
 			break;
 		default:
 			break;
@@ -53,22 +63,26 @@ void LogHandler::logging(LogLevel level, std::ostream& os, const std::string& lo
 {
 	{
 		std::unique_lock<std::mutex> lock(cout_mutex);
+		// スレッドIDをstd::thread::idから数値に変換
+		std::hash<std::thread::id> hasher;
+		uint32_t thread_id = hasher(std::this_thread::get_id()) % 100000; // 5桁に制限
+
 		switch (level)
 		{
 		case LogHandler::LogLevel::DEBUG:
-			os << StringFormat("[DEBUG] %s, thread id : %d, %s", ServerTime::get_current_time_to_milliseconds(), std::this_thread::get_id(), log) << std::endl;
+			os << StringFormat("[%-8s][%s][%5u] %s", "DEBUG", ServerTime::get_current_time_to_milliseconds(), thread_id, log.c_str()) << std::endl;
 			break;
 		case LogHandler::LogLevel::INFO:
-			os << StringFormat("[INFO] %s, thread id : %d, %s", ServerTime::get_current_time_to_milliseconds(), std::this_thread::get_id(), log) << std::endl;
+			os << StringFormat("[%-8s][%s][%5u] %s", "INFO", ServerTime::get_current_time_to_milliseconds(), thread_id, log.c_str()) << std::endl;
 			break;
 		case LogHandler::LogLevel::WARNING:
-			os << StringFormat("\033[33m[WARNING] %s, thread id : %d, %s\033[m", ServerTime::get_current_time_to_milliseconds(), std::this_thread::get_id(), log) << std::endl;
+			os << StringFormat("\033[33m[%-8s][%s][%5u] %s\033[m", "WARNING", ServerTime::get_current_time_to_milliseconds(), thread_id, log.c_str()) << std::endl;
 			break;
 		case LogHandler::LogLevel::PROGRAM_ERROR:
-			os << StringFormat("\033[31m[ERROR] %s, thread id : %d, %s\033[m", ServerTime::get_current_time_to_milliseconds(), std::this_thread::get_id(), log) << std::endl;
+			os << StringFormat("\033[31m[%-8s][%s][%5u] %s\033[m", "ERROR", ServerTime::get_current_time_to_milliseconds(), thread_id, log.c_str()) << std::endl;
 			break;
 		case LogHandler::LogLevel::CRITICAL:
-			os << StringFormat("\033[31m[CRITICAL] %s, thread id : %d, %s\033[m", ServerTime::get_current_time_to_milliseconds(), std::this_thread::get_id(), log) << std::endl;
+			os << StringFormat("\033[31m[%-8s][%s][%5u] %s\033[m", "CRITICAL", ServerTime::get_current_time_to_milliseconds(), thread_id, log.c_str()) << std::endl;
 			break;
 		default:
 			break;

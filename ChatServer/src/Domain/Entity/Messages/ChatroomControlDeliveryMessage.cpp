@@ -2,11 +2,11 @@
 
 ChatroomControlDeliveryMessage::ChatroomControlDeliveryMessage() 
 	:MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_DELIVERY),
-	 _sender_cid{""},
+	 _sender_uid{""},
 	 _room_id{""},
 	 _room_name{""},
 	 _room_icon_url{""},
-	 _client_info_list{},
+	 _user_infos{},
 	 _room_action{ChatroomControlMessage::RoomAction::CREATE_ROOM}
 {
 }
@@ -14,18 +14,18 @@ ChatroomControlDeliveryMessage::ChatroomControlDeliveryMessage()
 ChatroomControlDeliveryMessage::ChatroomControlDeliveryMessage(
 	const MessageBase::CommonField& common_fields,
 	const std::uint64_t& mid,
-    const std::string &sender_cid,
+    const std::string &sender_uid,
     const std::string &room_id,
     const std::string &room_name,
     const std::string &room_icon_url,
-    const std::vector<ClientInfo> &client_info_list,
+    const std::vector<UserInfo> &user_infos,
     const ChatroomControlMessage::RoomAction &room_action) 
 	: MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL_DELIVERY),
-	 _sender_cid{sender_cid},
+	 _sender_uid{sender_uid},
 	 _room_id{room_id},
 	 _room_name{room_name},
 	 _room_icon_url{room_icon_url},
-	 _client_info_list{client_info_list},
+	 _user_infos{user_infos},
 	 _room_action{room_action}
 {
 }
@@ -34,9 +34,9 @@ ChatroomControlDeliveryMessage::~ChatroomControlDeliveryMessage()
 {
 }
 
-std::string ChatroomControlDeliveryMessage::get_sender_cid() const
+std::string ChatroomControlDeliveryMessage::get_sender_uid() const
 {
-	return this->_sender_cid;
+	return this->_sender_uid;
 }
 std::string ChatroomControlDeliveryMessage::get_room_id() const
 {
@@ -68,14 +68,14 @@ void ChatroomControlDeliveryMessage::set_room_icon_url(const std::string& room_i
 	this->_room_icon_url = room_icon_url;
 }
 
-std::vector<ChatroomControlDeliveryMessage::ClientInfo> ChatroomControlDeliveryMessage::get_client_info_list() const
+std::vector<ChatroomControlDeliveryMessage::UserInfo> ChatroomControlDeliveryMessage::get_user_infos() const
 {
-    return this->_client_info_list;
+    return this->_user_infos;
 }
 
-void ChatroomControlDeliveryMessage::set_client_info_list(const std::vector<ClientInfo>& client_info_list)
+void ChatroomControlDeliveryMessage::set_user_infos(const std::vector<UserInfo>& user_infos)
 {
-	this->_client_info_list = client_info_list;
+	this->_user_infos = user_infos;
 }
 
 ChatroomControlMessage::RoomAction ChatroomControlDeliveryMessage::get_room_action() const
@@ -93,7 +93,7 @@ json ChatroomControlDeliveryMessage::serialize_payload() const
 		if(validate_payload() == false){
 			throw std::runtime_error("Specific message fields validation failed.");
 		}
-		specific_fields["sender_cid"] = this->_sender_cid;
+		specific_fields["sender_uid"] = this->_sender_uid;
 		specific_fields["room_id"] = this->_room_id;
 		specific_fields["room_name"] = this->_room_name;
 		specific_fields["room_icon_url"] = this->_room_icon_url;
@@ -106,10 +106,10 @@ json ChatroomControlDeliveryMessage::serialize_payload() const
 		{
 			// クライアント情報（members）
 			json members_json = json::array();
-			for (const auto &member : this->get_client_info_list())
+			for (const auto &member : this->get_user_infos())
 			{
 				json m;
-				m["cid"] = member.cid;
+				m["uid"] = member.uid;
 				m["name"] = member.name;
 				m["icon_url"] = member.icon_url;
 				members_json.push_back(m);

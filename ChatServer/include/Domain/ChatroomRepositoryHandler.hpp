@@ -9,7 +9,7 @@
 #include <string>
 
 #define MAX_ACTIVE_CHATROOM_NUM 1000  // activeなチャットルームの最大数
-#define MAX_CLIENT_NUM_IN_CHATROOM 100 // チャットルーム内の最大クライアント数
+#define MAX_USER_NUM_IN_CHATROOM 100 // チャットルーム内の最大ユーザー数
 
 /**
  * @brief チャットルームのデータアクセス・ストレージ管理を担当するRepository層
@@ -78,14 +78,14 @@ public:
      * @param list_num リストインデックス
      * @return クライアントIDリスト
      */
-    std::vector<std::string> get_client_infos_by_chatroom_id(int list_num);
+    std::vector<std::string> get_user_infos_by_chatroom_id(int list_num);
     
     /**
      * @brief ルームIDでクライアント情報を取得
      * @param room_id ルームID
      * @return クライアントIDリスト
      */
-    std::vector<std::string> get_client_infos_by_chatroom_id(const std::string& room_id);
+    std::vector<std::string> get_user_infos_by_chatroom_id(const std::string& room_id);
     
     /**
      * @brief チャットルームIDを検索
@@ -102,29 +102,29 @@ public:
     std::vector<std::shared_ptr<Chatroom>>::iterator find_chatroom_id_from_list(const std::string& room_id);
     
     /**
-     * @brief チャットルームのクライアントリストを取得
+     * @brief チャットルームのユーザーリストを取得
      * @param room_id ルームID
-     * @return クライアントIDリスト
+     * @return ユーザーIDリスト
      */
-    std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
+    std::vector<std::string> get_users_from_chatroom(const std::string& room_id);
     
     // ==================== メンバーシップ操作 ====================
     
     /**
      * @brief ルームメンバーを追加
      * @param room_id 対象ルームID
-     * @param cids 追加するクライアントIDリスト
+     * @param user_ids 追加するユーザーIDリスト
      * @return 追加成功時true
      */
-    bool add_member_to_chatroom(const std::string& room_id, const std::vector<std::string>& cids);
+    bool add_member_to_chatroom(const std::string& room_id, const std::vector<std::string>& uids);
     
     /**
      * @brief ルームメンバーを削除
      * @param room_id 対象ルームID
-     * @param cids 削除するクライアントIDリスト
+     * @param uids 削除するユーザーIDリスト
      * @return 削除成功時true
      */
-    bool delete_member_from_chatroom(const std::string& room_id, const std::vector<std::string>& cids);
+    bool delete_member_from_chatroom(const std::string& room_id, const std::vector<std::string>& uids);
     
     // ==================== ルーム属性更新 ====================
     

@@ -1,37 +1,37 @@
-#ifndef CLIENTCOMMUNICATIONHANDLER_HPP
-#define CLIENTCOMMUNICATIONHANDLER_HPP
+#ifndef COMMUNICATIONHANDLER_HPP
+#define COMMUNICATIONHANDLER_HPP
 #include "Utils/common.hpp"
-#include "Domain/ClientAggregateStore.hpp"
+#include "Domain/UserAggregateStore.hpp"
 
-class ClientCommunicationHandler {
+class CommunicationHandler {
 
     struct AcceptResult {
         socket_t socket;
         SSL* ssl;
-        struct sockaddr_in client_addr;
-        std::string client_ip;
+        struct sockaddr_in user_addr;
+        std::string user_ip_addr;
         
         bool has_value() const {
-            return socket != INVALID_SOCKET_FD && ssl != nullptr && !client_ip.empty();
+            return socket != INVALID_SOCKET_FD && ssl != nullptr && !user_ip_addr.empty();
         }
     };
 private:
-    std::shared_ptr<ClientAggregateStore> _store;
+    std::shared_ptr<UserAggregateStore> _store;
     
     // 通信関連のインフラを全て管理
     std::shared_ptr<SocketHandler> _socket_handler;      // ソケット操作
     std::shared_ptr<ProtocolHandler> _protocol_handler;  // SSL/プロトコル
     
 public:
-    explicit ClientCommunicationHandler(
-        std::shared_ptr<ClientAggregateStore> store,
+    explicit CommunicationHandler(
+        std::shared_ptr<UserAggregateStore> store,
         std::shared_ptr<SocketHandler> socket_handler,
         std::shared_ptr<ProtocolHandler> protocol_handler) 
         : _store(store), 
           _socket_handler(socket_handler),
           _protocol_handler(protocol_handler) {}
     
-    // 低レベルな通信操作（ClientRepositoryHandlerから呼び出される）
+    // 低レベルな通信操作（UserRepositoryHandlerから呼び出される）
     AcceptResult accept_new_connection();
     bool close_connection(socket_t socket);
     
@@ -51,4 +51,4 @@ public:
     socket_t get_listen_socket();
     bool close_listen_socket();
 };
-#endif // CLIENTCOMMUNICATIONHANDLER_HPP
+#endif // COMMUNICATIONHANDLER_HPP

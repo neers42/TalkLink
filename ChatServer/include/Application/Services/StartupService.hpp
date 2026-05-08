@@ -12,7 +12,7 @@ class ThreadPoolHandler;
 class ProtocolHandler;
 class TaskManagementService;
 class RequestDispatcherService;
-class ClientManagementService;
+class UserManagementService;
 class ChatService;
 
 // サーバー起動フェーズ定義
@@ -60,7 +60,7 @@ public:
         std::shared_ptr<ProtocolHandler> protocol_handler,
         std::shared_ptr<TaskManagementService> task_management_service,
         std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
-        std::shared_ptr<ClientManagementService> client_management_service,
+        std::shared_ptr<UserManagementService> user_management_service,
         std::shared_ptr<ChatService> chat_service
     );
     ~StartupService();
@@ -159,7 +159,7 @@ private:
     std::shared_ptr<ProtocolHandler> _protocol_handler;
     std::shared_ptr<TaskManagementService> _task_management_service;
     std::shared_ptr<RequestDispatcherService> _request_dispatcher_service;
-    std::shared_ptr<ClientManagementService> _client_management_service;
+    std::shared_ptr<UserManagementService> _user_management_service;
     std::shared_ptr<ChatService> _chat_service;
     
     // 起動状態管理

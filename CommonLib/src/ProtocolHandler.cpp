@@ -44,51 +44,57 @@ std::shared_ptr<SSL_CTX> ProtocolHandler::get_ssl_ctx()
 
 
 
-SSL* ProtocolHandler::generate_and_attach_ssl_object(socket_t client_socket)
+SSL* ProtocolHandler::generate_and_attach_ssl_object(socket_t socket)
 {
 	std::shared_ptr<SSL_CTX> ctx_copy;
 
-    // ロックは shared_ptr をコピーする瞬間だけ
-    {
-        std::lock_guard<std::mutex> lock(this->_ctx_mutex);
-        ctx_copy = this->_server_ctx;
-    }
+	try
+	{
+		// ロックは shared_ptr をコピーする瞬間だけ
+		{
+			std::lock_guard<std::mutex> lock(this->_ctx_mutex);
+			ctx_copy = this->_server_ctx;
+		}
 
-    if (!ctx_copy) {
-        LOG_ERROR("SSL_CTX is null.");
-        return nullptr;
-    }
+		if (!ctx_copy)
+		{
+			throw std::runtime_error("SSL_CTX is not initialized. SSL object is null.");
+		}
 
-    SSL* new_client_ssl = SSL_new(ctx_copy.get());
-    if (!new_client_ssl) {
-        LOG_ERROR("new client ssl object creation failed.");
-        return nullptr;
-    }
+		SSL *new_ssl = SSL_new(ctx_copy.get());
+		if (!new_ssl)
+		{
+			throw std::runtime_error("new user ssl object creation failed.");
+		}
 
-    spdlog::info("new client ssl object creation success!!");
-    SSL_set_fd(new_client_ssl, static_cast<int>(client_socket));
-    return new_client_ssl;
-
-
-}
-
-
-SSL* ProtocolHandler::ssl_accept(const socket_t client_socket)
-{
-	//SSLオブジェクトの生成及び
-	SSL* new_client_ssl = generate_and_attach_ssl_object(client_socket);
-	if (SSL_accept(new_client_ssl) == 1) {
-		return new_client_ssl;
-
+		LOG_DEBUG("[ProtocolHandler] new user ssl object creation success!!");
+		SSL_set_fd(new_ssl, static_cast<int>(socket));
+		return new_ssl;
 	}
-	else {
-		this->print_ssl_error(new_client_ssl);
-		SSL_free(new_client_ssl);
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("[ProtocolHandler] Exception in generate_and_attach_ssl_object: {}", e.what());
 		return nullptr;
 	}
 }
 
-std::tuple<std::string, bool, bool> ProtocolHandler::receive_message_str(SSL *client_ssl)
+
+SSL* ProtocolHandler::ssl_accept(const socket_t socket)
+{
+	//SSLオブジェクトの生成及び
+	SSL* new_ssl = generate_and_attach_ssl_object(socket);
+	if (SSL_accept(new_ssl) == 1) {
+		return new_ssl;
+
+	}
+	else {
+		this->print_ssl_error(new_ssl);
+		SSL_free(new_ssl);
+		return nullptr;
+	}
+}
+
+std::tuple<std::string, bool, bool> ProtocolHandler::receive_message_str(SSL *ssl)
 {
 	char buffer[MESSAGE_SIZE];
 	int message_size = 0;
@@ -97,14 +103,14 @@ std::tuple<std::string, bool, bool> ProtocolHandler::receive_message_str(SSL *cl
 	bool recv_flag = false;	//受信完了の判定フラグ
 	int bytes_read = 0;
 
-	if (client_ssl == nullptr || SSL_is_init_finished(client_ssl) == false) {
-		LOG_ERROR("SSL is not initialized, cannot send message.");
+	if (ssl == nullptr || SSL_is_init_finished(ssl) == false) {
+		LOG_ERROR("[ProtocolHandler] SSL is not initialized, cannot send message.");
 		disconnect_flag = true;
 		return std::make_tuple(std::string(), disconnect_flag, recv_flag);
 	}
 	while (true)
 	{
-		bytes_read = SSL_read(client_ssl, buffer, sizeof(buffer));
+		bytes_read = SSL_read(ssl, buffer, sizeof(buffer));
 		message_size += bytes_read;
 
 		//受信したバイト数が0より大きい場合msgの解析を実施する。
@@ -128,7 +134,7 @@ std::tuple<std::string, bool, bool> ProtocolHandler::receive_message_str(SSL *cl
 		//上記の判定以外の場合の処理
 		else
 		{
-			int recv_error = SSL_get_error(client_ssl, bytes_read);
+			int recv_error = SSL_get_error(ssl, bytes_read);
 			if (recv_error == SSL_ERROR_WANT_READ || recv_error == SSL_ERROR_WANT_WRITE) {
 				continue;
 			}
@@ -159,7 +165,7 @@ std::tuple<std::string, bool, bool> ProtocolHandler::receive_message_str(SSL *cl
 	}
 }
 
-std::tuple<json, bool, bool> ProtocolHandler::receive_message_json(SSL *client_ssl)
+std::tuple<json, bool, bool> ProtocolHandler::receive_message_json(SSL *ssl)
 {
 	json recv_msg_json;
 	char buffer[MESSAGE_SIZE];
@@ -169,15 +175,15 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_json(SSL *client_s
 	bool recv_flag = false;	//受信完了の判定フラグ
 	int bytes_read = 0;
 
-	if (client_ssl == nullptr || SSL_is_init_finished(client_ssl) == false) {
-		LOG_ERROR("SSL is not initialized, cannot send message.");
+	if (ssl == nullptr || SSL_is_init_finished(ssl) == false) {
+		LOG_ERROR("[ProtocolHandler] SSL is not initialized, cannot send message.");
 		disconnect_flag = true;
 		return std::make_tuple(json(), disconnect_flag, recv_flag);
 	}
 
 	while (true)
 	{
-		bytes_read = SSL_read(client_ssl, buffer, sizeof(buffer));
+		bytes_read = SSL_read(ssl, buffer, sizeof(buffer));
 		message_size += bytes_read;
 
 		//受信したバイト数が0より大きい場合msgの解析を実施する。
@@ -216,7 +222,7 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_json(SSL *client_s
 		//上記の判定以外の場合の処理
 		else
 		{
-			int recv_error = SSL_get_error(client_ssl, bytes_read);
+			int recv_error = SSL_get_error(ssl, bytes_read);
 			if (recv_error == SSL_ERROR_WANT_READ || recv_error == SSL_ERROR_WANT_WRITE) {
 				continue;
 			}
@@ -247,7 +253,7 @@ std::tuple<json, bool, bool> ProtocolHandler::receive_message_json(SSL *client_s
 	}
 }
 
-bool ProtocolHandler::send_message_json(SSL* client_ssl, const json& message)
+bool ProtocolHandler::send_message_json(SSL* ssl, const json& message)
 {
 	LOG_TRACE;
 	std::vector<uint8_t> message_buffer = json::to_msgpack(message);
@@ -256,55 +262,55 @@ bool ProtocolHandler::send_message_json(SSL* client_ssl, const json& message)
 	size_t chunk_size = 16384;  // 最大TLSレコードサイズ
 	int ret = 0;
 
-	if (client_ssl == nullptr || SSL_is_init_finished(client_ssl) == false) {
-		LOG_ERROR("SSL is not initialized, cannot send message.");
+	if (ssl == nullptr || SSL_is_init_finished(ssl) == false) {
+		LOG_ERROR("[ProtocolHandler] SSL is not initialized, cannot send message.");
 		return false;
 	}
 	while (total_sent < message_size) {
 		size_t to_send = (message_size - total_sent > chunk_size) ? chunk_size : (message_size - total_sent);
-		ret = SSL_write(client_ssl, message_buffer.data() + total_sent, static_cast<int>(to_send));
+		ret = SSL_write(ssl, message_buffer.data() + total_sent, static_cast<int>(to_send));
 		if (ret > 0) {
 			total_sent += ret;
 			continue;
 		}
 		// エラー発生時
-		int err = SSL_get_error(client_ssl, ret);
+		int err = SSL_get_error(ssl, ret);
 		if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
 			// 一時的なエラー、リトライ
-			this->print_ssl_error(client_ssl);
-			spdlog::info("Temporary error (WANT_WRITE/WANT_READ), retrying...");
+			this->print_ssl_error(ssl);
+			LOG_WARNING("[ProtocolHandler] Temporary error (WANT_WRITE/WANT_READ), retrying...");
 			continue;
 		}
 		else {
 			// 致命的なエラー
-			this->print_ssl_error(client_ssl);
-			LOG_ERROR("SSL_write failed: {:d}", err);
-			SSL_shutdown(client_ssl);
+			this->print_ssl_error(ssl);
+			LOG_ERROR("[ProtocolHandler] SSL_write failed: {:d}", err);
+			SSL_shutdown(ssl);
 			return false;
 		}
 	}
-	spdlog::info("SSL write success!!");
+	LOG_DEBUG("[ProtocolHandler] SSL write success!!");
 	if (!message.is_object() || message.is_null()) {
-		spdlog::error("Invalid JSON: message is either null or not an object.");
+		LOG_ERROR("[ProtocolHandler] Invalid JSON: message is either null or not an object.");
 	}
 	else {
-		spdlog::debug("message json content : {}", message.dump(4));
+		LOG_DEBUG("[ProtocolHandler] message json content : {}", message.dump(4));
 	}
 	return true;
 }
 
-bool ProtocolHandler::shutdown_ssl(SSL* client_ssl)
+bool ProtocolHandler::shutdown_ssl(SSL* ssl)
 {
-	int ret = SSL_shutdown(client_ssl);
+	int ret = SSL_shutdown(ssl);
 	if (ret == 1) {
-		spdlog::debug("SSL shutdown success.");
+		LOG_DEBUG("[ProtocolHandler] SSL shutdown success.");
 	}
 	else
 	{
-		this->print_ssl_error(client_ssl);
+		this->print_ssl_error(ssl);
 		return false;
 	}
-	SSL_free(client_ssl);
+	SSL_free(ssl);
 	return true;
 }
 
@@ -326,15 +332,14 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 		cert_not_before_buffer[32] = { 0 },
 		cert_not_after_buffer[32] = { 0 };
 	if (!ssl) {
-		LOG_ERROR("SSL object is null.");
-		//spdlog::error("SSL object is null.");
+		LOG_ERROR("[ProtocolHandler] SSL object is null.");
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
 
 #ifdef _WIN32
 	SSL_X509* server_cert = SSL_get_peer_certificate(ssl);
 	if (!server_cert) {
-		spdlog::warn("No client certificate received.");
+		LOG_WARNING("[ProtocolHandler] No user certificate received.");
 		return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 	}
 	// 証明書のサブジェクト名（発行対象）
@@ -389,10 +394,10 @@ const std::tuple<std::string, std::string, std::string, std::string>  ProtocolHa
 
 	// 証明書オブジェクトを解放
 	SSL_X509_free(server_cert);
-	spdlog::info(" * Server Certificate Subject Name : {:s}", cert_subject_name);
-	spdlog::info(" * Server Certificate Issuer Name : {:s}", cert_issuer_name);
-	spdlog::info(" * Server Certificate Not Before : {:s}", cert_not_before);
-	spdlog::info(" * Server Certificate Not After : {:s}", cert_not_after);
+	LOG_DEBUG("[ProtocolHandler] * Server Certificate Subject Name : {:s}", cert_subject_name);
+	LOG_DEBUG("[ProtocolHandler] * Server Certificate Issuer Name : {:s}", cert_issuer_name);
+	LOG_DEBUG("[ProtocolHandler] * Server Certificate Not Before : {:s}", cert_not_before);
+	LOG_DEBUG("[ProtocolHandler] * Server Certificate Not After : {:s}", cert_not_after);
 	return std::make_tuple(cert_subject_name, cert_issuer_name, cert_not_before, cert_not_after);
 
 #endif
@@ -403,26 +408,26 @@ void ProtocolHandler::print_json_message(const json &json_message)
 {
 	if (json_message.is_null() || json_message.empty())
 	{
-		LOG_ERROR("Invalid JSON object.");
+		LOG_ERROR("[ProtocolHandler] Invalid JSON object.");
 		return;
 	}
-	spdlog::debug("Receive JSON DATA :\n{:s}", json_message.dump(4));
+	LOG_DEBUG("[ProtocolHandler] Receive JSON DATA :\n{:s}", json_message.dump(4));
 }
 
 void ProtocolHandler::print_received_message_info(const uint64_t message_id, const std::string &sender_id, const std::string &room_id, const std::string &sender_ipv4, const socket_t socket_num, const json &json_message)
 {
 	if (json_message.is_null() || json_message.empty())
 	{
-		LOG_ERROR("Invalid JSON object.");
+		LOG_ERROR("[ProtocolHandler] Invalid JSON object.");
 		return;
 	}
-	spdlog::debug("server received Message(message id:{}) from sender(id:{}, ip:{}, socket:{}).\nReceive JSON DATA :\n{}", message_id, sender_id, sender_ipv4, socket_num, json_message.dump(4));
+	LOG_DEBUG("[ProtocolHandler] server received Message(message id:{}) from sender(id:{}, ip:{}, socket:{}).\nReceive JSON DATA :\n{}", message_id, sender_id, sender_ipv4, socket_num, json_message.dump(4));
 }
 
 void ProtocolHandler::hot_reload_certificates(int interval_seconds, const std::string& cert_file_pass, const std::string& private_key_file_pass)
 {
 	
-	spdlog::info("Starting certificate hot reload thread with interval: {} seconds", interval_seconds);
+	LOG_INFO("[ProtocolHandler] Starting certificate hot reload thread with interval: {} seconds", interval_seconds);
 	while (this->_running)  // サーバーが実行中の間ループ
 	{
 		std::unique_lock<std::mutex> lock(_reload_mutex);
@@ -472,11 +477,11 @@ void ProtocolHandler::stop_hot_reload()
 }
 
 // SSL通信で発生するエラーの表示
-void ProtocolHandler::print_ssl_error(SSL* client_ssl)
+void ProtocolHandler::print_ssl_error(SSL* ssl)
 {
 	int err = 0;
 	char buffer[80];
-	err = SSL_get_error(client_ssl, 0);
+	err = SSL_get_error(ssl, 0);
 	ERR_error_string(err, buffer);
 	LOG_ERROR("[ProtocolHandler] SSL error content : {:s} (code : {:d}.)", std::string(buffer), err);
 }

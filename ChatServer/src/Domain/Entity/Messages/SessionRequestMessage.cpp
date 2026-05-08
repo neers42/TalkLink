@@ -4,8 +4,8 @@ SessionRequestMessage::SessionRequestMessage()
     : MessageBase(MessageBase::MessageType::SESSION_REQUEST),
       _sign_type{SignType::SIGNIN},
       _jwt{""},
-      _client_name{""},
-      _client_mail_addr{""},
+      _user_name{""},
+      _user_mail_addr{""},
       _last_received_message_id{0}
 {
 }
@@ -13,8 +13,8 @@ SessionRequestMessage::SessionRequestMessage(const MessageBase::CommonField& com
     : MessageBase(common_fields, MessageBase::MessageType::SESSION_REQUEST), 
       _sign_type{s_type},
       _jwt{jwt},
-      _client_name{name},
-      _client_mail_addr{mail_addr},
+      _user_name{name},
+      _user_mail_addr{mail_addr},
       _last_received_message_id{last_received_message_id}
 {
 }
@@ -80,24 +80,24 @@ void SessionRequestMessage::set_jwt(const std::string &jwt)
     this->_jwt = jwt;
 }
 
-std::string SessionRequestMessage::get_client_name() const
+std::string SessionRequestMessage::get_user_name() const
 {
-    return this->_client_name;
+    return this->_user_name;
 }
 
-void SessionRequestMessage::set_client_name(const std::string& name)
+void SessionRequestMessage::set_user_name(const std::string& name)
 {
-    this->_client_name = name;
+    this->_user_name = name;
 }
 
-std::string SessionRequestMessage::get_client_mail_addr() const
+std::string SessionRequestMessage::get_user_mail_addr() const
 {
-    return this->_client_mail_addr;
+    return this->_user_mail_addr;
 }
 
-void SessionRequestMessage::set_client_mail_addr(const std::string& mail_addr)
+void SessionRequestMessage::set_user_mail_addr(const std::string& mail_addr)
 {
-    this->_client_mail_addr = mail_addr;
+    this->_user_mail_addr = mail_addr;
 }
 
 uint64_t SessionRequestMessage::get_last_received_message_id() const
@@ -187,18 +187,28 @@ std::unique_ptr<MessageBase> SessionRequestMessage::create_instance(const json &
         std::string jwt = message["payload"]["jwt"];
         uint64_t last_received_message_id = message["payload"]["last_received_message_id"];
         std::string sign_type_str = message["payload"]["sign_type"];
+		std::string user_name = "";
+		std::string user_mail_addr = "";
+
+		// SIGN IN/OUTでもクライアントが任意で送ってきた場合は保持する
+		if (message["payload"].contains("name") && message["payload"]["name"].is_string()) {
+			user_name = message["payload"]["name"];
+		}
+		if (message["payload"].contains("mail_address") && message["payload"]["mail_address"].is_string()) {
+			user_mail_addr = message["payload"]["mail_address"];
+		}
 		int sign_type;
 		if (sign_type_str == "SIGN UP") {
 			sign_type = 0;
-            std::string client_name = message["payload"]["name"];
-            std::string client_mail_addr = message["payload"]["mail_address"];
+            user_name = message["payload"]["name"];
+            user_mail_addr = message["payload"]["mail_address"];
 
             return std::make_unique<SessionRequestMessage>(
             this->parse_common_fields(message),
             static_cast<SignType>(sign_type),
             jwt,
-            client_name,        //Client nameはSign UPの場合必須
-            client_mail_addr,     //Client mail addressはSign UPの場合必須
+            user_name,
+            user_mail_addr,
             last_received_message_id
             );
 		}
@@ -216,8 +226,8 @@ std::unique_ptr<MessageBase> SessionRequestMessage::create_instance(const json &
             this->parse_common_fields(message),
             static_cast<SignType>(sign_type),
             jwt,
-            "",     //Client nameはSign IN/OUTの場合不要
-            "",    //Client mail addressはSign IN/OUTの場合不要
+            user_name,
+            user_mail_addr,
             last_received_message_id
         );
     }
@@ -239,8 +249,8 @@ std::unique_ptr<MessageBase> SessionRequestMessage::create_instance(const json &
 bool SessionRequestMessage::validate_value() const
 {
     if (is_valid_jwt(this->_jwt) == true &&
-        is_valid_name(this->_client_name) == true &&
-        is_valid_mail_addr(this->_client_mail_addr) == true) {
+        is_valid_name(this->_user_name) == true &&
+        is_valid_mail_addr(this->_user_mail_addr) == true) {
         return true;
     }
     else
@@ -270,12 +280,12 @@ bool SessionRequestMessage::is_valid_name(const std::string &name) const
         // SIGN OUTの場合は名前のバリデーションをスキップ
         return true;
     }
-    //Client nameが0byteより大きい場合
+    //User nameが0byteより大きい場合
     if (name.size() > 0) {
         return true;
     }
     else {
-		LOG_ERROR("Client name is invalid by byte size error(name byte size : {:d}).", name.size());
+		LOG_ERROR("User name is invalid by byte size error(name byte size : {:d}).", name.size());
         return false;
     }
 }
@@ -283,15 +293,15 @@ bool SessionRequestMessage::is_valid_name(const std::string &name) const
 bool SessionRequestMessage::is_valid_mail_addr(const std::string& mail_addr) const
 {
     if(this->get_sign_type() == SignType::SIGNIN || this->get_sign_type() == SignType::SIGNOUT  ){
-        // SIGN OUTの場合は名前のバリデーションをスキップ
+        // SIGN OUTの場合はメールアドレスのバリデーションをスキップ
         return true;
     }
-    //Client mail addressが0byteより大きい場合
+    //User mail addressが0byteより大きい場合
     if (mail_addr.size() > 0) {
         return true;
     }
     else {
-		LOG_ERROR("Client Mail Address is invalid by byte size error(mailAddress byte size : {:d}).", mail_addr.size());
+		LOG_ERROR("User Mail Address is invalid by byte size error(mailAddress byte size : {:d}).", mail_addr.size());
         return false;
     }
 

@@ -10,12 +10,12 @@ Chatroom::Chatroom(
 	const std::string& chatroom_id,
 	const std::string& chatroom_name,
 	const std::string& icon_url,
-	const std::vector<std::string>& cids
+	const std::vector<std::string>& uids
 )	:
 	_chatroom_id{ chatroom_id },
 	_chatroom_name{ chatroom_name },
 	_chatroom_icon_url{ icon_url },
-	_cid_list{ cids }
+	_uid_list{ uids }
 {
 }
 
@@ -25,36 +25,36 @@ Chatroom::~Chatroom()
 
 }
 
-bool Chatroom::add_client_chatroom(const std::string& cid)
+bool Chatroom::add_user_chatroom(const std::string& uid)
 {
-	if (cid.empty()) {
-		LOG_ERROR("The client ID cannot be empty.");
+	if (uid.empty()) {
+		LOG_ERROR("The user ID cannot be empty.");
 		return false;
 	}
 	std::unique_lock<std::mutex> lock(this->mtx);
 
 	try
 	{
-		this->_cid_list.push_back(cid);
+		this->_uid_list.push_back(uid);
 	}
 	catch (const std::bad_alloc&)
 	{
-		LOG_ERROR("Failed to allocate memory while adding a client to a chat room.");
+		LOG_ERROR("Failed to allocate memory while adding a user to a chat room.");
 		return false;
 	}
 	return true;
 }
 
-bool Chatroom::delete_client_chatroom(const std::string& cid)
+bool Chatroom::delete_user_chatroom(const std::string& uid)
 {
-	auto element_to_remove = search_client_from_chatroom(cid);
-	if (element_to_remove == this->_cid_list.end()) {
-		LOG_ERROR("The client ID({}) you tried to delete could not be found.", cid);
+	auto element_to_remove = search_user_from_chatroom(uid);
+	if (element_to_remove == this->_uid_list.end()) {
+		LOG_ERROR("The user ID({}) you tried to delete could not be found.", uid);
 		return false;
 	}
 	{
 		std::unique_lock<std::mutex> lock(this->mtx);
-		this->_cid_list.erase(element_to_remove);
+		this->_uid_list.erase(element_to_remove);
 	}
 	
 	return true;
@@ -91,14 +91,14 @@ const std::string& Chatroom::get_chatroom_icon() const
 	return this->_chatroom_icon_url;
 }
 
-std::vector<std::string>& Chatroom::get_client_list()
+std::vector<std::string>& Chatroom::get_users()
 {
-	return this->_cid_list;
+	return this->_uid_list;
 }
 
-const std::vector<std::string>& Chatroom::get_client_list() const
+const std::vector<std::string>& Chatroom::get_users() const
 {
-	return this->_cid_list;
+	return this->_uid_list;
 }
 
 void Chatroom::set_chatroom_name(const std::string& chatroom_name)
@@ -113,13 +113,13 @@ void Chatroom::set_chatroom_icon(const std::string& icon_url)
 	this->_chatroom_icon_url = icon_url;
 }
 
-std::vector<std::string>::iterator Chatroom::search_client_from_chatroom(const std::string& cid)
+std::vector<std::string>::iterator Chatroom::search_user_from_chatroom(const std::string& uid)
 {
 	try
 	{
-		auto iterator = std::find(this->_cid_list.begin(), this->_cid_list.end(), cid);
-		if (iterator == this->_cid_list.end()) {
-			throw std::runtime_error("Client ID not found in chat room.");
+		auto iterator = std::find(this->_uid_list.begin(), this->_uid_list.end(), uid);
+		if (iterator == this->_uid_list.end()) {
+			throw std::runtime_error("User ID not found in chat room.");
 		}
 		else {
 #ifdef DEBUG
@@ -132,6 +132,6 @@ std::vector<std::string>::iterator Chatroom::search_client_from_chatroom(const s
 	catch(const std::runtime_error& e)
 	{
 		LOG_ERROR("Runtime Error : ", e.what());
-		return this->_cid_list.end();
+		return this->_uid_list.end();
 	}
 }

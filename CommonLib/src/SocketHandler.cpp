@@ -142,12 +142,12 @@ SocketHandler::SocketHandler(const std::string &file_pass) : _result_tcp{nullptr
 	}
 	catch (const std::runtime_error &e)
 	{
-		spdlog::critical("Runtime Error : {}", e.what());
+		LOG_ERROR("[SocketHandler] Runtime Error : {}", e.what());
 		return;
 	}
 	catch (const std::exception &e)
 	{
-		spdlog::critical("Exception : {}", e.what());
+		LOG_ERROR("[SocketHandler] Exception : {}", e.what());
 		return;
 	}
 	obtain_local_ip_addr();
@@ -315,26 +315,26 @@ bool SocketHandler::set_bloadcast_tx_socket_param(const std::string &file_pass)
 }
 
 /**********************************************************************************
- * @fn	  get_client_ip
- * 接続要求があった際のクライアントソケットに対してaccept処理を実行する
+ * @fn	  extraction_user_ip_address
+ * 接続要求があった際のユーザーソケットに対してaccept処理を実行する
  * @brief accept処理
  *
- * @param [in] client_num  IPアドレス変換をする際のクライアントリストの番号
+ * @param [in] user_num  IPアドレス変換をする際のユーザーリストの番号
  * @return 処理結果(true:成功/false:エラー)
  *
  * @detail
  **********************************************************************************/
 
-std::string SocketHandler::extraction_client_ip(sockaddr_in &client_sockaddr_in, size_t ipv4_addr_size)
+std::string SocketHandler::extraction_user_ip_address(sockaddr_in &user_sockaddr_in, size_t ipv4_addr_size)
 {
 	try
 	{
-		char client_ip_addr_char[100];
-		struct sockaddr_in temp_paddr = client_sockaddr_in;
+		char user_ip_addr_char[100];
+		struct sockaddr_in temp_paddr = user_sockaddr_in;
 		const char *iresult;
 		iresult = inet_ntop(temp_paddr.sin_family, &temp_paddr.sin_addr,
-							client_ip_addr_char, ipv4_addr_size);
-		std::string client_ip_addr_str(client_ip_addr_char);
+							user_ip_addr_char, ipv4_addr_size);
+		std::string user_ip_addr_str(user_ip_addr_char);
 		if (iresult == NULL)
 		{
 #ifdef _WIN32
@@ -350,7 +350,7 @@ std::string SocketHandler::extraction_client_ip(sockaddr_in &client_sockaddr_in,
 		}
 		else
 		{
-			return client_ip_addr_str;
+			return user_ip_addr_str;
 		}
 	}
 	catch (const std::runtime_error &e)
@@ -498,7 +498,7 @@ bool SocketHandler::open_udp_multicast_tx_socket()
 #ifdef USE_POLL
 	this->add_epoll_ctrl(_udp_multicast_tx_socket);
 #endif
-	spdlog::info("server open udp multicast tx socket: {}.", _udp_multicast_tx_socket);
+	LOG_DEBUG("[SocketHandler] server open udp multicast tx socket: {}.", _udp_multicast_tx_socket);
 	return true;
 }
 
@@ -678,26 +678,26 @@ bool SocketHandler::set_multicast_tx_sin_family(ini::IniFile socket_param_config
 		_multicast_tx_addr.sin_family = AF_UNSPEC;
 	}
 #ifdef DEBUG
-	spdlog::debug("multicast param：sin_family = AF_UNSPEC");
+	LOG_DEBUG("[SocketHandler] multicast param：sin_family = AF_UNSPEC");
 #endif // DEBUG
 
 	if (std::equal(temp_af.begin(), temp_af.end(), "AF_INET"))
 	{
 		_multicast_tx_addr.sin_family = AF_INET;
 #ifdef DEBUG
-		spdlog::debug("multicast param：sin_family = AF_INET");
+		LOG_DEBUG("[SocketHandler] multicast param：sin_family = AF_INET");
 #endif // DEBUG
 	}
 	else if (std::equal(temp_af.begin(), temp_af.end(), "AF_INET6"))
 	{
 		_multicast_tx_addr.sin_family = AF_INET6;
 #ifdef DEBUG
-		spdlog::debug("multicast param：sin_family = AF_INET6");
+		LOG_DEBUG("[SocketHandler] multicast param：sin_family = AF_INET6");
 #endif // DEBUG
 	}
 	else
 	{
-		LOG_ERROR("The multicast transmit socket settings were not set correctly(sin_family). Exit the program.");
+		LOG_ERROR("[SocketHandler] The multicast transmit socket settings were not set correctly(sin_family). Exit the program.");
 		return false;
 	}
 	return true;
@@ -721,17 +721,17 @@ bool SocketHandler::set_multicast_tx_sin_port(ini::IniFile socket_param_setting_
 		}
 		_multicast_tx_addr.sin_port = temp_port;
 #ifdef DEBUG
-		spdlog::debug("The send port for multicast is now set to {:d}", m_multicast_tx_addr.sin_port);
+		LOG_DEBUG("[SocketHandler] The send port for multicast is now set to {:d}", _multicast_tx_addr.sin_port);
 #endif // DEBUG
 	}
 	catch (const std::out_of_range &e)
 	{
-		LOG_ERROR("Out of range : {}", e.what());
+		LOG_ERROR("[SocketHandler] Out of range : {}", e.what());
 		return false;
 	}
 	catch (const std::invalid_argument &e)
 	{
-		LOG_ERROR("Invalid argument : {}", e.what());
+		LOG_ERROR("[SocketHandler] Invalid argument : {}", e.what());
 		return false;
 	}
 	return true;
@@ -766,23 +766,23 @@ bool SocketHandler::set_multicast_tx_sin_address(ini::IniFile socket_param_confi
 		else
 		{
 #ifdef DEBUG
-			spdlog::debug("The multicast transmission address has been set successfully (address: {:s})", temp_multicast_addr);
+			LOG_DEBUG("[SocketHandler] The multicast transmission address has been set successfully (address: {:s})", temp_multicast_addr);
 #endif // DEBUG
 		}
 	}
 	catch (const std::runtime_error &e)
 	{
-		LOG_ERROR("Runtime Error : {}", e.what());
+		LOG_ERROR("[SocketHandler] Runtime Error : {}", e.what());
 		return false;
 	}
 	catch (const std::invalid_argument &e)
 	{
-		LOG_ERROR("Invalid argument : {}", e.what());
+		LOG_ERROR("[SocketHandler] Invalid argument : {}", e.what());
 		return false;
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR("Exception : {}", e.what());
+		LOG_ERROR("[SocketHandler] Exception : {}", e.what());
 		return false;
 	}
 
@@ -859,7 +859,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR("Error obtaining local IP address: {}", e.what());
+		LOG_ERROR("[SocketHandler] Error obtaining local IP address: {}", e.what());
 		return "";
 	}
 #else
@@ -889,7 +889,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 			{
 				ifname = ifa->ifa_name;
 				ip_str = host;
-				spdlog::debug("Interface: {}, IP: {}", ifname, ip_str);
+				LOG_DEBUG("[SocketHandler] Interface: {}, IP: {}", ifname, ip_str);
 
 				// eth0を優先
 				if (ifname == "eth0")
@@ -906,7 +906,7 @@ std::string SocketHandler::obtain_local_ip_addr()
 			}
 		}
 	}
-	spdlog::info("Server Interface: {}, IP: {}", ifname, ip_str);
+	LOG_DEBUG("[SocketHandler] Server Interface: {}, IP: {}", ifname, ip_str);
 	freeifaddrs(ifaddr);
 	return local_ip_addr;
 #endif
@@ -938,19 +938,19 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo *r
 	}
 	catch (const std::runtime_error &e)
 	{
-		LOG_ERROR("Runtime Error : {}", e.what());
+		LOG_ERROR("[SocketHandler] Runtime Error : {}", e.what());
 		return false;
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR("Exception : {}", e.what());
+		LOG_ERROR("[SocketHandler] Exception : {}", e.what());
 		return false;
 	}
 	return true;
 }
 
 /**********************************************************************************
- * @fn	  accept_client_socket
+ * @fn	  accept_user_socket
  * 接続要求があった際のクライアントソケットに対してaccept処理を実行する
  * @brief accept処理
  *
@@ -960,25 +960,25 @@ bool SocketHandler::bind_tcp_listen_socket(int listen_socket, struct addrinfo *r
  * @detail
  **********************************************************************************/
 
-std::tuple<socket_t, sockaddr_in> SocketHandler::accept_client_socket(socklen_t client_sockaddr_in_length)
+std::tuple<socket_t, sockaddr_in> SocketHandler::accept_user_socket(socklen_t user_sockaddr_in_length)
 {
-	socket_t accept_client_socket_result;
+	socket_t accept_user_socket_result;
 	struct sockaddr_in accept_sockaddr_in_result;
 	try
 	{
 
 #ifdef _WIN32
-		int addr_len = static_cast<int>(client_sockaddr_in_length);
-		accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr *)&accept_sockaddr_in_result, &addr_len);
-		client_sockaddr_in_length = static_cast<socklen_t>(addr_len);
+		int addr_len = static_cast<int>(user_sockaddr_in_length);
+		accept_user_socket_result = accept(_tcp_listen_socket, (struct sockaddr *)&accept_sockaddr_in_result, &addr_len);
+		user_sockaddr_in_length = static_cast<socklen_t>(addr_len);
 #else
-		accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr *)&accept_sockaddr_in_result, &client_sockaddr_in_length);
+		accept_user_socket_result = accept(_tcp_listen_socket, (struct sockaddr *)&accept_sockaddr_in_result, &user_sockaddr_in_length);
 #endif
 
-		// accept_client_socket_result = accept(_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &client_sockaddr_in_length);
+		// accept_user_socket_result = accept(_tcp_listen_socket, (struct sockaddr*)&accept_sockaddr_in_result, &user_sockaddr_in_length);
 
 		// acceptしたソケットがINVALID_SOCKET_FDである場合
-		if (accept_client_socket_result == INVALID_SOCKET_FD)
+		if (accept_user_socket_result == INVALID_SOCKET_FD)
 		{
 #ifdef _WIN32
 			int error_code = WSAGetLastError();
@@ -994,46 +994,46 @@ std::tuple<socket_t, sockaddr_in> SocketHandler::accept_client_socket(socklen_t 
 		{
 #ifdef USE_POLL
 			// epollにアクセプトしたfdを登録
-			//this->add_epoll_ctrl(accept_client_socket_result);
+			//this->add_epoll_ctrl(accept_user_socket_result);
 #endif
 			// acceptが成功した場合
-			return std::make_tuple(accept_client_socket_result, accept_sockaddr_in_result);
+			return std::make_tuple(accept_user_socket_result, accept_sockaddr_in_result);
 		}
 	}
 	catch (const std::runtime_error &e)
 	{
-		LOG_ERROR("Runtime error : {}", e.what());
+		LOG_ERROR("[SocketHandler] Runtime error : {}", e.what());
 		struct sockaddr_in error_addr_in = {0};
 		return std::make_tuple(INVALID_SOCKET_FD, error_addr_in);
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR("Exception : {}", e.what());
+		LOG_ERROR("[SocketHandler] Exception : {}", e.what());
 		struct sockaddr_in error_addr_in = {0};
 		return std::make_tuple(INVALID_SOCKET_FD, error_addr_in);
 	}
 }
 
-void SocketHandler::close_socket(const socket_t client_socket)
+void SocketHandler::close_socket(const socket_t user_socket)
 {
 	int clnt_socket_result = 0;
 	try
 	{
-		if (client_socket == INVALID_SOCKET_FD)
+		if (user_socket == INVALID_SOCKET_FD)
 		{
-			throw std::runtime_error("The client socket is invalid. The socket may already be closed.");
+			throw std::runtime_error("The user socket is invalid. The socket may already be closed.");
 		}
 #ifdef _WIN32
-		shutdown(client_socket, SD_BOTH);
-		int close_socket_result = closesocket(client_socket);
+		shutdown(user_socket, SD_BOTH);
+		int close_socket_result = closesocket(user_socket);
 #else
-		int shutdown_result = shutdown(client_socket, SHUT_RDWR);
+		int shutdown_result = shutdown(user_socket, SHUT_RDWR);
 		if (shutdown_result == -1) {
 			int error_code = errno;
 			std::string message = strerror(error_code);
-			spdlog::warn("shutdown failed: errno={}, message={}", error_code, message);
+			LOG_WARNING("[SocketHandler] shutdown failed: errno={}, message={}", error_code, message);
 		}
-		int close_socket_result = close(client_socket);
+		int close_socket_result = close(user_socket);
 		
 #endif // _WIN32
 
@@ -1051,12 +1051,12 @@ void SocketHandler::close_socket(const socket_t client_socket)
 		}
 		else
 		{
-			spdlog::debug("client socket({}) closure complete!!", client_socket);
+			LOG_DEBUG("[SocketHandler] user socket({}) closure complete!!", user_socket);
 		}
 	}
 	catch (const std::runtime_error &e)
 	{
-		LOG_ERROR("Runtime Error : {}", e.what());
+		LOG_ERROR("[SocketHandler] Runtime Error : {}", e.what());
 	}
 }
 
@@ -1121,12 +1121,11 @@ bool SocketHandler::generate_tcp_listen_socket()
 #endif
 		return false;
 	}
-	spdlog::debug("server generated listen socket: {}.", _tcp_listen_socket);
+	LOG_DEBUG("[SocketHandler] server generated listen socket: {}.", _tcp_listen_socket);
 
 	bool bind_result = bind_tcp_listen_socket(static_cast<int>(_tcp_listen_socket), _result_tcp);
 	if (bind_result == true)
 	{
-		spdlog::debug("server bind setting on listen socket: {}.", _tcp_listen_socket);
 		struct sockaddr_in addr;
 		socklen_t addr_len = sizeof(addr);
 		if (getsockname(_tcp_listen_socket, (struct sockaddr *)&addr, &addr_len) == 0)
@@ -1134,15 +1133,16 @@ bool SocketHandler::generate_tcp_listen_socket()
 			char ip_str[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &(addr.sin_addr), ip_str, sizeof(ip_str));
 			uint16_t port = ntohs(addr.sin_port);
-			spdlog::info("Listening on IP: {}, Port : {}", ip_str, _port);
+			LOG_DEBUG("[SocketHandler] Listening on IP: {}, Port : {}", ip_str, _port);
 		}
 		else
 		{
+			LOG_ERROR("[SocketHandler] Failed to get socket name for listen socket: {}.", _tcp_listen_socket);
 		}
 	}
 	else
 	{
-		LOG_ERROR("server can't bind setting on listen socket: {}.", _tcp_listen_socket);
+		LOG_ERROR("[SocketHandler] server can't bind setting on listen socket: {}.", _tcp_listen_socket);
 		return false;
 	}
 
@@ -1156,47 +1156,47 @@ bool SocketHandler::trans_flags(const std::string &flag_str, struct addrinfo *pa
 	{
 		param->ai_flags = AI_PASSIVE;
 #ifdef DEBUG
-		spdlog::debug("param：ai_flags is set to AI_PASSIVE.");
+		LOG_DEBUG("[SocketHandler] param：ai_flags is set to AI_PASSIVE.");
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_CANONNAME"))
 	{
 		param->ai_flags = AI_CANONNAME;
 #ifdef DEBUG
-		spdlog::debug("param：ai_flags is set to AI_CANONNAME.");
+		LOG_DEBUG("[SocketHandler] param：ai_flags is set to AI_CANONNAME.");
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_NUMERICHOST"))
 	{
 		param->ai_flags = AI_NUMERICHOST;
 #ifdef DEBUG
-		spdlog::debug("param：ai_flags is set to AI_NUMERICHOST.");
+		LOG_DEBUG("[SocketHandler] param：ai_flags is set to AI_NUMERICHOST.");
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_ALL"))
 	{
 		param->ai_flags = AI_ALL;
 #ifdef DEBUG
-		spdlog::debug("param：ai_flags is set to AI_ALL.");
+		LOG_DEBUG("[SocketHandler] param：ai_flags is set to AI_ALL.");
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_ADDRCONFIG"))
 	{
 		param->ai_flags = AI_ADDRCONFIG;
 #ifdef DEBUG
-		spdlog::debug("param：ai_flags is set to AI_ADDRCONFIG.");
+		LOG_DEBUG("[SocketHandler] param：ai_flags is set to AI_ADDRCONFIG.");
 #endif // DEBUG
 	}
 	else if (std::equal(flag_str.begin(), flag_str.end(), "AI_V4MAPPED"))
 	{
 		param->ai_flags = AI_V4MAPPED;
 #ifdef DEBUG
-		spdlog::debug("param：ai_flags is set to AI_V4MAPPED.");
+		LOG_DEBUG("[SocketHandler] param：ai_flags is set to AI_V4MAPPED.");
 #endif // DEBUG
 	}
 	else
 	{
-		LOG_ERROR("Failed to set ai_flags.");
+		LOG_ERROR("[SocketHandler] Failed to set ai_flags.");
 		return false;
 	}
 	return true;
@@ -1208,7 +1208,7 @@ bool SocketHandler::trans_family(const std::string &family_str, addrinfo *param)
 	{
 		param->ai_family = AF_INET;
 #ifdef DEBUG
-		spdlog::debug("param：ai_family is set to AF_INET.");
+		LOG_DEBUG("[SocketHandler] param：ai_family is set to AF_INET.");
 #endif // DEBUG
 	}
 	// 通信プロトコルをipv6に設定する場合
@@ -1216,7 +1216,7 @@ bool SocketHandler::trans_family(const std::string &family_str, addrinfo *param)
 	{
 		param->ai_family = AF_INET6;
 #ifdef DEBUG
-		spdlog::debug("param：ai_family is set to AF_INET6.");
+		LOG_DEBUG("[SocketHandler] param：ai_family is set to AF_INET6.");
 #endif // DEBUG
 	}
 	// 通信プロトコルがaf_unspecに設定された場合(ipv4とipv6に対応)
@@ -1225,12 +1225,12 @@ bool SocketHandler::trans_family(const std::string &family_str, addrinfo *param)
 	{
 		param->ai_family = AF_UNSPEC;
 #ifdef DEBUG
-		spdlog::debug("param：ai_family is set to AF_UNSPEC.");
+		LOG_DEBUG("[SocketHandler] param：ai_family is set to AF_UNSPEC.");
 #endif // DEBUG
 	}
 	else
 	{
-		LOG_ERROR("Failed to set ai_family.");
+		LOG_ERROR("[SocketHandler] Failed to set ai_family.");
 		return false;
 	}
 	return true;
@@ -1242,41 +1242,40 @@ bool SocketHandler::trans_socktype(const std::string &socktype_str, addrinfo *pa
 	{
 		param->ai_socktype = SOCK_STREAM;
 #ifdef DEBUG
-		spdlog::debug("param：ai_socktype is set to SOCK_STREAM.");
+		LOG_DEBUG("[SocketHandler] param：ai_socktype is set to SOCK_STREAM.");
 #endif // DEBUG
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_DGRAM"))
 	{
 		param->ai_socktype = SOCK_DGRAM;
 #ifdef DEBUG
-		spdlog::debug("param：ai_socktype is set to SOCK_DGRAM.");
+		LOG_DEBUG("[SocketHandler] param：ai_socktype is set to SOCK_DGRAM.");
 #endif // DEBUG
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_RAW"))
 	{
 		param->ai_socktype = SOCK_RAW;
 #ifdef DEBUG
-		spdlog::debug("param：ai_socktype is set to SOCK_RAW.");
+		LOG_DEBUG("[SocketHandler] param：ai_socktype is set to SOCK_RAW.");
 #endif // DEBUG
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_RDM"))
 	{
 		param->ai_socktype = SOCK_RDM;
 #ifdef DEBUG
-		spdlog::debug("param：ai_socktype is set to SOCK_RDM.");
+		LOG_DEBUG("[SocketHandler] param：ai_socktype is set to SOCK_RDM.");
 #endif // DEBUG
 	}
 	else if (std::equal(socktype_str.begin(), socktype_str.end(), "SOCK_SEQPACKET"))
 	{
 		param->ai_socktype = SOCK_SEQPACKET;
 #ifdef DEBUG
-		spdlog::debug("param：ai_socktype is set to SOCK_SEQPACKET.");
-
+		LOG_DEBUG("[SocketHandler] param：ai_socktype is set to SOCK_SEQPACKET.");
 #endif // DEBUG
 	}
 	else
 	{
-		LOG_ERROR("Failed to set ai_socktype.");
+		LOG_ERROR("[SocketHandler] Failed to set ai_socktype.");
 		return false;
 	}
 	return true;
@@ -1288,7 +1287,7 @@ bool SocketHandler::trans_protocol(const std::string &protocol_str, addrinfo *pa
 	{
 		param->ai_protocol = IPPROTO_TCP;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_TCP.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_TCP.");
 #endif // DEBUG
 	}
 
@@ -1297,7 +1296,7 @@ bool SocketHandler::trans_protocol(const std::string &protocol_str, addrinfo *pa
 	{
 		param->ai_protocol = IPPROTO_UDP;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_UDP.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_UDP.");
 #endif // DEBUG
 	}
 #ifdef _WIN32
@@ -1306,13 +1305,13 @@ bool SocketHandler::trans_protocol(const std::string &protocol_str, addrinfo *pa
 	{
 		param->ai_protocol = IPPROTO_PGM;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_PGM.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_PGM.");
 #endif // DEBUG
 	}
 #endif // _WIN32
 	else
 	{
-		LOG_ERROR("Failed to set ai_protocol.");
+		LOG_ERROR("[SocketHandler] Failed to set ai_protocol.");
 		return false;
 	}
 	return true;
@@ -1326,7 +1325,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 	{
 		param->ai_protocol = IPPROTO_ICMP;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_ICMP.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_ICMP.");
 #endif // DEBUG
 	}
 #ifdef _WIN32
@@ -1335,7 +1334,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 	{
 		param->ai_protocol = IPPROTO_IGMP;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_IGMP.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_IGMP.");
 #endif // DEBUG
 	}
 #endif // _WIN32
@@ -1344,7 +1343,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 	{
 		param->ai_protocol = IPPROTO_TCP;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_TCP.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_TCP.");
 #endif // DEBUG
 	}
 
@@ -1353,7 +1352,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 	{
 		param->ai_protocol = IPPROTO_UDP;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_UDP.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_UDP.");
 #endif // DEBUG
 	}
 
@@ -1362,7 +1361,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 	{
 		param->ai_protocol = IPPROTO_ICMPV6;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_ICMPV6.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_ICMPV6.");
 #endif // DEBUG
 	}
 #ifdef _WIN32
@@ -1371,7 +1370,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 	{
 		param->ai_protocol = IPPROTO_PGM;
 #ifdef DEBUG
-		spdlog::debug("param：ai_protocol is set to IPPROTO_PGM.");
+		LOG_DEBUG("[SocketHandler] param：ai_protocol is set to IPPROTO_PGM.");
 #endif // DEBUG
 	}
 #endif // _WIN32
@@ -1381,7 +1380,7 @@ bool SocketHandler::trans_protocol(const int protocol_int, addrinfo *param)
 	}
 	else
 	{
-		LOG_ERROR("Failed to set ai_protocol.");
+		LOG_ERROR("[SocketHandler] Failed to set ai_protocol.");
 		return false;
 	}
 	return true;
@@ -1450,7 +1449,7 @@ void SocketHandler::add_epoll_ctrl(socket_t socket)
 void SocketHandler::delete_epoll_ctrl(socket_t socket)
 {
 	if (socket == INVALID_SOCKET_FD) {
-        spdlog::warn("Attempted to delete invalid socket from epoll.");
+        LOG_WARNING("[SocketHandler] Attempted to delete invalid socket from epoll.");
         return;
     }
 	std::unique_lock<std::shared_mutex> lock(this->smtx);
@@ -1458,16 +1457,16 @@ void SocketHandler::delete_epoll_ctrl(socket_t socket)
 	{
 		if (epoll_ctl(this->_epfd, EPOLL_CTL_DEL, socket, nullptr) == -1)
 		{
-			spdlog::error("epoll_ctl DEL failed for fd {}: {}", socket, strerror(errno));
+			LOG_ERROR("[SocketHandler] epoll_ctl DEL failed for fd {}: {}", socket, strerror(errno));
 		}
 		else
 		{
-			spdlog::debug("epoll_ctl DEL success for fd {}", socket);
+			LOG_DEBUG("[SocketHandler] epoll_ctl DEL success for fd {}", socket);
 		}
 	}
 	catch (const std::exception &e)
 	{
-		spdlog::error("Exception in delete_epoll_ctrl: {}", e.what());
+		LOG_ERROR("[SocketHandler] Exception in delete_epoll_ctrl: {}", e.what());
 	}
 }
 
@@ -1480,12 +1479,12 @@ void SocketHandler::reactivate_epoll_ctrl(socket_t socket)
 	std::unique_lock<std::shared_mutex> lock(this->smtx);
     if (epoll_ctl(_epfd, EPOLL_CTL_MOD, socket, &event) == -1)
     {
-        spdlog::error("Failed to reactivate epoll socket (fd: {}), errno: {}, msg: {}",
-                      socket, errno, strerror(errno));
+        LOG_ERROR("[SocketHandler] Failed to reactivate epoll socket (fd: {}), errno: {}, msg: {}",
+                  socket, errno, strerror(errno));
     }
     else
     {
-        spdlog::debug("Successfully reactivated epoll socket (fd: {})", socket);
+        LOG_DEBUG("[SocketHandler] Successfully reactivated epoll socket (fd: {})", socket);
     }
 }
 #elif defined(USE_SELECT)
@@ -1545,15 +1544,15 @@ void SocketHandler::monitor_socket_descriptor(const std::vector<socket_t> &socke
 	}
 	catch (const std::runtime_error &e)
 	{
-		LOG_ERROR("Runtime Error : {}", e.what());
+		LOG_ERROR("[SocketHandler] Runtime Error : {}", e.what());
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR("Exception : {}", e.what());
+		LOG_ERROR("[SocketHandler] Exception : {}", e.what());
 	}
 	catch (...)
 	{
-		LOG_ERROR("An unknown error occurred in monitor_socket_descriptor.");
+		LOG_ERROR("[SocketHandler] An unknown error occurred in monitor_socket_descriptor.");
 	}
 }
 #endif
@@ -1580,12 +1579,12 @@ bool SocketHandler::open_tcp_listen_socket()
 			// epfdに_tcp_listen_socketを登録して監視対象にする
 			this->add_epoll_ctrl(_tcp_listen_socket);
 #endif
-			spdlog::info("server open listen socket: {}.", _tcp_listen_socket);
+			LOG_DEBUG("[SocketHandler] server open listen socket: {}.", _tcp_listen_socket);
 		}
 	}
 	catch (const std::runtime_error &e)
 	{
-		LOG_ERROR("Runtime Error : {}", e.what());
+		LOG_ERROR("[SocketHandler] Runtime Error : {}", e.what());
 		if (_result_tcp != nullptr)
 		{
 			freeaddrinfo(_result_tcp);
@@ -1617,7 +1616,7 @@ bool SocketHandler::open_tcp_listen_socket()
 	}
 	catch (const std::exception &e)
 	{
-		LOG_ERROR("Exception : {}", e.what());
+		LOG_ERROR("[SocketHandler] Exception : {}", e.what());
 		if (_result_tcp != nullptr)
 		{
 			freeaddrinfo(_result_tcp);
@@ -1650,7 +1649,7 @@ bool SocketHandler::open_tcp_listen_socket()
 }
 
 /**********************************************************************************
- * @fn	  check_client_socket(SOCKET socket)
+ * @fn	  check_user_socket(SOCKET socket)
  * socketが閉じているか確認する。
  * @brief socketが閉じているか確認する。
  * @param [in] SOCKET socket

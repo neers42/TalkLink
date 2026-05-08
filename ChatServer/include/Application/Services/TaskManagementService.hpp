@@ -13,7 +13,7 @@ enum class TaskPriority {
 // Task category for business workflow management
 enum class TaskCategory {
     AUTHENTICATION,  // ログイン/ログアウト処理
-    CLIENT_MANAGEMENT, // セッション管理、接続処理
+    USER_MANAGEMENT, // セッション管理、接続処理
     CHAT_PROCESSING, // メッセージルーティング、配信
     HEARTBEAT,      // ヘルスモニタリング
     MAINTENANCE,    // クリーンアップ、証明書リロード
@@ -28,7 +28,7 @@ struct TaskMetadata {
     std::chrono::steady_clock::time_point created_at; // 作成時刻
     std::chrono::steady_clock::time_point scheduled_at; // スケジュール時刻
     std::string description; // タスクの説明
-    socket_t associated_socket{INVALID_SOCKET_FD}; // クライアント関連タスク用
+    socket_t associated_socket{INVALID_SOCKET_FD}; // ユーザー関連タスク用
     std::chrono::milliseconds max_execution_time{30000}; // 最大実行時間
     
     TaskMetadata(const std::string& id, TaskPriority prio, TaskCategory cat, const std::string& desc,
@@ -117,13 +117,21 @@ public:
     };
     TaskMetrics get_task_metrics() const;
     
-    // クライアント固有のタスク管理
-    void cancel_client_tasks(socket_t socket);
-    uint32_t get_client_task_count(socket_t socket) const;
+    // ユーザー固有のタスク管理
+    void cancel_user_tasks(socket_t socket);
+    uint32_t get_user_task_count(socket_t socket) const;
     
     // システムヘルスモニタリングと過負荷保護
     void enable_overload_protection(bool enabled = true);
     bool is_overloaded() const;
+    
+    // ==================== スレッドローカルタスク管理 ====================
+    
+    // 現在のスレッドで実行中のタスクIDを取得
+    static std::string get_current_task_id();
+    
+    // ログ出力用のタスクIDフォーマット取得（"[task_xxx]"形式）
+    static std::string get_current_task_id_format();
     
 private:
     // タスク実行ラッパー
@@ -139,6 +147,10 @@ private:
     
     // システムヘルスモニタリングと過負荷保護
     void check_system_overload();
+    
+    // スレッドローカルタスク管理
+    static void set_current_task_id(const std::string& task_id);
+    static void clear_current_task_id();
 };
 
 #endif // TASKMANAGEMENTSERVICE_HPP

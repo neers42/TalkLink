@@ -3,7 +3,7 @@
 // Core Services
 #include "Application/Services/ChatService.hpp"
 #include "Application/Services/ChatroomManagementService.hpp"
-#include "Application/Services/ClientManagementService.hpp"
+#include "Application/Services/UserManagementService.hpp"
 #include "Application/Services/RequestDispatcherService.hpp"
 #include "Application/Services/TaskManagementService.hpp"
 #include "Application/Services/StartupService.hpp"
@@ -16,9 +16,9 @@
 #include "ProtocolHandler.hpp"
 #include "ServerTime.hpp"
 #include "ThreadPoolHandler.hpp"
-#include "Domain/ClientAggregateStore.hpp"
+#include "Domain/UserAggregateStore.hpp"
 #include "Domain/ChatroomRepositoryHandler.hpp"
-#include "Domain/ClientRepositoryHandler.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
 #include "Domain/SessionHandler.hpp"
 
 #include <functional>
@@ -56,29 +56,29 @@ void ServiceContainer::initialize() {
         _task_management_service = std::make_shared<TaskManagementService>(_thread_pool_handler);
         
         // Phase 3: データストレージを初期化
-        _client_store = std::make_shared<ClientAggregateStore>();
+        _user_store = std::make_shared<UserAggregateStore>();
         _chatroom_repository_handler = std::make_shared<ChatroomRepositoryHandler>();
-        _client_repository_handler = std::make_shared<ClientRepositoryHandler>(_client_store);
-        _client_communication_handler = std::make_shared<ClientCommunicationHandler>(_client_store, _socket_handler, _protocol_handler);
+        _user_repository_handler = std::make_shared<UserRepositoryHandler>(_user_store);
+        _communication_handler = std::make_shared<CommunicationHandler>(_user_store, _socket_handler, _protocol_handler);
         
         // Phase 3.5: ドメインハンドラーを初期化
-        _session_handler = std::make_shared<SessionHandler>(_client_repository_handler, _redis_client, _mysql_client, _server_time);
+        _session_handler = std::make_shared<SessionHandler>(_user_repository_handler, _redis_client, _mysql_client, _server_time);
         
         // Phase 4: メッセージ配信サービス（仮実装）
-        _message_delivery_service = std::make_shared<MessageDeliveryService>(_client_communication_handler,_chatroom_repository_handler ,_client_repository_handler, _mysql_client); 
+        _message_delivery_service = std::make_shared<MessageDeliveryService>(_communication_handler,_chatroom_repository_handler ,_user_repository_handler, _mysql_client); 
         
         // Phase 5: ビジネスサービスを初期化
-        _client_management_service = std::make_shared<ClientManagementService>(
-            _mysql_client, _redis_client, _server_time, _session_handler, _client_repository_handler, _client_communication_handler);
+        _user_management_service = std::make_shared<UserManagementService>(
+            _mysql_client, _redis_client, _server_time, _session_handler, _user_repository_handler, _communication_handler);
             
         _chatroom_management_service = std::make_shared<ChatroomManagementService>(
             _mysql_client, _redis_client, _message_delivery_service, _chatroom_repository_handler);
             
         _chat_service = std::make_shared<ChatService>(
-            _mysql_client, _redis_client, _message_delivery_service, _client_repository_handler);
+            _mysql_client, _redis_client, _message_delivery_service, _user_repository_handler);
         
         _request_dispatcher_service = std::make_shared<RequestDispatcherService>(
-            _socket_handler, _thread_pool_handler, _client_communication_handler);
+            _socket_handler, _thread_pool_handler, _communication_handler);
             
         // Phase 6: スタートアップサービスを初期化（すべてのサービスが準備された後）
         _startup_service = std::make_shared<StartupService>(
@@ -87,7 +87,7 @@ void ServiceContainer::initialize() {
             _protocol_handler,
             _task_management_service,
             _request_dispatcher_service,
-            _client_management_service,
+            _user_management_service,
             _chat_service
         );
         
@@ -146,18 +146,18 @@ std::shared_ptr<ThreadPoolHandler> ServiceContainer::get_thread_pool_handler() {
 }
 
 // ドメイン層のゲッター
-std::shared_ptr<ClientAggregateStore> ServiceContainer::get_client_store() {
+std::shared_ptr<UserAggregateStore> ServiceContainer::get_user_store() {
     if (!_initialized) {
         throw std::runtime_error("ServiceContainer not initialized");
     }
-    return _client_store;
+    return _user_store;
 }
 
-std::shared_ptr<ClientRepositoryHandler> ServiceContainer::get_client_repository_handler() {
+std::shared_ptr<UserRepositoryHandler> ServiceContainer::get_user_repository_handler() {
     if (!_initialized) {
         throw std::runtime_error("ServiceContainer not initialized");
     }
-    return _client_repository_handler;
+    return _user_repository_handler;
 }
 
 std::shared_ptr<ChatroomRepositoryHandler> ServiceContainer::get_chatroom_repository_handler() {
@@ -167,12 +167,12 @@ std::shared_ptr<ChatroomRepositoryHandler> ServiceContainer::get_chatroom_reposi
     return _chatroom_repository_handler;
 }
 
-std::shared_ptr<ClientCommunicationHandler> ServiceContainer::get_client_communication_handler()
+std::shared_ptr<CommunicationHandler> ServiceContainer::get_communication_handler()
 {
-    if (!_initialized || !_client_communication_handler) {
-        throw std::runtime_error("ServiceContainer not initialized or ClientCommunicationHandler not available");
+    if (!_initialized || !_communication_handler) {
+        throw std::runtime_error("ServiceContainer not initialized or CommunicationHandler not available");
     }
-    return _client_communication_handler;
+    return _communication_handler;
 } 
 
 std::shared_ptr<SessionHandler> ServiceContainer::get_session_handler() {
@@ -183,11 +183,11 @@ std::shared_ptr<SessionHandler> ServiceContainer::get_session_handler() {
 } 
 
 // アプリケーションサービスのゲッター
-std::shared_ptr<ClientManagementService> ServiceContainer::get_client_management_service() {
-    if (!_initialized || !_client_management_service) {
-        throw std::runtime_error("ServiceContainer not initialized or ClientManagementService not available");
+std::shared_ptr<UserManagementService> ServiceContainer::get_user_management_service() {
+    if (!_initialized || !_user_management_service) {
+        throw std::runtime_error("ServiceContainer not initialized or UserManagementService not available");
     }
-    return _client_management_service;
+    return _user_management_service;
 }
 
 std::shared_ptr<ChatroomManagementService> ServiceContainer::get_chatroom_management_service() {
@@ -242,13 +242,13 @@ void ServiceContainer::cleanup() {
         _request_dispatcher_service.reset();
         _chat_service.reset();
         _chatroom_management_service.reset();
-        _client_management_service.reset();
+        _user_management_service.reset();
         
         // データストレージをクリーンアップ
         _chatroom_repository_handler.reset();
-        _client_repository_handler.reset();
-        _client_store.reset();
-        _client_communication_handler.reset();
+        _user_repository_handler.reset();
+        _user_store.reset();
+        _communication_handler.reset();
         _session_handler.reset();
         
         // メッセージ配信サービスをクリーンアップ

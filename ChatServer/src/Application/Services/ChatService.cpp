@@ -5,13 +5,13 @@ ChatService::ChatService(
     std::shared_ptr<MySQLClient> mysql_client,
     std::shared_ptr<RedisClient> redis_client,
     std::shared_ptr<IMessageDeliveryService> message_delivery_service,
-    std::shared_ptr<ClientRepositoryHandler> client_repository_handler
+    std::shared_ptr<UserRepositoryHandler> user_repository_handler
 ) : _mysql_client(std::move(mysql_client)),
     _redis_client(std::move(redis_client)),
     _message_delivery_service(std::move(message_delivery_service)),
-    _client_repository_handler(std::move(client_repository_handler))
+    _user_repository_handler(std::move(user_repository_handler))
 {
-    if (!_message_delivery_service || !_mysql_client || !_redis_client || !_client_repository_handler) {
+    if (!_message_delivery_service || !_mysql_client || !_redis_client || !_user_repository_handler) {
         throw std::runtime_error("All dependencies must be non-null");
     }
     
@@ -49,7 +49,7 @@ IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const 
             chat_message->get_common_fields(),
             chat_message->get_message_id(),
             chat_message->get_room_id(),
-            chat_message->get_sender_cid(),
+            chat_message->get_sender_uid(),
             chat_message->get_content()
         );
         
@@ -59,16 +59,16 @@ IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const 
             message_json, 
             chat_message->get_room_id(), 
             sender_socket, 
-            chat_message->get_sender_cid()
+            chat_message->get_sender_uid()
         );
         if(delivery_result.success) {
-            LOG_INFO("[ChatService] Chat message delivered successfully. Message ID: {}, Room ID: {}, Sender CID: {}", 
-                        chat_message->get_message_id(), chat_message->get_room_id(), chat_message->get_sender_cid());
+            LOG_INFO("[ChatService] Chat message delivered successfully. Message ID: {}, Room ID: {}, Sender UID: {}", 
+                        chat_message->get_message_id(), chat_message->get_room_id(), chat_message->get_sender_uid());
         } else {
-            LOG_ERROR("[ChatService] Failed to deliver chat message. Message ID: {}, Room ID: {}, Sender CID: {}. Error: {}", 
-                        chat_message->get_message_id(), chat_message->get_room_id(), chat_message->get_sender_cid(), delivery_result.error_message);
+            LOG_ERROR("[ChatService] Failed to deliver chat message. Message ID: {}, Room ID: {}, Sender UID: {}. Error: {}", 
+                        chat_message->get_message_id(), chat_message->get_room_id(), chat_message->get_sender_uid(), delivery_result.error_message);
             //メッセージの再配信
-            auto resend_result = this->execute_message_resend(message_json, delivery_result.unsent_client_ids);
+            auto resend_result = this->execute_message_resend(message_json, delivery_result.unsent_uids);
                 if(resend_result == true)
                 {
                     LOG_INFO("[ChatService] Message resend succeeded for message ID: {}", chat_message->get_message_id());
@@ -79,7 +79,7 @@ IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const 
                 }
         }
         LOG_INFO("[ChatService] Chat message delivered. Sent: {}, Failed: {}", 
-                    delivery_result.sent_count, delivery_result.unsent_client_ids.size());
+                    delivery_result.sent_count, delivery_result.unsent_uids.size());
         
         return delivery_result;
         
@@ -101,9 +101,9 @@ bool ChatService::send_chat_acknowledgment(
         // 送信状態を決定
         ChatAckMessage::MessageSendStatus send_status;
         
-        if (delivery_result.sent_count == 0 && delivery_result.unsent_client_ids.empty()) {
+        if (delivery_result.sent_count == 0 && delivery_result.unsent_uids.empty()) {
             send_status = ChatAckMessage::MessageSendStatus::SEND_FAILED;
-        } else if (delivery_result.sent_count > 0 && delivery_result.unsent_client_ids.empty()) {
+        } else if (delivery_result.sent_count > 0 && delivery_result.unsent_uids.empty()) {
             send_status = ChatAckMessage::MessageSendStatus::SEND_SUCCESS;
         } else {
             send_status = ChatAckMessage::MessageSendStatus::SEND_PARTIAL_SUCCESS;
@@ -115,12 +115,12 @@ bool ChatService::send_chat_acknowledgment(
             chat_message->get_message_id(),
             send_status,
             chat_message->get_room_id(),
-            delivery_result.unsent_client_ids
+            delivery_result.unsent_uids
         );
         
         // シリアライズして送信
         json chat_ack_json = MessageBase::serialize_message(chat_ack_message);
-        auto send_result = _message_delivery_service->deliver_p2p(chat_ack_json, _client_repository_handler->get_client_id(sender_socket));
+        auto send_result = _message_delivery_service->deliver_p2p(chat_ack_json, _user_repository_handler->get_uid_by_socket(sender_socket));
         
         if (send_result.success) {
             LOG_INFO("[ChatService] Chat acknowledgment sent to sender (socket: {})", sender_socket);
@@ -165,7 +165,7 @@ bool ChatService::process_chat_message(
         bool ack_sent = send_chat_acknowledgment(chat_message, delivery_result, sender_socket);
             if (!ack_sent) {
                 //メッセージの再送信
-                if(this->execute_message_resend(original_json, delivery_result.unsent_client_ids) == false)
+                if(this->execute_message_resend(original_json, delivery_result.unsent_uids) == false)
                 {
                     LOG_ERROR("[ChatService] Message resend failed during acknowledgment step for message ID: {}", chat_message->get_message_id());
                     return false;
@@ -188,9 +188,9 @@ bool ChatService::process_chat_message(
 
 // ==================== ユーティリティメソッド ====================
 
-json ChatService::get_unreceived_messages(const std::string& client_id, uint64_t last_received_message_id) {
+json ChatService::get_unreceived_messages(const std::string& uid, uint64_t last_received_message_id) {
     try {
-        return _mysql_client->get_unreceived_messages(client_id, last_received_message_id);
+        return _mysql_client->get_unreceived_messages(uid, last_received_message_id);
     } catch (const std::exception& e) {
         handle_processing_error(e, "get_unreceived_messages");
         return json::object();
@@ -228,7 +228,7 @@ bool ChatService::save_message_to_database(const std::unique_ptr<ChatMessage>& c
         bool save_success = _mysql_client->insert_message(
             chat_message->get_message_id(),
             chat_message->get_room_id(),
-            chat_message->get_sender_cid(),
+            chat_message->get_sender_uid(),
             mysql_timestamp,
             original_json.dump()
         );
@@ -248,15 +248,15 @@ bool ChatService::save_message_to_database(const std::unique_ptr<ChatMessage>& c
 }
 
 // メッセージの再送処理
-bool ChatService::execute_message_resend(const json& message_json, const std::vector<std::string>& target_client_ids) {
+bool ChatService::execute_message_resend(const json& message_json, const std::vector<std::string>& target_uids) {
     try {
         int unsent_count = 0;
         // 1秒待機
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        for (auto &client_id : target_client_ids)
+        for (auto &uid : target_uids)
         {
-            LOG_INFO("[ChatService] Attempting to resend message to client: {}", client_id);
+            LOG_INFO("[ChatService] Attempting to resend message to user: {}", uid);
             // 再送試行
             for (int resend_count = 1; resend_count < MAX_RESEND_COUNT; resend_count++)
             {
@@ -268,16 +268,16 @@ bool ChatService::execute_message_resend(const json& message_json, const std::ve
                 {
                     std::this_thread::sleep_for(std::chrono::seconds(5));
                 }
-                auto resend_result = _message_delivery_service->deliver_p2p(message_json, client_id);
+                auto resend_result = _message_delivery_service->deliver_p2p(message_json, uid);
                 if (resend_result.success)
                 {
                     //再送処理完了したらループを抜けて次のクライアントの処理を実施
-                    LOG_DEBUG("[ChatService] Resend message to client {} succeeded on attempt {}", client_id, resend_count);
+                    LOG_DEBUG("[ChatService] Resend message to user {} succeeded on attempt {}", uid, resend_count);
                     break;
                 }
                 if(resend_result.success == false && resend_count == MAX_RESEND_COUNT - 1)
                 {
-                    LOG_WARNING("[ChatService] Resend message to client {} failed after {} attempts", client_id, resend_count);
+                    LOG_WARNING("[ChatService] Resend message to user {} failed after {} attempts", uid, resend_count);
                     unsent_count++;
                 }
             }
@@ -286,7 +286,7 @@ bool ChatService::execute_message_resend(const json& message_json, const std::ve
             LOG_ERROR("[ChatService] Message resend completed with some failures. Unsent: {}", unsent_count);
             return false;
         } else {
-            LOG_INFO("[ChatService] Message resend completed successfully for all clients.");
+            LOG_INFO("[ChatService] Message resend completed successfully for all users.");
             return true;
         }
                      

@@ -15,7 +15,7 @@ public:
 private:
 	MessageSendStatus _send_status;
 	std::string _room_id;
-	std::vector<std::string> _unsend_cid_list;
+	std::vector<std::string> _unsend_uid_list;
 
 
 
@@ -27,7 +27,7 @@ public:
 		const uint64_t _send_mid,
 		const MessageSendStatus status,
 		const std::string& room_id,
-		const std::vector<std::string>& _unsend_cid_list);
+		const std::vector<std::string>& _unsend_uid_list);
 
     //デストラクタ
 	~ChatAckMessage();

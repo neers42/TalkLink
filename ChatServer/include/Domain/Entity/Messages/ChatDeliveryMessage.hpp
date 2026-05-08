@@ -8,7 +8,7 @@ class ChatDeliveryMessage :
 private:
 	uint64_t _send_message_id; //送信メッセージID
 	std::string _room_id;	//チャットルームID
-	std::string _sender_cid;	//送信者ID
+	std::string _sender_uid;	//送信者ID
 	std::string _content;	//メッセージ内容
 	
 
@@ -26,11 +26,11 @@ public:
 	//各種アクセッサ
 	uint64_t get_send_message_id() const;
 	std::string get_room_id() const;
-	std::string get_sender_cid() const;
+	std::string get_sender_uid() const;
 	std::string get_content() const;
 
 	void set_room_id(const std::string& room_id);
-	void set_sender_cid(const std::string& sender_id);
+	void set_sender_uid(const std::string& sender_id);
 	void set_content(const std::string& content);
 
 	//ISendMessageの実装

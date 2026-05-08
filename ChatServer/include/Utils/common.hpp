@@ -36,11 +36,11 @@
 #include "base32.hpp"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-#include <jwt-cpp/jwt.h>
 #include <unordered_map>
 #include <functional>
 #include <algorithm>
 #include <iomanip>
+#include <jwt-cpp/jwt.h>
 using json = nlohmann::json;
 
 // ソケット関連の型定義

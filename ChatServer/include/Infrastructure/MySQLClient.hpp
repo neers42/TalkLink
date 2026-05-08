@@ -13,7 +13,7 @@ private:
     std::string _mysql_user_name;
     std::string _mysql_password;
     std::string _mysql_db_name;
-	std::string _mysql_table_name_clients = "clients";
+	std::string _mysql_table_name_users = "users";
 	std::string _mysql_table_name_chatrooms = "chatrooms";
 	std::string _mysql_table_name_chat_members = "chat_members";
 	std::string _mysql_table_name_messages = "messages";
@@ -31,13 +31,13 @@ public:
 
 
 	//テーブル：chat_members操作
-	bool insert_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids, const std::string& joined_at);
-	bool delete_chatroom_member(const std::string& room_id, const std::vector<std::string>& cids);
-	std::vector<std::string> get_client_list_from_chatroom(const std::string& room_id);
+	bool insert_chatroom_member(const std::string& room_id, const std::vector<std::string>& uids, const std::string& joined_at);
+	bool delete_chatroom_member(const std::string& room_id, const std::vector<std::string>& uids);
+	std::vector<std::string> get_users_from_chatroom(const std::string& room_id);
 
 	//テーブル：chat_messages操作
-	bool insert_message(const uint64_t mid, const std::string& room_id, const std::string& sender_cid, const std::string& send_time, const std::string& message_content);
-	json get_unreceived_messages(const std::string& cid, const uint64_t last_received_message_id);
+	bool insert_message(const uint64_t mid, const std::string& room_id, const std::string& sender_uid, const std::string& send_time, const std::string& message_content);
+	json get_unreceived_messages(const std::string& uid, const uint64_t last_received_message_id);
 
 	//テーブル：chatrooms操作
 	bool is_room_id_exist(const std::string& room_id);
@@ -48,33 +48,33 @@ public:
 	bool update_chatroom_name(const std::string& room_id, const std::string& room_name);
 	bool update_chatroom_icon(const std::string& room_id, const std::string& icon_url);
 
-	//テーブル：clients操作
-	bool insert_client_data(
-		const std::string& cid,
+	//テーブル：users操作
+	bool insert_user_info_data(
+		const std::string& uid,
 		const std::string& name,
 		const std::string& mail_address,
 		const std::string& icon_url,
 		const std::string& created_at,
 		const std::string& last_login);
-	std::tuple<std:: string, std::string, std::string> get_client_info_fromDB(const std::string& cid);
-	bool update_last_login(const std::string& cid, const std::string& last_login);
-	bool is_client_id_exist(const std::string& cid);
-	std::string get_client_last_login_fromDB(const std::string& cid);
+	std::tuple<std:: string, std::string, std::string> get_user_info_fromDB(const std::string& uid);
+	bool update_last_login(const std::string& uid, const std::string& last_login);
+	bool is_uid_exist(const std::string& uid);
+	std::string get_user_last_login_fromDB(const std::string& uid);
 
 	//テーブル：unsend_control_messages操作
-	bool insert_unsend_control_message(const uint64_t mid, const std::string& cid, const std::string& room_id, const std::string& json_payload, const std::string& request_time);
-	json get_unsend_control_message_fromDB(const std::string& cid);
-	bool delete_unsend_control_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
+	bool insert_unsend_control_message(const uint64_t mid, const std::string& uid, const std::string& room_id, const std::string& json_payload, const std::string& request_time);
+	json get_unsend_control_message_fromDB(const std::string& uid);
+	bool delete_unsend_control_message(const uint64_t mid, const std::string& uid, const std::string& room_id);
 
 
 	//テーブル：unsend_messages操作
-	bool insert_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
-	json get_unsend_message_fromDB(const std::string& cid, int limit);
-	bool delete_unsend_message(const uint64_t mid, const std::string& cid, const std::string& room_id);
+	bool insert_unsend_message(const uint64_t mid, const std::string& uid, const std::string& room_id);
+	json get_unsend_message_fromDB(const std::string& uid, int limit);
+	bool delete_unsend_message(const uint64_t mid, const std::string& uid, const std::string& room_id);
 	
 	
 private:
-	bool create_table_clients();
+	bool create_table_users();
 	bool create_table_chatrooms();
 	bool create_table_chat_members();
 	bool create_table_messages();

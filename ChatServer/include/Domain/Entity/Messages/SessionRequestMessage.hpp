@@ -1,5 +1,5 @@
-﻿#ifndef CLIENTSESSIONMESSAGE_HPP
-#define CLIENTSESSIONMESSAGE_HPP
+﻿#ifndef SESSION_REQUEST_MESSAGE_HPP
+#define SESSION_REQUEST_MESSAGE_HPP
 #include "Utils/common.hpp"
 #include "MessageBase.hpp"
 #include "IReceiveMessage.hpp"
@@ -17,14 +17,14 @@ public:
 private:
     SignType _sign_type;
     std::string _jwt;
-    std::string _client_name;
-    std::string _client_mail_addr;
+    std::string _user_name;
+    std::string _user_mail_addr;
     uint64_t _last_received_message_id;
 
 public:
     //コンストラクタ
     SessionRequestMessage();
-    SessionRequestMessage(const MessageBase::CommonField& common_fields, SignType s_type, const std::string& jwt, const std::string& name, const std::string& mail_addr, const uint64_t last_received_message_id);
+    SessionRequestMessage(const MessageBase::CommonField& common_fields, SignType s_type, const std::string& jwt, const std::string& user_name, const std::string& user_mail_addr, const uint64_t last_received_message_id);
     //デストラクタ
     ~SessionRequestMessage();
 
@@ -37,11 +37,11 @@ public:
     std::string get_jwt() const;
     void set_jwt(const std::string& jwt);
 
-    std::string get_client_name() const;
-    void set_client_name(const std::string& name);
+    std::string get_user_name() const;
+    void set_user_name(const std::string& name);
 
-    std::string get_client_mail_addr() const;
-    void set_client_mail_addr(const std::string& mail_addr);
+    std::string get_user_mail_addr() const;
+    void set_user_mail_addr(const std::string& mail_addr);
 
     uint64_t get_last_received_message_id() const;
     void set_last_received_message_id(uint64_t last_received_message_id);

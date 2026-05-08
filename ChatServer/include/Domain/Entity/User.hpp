@@ -1,5 +1,5 @@
-﻿#ifndef CLIENT_HPP
-#define CLIENT_HPP
+﻿#ifndef USER_HPP
+#define USER_HPP
 #include "Utils/common.hpp"
 #include <ctime>
 
@@ -11,7 +11,7 @@ struct SessionInfo {
     std::map<std::string, std::string> metadata;
 };
 
-class Client
+class User
 {
 public:
 	enum class ConnectState{
@@ -20,7 +20,7 @@ public:
 		DISCONNECT
 	};
 
-	//Client private変数（ドメイン情報のみ）
+	//User private変数（ドメイン情報のみ）
 private:
 	std::string _id;						//クライアントID
 	std::string _name;						//クライアント名
@@ -33,10 +33,10 @@ private:
 
 public:
 	// ドメインエンティティのコンストラクタ（インフラ情報なし）
-	explicit Client();
-	explicit Client(const std::string& id, const std::string& name, const std::string& mail_addr);
-	explicit Client(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password);
-	~Client();
+	explicit User();
+	explicit User(const std::string& id, const std::string& name, const std::string& mail_addr);
+	explicit User(const std::string& id, const std::string& name, const std::string& mail_addr, const std::string& password);
+	~User();
 
 
 	//ドメイン情報のgetter
@@ -70,10 +70,10 @@ public:
 	bool is_active() const noexcept { return _connection_state == ConnectState::ACTIVE; }
 	bool is_authenticated() const noexcept { return _auth_status; }
 	bool can_disconnect() const;
-	bool operator==(const Client& other_client) const;
-	Client& operator=(const Client& other_client);
+	bool operator==(const User& other_user) const;
+	User& operator=(const User& other_user);
 };
-#endif // !CLIENT_HPP
+#endif // !USER_HPP
 
 
 

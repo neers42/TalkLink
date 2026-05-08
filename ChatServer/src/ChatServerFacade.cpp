@@ -12,8 +12,9 @@ ChatServerFacade::ChatServerFacade() :
 #endif // DEBUG_MODE
 
 	////ログのフォーマット設定
-	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%l%$] %v");
-	LOG_INFO("[Facade] Starting MyChat server version 1.0.0!!");
+	// Use fixed-width level field so info/debug align visually.
+	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%-5l%$] %v");
+	LOG_INFO("[Facade] Starting TalkLink chat server version 1.0.0!!");
 	
 	// ServiceContainerを初期化
 	try {
@@ -50,12 +51,9 @@ void ChatServerFacade::run()
 			exit(1);
 		}
 		
-		LOG_INFO("[Facade] Server startup completed successfully");
-		LOG_INFO("[Facade] Server is ready to accept connections");
-		
 		// RequestDispatcherServiceを使用してソケット監視を開始
 		auto dispatcher = _service_container.get_request_dispatcher_service();
-		LOG_INFO("[Facade] Starting client request monitoring...");
+		LOG_INFO("[Facade] Starting user request monitoring...");
 		
 		// ディスクリプション監視スタート
 		while (startup_service->is_system_healthy())

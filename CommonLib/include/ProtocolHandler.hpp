@@ -78,14 +78,14 @@ public:
 	std::shared_ptr<SSL_CTX> get_ssl_ctx();
 
 	//SSLオブジェクトの生成
-	SSL* generate_and_attach_ssl_object(socket_t client_socket);
+	SSL* generate_and_attach_ssl_object(socket_t socket);
 
 	//SSLのアクセプト
-	SSL* ssl_accept(const socket_t client_socket);
-	std::tuple<std::string, bool, bool> receive_message_str(SSL* client_ssl);	//メッセージの受信(std::string形式)
-	std::tuple<json, bool, bool> receive_message_json(SSL* client_ssl);	//メッセージの受信(json形式)
-	bool send_message_json(SSL* client_ssl, const json& message);	//メッセージの送信
-	bool shutdown_ssl(SSL* client_ssl);	//SSLのシャットダウン
+	SSL* ssl_accept(const socket_t socket);
+	std::tuple<std::string, bool, bool> receive_message_str(SSL* ssl);	//メッセージの受信(std::string形式)
+	std::tuple<json, bool, bool> receive_message_json(SSL* ssl);	//メッセージの受信(json形式)
+	bool send_message_json(SSL* ssl, const json& message);	//メッセージの送信
+	bool shutdown_ssl(SSL* ssl);	//SSLのシャットダウン
 
 
 	//使用されている暗号スイートを取得
@@ -107,7 +107,7 @@ public:
 
 private:
 	//SSLにおけるSSL通信での発生エラーを表示
-	void print_ssl_error(SSL* client_ssl);
+	void print_ssl_error(SSL* ssl);
 
 	//サーバのTLSプロトコルバージョンを設定
 	const SSL_METHOD* set_server_method();

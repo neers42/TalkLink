@@ -1,5 +1,4 @@
 #include "Domain/ChatroomRepositoryHandler.hpp"
-#include "LogHandler.hpp"
 
 ChatroomRepositoryHandler::ChatroomRepositoryHandler() {
     LOG_INFO("ChatroomRepositoryHandler initialized");
@@ -35,8 +34,8 @@ int ChatroomRepositoryHandler::find_chatroom_index(const std::string& room_id) {
 bool ChatroomRepositoryHandler::add_chatroom(std::shared_ptr<Chatroom> chatroom) {
     try {
         std::unique_lock<std::shared_mutex> lock(_shared_mtx);
-        if (!chatroom || chatroom->get_chatroom_name().empty() || chatroom->get_client_list().empty()) {
-            LOG_ERROR("Chatroom name or client list is empty.");
+        if (!chatroom || chatroom->get_chatroom_name().empty() || chatroom->get_users().empty()) {
+            LOG_ERROR("Chatroom name or user list is empty.");
             return false;
         }
         if (_chatroom_list.size() == MAX_ACTIVE_CHATROOM_NUM) {
@@ -94,19 +93,19 @@ std::vector<std::shared_ptr<Chatroom>> ChatroomRepositoryHandler::get_chatrooms_
 
 // ==================== 検索・取得操作（既存API互換） ====================
 
-std::vector<std::string> ChatroomRepositoryHandler::get_client_infos_by_chatroom_id(int list_num) {
+std::vector<std::string> ChatroomRepositoryHandler::get_user_infos_by_chatroom_id(int list_num) {
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     if (list_num >= 0 && static_cast<size_t>(list_num) < _chatroom_list.size()) {
-        return _chatroom_list[list_num]->get_client_list();
+        return _chatroom_list[list_num]->get_users();
     }
     return std::vector<std::string>();
 }
 
-std::vector<std::string> ChatroomRepositoryHandler::get_client_infos_by_chatroom_id(const std::string& room_id) {
+std::vector<std::string> ChatroomRepositoryHandler::get_user_infos_by_chatroom_id(const std::string& room_id) {
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     int chatroom_list_num = find_chatroom_index(room_id);
     if (chatroom_list_num != -1) {
-        return _chatroom_list[chatroom_list_num]->get_client_list();
+        return _chatroom_list[chatroom_list_num]->get_users();
     }
     else {
         return std::vector<std::string>();
@@ -123,11 +122,11 @@ std::vector<std::shared_ptr<Chatroom>>::iterator ChatroomRepositoryHandler::find
     return find_chatroom_iterator(room_id);
 }
 
-std::vector<std::string> ChatroomRepositoryHandler::get_client_list_from_chatroom(const std::string& chatroom_id) {
+std::vector<std::string> ChatroomRepositoryHandler::get_users_from_chatroom(const std::string& chatroom_id) {
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     int chatroom_list_num = find_chatroom_index(chatroom_id);
     if (chatroom_list_num != -1) {
-        return _chatroom_list[chatroom_list_num]->get_client_list();
+        return _chatroom_list[chatroom_list_num]->get_users();
     }
     else {
         LOG_ERROR("Chatroom id is not found.");
@@ -137,45 +136,45 @@ std::vector<std::string> ChatroomRepositoryHandler::get_client_list_from_chatroo
 
 // ==================== メンバーシップ操作 ====================
 
-bool ChatroomRepositoryHandler::add_member_to_chatroom(const std::string& room_id, const std::vector<std::string>& cids) {
+bool ChatroomRepositoryHandler::add_member_to_chatroom(const std::string& room_id, const std::vector<std::string>& uids) {
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     auto it = find_chatroom_iterator(room_id);
     if (it == _chatroom_list.end()) {
         LOG_WARNING("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
         return false;
     }
-    for (const auto& cid : cids) {
-        if ((*it)->get_client_list().size() == MAX_CLIENT_NUM_IN_CHATROOM) {
-            LOG_ERROR("The chatroom ID({}) has reached the maximum number of clients.", room_id);
+    for (const auto& uid : uids) {
+        if ((*it)->get_users().size() == MAX_USER_NUM_IN_CHATROOM) {
+            LOG_ERROR("The chatroom ID({}) has reached the maximum number of users.", room_id);
             return false;
         }
-        if (!(*it)->add_client_chatroom(cid)) {
-            LOG_ERROR("Failed to add client ID({}) to chatroom ID({}).", cid, room_id);
+        if (!(*it)->add_user_chatroom(uid)) {
+            LOG_ERROR("Failed to add user ID({}) to chatroom ID({}).", uid, room_id);
             return false;
         }
     }
-    LOG_INFO("{}Clients added to chatroom ID({}) successfully.", cids.size(), room_id);
+    LOG_INFO("{}Users added to chatroom ID({}) successfully.", uids.size(), room_id);
     return true;
 }
 
-bool ChatroomRepositoryHandler::delete_member_from_chatroom(const std::string& room_id, const std::vector<std::string>& cids) {
+bool ChatroomRepositoryHandler::delete_member_from_chatroom(const std::string& room_id, const std::vector<std::string>& uids) {
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     auto it = find_chatroom_iterator(room_id);
     if (it == _chatroom_list.end()) {
         LOG_WARNING("The chatroom ID({}) you tried to remove a member from could not be found.", room_id);
         return false;
     }
-    for (const auto& cid : cids) {
-        if ((*it)->get_client_list().size() == 0) {
-            LOG_WARNING("The chatroom ID({}) has no clients.", room_id);
+    for (const auto& uid : uids) {
+        if ((*it)->get_users().size() == 0) {
+            LOG_WARNING("The chatroom ID({}) has no users.", room_id);
             return false;
         }
-        if (!(*it)->delete_client_chatroom(cid)) {
-            LOG_ERROR("Failed to delete client ID({}) from chatroom ID({}).", cid, room_id);
+        if (!(*it)->delete_user_chatroom(uid)) {
+            LOG_ERROR("Failed to delete user ID({}) from chatroom ID({}).", uid, room_id);
             return false;
         }
     }
-    LOG_INFO("{}Clients removed from chatroom ID({}) successfully.", cids.size(), room_id);
+    LOG_INFO("{}Users removed from chatroom ID({}) successfully.", uids.size(), room_id);
     return true;
 }
 

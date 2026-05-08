@@ -7,7 +7,7 @@ class TokenHandler
 public:
     TokenHandler();
     ~TokenHandler();
-    bool verify_token(const std::string& token, std::string& cid, std::uint64_t& expire);
+    bool verify_token(const std::string& token, std::string& uid, std::uint64_t& expire);
 
 private:
     const std::string get_key_pass(const std::string& kid) const;

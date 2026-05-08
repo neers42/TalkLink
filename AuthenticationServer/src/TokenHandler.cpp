@@ -7,7 +7,7 @@ TokenHandler::~TokenHandler() {
     // 必要なら破棄処理を書く
 }
 
-bool TokenHandler::verify_token(const std::string &token, std::string &cid, std::uint64_t &expire)
+bool TokenHandler::verify_token(const std::string &token, std::string &uid, std::uint64_t &expire)
 {
     try {
         if(token.empty()) {
@@ -39,8 +39,8 @@ bool TokenHandler::verify_token(const std::string &token, std::string &cid, std:
         verify.verify(decoded_token); // Verify the token
 
         if(decoded_token.has_subject() == true) {
-            cid = decoded_token.get_subject();
-            spdlog::debug("Token subject (CID): {}", cid);
+            uid = decoded_token.get_subject();
+            spdlog::debug("Token subject (CID): {}", uid);
         }else{
             LOG_ERROR("Token does not have a subject.");
             return false; // Token does not have a subject
