@@ -5,11 +5,11 @@
 #include "Domain/Entity/Messages/ChatroomControlMessage.hpp"
 #include "Domain/Entity/Messages/ChatroomControlDeliveryMessage.hpp"
 #include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
-#include "Infrastructure/MySQLClient.hpp"
-#include "Infrastructure/RedisClient.hpp"
 #include "Application/Services/IMessageDeliveryService.hpp"
 #include "Domain/ChatroomRepositoryHandler.hpp"
 #include "Domain/ChatroomIDGenerator.hpp"
+
+class ChatroomSequenceHandler;
 
 // チャットルーム操作結果
 struct ChatroomOperationResult {
@@ -17,6 +17,7 @@ struct ChatroomOperationResult {
     std::string error_message;
     int affected_members;
     std::vector<std::string> unsent_notifications;
+    std::uint64_t room_sequence = 0;
 };
 
 // ルーム作成結果
@@ -38,25 +39,23 @@ struct MemberManagementResult {
 class ChatroomManagementService {
 private:
     // 依存関係
-    std::shared_ptr<MySQLClient> _mysql_client;
-    std::shared_ptr<RedisClient> _redis_client;
     std::shared_ptr<IMessageDeliveryService> _message_delivery_service;
     std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
+    std::shared_ptr<ChatroomSequenceHandler> _chatroom_sequence_handler;
 
 public:
     // コンストラクタ・デストラクタ
     explicit ChatroomManagementService(
-        std::shared_ptr<MySQLClient> mysql_client,
-        std::shared_ptr<RedisClient> redis_client,
         std::shared_ptr<IMessageDeliveryService> message_delivery_service,
-        std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler
+        std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
+        std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler
     );
     ~ChatroomManagementService();
     
     // ==================== チャットルーム操作 ====================
     
     // チャットルーム操作処理（統合）
-    ChatroomOperationResult process_chatroom_operation(const json& control_message_json);
+    ChatroomOperationResult process_chatroom_operation(const json& control_message_json, socket_t sender_socket);
     
     // チャットルーム作成
     RoomCreationResult create_chatroom(
@@ -76,8 +75,9 @@ public:
     // ==================== 通知配信 ====================
     
     // チャットルーム操作通知の配信
-    ChatroomOperationResult deliver_chatroom_notification(
+    IMessageDeliveryService::DeliveryResult deliver_chatroom_notification(
         const std::unique_ptr<ChatroomControlMessage>& control_message,
+        const ChatroomOperationResult& operation_result,
         socket_t sender_socket
     );
     
@@ -110,7 +110,8 @@ private:
     bool validate_member_ids(const std::vector<std::string>& member_ids);
     
     // データベース操作
-    bool save_room_operation_to_database(const std::unique_ptr<ChatroomControlMessage>& control_message, const json& message_json);
+    bool save_room_operation_to_database(const std::unique_ptr<ChatroomControlMessage>& control_message, const json& message_json, std::uint64_t room_sequence);
+    bool remove_room_sequence(const std::string& room_id);
     
     // エラーハンドリング
     void handle_operation_error(const std::exception& e, const std::string& operation_context);

@@ -5,10 +5,9 @@ ChatroomControlMessage::ChatroomControlMessage()
 	 _message_id{0},
 	 _sender_uid{""},
 	 _room_id{""},
-	 _add_member_list{},
-	 _remove_member_list{},
+	 _member_list{},
 	 _room_name{""},
-	 _room_image_url{""},
+	 _icon_url{""},
 	 _room_action{RoomAction::CREATE_ROOM},
 	 _message_content{""}
 {
@@ -19,20 +18,18 @@ ChatroomControlMessage::ChatroomControlMessage(
     const uint64_t mid,
     const std::string &sender_uid,
     const std::string &room_id,
-    const std::vector<std::string> &add_member_list,
-    const std::vector<std::string> &remove_member_list,
+    const std::vector<std::string> &member_list,
     const std::string &room_name,
-    const std::string &room_image,
+    const std::string &icon_url,
     const RoomAction &room_action,
     const std::string &message_content) 
 	: MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL),
 	_message_id(mid),
 	_sender_uid(sender_uid),
     _room_id(room_id),
-    _add_member_list(add_member_list),
-    _remove_member_list(remove_member_list),
+    _member_list(member_list),
     _room_name(room_name),
-    _room_image_url(room_image),
+    _icon_url(icon_url),
     _room_action(room_action),
 	_message_content(message_content)
 {
@@ -58,14 +55,9 @@ std::string ChatroomControlMessage::get_room_id() const
 }
 
 
-std::vector<std::string> ChatroomControlMessage::get_add_member_list() const
+std::vector<std::string> ChatroomControlMessage::get_member_list() const
 {
-	return this->_add_member_list;
-}
-
-std::vector<std::string> ChatroomControlMessage::get_remove_member_list() const
-{
-	return this->_remove_member_list;
+	return this->_member_list;
 }
 
 std::string ChatroomControlMessage::get_room_name() const
@@ -73,9 +65,9 @@ std::string ChatroomControlMessage::get_room_name() const
 	return this->_room_name;
 }
 
-std::string ChatroomControlMessage::get_room_image_url() const
+std::string ChatroomControlMessage::get_icon_url() const
 {
-	return this->_room_image_url;
+	return this->_icon_url;
 }
 
 
@@ -106,10 +98,9 @@ bool ChatroomControlMessage::validate_payload(const json &message) const
 		static const std::vector<std::string> required_keys = {
 			"sender_uid", 
 			"room_id",
-			"room_add_member_list",
-			"room_remove_member_list",
+			"room_member_list",
 			"room_name",
-			"room_image_url",
+			"icon_url",
 			"room_action"
 		};
 
@@ -128,21 +119,17 @@ bool ChatroomControlMessage::validate_payload(const json &message) const
 		{
 			throw std::runtime_error("Invalid type for room_id");
 		}
-		if(!payload["room_add_member_list"].is_array())
+		if(!payload["room_member_list"].is_array())
 		{
-			throw std::runtime_error("Invalid type for room_add_member_list");
-		}
-		if(!payload["room_remove_member_list"].is_array())
-		{
-			throw std::runtime_error("Invalid type for room_remove_member_list");
+			throw std::runtime_error("Invalid type for room_member_list");
 		}
 		if(!payload["room_name"].is_string())
 		{
 			throw std::runtime_error("Invalid type for room_name");
 		}
-		if(!payload["room_image_url"].is_string())
+		if(!payload["icon_url"].is_string())
 		{
-			throw std::runtime_error("Invalid type for room_image_url");
+			throw std::runtime_error("Invalid type for icon_url");
 		}
 		if(!payload["room_action"].is_string())
 		{
@@ -167,10 +154,9 @@ std::unique_ptr<MessageBase> ChatroomControlMessage::create_instance(const json 
 {
 	std::string sender_uid;
 	std::string room_id;
-	std::vector<std::string> add_member_list;
-	std::vector<std::string> remove_member_list;
+	std::vector<std::string> member_list;
 	std::string room_name;
-	std::string room_image_url;
+	std::string icon_url;
 	RoomAction room_action;
 
 	try
@@ -178,10 +164,9 @@ std::unique_ptr<MessageBase> ChatroomControlMessage::create_instance(const json 
 		auto common_fields = this->parse_common_fields(message);
         std::string sender_uid = message["payload"]["sender_uid"].get<std::string>();
         std::string room_id = message["payload"]["room_id"].get<std::string>();
-        std::vector<std::string> add_member_list = message["payload"]["room_add_member_list"].get<std::vector<std::string>>();
-        std::vector<std::string> remove_member_list = message["payload"]["room_remove_member_list"].get<std::vector<std::string>>();
+        std::vector<std::string> member_list = message["payload"]["room_member_list"].get<std::vector<std::string>>();
         std::string room_name = message["payload"]["room_name"].get<std::string>();
-        std::string room_image_url = message["payload"]["room_image_url"].get<std::string>();   
+        std::string icon_url = message["payload"]["icon_url"].get<std::string>();   
         RoomAction room_action = parse_room_action(message["payload"]["room_action"].get<std::string>());
         std::string message_content = message.dump();
 
@@ -190,10 +175,9 @@ std::unique_ptr<MessageBase> ChatroomControlMessage::create_instance(const json 
             MessageIDGenerator::generate_message_id(),
             sender_uid,
             room_id,
-            add_member_list,
-            remove_member_list,
+            member_list,
             room_name,
-            room_image_url,
+            icon_url,
             room_action,
             message_content
         );
@@ -209,7 +193,7 @@ bool ChatroomControlMessage::validate_value() const
 {
 	if(is_valid_room_id(this->_room_id, this->_room_action) == false ||
 	   is_valid_room_name(this->_room_name) == false ||
-	   is_valid_room_image_url(this->_room_image_url) == false){
+	   is_valid_icon_url(this->_icon_url) == false){
 		LOG_ERROR("ChatRoomControlMessage value validation failed.");
     	return false;
 	}else{
@@ -265,10 +249,10 @@ bool ChatroomControlMessage::is_valid_room_name(const std::string &room_name) co
 	return true;
 }
 
-bool ChatroomControlMessage::is_valid_room_image_url(const std::string &room_image_url) const
+bool ChatroomControlMessage::is_valid_icon_url(const std::string &icon_url) const
 {
-	if (room_image_url.empty() || room_image_url.size() > 200) {
-		LOG_ERROR("dst chatroom image url is invalid. dst chatroom image url size : {}", room_image_url.size());
+	if (icon_url.empty() || icon_url.size() > 200) {
+		LOG_ERROR("dst chatroom icon url is invalid. dst chatroom icon url size : {}", icon_url.size());
 		return false;
 	}
 	return true;

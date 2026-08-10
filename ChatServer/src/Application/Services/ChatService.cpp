@@ -1,17 +1,18 @@
 #include "Application/Services/ChatService.hpp"
+#include "Domain/ChatroomSequenceHandler.hpp"
 #include "MessageBase.hpp"
 
 ChatService::ChatService(
-    std::shared_ptr<MySQLClient> mysql_client,
-    std::shared_ptr<RedisClient> redis_client,
     std::shared_ptr<IMessageDeliveryService> message_delivery_service,
-    std::shared_ptr<UserRepositoryHandler> user_repository_handler
-) : _mysql_client(std::move(mysql_client)),
-    _redis_client(std::move(redis_client)),
-    _message_delivery_service(std::move(message_delivery_service)),
-    _user_repository_handler(std::move(user_repository_handler))
+    std::shared_ptr<UserRepositoryHandler> user_repository_handler,
+    std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
+    std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler
+) : _message_delivery_service(std::move(message_delivery_service)),
+    _user_repository_handler(std::move(user_repository_handler)),
+    _chatroom_repository_handler(std::move(chatroom_repository_handler)),
+    _chatroom_sequence_handler(std::move(chatroom_sequence_handler))
 {
-    if (!_message_delivery_service || !_mysql_client || !_redis_client || !_user_repository_handler) {
+    if (!_message_delivery_service || !_user_repository_handler || !_chatroom_repository_handler || !_chatroom_sequence_handler) {
         throw std::runtime_error("All dependencies must be non-null");
     }
     
@@ -24,23 +25,16 @@ ChatService::~ChatService() {
 
 // ==================== チャットメッセージ処理 ====================
 
-bool ChatService::process_save_message(const std::unique_ptr<ChatMessage>& chat_message, const json& original_json) {
-    try {
-        return save_message_to_database(chat_message, original_json);
-        
-    } catch (const std::exception& e) {
-        handle_processing_error(e, "process_save_message");
-        return false;
-    }
-}
-
 IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const std::unique_ptr<ChatMessage>& chat_message, socket_t sender_socket) {
     IMessageDeliveryService::DeliveryResult delivery_result = {};
     
     try {
-        if (!validate_chat_message(chat_message)) {
+        // シーケンス番号を採番
+        std::uint64_t room_sequence = 0;
+        if (!_chatroom_sequence_handler->increment_room_sequence(chat_message->get_room_id(), room_sequence)) {
+            LOG_ERROR("[ChatService] Failed to get room sequence for room ID: {}", chat_message->get_room_id());
             delivery_result.success = false;
-            delivery_result.error_message = "Invalid chat message";
+            delivery_result.error_message = "Failed to get room sequence";
             return delivery_result;
         }
         
@@ -50,7 +44,8 @@ IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const 
             chat_message->get_message_id(),
             chat_message->get_room_id(),
             chat_message->get_sender_uid(),
-            chat_message->get_content()
+            chat_message->get_content(),
+            room_sequence
         );
         
         // ルームメンバーに配信
@@ -61,6 +56,7 @@ IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const 
             sender_socket, 
             chat_message->get_sender_uid()
         );
+        delivery_result.room_sequence = room_sequence;
         if(delivery_result.success) {
             LOG_INFO("[ChatService] Chat message delivered successfully. Message ID: {}, Room ID: {}, Sender UID: {}", 
                         chat_message->get_message_id(), chat_message->get_room_id(), chat_message->get_sender_uid());
@@ -115,7 +111,8 @@ bool ChatService::send_chat_acknowledgment(
             chat_message->get_message_id(),
             send_status,
             chat_message->get_room_id(),
-            delivery_result.unsent_uids
+            delivery_result.unsent_uids,
+            delivery_result.room_sequence
         );
         
         // シリアライズして送信
@@ -151,17 +148,11 @@ bool ChatService::process_chat_message(
             LOG_ERROR("[ChatService] Failed to create ChatMessage instance from JSON");
             return false;
         }
-        // 2. メッセージのバリデーション
-        if(this->validate_chat_message(chat_message) == false)
-        {
-            LOG_ERROR("[ChatService] Chat message validation failed for message ID: {}", chat_message->get_message_id());
-            return false;
-        }
 
-        // 3. メッセージを配信
+        // 2. メッセージを配信
         auto delivery_result = deliver_chat_message(chat_message, sender_socket);
         
-        // 4. 確認応答を送信
+        // 3. 確認応答を送信
         bool ack_sent = send_chat_acknowledgment(chat_message, delivery_result, sender_socket);
             if (!ack_sent) {
                 //メッセージの再送信
@@ -173,8 +164,8 @@ bool ChatService::process_chat_message(
                 LOG_INFO("[ChatService] Message resend succeeded during acknowledgment step for message ID: {}", chat_message->get_message_id());
             }
         
-        // 5. メッセージをデータベースに保存
-        if (!process_save_message(chat_message, original_json)) {
+        // 4. メッセージをデータベースに保存（シーケンス採番不要、すでに deliver_chat_message で採番済み）
+        if (!save_message_to_database(chat_message, original_json, delivery_result.room_sequence)) {
             return false;
         }
         return true;
@@ -190,7 +181,7 @@ bool ChatService::process_chat_message(
 
 json ChatService::get_unreceived_messages(const std::string& uid, uint64_t last_received_message_id) {
     try {
-        return _mysql_client->get_unreceived_messages(uid, last_received_message_id);
+        return _chatroom_repository_handler->get_unreceived_messages(uid, last_received_message_id);
     } catch (const std::exception& e) {
         handle_processing_error(e, "get_unreceived_messages");
         return json::object();
@@ -199,24 +190,10 @@ json ChatService::get_unreceived_messages(const std::string& uid, uint64_t last_
 
 // ==================== 内部ヘルパーメソッド ====================
 
-bool ChatService::validate_chat_message(const std::unique_ptr<ChatMessage>& chat_message) {
-    if (!chat_message) {
-        LOG_ERROR("[ChatService] ChatMessage is null");
-        return false;
-    }
-    
-    if (!chat_message->validate_value()) {
-        LOG_ERROR("[ChatService] ChatMessage validation failed");
-        return false;
-    }
-    
-    return true;
-}
-
-bool ChatService::save_message_to_database(const std::unique_ptr<ChatMessage>& chat_message, const json& original_json) {
+bool ChatService::save_message_to_database(const std::unique_ptr<ChatMessage>& chat_message, const json& original_json, std::uint64_t room_sequence) {
     try {
         // ルームIDの存在確認
-        if (!_mysql_client->is_room_id_hex_exist(chat_message->get_room_id())) {
+        if (!_chatroom_repository_handler->is_room_id_exist(chat_message->get_room_id())) {
             LOG_ERROR("[ChatService] Room ID not found: {}", chat_message->get_room_id());
             return false;
         }
@@ -225,12 +202,13 @@ bool ChatService::save_message_to_database(const std::unique_ptr<ChatMessage>& c
         std::string mysql_timestamp = ServerTime::iso8601_to_mysql_datetime(chat_message->get_time_stamp());
         
         // データベースに保存
-        bool save_success = _mysql_client->insert_message(
+        bool save_success = _chatroom_repository_handler->insert_message(
             chat_message->get_message_id(),
             chat_message->get_room_id(),
             chat_message->get_sender_uid(),
             mysql_timestamp,
-            original_json.dump()
+            original_json.dump(),
+            room_sequence
         );
         
         if (save_success) {
@@ -294,6 +272,18 @@ bool ChatService::execute_message_resend(const json& message_json, const std::ve
         handle_processing_error(e, "execute_message_resend");
         return false;
     }
+}
+
+bool ChatService::advance_room_sequence(const std::string& room_id)
+{
+    std::uint64_t next_sequence = 0;
+    if (!_chatroom_sequence_handler->increment_room_sequence(room_id, next_sequence)) {
+        LOG_ERROR("[ChatService] Failed to update room sequence. Room ID: {}", room_id);
+        return false;
+    }
+
+    LOG_INFO("[ChatService] Room sequence updated. Room ID: {}, Sequence: {}", room_id, next_sequence);
+    return true;
 }
 
 void ChatService::handle_processing_error(const std::exception& e, const std::string& operation_context) {

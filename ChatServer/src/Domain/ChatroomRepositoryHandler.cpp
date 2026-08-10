@@ -1,13 +1,17 @@
 #include "Domain/ChatroomRepositoryHandler.hpp"
 
-ChatroomRepositoryHandler::ChatroomRepositoryHandler() {
-    LOG_INFO("ChatroomRepositoryHandler initialized");
+ChatroomRepositoryHandler::ChatroomRepositoryHandler(std::shared_ptr<MySQLAdapter> mysql_adapter) 
+    : _mysql_adapter(std::move(mysql_adapter)) {
+    if (!_mysql_adapter) {
+        throw std::invalid_argument("MySQLAdapter cannot be null");
+    }
+    LOG_INFO("[ChatroomRepositoryHandler] ChatroomRepositoryHandler initialized");
 }
 
 ChatroomRepositoryHandler::~ChatroomRepositoryHandler() {
     std::unique_lock<std::shared_mutex> lock(_shared_mtx);
     _chatroom_list.clear();
-    LOG_INFO("ChatroomRepositoryHandler destroyed");
+    LOG_INFO("[ChatroomRepositoryHandler] ChatroomRepositoryHandler destroyed");
 }
 
 // ==================== プライベートヘルパーメソッド ====================
@@ -43,27 +47,27 @@ bool ChatroomRepositoryHandler::add_chatroom(std::shared_ptr<Chatroom> chatroom)
         }
 
         _chatroom_list.push_back(std::move(chatroom));
-        LOG_INFO("Chatroom added successfully");
+        LOG_INFO("[ChatroomRepositoryHandler] Chatroom added successfully");
         return true;
     }
     catch (const std::bad_alloc& e) {
-        LOG_ERROR("Memory allocation failed: {}", e.what());
+        LOG_ERROR("[ChatroomRepositoryHandler] Memory allocation failed: {}", e.what());
         return false;
     }
     catch (const std::system_error& e) {
-        LOG_ERROR("System error: {}", e.what());
+        LOG_ERROR("[ChatroomRepositoryHandler] System error: {}", e.what());
         return false;
     }
     catch (const std::runtime_error& e) {
-        LOG_ERROR("Runtime error: {}", e.what());
+        LOG_ERROR("[ChatroomRepositoryHandler] Runtime error: {}", e.what());
         return false;
     }
     catch (const std::logic_error& e) {
-        LOG_ERROR("Logic error: {}", e.what());
+        LOG_ERROR("[ChatroomRepositoryHandler] Logic error: {}", e.what());
         return false;
     }
     catch (const std::exception& e) {
-        LOG_ERROR("Exception: {}", e.what());
+        LOG_ERROR("[ChatroomRepositoryHandler] Exception: {}", e.what());
         return false;
     }
 }
@@ -72,11 +76,11 @@ bool ChatroomRepositoryHandler::delete_chatroom(const std::string& room_id) {
     std::unique_lock<std::shared_mutex> lock(_shared_mtx);
     auto it = find_chatroom_iterator(room_id);
     if (it == _chatroom_list.end()) {
-        LOG_ERROR("The chatroom ID({}) you tried to delete could not be found.", room_id);
+        LOG_ERROR("[ChatroomRepositoryHandler] The chatroom ID({}) you tried to delete could not be found.", room_id);
         return false;
     }
     _chatroom_list.erase(it);
-    LOG_INFO("Chatroom ID:{} deleted from active room list successfully.", room_id);
+    LOG_INFO("[ChatroomRepositoryHandler] Chatroom ID:{} deleted from active room list successfully.", room_id);
     return true;
 }
 
@@ -153,7 +157,7 @@ bool ChatroomRepositoryHandler::add_member_to_chatroom(const std::string& room_i
             return false;
         }
     }
-    LOG_INFO("{}Users added to chatroom ID({}) successfully.", uids.size(), room_id);
+    LOG_INFO("[ChatroomRepositoryHandler] {}Users added to chatroom ID({}) successfully.", uids.size(), room_id);
     return true;
 }
 
@@ -161,20 +165,20 @@ bool ChatroomRepositoryHandler::delete_member_from_chatroom(const std::string& r
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     auto it = find_chatroom_iterator(room_id);
     if (it == _chatroom_list.end()) {
-        LOG_WARNING("The chatroom ID({}) you tried to remove a member from could not be found.", room_id);
+        LOG_WARNING("[ChatroomRepositoryHandler] The chatroom ID({}) you tried to remove a member from could not be found.", room_id);
         return false;
     }
     for (const auto& uid : uids) {
         if ((*it)->get_users().size() == 0) {
-            LOG_WARNING("The chatroom ID({}) has no users.", room_id);
+            LOG_WARNING("[ChatroomRepositoryHandler] The chatroom ID({}) has no users.", room_id);
             return false;
         }
         if (!(*it)->delete_user_chatroom(uid)) {
-            LOG_ERROR("Failed to delete user ID({}) from chatroom ID({}).", uid, room_id);
+            LOG_ERROR("[ChatroomRepositoryHandler] Failed to delete user ID({}) from chatroom ID({}).", uid, room_id);
             return false;
         }
     }
-    LOG_INFO("{}Users removed from chatroom ID({}) successfully.", uids.size(), room_id);
+    LOG_INFO("[ChatroomRepositoryHandler] {}Users removed from chatroom ID({}) successfully.", uids.size(), room_id);
     return true;
 }
 
@@ -184,15 +188,15 @@ bool ChatroomRepositoryHandler::change_room_name(const std::string& room_id, con
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     auto it = find_chatroom_iterator(room_id);
     if (it == _chatroom_list.end()) {
-        LOG_ERROR("The chatroom ID({}) you tried to change name could not be found.", room_id);
+        LOG_ERROR("[ChatroomRepositoryHandler] The chatroom ID({}) you tried to change name could not be found.", room_id);
         return false;
     }
     if (room_name.empty()) {
-        LOG_ERROR("The room name cannot be empty.");
+        LOG_ERROR("[ChatroomRepositoryHandler] The room name cannot be empty.");
         return false;
     }
     (*it)->set_chatroom_name(room_name);
-    LOG_INFO("Room name changed to '{}' for chatroom ID: {}", room_name, room_id);
+    LOG_INFO("[ChatroomRepositoryHandler] Room name changed to '{}' for chatroom ID: {}", room_name, room_id);
     return true;
 }
 
@@ -200,14 +204,121 @@ bool ChatroomRepositoryHandler::change_room_icon(const std::string& room_id, con
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     auto it = find_chatroom_iterator(room_id);
     if (it == _chatroom_list.end()) {
-        LOG_ERROR("The chatroom ID({}) you tried to change icon could not be found.", room_id);
+        LOG_ERROR("[ChatroomRepositoryHandler] The chatroom ID({}) you tried to change icon could not be found.", room_id);
         return false;
     }
     if (icon_url.empty()) {
-        LOG_ERROR("The room icon URL cannot be empty.");
+        LOG_ERROR("[ChatroomRepositoryHandler] The room icon URL cannot be empty.");
         return false;
     }
     (*it)->set_chatroom_icon(icon_url);
-    LOG_INFO("Room icon changed to '{}' for chatroom ID: {}", icon_url, room_id);
+    LOG_INFO("[ChatroomRepositoryHandler] Room icon changed to '{}' for chatroom ID: {}", icon_url, room_id);
     return true;
+}
+
+// ==================== データベース永続化操作 ====================
+
+bool ChatroomRepositoryHandler::delete_chatroom_with_mysql(const std::string& room_id) {
+    try {
+        if (!_mysql_adapter) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+            return false;
+        }
+        
+        // インメモリから削除
+        bool deleted = delete_chatroom(room_id);
+        if (!deleted) {
+            LOG_ERROR("[ChatroomRepositoryHandler] Failed to delete chatroom from memory: {}", room_id);
+            return false;
+        }
+        
+        // データベースから削除
+        bool db_deleted = _mysql_adapter->delete_chatroom_fromDB(room_id);
+        if (!db_deleted) {
+            LOG_WARNING("[ChatroomRepositoryHandler] Failed to delete chatroom from database: {}", room_id);
+            // インメモリは削除されたので、部分的な成功と見なす
+        }
+        
+        return true;
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error deleting chatroom {}: {}", room_id, e.what());
+        return false;
+    }
+}
+
+bool ChatroomRepositoryHandler::insert_message(const uint64_t message_id, const std::string& room_id, 
+                                              const std::string& sender_uid, const std::string& send_time,
+                                              const std::string& message_content, std::uint64_t room_sequence) {
+    try {
+        if (!_mysql_adapter) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+            return false;
+        }
+        
+        bool result = _mysql_adapter->insert_message(message_id, room_id, sender_uid, send_time, message_content, room_sequence);
+        if (!result) {
+            LOG_ERROR("[ChatroomRepositoryHandler] Failed to insert message {} to room {}", message_id, room_id);
+        } else {
+            LOG_DEBUG("[ChatroomRepositoryHandler] Message {} inserted successfully to room {}", message_id, room_id);
+        }
+        return result;
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error inserting message {}: {}", message_id, e.what());
+        return false;
+    }
+}
+
+bool ChatroomRepositoryHandler::is_room_id_exist(const std::string& room_id_hex) {
+    try {
+        if (!_mysql_adapter) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+            return false;
+        }
+        
+        bool exists = _mysql_adapter->is_room_id_hex_exist(room_id_hex);
+        return exists;
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error checking room existence {}: {}", room_id_hex, e.what());
+        return false;
+    }
+}
+
+json ChatroomRepositoryHandler::get_unreceived_messages(const std::string& uid, const uint64_t last_received_message_id) {
+    try {
+        if (!_mysql_adapter) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+            return json::object();
+        }
+        
+        json result = _mysql_adapter->get_unreceived_messages(uid, last_received_message_id);
+        return result;
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error getting unreceived messages for user {}: {}", uid, e.what());
+        return json::object();
+    }
+}
+
+std::vector<ChatroomRepositoryHandler::UserInfo> ChatroomRepositoryHandler::get_user_infos(const std::vector<std::string>& uids) {
+    std::vector<UserInfo> result;
+    
+    try {
+        if (!_mysql_adapter) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+            return result;
+        }
+        
+        for (const auto& uid : uids) {
+            try {
+                auto user_info = _mysql_adapter->get_user_info(uid);
+                result.emplace_back(UserInfo{uid, user_info.name, user_info.icon_url});
+            } catch (const std::exception& e) {
+                LOG_WARNING("[ChatroomRepositoryHandler] Failed to get user info for {}: {}", uid, e.what());
+            }
+        }
+        
+        return result;
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error getting user infos: {}", e.what());
+        return result;
+    }
 }

@@ -1,11 +1,24 @@
-﻿#ifndef MYSQLCLIENT_HPP
-#define MYSQLCLIENT_HPP
+﻿#ifndef MYSQLADAPTER_HPP
+#define MYSQLADAPTER_HPP
 #include "Utils/common.hpp"
 #include "MySQLHelper.hpp"
 #include "ServerTime.hpp"
 
 using ChatRoomID = std::array<uint8_t, 16>;
-class MySQLClient
+
+struct UserInfo{
+	std::string uid;
+	std::string name;
+	std::string mail_address;
+	std::string icon_url;
+
+	UserInfo() : uid(""), name(""), mail_address(""), icon_url("") {}
+	UserInfo(const std::string& uid, const std::string& name, const std::string& mail_address, const std::string& icon_url)
+	: uid(uid), name(name), mail_address(mail_address), icon_url(icon_url) {}
+	UserInfo(const std::string& name, const std::string& mail_address, const std::string& icon_url) 
+	: uid(""), name(name), mail_address(mail_address), icon_url(icon_url) {}
+};
+class MySQLAdapter
 {
 private:
 	std::unique_ptr<MySQLHelper> _mysql_helper;
@@ -22,8 +35,8 @@ private:
 
 
 public:
-	MySQLClient();
-	~MySQLClient();
+	MySQLAdapter();
+	~MySQLAdapter();
 
 
 	void create_database();
@@ -36,7 +49,7 @@ public:
 	std::vector<std::string> get_users_from_chatroom(const std::string& room_id);
 
 	//テーブル：chat_messages操作
-	bool insert_message(const uint64_t mid, const std::string& room_id, const std::string& sender_uid, const std::string& send_time, const std::string& message_content);
+	bool insert_message(const uint64_t mid, const std::string& room_id, const std::string& sender_uid, const std::string& send_time, const std::string& message_content, std::uint64_t room_sequence = 0);
 	json get_unreceived_messages(const std::string& uid, const uint64_t last_received_message_id);
 
 	//テーブル：chatrooms操作
@@ -56,10 +69,11 @@ public:
 		const std::string& icon_url,
 		const std::string& created_at,
 		const std::string& last_login);
-	std::tuple<std:: string, std::string, std::string> get_user_info_fromDB(const std::string& uid);
+	UserInfo get_user_info(const std::string& uid);
 	bool update_last_login(const std::string& uid, const std::string& last_login);
 	bool is_uid_exist(const std::string& uid);
 	std::string get_user_last_login_fromDB(const std::string& uid);
+	std::vector<UserInfo> search_user_infos(const std::string& query);
 
 	//テーブル：unsend_control_messages操作
 	bool insert_unsend_control_message(const uint64_t mid, const std::string& uid, const std::string& room_id, const std::string& json_payload, const std::string& request_time);
@@ -87,5 +101,5 @@ private:
 
 
 
-#endif // !MYSQLCLIENT_HPP
+#endif // !MYSQLADAPTER_HPP
 

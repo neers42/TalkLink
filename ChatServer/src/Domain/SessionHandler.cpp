@@ -1,17 +1,20 @@
 #include "Domain/SessionHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
-#include "Infrastructure/RedisClient.hpp"
-#include "Infrastructure/MySQLClient.hpp"
+#include "Infrastructure/RedisAdapter.hpp"
+#include "Infrastructure/MySQLAdapter.hpp"
 #include "ServerTime.hpp"
 
 SessionHandler::SessionHandler(
     std::shared_ptr<UserRepositoryHandler> repository,
-    std::shared_ptr<RedisClient> redis_client,
-    std::shared_ptr<MySQLClient> mysql_client,
+    std::shared_ptr<RedisAdapter> redis_adapter,
+    std::shared_ptr<MySQLAdapter> mysql_adapter,
     std::shared_ptr<ServerTime> server_time)
-    : _repository(repository), _redis_client(redis_client), _mysql_client(mysql_client), _server_time(server_time)
+    : _repository(std::move(repository)), 
+    _redis_adapter(std::move(redis_adapter)), 
+    _mysql_adapter(std::move(mysql_adapter)), 
+    _server_time(std::move(server_time))
 {
-    if (!_repository || !_redis_client || !_mysql_client || !_server_time) {
+    if (!_repository || !_redis_adapter || !_mysql_adapter || !_server_time) {
         throw std::runtime_error("Failed to initialize SessionHandler dependencies");
     }
     
@@ -69,7 +72,7 @@ bool SessionHandler::verify_session_in_redis(const std::string& uid) {
     try {
         // Redis セッションキーの存在確認
         std::string session_key = "session:" + uid;
-        bool session_exists = _redis_client->is_user_session_key(session_key);
+        bool session_exists = _redis_adapter->is_user_session_key(session_key);
         
         if (session_exists) {
             LOG_DEBUG("[SessionHandler] Session found in Redis for user: {}", uid);
@@ -107,13 +110,12 @@ void SessionHandler::resolve_user_profile(
         std::string db_name;
         std::string db_email;
         std::string db_icon;
-        std::tie(db_name, db_email, db_icon) = _mysql_client->get_user_info_fromDB(uid);
-
-        if (out_name.empty() && !db_name.empty()) {
-            out_name = db_name;
+        auto user_info = _mysql_adapter->get_user_info(uid);
+        if (out_name.empty() && !user_info.name.empty()) {
+            out_name = user_info.name;
         }
-        if (out_email.empty() && !db_email.empty()) {
-            out_email = db_email;
+        if (out_email.empty() && !user_info.mail_address.empty()) {
+            out_email = user_info.mail_address;
         }
 
         LOG_INFO(
@@ -244,17 +246,29 @@ SessionValidationResult SessionHandler::handle_signup_request(
         }
         // SIGNUP時もJWTから認証情報を確認
         result.uid = extract_uid_from_jwt(session_message->get_jwt());
-        
+
         // Redisでセッション存在確認
         if (!verify_session_in_redis(result.uid)) {
-            result.error_message = "Authentication required for signup";
-            log_session_event(result.uid, "signup_session_not_found", socket);
+            result.error_message = "Session not found or expired";
+            log_session_event(result.uid, "session_not_found", socket);
             return result;
         }
-        
-        // payload値を優先し、空ならDBから補完
-        resolve_user_profile(result.uid, session_message, result.name, result.email);
-        
+        // ユーザの情報をDBに登録
+        auto insert_db_result = _mysql_adapter->insert_user_info_data(
+            result.uid, 
+            session_message->get_user_name(), 
+            session_message->get_user_mail_addr(),
+            "",
+            _server_time->get_current_time_to_seconds(),
+            ""
+        );
+        if(!insert_db_result) {
+            result.error_message = "Failed to create user in database";
+            log_session_event(result.uid, "signup_db_error", socket);
+            result.is_valid = false;
+            result.error_message = "Failed to insert user data in database";
+            return result;
+        }
         result.is_valid = true;
         result.error_message = "Signup session validation successful";
         result.unreceived_messages = json::array(); // 新規ユーザーなので空
@@ -287,7 +301,7 @@ SessionValidationResult SessionHandler::handle_signout_request(
         result.uid = extract_uid_from_jwt(session_message->get_jwt());
         
         // TODO: Redisからセッション削除処理を実装
-        // _redis_client->delete_session(result.uid);
+        // _redis_adapter->delete_session(result.uid);
         
         result.is_valid = true;
         result.error_message = "Signout successful";

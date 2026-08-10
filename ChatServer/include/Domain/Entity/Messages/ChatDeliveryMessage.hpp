@@ -10,6 +10,7 @@ private:
 	std::string _room_id;	//チャットルームID
 	std::string _sender_uid;	//送信者ID
 	std::string _content;	//メッセージ内容
+	std::uint64_t _room_sequence;	//ルームシーケンス番号
 	
 
 
@@ -20,7 +21,8 @@ public:
 		const uint64_t send_message_id,
 		const std::string& room_id,
 		const std::string& sender_id,
-		const std::string& content);
+		const std::string& content,
+		const std::uint64_t room_sequence = 0);
 	~ChatDeliveryMessage();
 
 	//各種アクセッサ
@@ -28,10 +30,12 @@ public:
 	std::string get_room_id() const;
 	std::string get_sender_uid() const;
 	std::string get_content() const;
+	std::uint64_t get_room_sequence() const;
 
 	void set_room_id(const std::string& room_id);
 	void set_sender_uid(const std::string& sender_id);
 	void set_content(const std::string& content);
+	void set_room_sequence(const std::uint64_t room_sequence);
 
 	//ISendMessageの実装
 	json serialize_payload() const override;

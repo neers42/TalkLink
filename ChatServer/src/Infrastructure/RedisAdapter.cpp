@@ -1,6 +1,6 @@
-﻿#include "Infrastructure/RedisClient.hpp"
+﻿#include "Infrastructure/RedisAdapter.hpp"
 
-RedisClient::RedisClient()
+RedisAdapter::RedisAdapter()
 {
     char* env_host = nullptr;
     char* env_port = nullptr;
@@ -29,14 +29,44 @@ RedisClient::RedisClient()
     }
 }
 
-RedisClient::~RedisClient() {
+RedisAdapter::~RedisAdapter() {
     if (_redis_helper) {
         _redis_helper->disconnect();
     }
 }
 
-bool RedisClient::is_user_session_key(const std::string &session_key)
+bool RedisAdapter::is_user_session_key(const std::string &session_key)
 {
     return _redis_helper->is_key_exists(session_key);
+}
+
+bool RedisAdapter::initialize_counter_key(const std::string& key, std::uint64_t initial_value)
+{
+    return _redis_helper->ensure_key_initialized(key, std::to_string(initial_value));
+}
+
+bool RedisAdapter::increment_counter_key(const std::string& key, std::uint64_t& next_value)
+{
+    return _redis_helper->increment_key(key, next_value);
+}
+
+std::uint64_t RedisAdapter::get_counter_value(const std::string& key)
+{
+    const std::string value = _redis_helper->get_key_value(key);
+    if (value.empty()) {
+        return 0;
+    }
+
+    try {
+        return static_cast<std::uint64_t>(std::stoull(value));
+    } catch (const std::exception& e) {
+        LOG_ERROR("Failed to parse Redis counter value for key {}: {}", key, e.what());
+        return 0;
+    }
+}
+
+bool RedisAdapter::delete_key(const std::string& key)
+{
+    return _redis_helper->delete_key({key});
 }
 

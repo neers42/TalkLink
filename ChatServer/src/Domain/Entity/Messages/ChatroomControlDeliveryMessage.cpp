@@ -5,9 +5,10 @@ ChatroomControlDeliveryMessage::ChatroomControlDeliveryMessage()
 	 _sender_uid{""},
 	 _room_id{""},
 	 _room_name{""},
-	 _room_icon_url{""},
+	 _icon_url{""},
 	 _user_infos{},
-	 _room_action{ChatroomControlMessage::RoomAction::CREATE_ROOM}
+	 _room_action{ChatroomControlMessage::RoomAction::CREATE_ROOM},
+	 _room_sequence{0}
 {
 }
 
@@ -17,16 +18,18 @@ ChatroomControlDeliveryMessage::ChatroomControlDeliveryMessage(
     const std::string &sender_uid,
     const std::string &room_id,
     const std::string &room_name,
-    const std::string &room_icon_url,
+    const std::string &icon_url,
     const std::vector<UserInfo> &user_infos,
-    const ChatroomControlMessage::RoomAction &room_action) 
+    const ChatroomControlMessage::RoomAction &room_action,
+    const std::uint64_t room_sequence) 
 	: MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL_DELIVERY),
 	 _sender_uid{sender_uid},
 	 _room_id{room_id},
 	 _room_name{room_name},
-	 _room_icon_url{room_icon_url},
+	 _icon_url{icon_url},
 	 _user_infos{user_infos},
-	 _room_action{room_action}
+	 _room_action{room_action},
+	 _room_sequence{room_sequence}
 {
 }
 
@@ -58,14 +61,14 @@ void ChatroomControlDeliveryMessage::set_room_name(const std::string& room_name)
 	this->_room_name = room_name;
 }
 
-std::string ChatroomControlDeliveryMessage::get_room_icon_url() const
+std::string ChatroomControlDeliveryMessage::get_icon_url() const
 {
-    return this->_room_icon_url;
+    return this->_icon_url;
 }
 
-void ChatroomControlDeliveryMessage::set_room_icon_url(const std::string& room_icon_url)
+void ChatroomControlDeliveryMessage::set_icon_url(const std::string& icon_url)
 {
-	this->_room_icon_url = room_icon_url;
+	this->_icon_url = icon_url;
 }
 
 std::vector<ChatroomControlDeliveryMessage::UserInfo> ChatroomControlDeliveryMessage::get_user_infos() const
@@ -83,7 +86,15 @@ ChatroomControlMessage::RoomAction ChatroomControlDeliveryMessage::get_room_acti
 	return this->_room_action;
 }
 
+std::uint64_t ChatroomControlDeliveryMessage::get_room_sequence() const
+{
+	return this->_room_sequence;
+}
 
+void ChatroomControlDeliveryMessage::set_room_sequence(const std::uint64_t room_sequence)
+{
+	this->_room_sequence = room_sequence;
+}
 
 json ChatroomControlDeliveryMessage::serialize_payload() const
 {
@@ -96,7 +107,8 @@ json ChatroomControlDeliveryMessage::serialize_payload() const
 		specific_fields["sender_uid"] = this->_sender_uid;
 		specific_fields["room_id"] = this->_room_id;
 		specific_fields["room_name"] = this->_room_name;
-		specific_fields["room_icon_url"] = this->_room_icon_url;
+		specific_fields["room_icon_url"] = this->_icon_url;
+		specific_fields["room_sequence"] = this->_room_sequence;
 
 		switch (this->get_room_action())
 		{
@@ -143,7 +155,7 @@ bool ChatroomControlDeliveryMessage::validate_payload() const
 	{
 		if(is_valid_room_id(this->_room_id) == false ||
 		   is_valid_room_name(this->_room_name) == false ||
-		   is_valid_room_icon_url(this->_room_icon_url) == false){
+		   is_valid_icon_url(this->_icon_url) == false){
 			throw std::runtime_error("ChatRoomControlDeliveryMessage specific fields validation failed.");
 		}
 	}
@@ -186,10 +198,10 @@ bool ChatroomControlDeliveryMessage::is_valid_room_name(const std::string &room_
 	return true;
 }
 
-bool ChatroomControlDeliveryMessage::is_valid_room_icon_url(const std::string &room_icon_url) const
+bool ChatroomControlDeliveryMessage::is_valid_icon_url(const std::string &icon_url) const
 {
-	if (room_icon_url.empty() || room_icon_url.size() > 200) {
-		LOG_ERROR("dst chatroom icon url is invalid. dst chatroom icon url byte size : {}", room_icon_url.size());
+	if (icon_url.empty() || icon_url.size() > 200) {
+		LOG_ERROR("dst chatroom icon url is invalid. dst chatroom icon url byte size : {}", icon_url.size());
 		return false;
 	}
 	return true;

@@ -103,12 +103,12 @@ std::unique_ptr<MessageBase> ChatMessage::create_instance(const json &message) c
 	}
 	catch (const std::runtime_error& re)
 	{
-		LOG_ERROR("Runtime error deserializing ChatMessage: {}", re.what());
+		LOG_ERROR("[ChatMessage] Runtime error deserializing ChatMessage: {}", re.what());
 		return nullptr;
 	}
 	catch (const std::exception& e)
 	{
-		LOG_ERROR("Error deserializing ChatMessage: {}", e.what());
+		LOG_ERROR("[ChatMessage] Error deserializing ChatMessage: {}", e.what());
 		return nullptr;
 	}
 }
@@ -169,12 +169,12 @@ bool ChatMessage::validate_payload(const json &message) const
 	}
 	catch(const std::runtime_error& re)
 	{
-		LOG_ERROR("Runtime error : {}", re.what());
+		LOG_ERROR("[ChatMessage] Runtime error : {}", re.what());
 		return false;
 	}
 	catch(const std::exception& e)
 	{
-		LOG_ERROR("Exception : {}", e.what());
+		LOG_ERROR("[ChatMessage] Exception : {}", e.what());
 		return false;
 	}
 	
@@ -190,7 +190,7 @@ bool ChatMessage::validate_value() const
 			is_valid_sender_uid(this->_sender_uid) == true &&
 			is_valid_content(this->_content) == true)
 		{
-			spdlog::debug("ChatMessage value validation succeeded.");
+			LOG_DEBUG("[ChatMessage] ChatMessage value validation succeeded.");
 			return true;
 		}else{
 			throw std::runtime_error("ChatMessage value validation failed.");
@@ -198,7 +198,7 @@ bool ChatMessage::validate_value() const
 	}
 	catch(const std::exception& e)
 	{
-		LOG_ERROR("Value validation failed: {}", e.what());
+		LOG_ERROR("[ChatMessage] Value validation failed: {}", e.what());
 		return false;
 	}
 	
@@ -208,7 +208,7 @@ bool ChatMessage::is_valid_room_id(const std::string &room_id) const
 {
 	//dst_idが32byteではない場合
 	if (room_id.size() != 32) {
-		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {}", room_id.size());
+		LOG_ERROR("[ChatMessage] dst chatroom id is invalid. dst chatroom id byte size : {}", room_id.size());
 		return false;
 	}
 	return true;
@@ -223,7 +223,7 @@ bool ChatMessage::is_valid_mention_ids(const std::vector<std::string>& mention_i
 	// 各メンションIDが28byteであることを確認
 	for (const auto& mention_id : mention_ids) {
 		if (mention_id.size() != 28) {
-			LOG_ERROR("mention id is invalid. mention id byte size : {}", mention_id.size());
+			LOG_ERROR("[ChatMessage] mention id is invalid. mention id byte size : {}", mention_id.size());
 			return false;
 		}
 	}
@@ -234,7 +234,7 @@ bool ChatMessage::is_valid_sender_uid(const std::string& sender_uid) const
 {
 	//dst_idが28byteではない場合
 	if (sender_uid.size() != 28) {
-		LOG_ERROR("sender id is invalid. src user id byte size : {}", sender_uid.size());
+		LOG_ERROR("[ChatMessage] sender uid is invalid. src user id byte size : {}", sender_uid.size());
 		return false;
 	}
 	return true;
@@ -243,7 +243,7 @@ bool ChatMessage::is_valid_sender_uid(const std::string& sender_uid) const
 bool ChatMessage::is_valid_content(const std::string& content) const
 {
 	if (content.size() <= 0) {
-		LOG_ERROR("content is invalid. content byte size : {}", content.size());
+		LOG_ERROR("[ChatMessage] content is invalid. content byte size : {}", content.size());
 		return false;
 	}
 	return true;

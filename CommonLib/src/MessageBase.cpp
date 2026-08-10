@@ -57,8 +57,12 @@ MessageBase::MessageType MessageBase::parse_message_type(const std::string& mess
             return MessageBase::MessageType::SESSION_RESPONSE;
         } else if (message_type_str == "INCLIMENTAL_SEARCH") {
             return MessageBase::MessageType::INCLIMENTAL_SEARCH;
-        } else if (message_type_str == "SETTING_CONTROL") {
-            return MessageBase::MessageType::SETTING_CONTROL;
+        } else if (message_type_str == "USER_SETTING_CONTROL") {
+            return MessageBase::MessageType::USER_SETTING_CONTROL;
+        } else if (message_type_str == "USER_SEARCH_REQUEST") {
+            return MessageBase::MessageType::USER_SEARCH_REQUEST;
+        } else if (message_type_str == "USER_SEARCH_RESPONSE") {
+            return MessageBase::MessageType::USER_SEARCH_RESPONSE;
         } else {
             throw std::invalid_argument("Unknown message type string: " + message_type_str);
         }
@@ -69,30 +73,49 @@ std::string MessageBase::message_type_to_string(const MessageBase::MessageType &
     switch (message_type) {
         case MessageBase::MessageType::CHAT_MESSAGE:
             return "CHAT_MESSAGE";
+            break;
         case MessageBase::MessageType::CHAT_ACK:
             return "CHAT_ACK";
+            break;
         case MessageBase::MessageType::CHAT_DELIVERY:
             return "CHAT_DELIVERY";
+            break;
         case MessageBase::MessageType::CHATROOM_CONTROL:
             return "CHATROOM_CONTROL";
+            break;
         case MessageBase::MessageType::CHATROOM_CONTROL_ACK:
             return "CHATROOM_CONTROL_ACK";
+            break;
         case MessageBase::MessageType::CHATROOM_CONTROL_DELIVERY:
             return "CHATROOM_CONTROL_DELIVERY";
+            break;
         case MessageBase::MessageType::HEARTBEAT_MESSAGE:
             return "HEARTBEAT_MESSAGE";
+            break;
         case MessageBase::MessageType::AUTHENTICATION_REQUEST:
             return "AUTHENTICATION_REQUEST";
+            break;
         case MessageBase::MessageType::AUTHENTICATION_RESPONSE:
             return "AUTHENTICATION_RESPONSE";
+            break;
         case MessageBase::MessageType::SESSION_REQUEST:
             return "SESSION_REQUEST";
+            break;
         case MessageBase::MessageType::SESSION_RESPONSE:
             return "SESSION_RESPONSE";
+            break;
         case MessageBase::MessageType::INCLIMENTAL_SEARCH:
             return "INCLIMENTAL_SEARCH";
-        case MessageBase::MessageType::SETTING_CONTROL:
-            return "SETTING_CONTROL";
+            break;
+        case MessageBase::MessageType::USER_SETTING_CONTROL:
+            return "USER_SETTING_CONTROL";
+            break;
+        case MessageBase::MessageType::USER_SEARCH_REQUEST:
+            return "USER_SEARCH_REQUEST";
+            break;
+        case MessageBase::MessageType::USER_SEARCH_RESPONSE:
+            return "USER_SEARCH_RESPONSE";
+            break;
         default:
             LOG_ERROR("Unknown MessageType enum value.");
             break;

@@ -9,8 +9,8 @@
 #include "LogHandler.hpp"
 
 class UserRepositoryHandler;
-class RedisClient;
-class MySQLClient;
+class RedisAdapter;
+class MySQLAdapter;
 class ServerTime;
 
 // セッション検証結果
@@ -50,8 +50,8 @@ public:
      */
     SessionHandler(
         std::shared_ptr<UserRepositoryHandler> repository,
-        std::shared_ptr<RedisClient> redis_client,
-        std::shared_ptr<MySQLClient> mysql_client,
+        std::shared_ptr<RedisAdapter> redis_client,
+        std::shared_ptr<MySQLAdapter> mysql_client,
         std::shared_ptr<ServerTime> server_time
     );
 
@@ -123,8 +123,8 @@ public:
 
 private:
     std::shared_ptr<UserRepositoryHandler> _repository;
-    std::shared_ptr<RedisClient> _redis_client;
-    std::shared_ptr<MySQLClient> _mysql_client;
+    std::shared_ptr<RedisAdapter> _redis_adapter;
+    std::shared_ptr<MySQLAdapter> _mysql_adapter;
     std::shared_ptr<ServerTime> _server_time;
 
     // JWT configuration

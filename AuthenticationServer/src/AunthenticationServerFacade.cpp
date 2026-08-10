@@ -11,13 +11,13 @@ AunthenticationServerFacade::AunthenticationServerFacade()
 	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
 	_protocol_handler = std::make_unique<ProtocolHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
-	_redis_client = std::make_unique<RedisClient>();
+	_redis_adapter = std::make_unique<RedisAdapter>();
 	_token_handler = std::make_unique<TokenHandler>();
 	
 	if (_socket_handler == nullptr
 		|| _thread_pool_handler == nullptr
 		|| _protocol_handler == nullptr
-		|| _redis_client == nullptr
+		|| _redis_adapter == nullptr
 		|| _token_handler == nullptr)
 	{
 		LOG_ERROR("Failed to initialize AunthenticationServerFacade components. Please check the configuration and try again.");
@@ -269,7 +269,7 @@ bool AunthenticationServerFacade::verify_auth_process(const std::string &token, 
 	// 検証を実施し、トークンが有効な場合の処理
 	if (this->_token_handler->verify_token(token, uid, expire) == true)
 	{
-		if (this->_redis_client->save_session(uid, token, expire, ttl) == true)
+		if (this->_redis_adapter->save_session(uid, token, expire, ttl) == true)
 		{
 			spdlog::info("Session saved in Redis for CID: {} with TTL: {}.", uid, ttl);
 			return true;

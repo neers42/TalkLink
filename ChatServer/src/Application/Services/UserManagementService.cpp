@@ -2,21 +2,17 @@
 
 // Constructor
 UserManagementService::UserManagementService(
-    std::shared_ptr<MySQLClient> mysql_client,
-    std::shared_ptr<RedisClient> redis_client,
     std::shared_ptr<ServerTime> server_time,
     std::shared_ptr<SessionHandler> session_handler,
     std::shared_ptr<UserRepositoryHandler> repository_handler,
     std::shared_ptr<CommunicationHandler> communication_handler
   )
-    : _mysql_client(mysql_client),
-    _redis_client(redis_client), 
-    _server_time(server_time),
-    _session_handler(session_handler),
-    _repository(repository_handler),
-    _communication(communication_handler)
+    : _server_time(std::move(server_time)),
+    _session_handler(std::move(session_handler)),
+    _repository(std::move(repository_handler)),
+    _communication(std::move(communication_handler))
 {
-    if (!_repository || !_communication || !_session_handler || !_mysql_client || !_redis_client || !_server_time) {
+    if (!_repository || !_communication || !_session_handler || !_server_time) {
         throw std::runtime_error("Failed to initialize UserManagementService dependencies");
     }
     
@@ -152,7 +148,7 @@ void UserManagementService::start_heartbeat_monitoring() {
         
         // 定期的なハートビート監視をバックグラウンドで開始
         // TODO: 実際のタイマータスクまたはスレッドプールでの実装
-        // 現在は手動でcleanupInactiveClients()を呼び出すことを想定
+        // 現在は手動でcleanup_inactive_users()を呼び出すことを想定
         
         LOG_INFO("[UserManagementService] Heartbeat monitoring system started successfully");
         
@@ -315,6 +311,57 @@ bool UserManagementService::send_session_response(
     }
 }
 
+bool UserManagementService::send_user_search_response(
+    const std::unique_ptr<UserSearchRequestMessage>& user_search_request,
+    const std::vector<UserInfo> &user_infos,
+    const std::string &error_message,
+    socket_t socket)
+{
+    try {
+        if (user_search_request == nullptr) {
+            LOG_ERROR("[UserManagementService] UserSearchRequestMessage is null");
+            return false;
+        }
+
+        json search_results = json::array();
+        for (const auto& info : user_infos) {
+            json entry;
+            entry["id"] = info.uid;
+            entry["name"] = info.name;
+            entry["icon_url"] = info.icon_url;
+            search_results.push_back(entry);
+        }
+
+        // UserSearchResponseMessageを生成
+        auto user_search_response = std::make_unique<UserSearchResponseMessage>(
+            user_search_request->get_common_fields(),
+            search_results,
+            error_message
+        );
+        
+        // シリアライズして送信
+        json user_search_response_json = MessageBase::serialize_message(user_search_response);
+        
+        if (user_search_response_json.empty()) {
+            LOG_ERROR("[UserManagementService] UserSearchResponse message serialization failed");
+            return false;
+        }
+
+        bool send_success = _communication->send_message(socket, user_search_response_json);
+        
+        if (send_success) {
+            LOG_INFO("[UserManagementService] UserSearchResponse sent successfully to socket: {}", socket);
+            return true;
+        } else {
+            LOG_ERROR("[UserManagementService] Failed to send UserSearchResponse to socket: {}", socket);
+            return false;
+        }
+    }catch (const std::exception& e) {
+        LOG_ERROR("[UserManagementService] Exception in send_user_search_response for socket {}: {}", socket, e.what());
+        return false;
+    }
+}
+
 bool UserManagementService::process_session_request(const json &session_data, socket_t socket)
 {
     try{
@@ -335,4 +382,30 @@ bool UserManagementService::process_session_request(const json &session_data, so
         LOG_ERROR("[UserManagementService] Exception in process_session_request for socket {}: {}", socket, e.what());
         return false;
     }
+}
+
+bool UserManagementService::process_user_search(const json& query_data, socket_t socket)
+{
+    try
+    {
+        LOG_INFO("[UserManagementService] Processing user search for socket: {}", socket);
+        
+        //user search requestメッセージの作成
+        auto user_search_request = MessageBase::deserialize_message<UserSearchRequestMessage>(query_data);
+        if(user_search_request == nullptr) {
+            throw std::runtime_error("UserSearchRequestMessage deserialization failed. Message is null.");
+        }
+
+        //DBからユーザーの情報を検索
+        auto user_infos = _repository->search_users(user_search_request->get_query());
+
+        // レスポンスの送信
+        bool response_sent = send_user_search_response(user_search_request, user_infos.user_infos, user_infos.error_message, socket);
+        return response_sent;
+    }
+    catch(const std::exception& e)
+    {
+        LOG_ERROR("[UserManagementService] Exception in process_user_search for socket {}: {}", socket, e.what());
+    }
+    return false;
 }

@@ -1,4 +1,22 @@
 #include "TokenHandler.hpp"
+
+namespace {
+std::uint64_t get_exp_leeway_seconds() {
+    constexpr std::uint64_t kDefaultLeewaySec = 60;
+    const char* raw = std::getenv("JWT_EXP_LEEWAY_SEC");
+    if (raw == nullptr) {
+        return kDefaultLeewaySec;
+    }
+
+    try {
+        return std::stoull(raw);
+    } catch (...) {
+        spdlog::warn("Invalid JWT_EXP_LEEWAY_SEC value: {}. Fallback to {} sec.", raw, kDefaultLeewaySec);
+        return kDefaultLeewaySec;
+    }
+}
+}
+
 TokenHandler::TokenHandler() {
     // 必要なら初期化処理を書く
 }
@@ -29,12 +47,13 @@ bool TokenHandler::verify_token(const std::string &token, std::string &uid, std:
             return false; // Failed to read the PEM file
         }else{
             spdlog::debug("PEM file content read successfully for KID: {}", kid);
-            spdlog::debug("PEM file content: \n{}", rsa_pub_key);
         }
+        const auto leeway_sec = get_exp_leeway_seconds();
         auto verify = jwt::verify()
                           .allow_algorithm(jwt::algorithm::rs256(rsa_pub_key, "", "", ""))
                           .with_issuer("https://securetoken.google.com/talklink-8b0d0")
-                          .with_audience("talklink-8b0d0");
+                          .with_audience("talklink-8b0d0")
+                          .leeway(leeway_sec);
 
         verify.verify(decoded_token); // Verify the token
 
@@ -54,7 +73,21 @@ bool TokenHandler::verify_token(const std::string &token, std::string &uid, std:
         }
         return true;
     } catch (const std::exception& e) {
-        LOG_ERROR("exception: {}", e.what());
+        try {
+            auto decoded_token = jwt::decode(token);
+            if (decoded_token.has_expires_at()) {
+                const auto exp_tp = decoded_token.get_expires_at();
+                const auto now_tp = std::chrono::system_clock::now();
+                const auto exp_epoch = std::chrono::duration_cast<std::chrono::seconds>(exp_tp.time_since_epoch()).count();
+                const auto now_epoch = std::chrono::duration_cast<std::chrono::seconds>(now_tp.time_since_epoch()).count();
+                const auto delta_sec = now_epoch - exp_epoch;
+                LOG_ERROR("JWT verify failed: {}, exp_epoch={}, now_epoch={}, now-exp={} sec", e.what(), exp_epoch, now_epoch, delta_sec);
+            } else {
+                LOG_ERROR("JWT verify failed: {}", e.what());
+            }
+        } catch (...) {
+            LOG_ERROR("JWT verify failed: {}", e.what());
+        }
         return false; // Token is invalid
     }
 }

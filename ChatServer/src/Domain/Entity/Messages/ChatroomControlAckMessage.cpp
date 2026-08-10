@@ -1,7 +1,7 @@
 ﻿#include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
 
 ChatroomControlAckMessage::ChatroomControlAckMessage() 
-	: MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list()
+	: MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list(), _room_sequence(0)
 {
 } 
 ChatroomControlAckMessage::ChatroomControlAckMessage(
@@ -9,12 +9,14 @@ ChatroomControlAckMessage::ChatroomControlAckMessage(
     MessageSendStatus send_status,
     const std::string &room_id,
     uint64_t send_message_id,
-    const std::vector<std::string> &unsend_uid_list)
+    const std::vector<std::string> &unsend_uid_list,
+    std::uint64_t room_sequence)
     : MessageBase(common_fields, MessageBase::MessageType::CHATROOM_CONTROL_ACK),
 	  _message_id(send_message_id),
       _send_status(send_status),
       _room_id(room_id),
-      _unsend_uid_list(unsend_uid_list)
+      _unsend_uid_list(unsend_uid_list),
+      _room_sequence(room_sequence)
 {
 }
 
@@ -32,8 +34,6 @@ json ChatroomControlAckMessage::serialize_payload() const
 		if(validate_payload() == false) {
 			throw std::runtime_error("ChatRoomControlAckMessage specific fields validation failed during serialization.");
 		}else{
-			specific_fields["content_type"] = "NOTIFICATION";
-			specific_fields["mt"] = this->get_message_type();
 			switch (this->_send_status)
 			{
 				case MessageSendStatus::SEND_SUCCESS:
@@ -51,6 +51,7 @@ json ChatroomControlAckMessage::serialize_payload() const
 			}
 			specific_fields["room_id"] = this->_room_id;
 			specific_fields["send_message_id"] = this->get_message_id();
+			specific_fields["room_sequence"] = this->_room_sequence;
 			if (this->_unsend_uid_list.size() > 0) {
 				specific_fields["unsend_uid_list"] = this->_unsend_uid_list;
 			}else if(this->_unsend_uid_list.size() == 0){
@@ -71,7 +72,7 @@ json ChatroomControlAckMessage::serialize_payload() const
 	}
 	catch (const std::exception& e)
 	{
-		LOG_ERROR("Error deserializing ChatRoomControlAck message: {}", e.what());
+		LOG_ERROR("Error serializing ChatRoomControlAckMessage: {}", e.what());
 		return json();
 	}
 }

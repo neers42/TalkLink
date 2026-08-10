@@ -3,20 +3,18 @@
 MessageDeliveryService::MessageDeliveryService(
     std::shared_ptr<CommunicationHandler> communication_handler,
     std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
-    std::shared_ptr<UserRepositoryHandler> user_repository_handler,
-    std::shared_ptr<MySQLClient> mysql_client
+    std::shared_ptr<UserRepositoryHandler> user_repository_handler
 ) :
     _communication_handler(std::move(communication_handler)),
     _chatroom_repository_handler(std::move(chatroom_repository_handler)),
-    _user_repository_handler(std::move(user_repository_handler)),
-    _mysql_client(std::move(mysql_client))
+    _user_repository_handler(std::move(user_repository_handler))
 {
     if (!_communication_handler || !_chatroom_repository_handler || 
-        !_user_repository_handler || !_mysql_client) {
+        !_user_repository_handler) {
         throw std::invalid_argument("All dependencies must be non-null for MessageDeliveryService");
     }
     
-    LOG_INFO("MessageDeliveryService initialized successfully");
+    LOG_INFO("[MessageDeliveryService] MessageDeliveryService initialized successfully");
 }
 
 IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
@@ -29,7 +27,7 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
     
     try {
         if (sender_socket == INVALID_SOCKET_FD) {
-            LOG_ERROR("Sender with ID '{}' not found. Cannot send message.", sender_uid);
+            LOG_ERROR("[MessageDeliveryService] Sender with UID '{}' not found. Cannot send message.", sender_uid);
             result.success = false;
             result.error_message = "Sender not found";
             return result;
@@ -38,8 +36,9 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
         // ルームメンバー取得
         auto receivers_uids = _chatroom_repository_handler->get_user_infos_by_chatroom_id(room_id);
         
+        //現在接続中であるメンバーがいない場合はエラーではないため、成功とする
         if (receivers_uids.empty()) {
-            LOG_WARNING("No members found in room: {}", room_id);
+            LOG_WARNING("[MessageDeliveryService] No members for connection found in room: {}", room_id);
             result.success = true; // エラーではない
             return result;
         }
@@ -64,19 +63,19 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
             
             if (send_success) {
                 result.sent_count++;
-                LOG_DEBUG("[ChatService] Message sent successfully to user: {}", uid);
+                LOG_DEBUG("[MessageDeliveryService] Message sent successfully to user: {}", uid);
             } else {
                 result.unsent_uids.push_back(uid);
-                LOG_WARNING("[ChatService] Failed to send message to user: {}", uid);
+                LOG_WARNING("[MessageDeliveryService] Failed to send message to user: {}", uid);
             }
         }
         if(result.unsent_uids.size() > 0){
             result.success = false;
             result.error_message = "Failed to send message to some users, unsent_uids: " + std::to_string(result.unsent_uids.size());
-            LOG_WARNING("[ChatService] Message delivery completed with some failures. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
+            LOG_WARNING("[MessageDeliveryService] Message delivery completed with some failures. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
         } else {
             result.success = true;
-            LOG_INFO("[ChatService] Message delivery completed. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
+            LOG_INFO("[MessageDeliveryService] Message delivery completed. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
         }
         
         
@@ -102,7 +101,7 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_p2p(
         auto target_user = _user_repository_handler->get_user_by_id(target_uid);
         
         if (target_user == nullptr) {
-            LOG_WARNING("Target user '{}' not found for P2P message", target_uid);
+            LOG_WARNING("[MessageDeliveryService] Target user '{}' not found for P2P message", target_uid);
             result.unsent_uids.push_back(target_uid);
             result.success = false;
             return result;
@@ -113,10 +112,10 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_p2p(
         
         if (send_success) {
             result.sent_count = 1;
-            LOG_DEBUG("P2P message sent successfully to user: {}", target_uid);
+            LOG_DEBUG("[MessageDeliveryService] P2P message sent successfully to user: {}", target_uid);
         } else {
             result.unsent_uids.push_back(target_uid);
-            LOG_WARNING("Failed to send P2P message to user: {}", target_uid);
+            LOG_WARNING("[MessageDeliveryService] Failed to send P2P message to user: {}", target_uid);
         }
         
         result.success = send_success;
@@ -155,15 +154,15 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::broadcast(
             
             if (send_success) {
                 result.sent_count++;
-                LOG_DEBUG("Broadcast message sent successfully to user: {}", uid);
+                LOG_DEBUG("[MessageDeliveryService] Broadcast message sent successfully to user: {}", uid);
             } else {
                 result.unsent_uids.push_back(uid);
-                LOG_WARNING("Failed to send broadcast message to user: {}", uid);
+                LOG_WARNING("[MessageDeliveryService] Failed to send broadcast message to user: {}", uid);
             }
         }
         
         result.success = (result.unsent_uids.empty());
-        LOG_INFO("Broadcast delivery completed. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
+        LOG_INFO("[MessageDeliveryService] Broadcast delivery completed. Sent: {}, Unsent: {}", result.sent_count, result.unsent_uids.size());
         return result;
         
     } catch (const std::exception& e) {

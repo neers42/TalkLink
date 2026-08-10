@@ -16,7 +16,6 @@
 #include <sstream>
 #include <map>
 #include <unordered_map>
-// ネットワーク関連のヘッダー
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

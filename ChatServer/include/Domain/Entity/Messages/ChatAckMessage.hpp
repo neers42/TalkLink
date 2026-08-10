@@ -16,6 +16,7 @@ private:
 	MessageSendStatus _send_status;
 	std::string _room_id;
 	std::vector<std::string> _unsend_uid_list;
+	std::uint64_t _room_sequence;
 
 
 
@@ -27,7 +28,8 @@ public:
 		const uint64_t _send_mid,
 		const MessageSendStatus status,
 		const std::string& room_id,
-		const std::vector<std::string>& _unsend_uid_list);
+		const std::vector<std::string>& _unsend_uid_list,
+		const std::uint64_t room_sequence = 0);
 
     //デストラクタ
 	~ChatAckMessage();
@@ -37,6 +39,8 @@ public:
 	void set_send_status(const int status);
 	std::string get_room_id() const;
 	void set_room_id(const std::string& room_id);
+	std::uint64_t get_room_sequence() const;
+	void set_room_sequence(const std::uint64_t room_sequence);
 
 	//ISendMessageの実装
 	json serialize_payload() const override;

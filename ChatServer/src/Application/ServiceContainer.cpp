@@ -10,8 +10,8 @@
 #include "Application/Services/IMessageDeliveryService.hpp"
 
 // Infrastructure
-#include "Infrastructure/MySQLClient.hpp"
-#include "Infrastructure/RedisClient.hpp"
+#include "Infrastructure/MySQLAdapter.hpp"
+#include "Infrastructure/RedisAdapter.hpp"
 #include "SocketHandler.hpp"
 #include "ProtocolHandler.hpp"
 #include "ServerTime.hpp"
@@ -20,6 +20,7 @@
 #include "Domain/ChatroomRepositoryHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
 #include "Domain/SessionHandler.hpp"
+#include "Domain/ChatroomSequenceHandler.hpp"
 
 #include <functional>
 #include <mutex>
@@ -47,8 +48,8 @@ void ServiceContainer::initialize() {
         // Phase 1: インフラストラクチャ層の共有リソースを初期化
         _server_time = std::make_shared<ServerTime>();
         _socket_handler = std::make_shared<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
-        _mysql_client = std::make_shared<MySQLClient>();
-        _redis_client = std::make_shared<RedisClient>();
+        _mysql_adapter = std::make_shared<MySQLAdapter>();
+        _redis_adapter = std::make_shared<RedisAdapter>();
         _protocol_handler = std::make_shared<ProtocolHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
         _thread_pool_handler = std::make_shared<ThreadPoolHandler>(10);
         
@@ -57,25 +58,26 @@ void ServiceContainer::initialize() {
         
         // Phase 3: データストレージを初期化
         _user_store = std::make_shared<UserAggregateStore>();
-        _chatroom_repository_handler = std::make_shared<ChatroomRepositoryHandler>();
-        _user_repository_handler = std::make_shared<UserRepositoryHandler>(_user_store);
+        _chatroom_repository_handler = std::make_shared<ChatroomRepositoryHandler>(_mysql_adapter);
+        _user_repository_handler = std::make_shared<UserRepositoryHandler>(_user_store, _mysql_adapter, _server_time);
         _communication_handler = std::make_shared<CommunicationHandler>(_user_store, _socket_handler, _protocol_handler);
         
         // Phase 3.5: ドメインハンドラーを初期化
-        _session_handler = std::make_shared<SessionHandler>(_user_repository_handler, _redis_client, _mysql_client, _server_time);
+        _session_handler = std::make_shared<SessionHandler>(_user_repository_handler, _redis_adapter, _mysql_adapter, _server_time);
+        _chatroom_sequence_handler = std::make_shared<ChatroomSequenceHandler>(_redis_adapter);
         
         // Phase 4: メッセージ配信サービス（仮実装）
-        _message_delivery_service = std::make_shared<MessageDeliveryService>(_communication_handler,_chatroom_repository_handler ,_user_repository_handler, _mysql_client); 
+        _message_delivery_service = std::make_shared<MessageDeliveryService>(_communication_handler,_chatroom_repository_handler ,_user_repository_handler); 
         
         // Phase 5: ビジネスサービスを初期化
         _user_management_service = std::make_shared<UserManagementService>(
-            _mysql_client, _redis_client, _server_time, _session_handler, _user_repository_handler, _communication_handler);
+            _server_time, _session_handler, _user_repository_handler, _communication_handler);
             
         _chatroom_management_service = std::make_shared<ChatroomManagementService>(
-            _mysql_client, _redis_client, _message_delivery_service, _chatroom_repository_handler);
+            _message_delivery_service, _chatroom_repository_handler, _chatroom_sequence_handler);
             
         _chat_service = std::make_shared<ChatService>(
-            _mysql_client, _redis_client, _message_delivery_service, _user_repository_handler);
+            _message_delivery_service, _user_repository_handler, _chatroom_repository_handler, _chatroom_sequence_handler);
         
         _request_dispatcher_service = std::make_shared<RequestDispatcherService>(
             _socket_handler, _thread_pool_handler, _communication_handler);
@@ -88,7 +90,8 @@ void ServiceContainer::initialize() {
             _task_management_service,
             _request_dispatcher_service,
             _user_management_service,
-            _chat_service
+            _chat_service,
+            _chatroom_management_service
         );
         
         _initialized = true;
@@ -110,18 +113,18 @@ std::shared_ptr<SocketHandler> ServiceContainer::get_socket_handler() {
     return this->_socket_handler;
 }
 
-std::shared_ptr<MySQLClient> ServiceContainer::get_mysql_client() {
+std::shared_ptr<MySQLAdapter> ServiceContainer::get_mysql_adapter() {
     if (!_initialized) {
         throw std::runtime_error("ServiceContainer not initialized");
     }
-    return this->_mysql_client;
+    return this->_mysql_adapter;
 }
 
-std::shared_ptr<RedisClient> ServiceContainer::get_redis_client() {
+std::shared_ptr<RedisAdapter> ServiceContainer::get_redis_adapter() {
     if (!_initialized) {
         throw std::runtime_error("ServiceContainer not initialized");
     }
-    return this->_redis_client;
+    return this->_redis_adapter;
 }
 
 std::shared_ptr<ProtocolHandler> ServiceContainer::get_protocol_handler() {
@@ -181,6 +184,13 @@ std::shared_ptr<SessionHandler> ServiceContainer::get_session_handler() {
     }
     return _session_handler;
 } 
+
+std::shared_ptr<ChatroomSequenceHandler> ServiceContainer::get_chatroom_sequence_handler() {
+    if (!_initialized || !_chatroom_sequence_handler) {
+        throw std::runtime_error("ServiceContainer not initialized or ChatroomSequenceHandler not available");
+    }
+    return _chatroom_sequence_handler;
+}
 
 // アプリケーションサービスのゲッター
 std::shared_ptr<UserManagementService> ServiceContainer::get_user_management_service() {
@@ -250,6 +260,7 @@ void ServiceContainer::cleanup() {
         _user_store.reset();
         _communication_handler.reset();
         _session_handler.reset();
+        _chatroom_sequence_handler.reset();
         
         // メッセージ配信サービスをクリーンアップ
         _message_delivery_service.reset();
@@ -260,8 +271,8 @@ void ServiceContainer::cleanup() {
         // インフラストラクチャをクリーンアップ (初期化の逆順で実施)
         _thread_pool_handler.reset();
         _protocol_handler.reset();
-        _redis_client.reset();
-        _mysql_client.reset();
+        _redis_adapter.reset();
+        _mysql_adapter.reset();
         _socket_handler.reset();
         _server_time.reset();
         

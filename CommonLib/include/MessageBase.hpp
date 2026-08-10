@@ -22,7 +22,9 @@ public :
         SESSION_REQUEST,
         SESSION_RESPONSE,
         INCLIMENTAL_SEARCH,
-        SETTING_CONTROL
+        USER_SETTING_CONTROL,
+        USER_SEARCH_REQUEST,
+        USER_SEARCH_RESPONSE
     };
 
     struct CommonField

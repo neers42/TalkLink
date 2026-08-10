@@ -25,10 +25,9 @@ private:
 	uint64_t _message_id;	// メッセージID
 	std::string _sender_uid;
 	std::string _room_id;	//メンバーを追加するチャットルームID
-	std::vector<std::string> _add_member_list;	//追加メンバーリスト
-	std::vector<std::string> _remove_member_list;	//削除メンバーリスト
+	std::vector<std::string> _member_list;	//メンバーリスト
 	std::string _room_name;	//チャットルーム名
-	std::string _room_image_url;	//チャットルームの画像
+	std::string _icon_url;	//ルームアイコンの画像
 	RoomAction _room_action;	//チャットルームのアクション
 	std::string _message_content;	//メッセージ内容(JSON形式)
 
@@ -41,11 +40,10 @@ public:
 		const MessageBase::CommonField& common_fields,
 		const uint64_t mid,
 		const std::string& sender_uid,
-		const std::string& room_id_add_member,
-		const std::vector<std::string>& add_member_list,
-		const std::vector<std::string>& remove_member_list,
+		const std::string& room_id,
+		const std::vector<std::string>& member_list,
 		const std::string& room_name,
-		const std::string& room_image,
+		const std::string& icon_url,
 		const RoomAction& room_action,
 		const std::string& message_content);
 	//デストラクタ
@@ -55,10 +53,9 @@ public:
 	uint64_t get_message_id() const;
 	std::string get_sender_uid() const;
 	std::string get_room_id() const;
-	std::vector<std::string> get_add_member_list() const;
-	std::vector<std::string> get_remove_member_list() const;
+	std::vector<std::string> get_member_list() const;
 	std::string get_room_name() const;
-	std::string get_room_image_url() const;
+	std::string get_icon_url() const;
 	RoomAction get_room_action() const;
 	std::string get_message_content() const;
 
@@ -71,7 +68,7 @@ private:
 	RoomAction parse_room_action(const std::string& action_str) const;
 	bool is_valid_room_id(const std::string& room_id, RoomAction room_action) const;
 	bool is_valid_room_name(const std::string& room_name) const;
-	bool is_valid_room_image_url(const std::string& room_image_url) const;
+	bool is_valid_icon_url(const std::string& icon_url) const;
 
 };
 #endif // CHATROOMCONTROLMESSAGE_HPP

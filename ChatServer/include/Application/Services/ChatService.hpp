@@ -6,9 +6,10 @@
 #include "Domain/Entity/Messages/ChatDeliveryMessage.hpp"
 #include "Domain/Entity/Messages/ChatAckMessage.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
-#include "Infrastructure/MySQLClient.hpp"
-#include "Infrastructure/RedisClient.hpp"
+#include "Domain/ChatroomRepositoryHandler.hpp"
 #include "Application/Services/IMessageDeliveryService.hpp"
+
+class ChatroomSequenceHandler;
 
 // チャットメッセージ処理結果
 struct ChatMessageResult {
@@ -21,10 +22,10 @@ struct ChatMessageResult {
 class ChatService {
 private:
     // 依存関係 - インターフェースのみに依存
-    std::shared_ptr<MySQLClient> _mysql_client;
-    std::shared_ptr<RedisClient> _redis_client;
     std::shared_ptr<IMessageDeliveryService> _message_delivery_service;
     std::shared_ptr<UserRepositoryHandler> _user_repository_handler;
+    std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
+    std::shared_ptr<ChatroomSequenceHandler> _chatroom_sequence_handler;
     
     // 設定
     static constexpr int MAX_RESEND_COUNT = 3;
@@ -33,17 +34,14 @@ private:
 public:
     // コンストラクタ・デストラクタ
     explicit ChatService(
-        std::shared_ptr<MySQLClient> mysql_client,
-        std::shared_ptr<RedisClient> redis_client,
         std::shared_ptr<IMessageDeliveryService> message_delivery_service,
-        std::shared_ptr<UserRepositoryHandler> user_repository_handler
+        std::shared_ptr<UserRepositoryHandler> user_repository_handler,
+        std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
+        std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler
     );
     ~ChatService();
     
     // ==================== チャットメッセージ処理 ====================
-    
-    // チャットメッセージの処理（データベース保存）
-    bool process_save_message(const std::unique_ptr<ChatMessage>& chat_message, const json& original_json);
     
     // チャットメッセージの配信処理
     IMessageDeliveryService::DeliveryResult deliver_chat_message(const std::unique_ptr<ChatMessage>& chat_message, socket_t sender_socket);
@@ -70,14 +68,13 @@ public:
 private:
     // ==================== 内部ヘルパーメソッド ====================
     
-    // メッセージバリデーション
-    bool validate_chat_message(const std::unique_ptr<ChatMessage>& chat_message);
-    
     // データベース操作ヘルパー
-    bool save_message_to_database(const std::unique_ptr<ChatMessage>& chat_message, const json& original_json);
+    bool save_message_to_database(const std::unique_ptr<ChatMessage>& chat_message, const json& original_json, std::uint64_t room_sequence = 0);
     
-    // 再送処理の詳細実装
+    // 再送処理
     bool execute_message_resend(const json& message_json, const std::vector<std::string>& target_uids);
+
+    bool advance_room_sequence(const std::string& room_id);
     
     // エラーハンドリング
     void handle_processing_error(const std::exception& e, const std::string& operation_context);

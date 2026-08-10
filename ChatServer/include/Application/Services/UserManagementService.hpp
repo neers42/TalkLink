@@ -1,8 +1,6 @@
 #ifndef USERMANAGEMENTSERVICE_HPP
 #define USERMANAGEMENTSERVICE_HPP
 #include "Utils/common.hpp"
-#include "Infrastructure/MySQLClient.hpp"
-#include "Infrastructure/RedisClient.hpp"
 #include "Domain/CommunicationHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
 #include "Domain/SessionHandler.hpp"
@@ -10,6 +8,8 @@
 #include "Domain/UserAggregateStore.hpp"
 #include "Domain/Entity/Messages/SessionRequestMessage.hpp"
 #include "Domain/Entity/Messages/SessionResponseMessage.hpp"
+#include "Domain/Entity/Messages/UserSearchRequestMessage.hpp"
+#include "Domain/Entity/Messages/UserSearchResponseMessage.hpp"
 
 // ChatServiceから共通のSessionResult構造体を使用
 struct SessionResult {
@@ -26,15 +26,13 @@ private:
     std::shared_ptr<SessionHandler> _session_handler;
     
     // ビジネス層のインフラのみ
-    std::shared_ptr<MySQLClient> _mysql_client;  // DB操作
-    std::shared_ptr<RedisClient> _redis_client;  // セッション管理・キャッシュ
+    std::shared_ptr<MySQLAdapter> _mysql_adapter;  // DB操作
+    std::shared_ptr<RedisAdapter> _redis_adapter;  // セッション管理・キャッシュ
     std::shared_ptr<ServerTime> _server_time;    // 時刻管理
     
     
 public:
     UserManagementService(
-        std::shared_ptr<MySQLClient> mysql_client,
-        std::shared_ptr<RedisClient> redis_client,
         std::shared_ptr<ServerTime> server_time,
         std::shared_ptr<SessionHandler> session_handler,
         std::shared_ptr<UserRepositoryHandler> repository_handler,
@@ -51,6 +49,14 @@ public:
     void start_heartbeat_monitoring();
     void cleanup_inactive_users();
     
+    // メッセージ処理
+    bool process_session_request(const json& session_data, socket_t socket);
+    bool process_user_search(const json& query_data, socket_t socket);
+    
+private:
+    bool can_accept_new_connection();  // ビジネスルールのみ
+    void log_connection_event(const std::string& uid, const std::string& event);
+
     // Session management operations (ChatServiceから移行)
     SessionResult authenticate_session(const std::unique_ptr<SessionRequestMessage>& session_message, socket_t socket);
     bool send_session_response(
@@ -60,11 +66,13 @@ public:
         const std::string& uid
     );
 
-    bool process_session_request(const json& session_data, socket_t socket);
-    
-private:
-    bool can_accept_new_connection();  // ビジネスルールのみ
-    void log_connection_event(const std::string& uid, const std::string& event);
+    bool send_user_search_response(
+        const std::unique_ptr<UserSearchRequestMessage>& user_search_request,
+        const std::vector<UserInfo>& user_infos,
+        const std::string& error_message,
+        socket_t socket
+    );
+
     
 
 };

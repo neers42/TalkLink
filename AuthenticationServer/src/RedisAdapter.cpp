@@ -1,6 +1,6 @@
-#include "RedisClient.hpp"
+#include "RedisAdapter.hpp"
 
-RedisClient::RedisClient()
+RedisAdapter::RedisAdapter()
 {
         char* env_host = nullptr;
     char* env_port = nullptr;
@@ -29,14 +29,14 @@ RedisClient::RedisClient()
     }
 }
 
-RedisClient::~RedisClient() 
+RedisAdapter::~RedisAdapter() 
 {
     if (this->_redis_helper) {
         this->_redis_helper->disconnect();
     }
 }
 
-bool RedisClient::save_session(const std::string &uid, const std::string &jwt_token, std::uint64_t expire, std::uint64_t& ttl)
+bool RedisAdapter::save_session(const std::string &uid, const std::string &jwt_token, std::uint64_t expire, std::uint64_t& ttl)
 {
    
     std::string session_key = "session:" + uid;
@@ -67,12 +67,12 @@ bool RedisClient::save_session(const std::string &uid, const std::string &jwt_to
     return true;
 }
 
-bool RedisClient::get_session(const std::string &uid, std::string &jwt_token, std::uint64_t &expire)
+bool RedisAdapter::get_session(const std::string &uid, std::string &jwt_token, std::uint64_t &expire)
 {
     return false;
 }
 
-bool RedisClient::delete_session(const std::string &uid)
+bool RedisAdapter::delete_session(const std::string &uid)
 {
     return false;
 }

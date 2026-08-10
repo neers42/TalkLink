@@ -14,6 +14,7 @@ class TaskManagementService;
 class RequestDispatcherService;
 class UserManagementService;
 class ChatService;
+class ChatroomManagementService;
 
 // サーバー起動フェーズ定義
 enum class ServerStartupPhase {
@@ -61,7 +62,8 @@ public:
         std::shared_ptr<TaskManagementService> task_management_service,
         std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
         std::shared_ptr<UserManagementService> user_management_service,
-        std::shared_ptr<ChatService> chat_service
+        std::shared_ptr<ChatService> chat_service,
+        std::shared_ptr<ChatroomManagementService> chatroom_management_service
     );
     ~StartupService();
 
@@ -161,7 +163,7 @@ private:
     std::shared_ptr<RequestDispatcherService> _request_dispatcher_service;
     std::shared_ptr<UserManagementService> _user_management_service;
     std::shared_ptr<ChatService> _chat_service;
-    
+    std::shared_ptr<ChatroomManagementService> _chatroom_management_service;
     // 起動状態管理
     std::atomic<ServerStartupPhase> _current_phase{ServerStartupPhase::NOT_STARTED};
     mutable std::mutex _phase_mutex;

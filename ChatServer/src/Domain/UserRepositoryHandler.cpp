@@ -86,6 +86,7 @@ bool UserRepositoryHandler::remove_user(socket_t socket)
             user_ip_addr = it->second.ipv4_address;
             if (it->second.user) {
                 uid = it->second.user->get_id();
+                _mysql_adapter->update_last_login(uid, _server_time->get_current_time_to_seconds());
             }
         }
 
@@ -356,6 +357,38 @@ std::string UserRepositoryHandler::get_uid_by_socket(const std::shared_ptr<User>
         return "";
     }
 }
+
+SearchResult UserRepositoryHandler::search_users(const std::string &query)
+{
+    SearchResult result;
+    try
+    {
+        if (query.empty()) {
+            LOG_ERROR("[UserRepositoryHandler] Search query is empty");
+            result.error_message = "Search query cannot be empty";
+            return result;
+        }
+
+        // MySQLAdapterを使用してユーザー情報を検索
+        auto user_infos = this->_mysql_adapter->search_user_infos(query);
+
+        if (user_infos.empty()) {
+            LOG_INFO("[UserRepositoryHandler] No users found for query: {}", query);
+            result.error_message = "No users found";
+            return result;
+        }
+
+        LOG_INFO("[UserRepositoryHandler] Found {} users for query: {}", user_infos.size(), query);
+        result.user_infos = std::move(user_infos);
+        return result;
+    }
+    catch(const std::exception& e)
+    {
+        LOG_ERROR("[UserRepositoryHandler] Exception in search_users: {}", e.what());
+    }
+    
+    return SearchResult();
+} 
 
 // Collection queries
 size_t UserRepositoryHandler::get_connected_user_count() const

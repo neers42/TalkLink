@@ -80,6 +80,43 @@ bool RedisHelper::set_key_value(const std::string& key, const std::string& value
     return true;
 }
 
+bool RedisHelper::set_key_if_not_exists(const std::string& key, const std::string& value)
+{
+    if (_context == nullptr) {
+        LOG_ERROR("Redis context is null");
+        return false;
+    }
+
+    redisReply* reply = static_cast<redisReply*>(redisCommand(_context.get(), "SET %s %s NX", key.c_str(), value.c_str()));
+    if (!reply) {
+        LOG_ERROR("Redis command error: {}", _context && _context->errstr ? _context->errstr : "Unknown error");
+        return false;
+    }
+
+    const bool success = (reply->type == REDIS_REPLY_STATUS && reply->str && std::string(reply->str) == "OK");
+    freeReplyObject(reply);
+    return success;
+}
+
+bool RedisHelper::ensure_key_initialized(const std::string& key, const std::string& value)
+{
+    if (_context == nullptr) {
+        LOG_ERROR("Redis context is null");
+        return false;
+    }
+
+    redisReply* reply = static_cast<redisReply*>(redisCommand(_context.get(), "SET %s %s NX", key.c_str(), value.c_str()));
+    if (!reply) {
+        LOG_ERROR("Redis command error: {}", _context && _context->errstr ? _context->errstr : "Unknown error");
+        return false;
+    }
+
+    const bool success = (reply->type == REDIS_REPLY_STATUS && reply->str && std::string(reply->str) == "OK") ||
+                         reply->type == REDIS_REPLY_NIL;
+    freeReplyObject(reply);
+    return success;
+}
+
 std::string RedisHelper::get_key_value(const std::string& key)
 {
     if (_context == nullptr) {
@@ -279,4 +316,27 @@ bool RedisHelper::is_key_exists(const std::string &key)
     bool exists = (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1);
     freeReplyObject(reply);
     return exists;
+}
+
+bool RedisHelper::increment_key(const std::string& key, std::uint64_t& next_value)
+{
+    next_value = 0;
+
+    if (!this->_context) {
+        LOG_ERROR("Redis context is not initialized.");
+        return false;
+    }
+
+    redisReply* reply = static_cast<redisReply*>(redisCommand(this->_context.get(), "INCR %s", key.c_str()));
+    if (!reply) {
+        LOG_ERROR("Redis INCR command failed for key: {}", key);
+        return false;
+    }
+
+    const bool success = reply->type == REDIS_REPLY_INTEGER;
+    if (success) {
+        next_value = static_cast<std::uint64_t>(reply->integer);
+    }
+    freeReplyObject(reply);
+    return success;
 }

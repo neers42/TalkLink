@@ -4,9 +4,9 @@ RequestDispatcherService::RequestDispatcherService(
     std::shared_ptr<SocketHandler> socket_handler,
     std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
     std::shared_ptr<CommunicationHandler> communication_handler
-) : _socket_handler(socket_handler), 
-    _thread_pool_handler(thread_pool_handler),
-    _communication_handler(communication_handler)
+) : _socket_handler(std::move(socket_handler)), 
+    _thread_pool_handler(std::move(thread_pool_handler)),
+    _communication_handler(std::move(communication_handler))
 {
     if (!_socket_handler || !_thread_pool_handler || !_communication_handler) {
         throw std::runtime_error("RequestDispatcherService dependencies cannot be null");
@@ -135,8 +135,10 @@ MessageDispatchResult::Type RequestDispatcherService::determine_message_type(con
                 return MessageDispatchResult::Type::CHAT_MESSAGE;
             case MessageBase::MessageType::CHATROOM_CONTROL:
                 return MessageDispatchResult::Type::CHATROOM_CONTROL;
-            case MessageBase::MessageType::SETTING_CONTROL:
-                return MessageDispatchResult::Type::SETTING_CONTROL;
+            case MessageBase::MessageType::USER_SETTING_CONTROL:
+                return MessageDispatchResult::Type::USER_SETTING_CONTROL;
+            case MessageBase::MessageType::USER_SEARCH_REQUEST:
+                return MessageDispatchResult::Type::USER_SEARCH_REQUEST;
             default:
                 return MessageDispatchResult::Type::ERROR;
         }

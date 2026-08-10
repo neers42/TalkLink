@@ -16,13 +16,14 @@
 
 // Forward declarations
 class SocketHandler;
-class MySQLClient;
-class RedisClient;
+class MySQLAdapter;
+class RedisAdapter;
 class ProtocolHandler;
 class ServerTime;
 class ThreadPoolHandler;
 class IMessageDeliveryService;
 class SessionHandler;
+class ChatroomSequenceHandler;
 
 class ServiceContainer {
 public:
@@ -34,8 +35,8 @@ public:
     
     // 共有リソースのゲッター
     std::shared_ptr<SocketHandler> get_socket_handler();
-    std::shared_ptr<MySQLClient> get_mysql_client();
-    std::shared_ptr<RedisClient> get_redis_client();
+    std::shared_ptr<MySQLAdapter> get_mysql_adapter();
+    std::shared_ptr<RedisAdapter> get_redis_adapter();
     std::shared_ptr<ProtocolHandler> get_protocol_handler();
     std::shared_ptr<ServerTime> get_server_time();
     std::shared_ptr<ThreadPoolHandler> get_thread_pool_handler();
@@ -46,6 +47,7 @@ public:
     std::shared_ptr<ChatroomRepositoryHandler> get_chatroom_repository_handler();
     std::shared_ptr<CommunicationHandler> get_communication_handler();
     std::shared_ptr<SessionHandler> get_session_handler();
+    std::shared_ptr<ChatroomSequenceHandler> get_chatroom_sequence_handler();
     
     // アプリケーションサービスのゲッター
     std::shared_ptr<UserManagementService> get_user_management_service();
@@ -64,8 +66,8 @@ private:
     
     // 共有リソース (インフラストラクチャ層)
     std::shared_ptr<SocketHandler> _socket_handler;
-    std::shared_ptr<MySQLClient> _mysql_client;
-    std::shared_ptr<RedisClient> _redis_client;
+    std::shared_ptr<MySQLAdapter> _mysql_adapter;
+    std::shared_ptr<RedisAdapter> _redis_adapter;
     std::shared_ptr<ProtocolHandler> _protocol_handler;
     std::shared_ptr<ServerTime> _server_time;
     std::shared_ptr<ThreadPoolHandler> _thread_pool_handler;
@@ -77,6 +79,7 @@ private:
     std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
     std::shared_ptr<CommunicationHandler> _communication_handler;
     std::shared_ptr<SessionHandler> _session_handler;
+    std::shared_ptr<ChatroomSequenceHandler> _chatroom_sequence_handler;
     
     // アプリケーションサービス層(サービス)
     std::shared_ptr<UserManagementService> _user_management_service;

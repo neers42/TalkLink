@@ -1,12 +1,22 @@
-#include "Infrastructure/MySQLClient.hpp"
+#include "Infrastructure/MySQLAdapter.hpp"
+
+namespace {
+std::string build_mysql_endpoint(const char* host, const char* port)
+{
+	const char* resolved_host = (host != nullptr && host[0] != '\0') ? host : "127.0.0.1";
+	const char* resolved_port = (port != nullptr && port[0] != '\0') ? port : "3306";
+	return std::string("tcp://") + resolved_host + ":" + resolved_port;
+}
+}
 
 
-MySQLClient::MySQLClient()
+MySQLAdapter::MySQLAdapter()
 {
 	char* env_host = nullptr;
 	char* env_user = nullptr;
 	char* env_pass = nullptr;
 	char* env_db = nullptr;
+	char* env_port = nullptr;
 #ifdef _WIN32
 	size_t len = 0;
 
@@ -32,13 +42,19 @@ MySQLClient::MySQLClient()
 	}else {
 		LOG_ERROR("DB_NAME environment variable is not set.");
 	}
+	if(_dupenv_s(&env_port, &len, "DB_PORT") == 0 && env_port != nullptr) {
+		LOG_DEBUG("DB_PORT: {}", env_port);
+	}else {
+		LOG_ERROR("DB_PORT environment variable is not set.");
+	}
 #else
 	env_host = std::getenv("DB_HOST");
 	env_user = std::getenv("DB_USER");
 	env_pass = std::getenv("DB_PASSWORD");
 	env_db = std::getenv("DB_NAME");
+	env_port = std::getenv("DB_PORT");
 #endif // _WIN32
-    _mysql_host = std::string("tcp://") + (env_host ? env_host : "127.0.0.1") + ":3306";
+    _mysql_host = build_mysql_endpoint(env_host, env_port);
     _mysql_user_name = env_user ? env_user : "chat_user";
     _mysql_password = env_pass ? env_pass : "chat_pass";
     _mysql_db_name = env_db ? env_db : "TalkLinkDB";
@@ -48,23 +64,24 @@ MySQLClient::MySQLClient()
 	free(env_user);
 	free(env_pass);
 	free(env_db);
+	free(env_port);
 #endif // _WIN32
 	_mysql_helper = std::make_unique<MySQLHelper>(_mysql_host, _mysql_user_name, _mysql_password, _mysql_db_name);
 	if (!_mysql_helper->connect(_mysql_db_name)) {
 		LOG_ERROR("Failed to connect to MySQL database.");
 		exit(1);
 	}
-	LOG_DEBUG("MySQLClient initialized successfully.");
+	LOG_DEBUG("MySQLAdapter initialized successfully.");
 	
 }
 
 
-MySQLClient::~MySQLClient()
+MySQLAdapter::~MySQLAdapter()
 {
 
 }
 
-void MySQLClient::create_database()
+void MySQLAdapter::create_database()
 {
 	try
 	{
@@ -88,7 +105,7 @@ void MySQLClient::create_database()
 	}
 }
 
-bool MySQLClient::create_table()
+bool MySQLAdapter::create_table()
 {
 	if (this->create_table_users() == false) {
 		return false;
@@ -107,7 +124,7 @@ bool MySQLClient::create_table()
 	}
 }
 
-bool MySQLClient::insert_user_info_data(
+bool MySQLAdapter::insert_user_info_data(
 	const std::string& uid,
 	const std::string& name, 
 	const std::string& mail_address,
@@ -181,7 +198,7 @@ bool MySQLClient::insert_user_info_data(
 	
 }
 
-std::tuple<std::string, std::string, std::string>  MySQLClient::get_user_info_fromDB(const std::string& uid)
+UserInfo MySQLAdapter::get_user_info(const std::string& uid)
 {
 	try
 	{
@@ -202,31 +219,31 @@ std::tuple<std::string, std::string, std::string>  MySQLClient::get_user_info_fr
 				icon_url = res->getString("icon_url");
 			}
 			LOG_DEBUG("MySQL:user name:{}, mail_address:{}, icon_url:{}", name, mail_address, icon_url);
-			return std::make_tuple(name, mail_address, icon_url);
+			return UserInfo{name, mail_address, icon_url};
 		}
 		else {
 			LOG_ERROR("MySQL: no data found for uid: {}", uid);
-			return std::make_tuple("", "", "");
+			return UserInfo{};
 		}
 	}
 	catch (const sql::SQLException& e)
 	{
 		this->_mysql_helper->printError(e);
 		LOG_ERROR("SQLException:{}", e.what());
-		return std::make_tuple("", "", "");
+		return UserInfo{};
 
 	}
 	catch (const std::runtime_error& e) {
 		LOG_ERROR("Runtime Error:{}", e.what());
-		return std::make_tuple("", "", "");
+		return UserInfo{};
 	}
 	catch (const std::exception& e) {
 		LOG_ERROR("Exception:{}.", e.what());
-		return std::make_tuple("", "", "");
+		return UserInfo{};
 	}
 }
 
-bool MySQLClient::update_last_login(const std::string& uid, const std::string& last_login)
+bool MySQLAdapter::update_last_login(const std::string& uid, const std::string& last_login)
 {
 	try
 	{
@@ -260,7 +277,7 @@ bool MySQLClient::update_last_login(const std::string& uid, const std::string& l
 	}
 }
 
-bool MySQLClient::is_uid_exist(const std::string& uid)
+bool MySQLAdapter::is_uid_exist(const std::string& uid)
 {
 	try
 	{
@@ -301,7 +318,7 @@ bool MySQLClient::is_uid_exist(const std::string& uid)
 	
 }
 
-bool MySQLClient::is_room_id_exist(const std::string& room_id)
+bool MySQLAdapter::is_room_id_exist(const std::string& room_id)
 {
 	try
 	{
@@ -358,7 +375,7 @@ bool MySQLClient::is_room_id_exist(const std::string& room_id)
 	}
 }
 
-bool MySQLClient::is_room_id_hex_exist(const std::string& room_id_hex)
+bool MySQLAdapter::is_room_id_hex_exist(const std::string& room_id_hex)
 {
 	try {
 		// 16進数文字列をバイナリデータに変換
@@ -408,7 +425,7 @@ bool MySQLClient::is_room_id_hex_exist(const std::string& room_id_hex)
 	return false;
 }
 
-bool MySQLClient::insert_message(const uint64_t mid, const std::string& room_id_hex, const std::string& sender_uid, const std::string& send_time, const std::string& message_content)
+bool MySQLAdapter::insert_message(const uint64_t mid, const std::string& room_id_hex, const std::string& sender_uid, const std::string& send_time, const std::string& message_content, std::uint64_t room_sequence)
 {
 	try
 	{
@@ -424,8 +441,8 @@ bool MySQLClient::insert_message(const uint64_t mid, const std::string& room_id_
 		//SQL文のセット
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_messages +
-				"(mid, room_id, sender_uid, send_time, `message`) "
-				"VALUES(?, ?, ?, ?, ?);")
+				"(mid, room_id, sender_uid, send_time, `message`, room_sequence) "
+				"VALUES(?, ?, ?, ?, ?, ?);")
 		);
 
 		pre_stmt->setInt64(1, mid);
@@ -433,6 +450,7 @@ bool MySQLClient::insert_message(const uint64_t mid, const std::string& room_id_
 		pre_stmt->setString(3, sender_uid);
 		pre_stmt->setString(4, send_time);
 		pre_stmt->setString(5, message_content);
+		pre_stmt->setInt64(6, static_cast<int64_t>(room_sequence));
 
 		pre_stmt->executeUpdate();
 		LOG_DEBUG("MySQL:insert chat message success.");
@@ -455,7 +473,7 @@ bool MySQLClient::insert_message(const uint64_t mid, const std::string& room_id_
 	}
 }
 
-json MySQLClient::get_unreceived_messages(const std::string &uid, const uint64_t last_received_message_id)
+json MySQLAdapter::get_unreceived_messages(const std::string &uid, const uint64_t last_received_message_id)
 {
     json result;
 	result["unreceived_messages"] = json::array();
@@ -521,7 +539,7 @@ json MySQLClient::get_unreceived_messages(const std::string &uid, const uint64_t
     }
     return result;
 }
-bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string &uid, const std::string &room_id_hex)
+bool MySQLAdapter::insert_unsend_message(const uint64_t mid, const std::string &uid, const std::string &room_id_hex)
 {
 	try
 	{
@@ -561,7 +579,7 @@ bool MySQLClient::insert_unsend_message(const uint64_t mid, const std::string &u
 	}
 }
 
-bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::string& room_name, const std::string& icon_url, const std::string& created_at)
+bool MySQLAdapter::insert_chatroom(const std::string& room_id_hex, const std::string& room_name, const std::string& icon_url, const std::string& created_at)
 {
 	try
 	{
@@ -604,7 +622,7 @@ bool MySQLClient::insert_chatroom(const std::string& room_id_hex, const std::str
 	}
 }
 
-bool MySQLClient::insert_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& uids, const std::string& joined_at)
+bool MySQLAdapter::insert_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& uids, const std::string& joined_at)
 {
 	try
 	{
@@ -645,7 +663,7 @@ bool MySQLClient::insert_chatroom_member(const std::string& room_id_hex, const s
 	}
 }
 
-bool MySQLClient::delete_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& uids)
+bool MySQLAdapter::delete_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& uids)
 {
 	try
 	{
@@ -685,7 +703,7 @@ bool MySQLClient::delete_chatroom_member(const std::string& room_id_hex, const s
 
 
 
-std::string MySQLClient::get_user_last_login_fromDB(const std::string& uid)
+std::string MySQLAdapter::get_user_last_login_fromDB(const std::string& uid)
 {
 	std::string last_login_time = "";
 
@@ -720,13 +738,43 @@ std::string MySQLClient::get_user_last_login_fromDB(const std::string& uid)
 	return last_login_time;
 }
 
-bool MySQLClient::insert_unsend_control_message(
-	const uint64_t mid, 
-	const std::string& uid, 
-	const std::string& room_id, 
-	const std::string& json_payload, 
-	const std::string& request_time
-)
+std::vector<UserInfo> MySQLAdapter::search_user_infos(const std::string& query)
+{
+	try
+	{
+		std::unique_ptr <sql::PreparedStatement> pre_stmt(
+			this->_mysql_helper->get_connection()->prepareStatement("SELECT uid, name, mail_address, icon_url FROM " + _mysql_table_name_users +
+				" WHERE uid LIKE CONCAT(?, '%') OR name LIKE CONCAT(?, '%');")
+		);
+		pre_stmt->setString(1, query);
+		pre_stmt->setString(2, query);
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+		std::vector<UserInfo> user_infos;
+		while (res->next()) {
+			UserInfo user_info;
+			user_info.uid = res->getString("uid");
+			user_info.name = res->getString("name");
+			user_info.mail_address = res->getString("mail_address");
+			user_info.icon_url = res->getString("icon_url");
+			user_infos.push_back(user_info);
+		}
+		return user_infos;
+	}
+	catch(const std::exception& e)
+	{
+		LOG_ERROR("[MySQLAdapter] Exception:{}.", e.what());
+	}
+	
+    return std::vector<UserInfo>();
+}
+
+
+bool MySQLAdapter::insert_unsend_control_message(
+    const uint64_t mid,
+    const std::string &uid,
+    const std::string &room_id,
+    const std::string &json_payload,
+    const std::string &request_time)
 {
 	try
 	{
@@ -766,7 +814,7 @@ bool MySQLClient::insert_unsend_control_message(
 	return true;
 }
 
-json MySQLClient::get_unsend_control_message_fromDB(const std::string& uid)
+json MySQLAdapter::get_unsend_control_message_fromDB(const std::string& uid)
 {
 	try
 	{
@@ -820,7 +868,7 @@ json MySQLClient::get_unsend_control_message_fromDB(const std::string& uid)
 	}
 }
 
-bool MySQLClient::delete_unsend_control_message(const uint64_t mid, const std::string& uid, const std::string& room_id)
+bool MySQLAdapter::delete_unsend_control_message(const uint64_t mid, const std::string& uid, const std::string& room_id)
 {
 	try
 	{
@@ -856,7 +904,7 @@ bool MySQLClient::delete_unsend_control_message(const uint64_t mid, const std::s
 	}
 }
 
-json MySQLClient::get_unsend_message_fromDB(const std::string& uid, int limit)
+json MySQLAdapter::get_unsend_message_fromDB(const std::string& uid, int limit)
 {
 	try
 	{
@@ -925,7 +973,7 @@ json MySQLClient::get_unsend_message_fromDB(const std::string& uid, int limit)
 	}
 }
 
-bool MySQLClient::delete_unsend_message(const uint64_t mid, const std::string& uid, const std::string& room_id)
+bool MySQLAdapter::delete_unsend_message(const uint64_t mid, const std::string& uid, const std::string& room_id)
 {
 	try
 	{
@@ -960,7 +1008,7 @@ bool MySQLClient::delete_unsend_message(const uint64_t mid, const std::string& u
 	}
 }
 
-std::vector<std::string> MySQLClient::get_users_from_chatroom(const std::string& room_id_hex)
+std::vector<std::string> MySQLAdapter::get_users_from_chatroom(const std::string& room_id_hex)
 {
 	try
 	{
@@ -1000,7 +1048,7 @@ std::vector<std::string> MySQLClient::get_users_from_chatroom(const std::string&
 	}
 }
 
-std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id_hex)
+std::string MySQLAdapter::get_chatroom_name_fromDB(const std::string& room_id_hex)
 {
 	try
 	{
@@ -1045,7 +1093,7 @@ std::string MySQLClient::get_chatroom_name_fromDB(const std::string& room_id_hex
 	}
 }
 
-bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id_hex)
+bool MySQLAdapter::delete_chatroom_fromDB(const std::string& room_id_hex)
 {
 	try
 	{
@@ -1080,7 +1128,7 @@ bool MySQLClient::delete_chatroom_fromDB(const std::string& room_id_hex)
 	}
 }
 
-bool MySQLClient::update_chatroom_name(const std::string& room_id_hex, const std::string& room_name)
+bool MySQLAdapter::update_chatroom_name(const std::string& room_id_hex, const std::string& room_name)
 {
 	try
 	{
@@ -1117,7 +1165,7 @@ bool MySQLClient::update_chatroom_name(const std::string& room_id_hex, const std
 	}
 }
 
-bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std::string& icon_url)
+bool MySQLAdapter::update_chatroom_icon(const std::string& room_id_hex, const std::string& icon_url)
 {
 	try
 	{
@@ -1154,7 +1202,7 @@ bool MySQLClient::update_chatroom_icon(const std::string& room_id_hex, const std
 	}
 }
 
-bool MySQLClient::create_table_users()
+bool MySQLAdapter::create_table_users()
 {
 	try
 	{
@@ -1182,7 +1230,7 @@ bool MySQLClient::create_table_users()
 	}
 }
 
-bool MySQLClient::create_table_chatrooms()
+bool MySQLAdapter::create_table_chatrooms()
 {
 	try
 	{
@@ -1210,7 +1258,7 @@ bool MySQLClient::create_table_chatrooms()
 }
 
 
-bool MySQLClient::create_table_chat_members()
+bool MySQLAdapter::create_table_chat_members()
 {
 	try
 	{
@@ -1238,7 +1286,7 @@ bool MySQLClient::create_table_chat_members()
 	}
 }
 
-bool MySQLClient::create_table_messages()
+bool MySQLAdapter::create_table_messages()
 {
 	try
 	{
@@ -1249,6 +1297,7 @@ bool MySQLClient::create_table_messages()
 				"sender_uid VARCHAR(28) NOT NULL,"
 				"send_time DATETIME NOT NULL,"
 				"message JSON NOT NULL,"
+				"room_sequence BIGINT UNSIGNED NOT NULL DEFAULT 0,"
 				"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE,"
 				"FOREIGN KEY (sender_uid) REFERENCES users(uid) ON DELETE CASCADE);")
 		);
@@ -1267,7 +1316,7 @@ bool MySQLClient::create_table_messages()
 	}
 }
 
-bool MySQLClient::create_table_unsend_messages()
+bool MySQLAdapter::create_table_unsend_messages()
 {
 	try
 	{
@@ -1296,7 +1345,7 @@ bool MySQLClient::create_table_unsend_messages()
 	}
 }
 
-bool MySQLClient::create_table_unsend_control_messages()
+bool MySQLAdapter::create_table_unsend_control_messages()
 {
 	try
 	{
@@ -1328,7 +1377,7 @@ bool MySQLClient::create_table_unsend_control_messages()
 	}
 }
 
-std::vector<uint8_t> MySQLClient::hex_to_binary(const std::string& hex_str)
+std::vector<uint8_t> MySQLAdapter::hex_to_binary(const std::string& hex_str)
 {
 	std::vector<uint8_t> binary_data;
 
@@ -1341,7 +1390,7 @@ std::vector<uint8_t> MySQLClient::hex_to_binary(const std::string& hex_str)
 	return binary_data;
 }
 
-std::string MySQLClient::to_hex_string(const std::string &bin_str)
+std::string MySQLAdapter::to_hex_string(const std::string &bin_str)
 {
     std::ostringstream oss;
     for (unsigned char c : bin_str) {

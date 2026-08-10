@@ -18,6 +18,7 @@ public:
         int sent_count;
         std::vector<std::string> unsent_uids;
         std::string error_message;
+        std::uint64_t room_sequence = 0;
     };
     
     /**

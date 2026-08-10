@@ -4,7 +4,7 @@
 extern thread_local std::string g_current_task_id;
 
 TaskManagementService::TaskManagementService(std::shared_ptr<ThreadPoolHandler> thread_pool)
-    : _thread_pool(thread_pool)
+    : _thread_pool(std::move(thread_pool))
 {
     if (!_thread_pool) {
         throw std::runtime_error("ThreadPoolHandler is null");

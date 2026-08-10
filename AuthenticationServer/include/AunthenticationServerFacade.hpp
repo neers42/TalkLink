@@ -1,7 +1,7 @@
 ﻿#ifndef AUNTHENTICATIONSERVERFACADE_HPP
 #define AUNTHENTICATIONSERVERFACADE_HPP
 #include "common.h"
-#include "RedisClient.hpp"
+#include "RedisAdapter.hpp"
 #include "TokenHandler.hpp"
 #include "Messages/AuthRequestMessage.hpp"
 #include "Messages/AuthResponseMessage.hpp"
@@ -18,7 +18,7 @@ private:
 	std::unique_ptr<SocketHandler> _socket_handler;
 	std::unique_ptr<ThreadPoolHandler> _thread_pool_handler;
 	std::unique_ptr<ProtocolHandler> _protocol_handler;
-	std::unique_ptr<RedisClient> _redis_client; // Redisクライアント
+	std::unique_ptr<RedisAdapter> _redis_adapter; // Redisクライアント
 	std::unique_ptr<TokenHandler> _token_handler; // JWTトークンハンドラー
 	std::map<socket_t, SSL*> _ssl_list;
 

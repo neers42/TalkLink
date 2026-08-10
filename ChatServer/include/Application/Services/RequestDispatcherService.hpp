@@ -17,7 +17,8 @@ struct MessageDispatchResult {
         SESSION_REQUEST,    // セッションリクエスト
         CHAT_MESSAGE,       // チャットメッセージ
         CHATROOM_CONTROL,   // チャットルーム制御
-        SETTING_CONTROL,    // 設定制御
+        USER_SETTING_CONTROL,    // 設定制御
+        USER_SEARCH_REQUEST,    // ユーザー検索リクエスト
         DISCONNECT,         // クライアント切断
         ERROR               // エラー
     };

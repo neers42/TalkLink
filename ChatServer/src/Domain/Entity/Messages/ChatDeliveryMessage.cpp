@@ -5,7 +5,8 @@ ChatDeliveryMessage::ChatDeliveryMessage()
       _send_message_id(0),
       _room_id(""),
       _sender_uid(""),
-      _content("")
+      _content(""),
+      _room_sequence(0)
 {
 
 } 
@@ -14,12 +15,14 @@ ChatDeliveryMessage::ChatDeliveryMessage(
 	const uint64_t send_message_id,
     const std::string &room_id,
     const std::string &sender_uid,
-    const std::string &content)
+    const std::string &content,
+    const std::uint64_t room_sequence)
     : MessageBase(common_fields, MessageBase::MessageType::CHAT_DELIVERY),
       _send_message_id(send_message_id),
       _room_id(room_id),
       _sender_uid(sender_uid),
-      _content(content)
+      _content(content),
+      _room_sequence(room_sequence)
 {
 	if (room_id.empty() || sender_uid.empty() || content.empty()) {
 		throw std::invalid_argument("Invalid argument: room_id, sender_uid, and content cannot be empty");
@@ -52,6 +55,11 @@ std::string ChatDeliveryMessage::get_content() const
 	return this->_content;
 }
 
+std::uint64_t ChatDeliveryMessage::get_room_sequence() const
+{
+	return this->_room_sequence;
+}
+
 void ChatDeliveryMessage::set_room_id(const std::string& room_id)
 {
 	this->_room_id = room_id;
@@ -67,6 +75,11 @@ void ChatDeliveryMessage::set_content(const std::string& content)
 	this->_content = content;
 }
 
+void ChatDeliveryMessage::set_room_sequence(const std::uint64_t room_sequence)
+{
+	this->_room_sequence = room_sequence;
+}
+
 json ChatDeliveryMessage::serialize_payload() const
 {
 	json payload, specific_fields;
@@ -77,6 +90,7 @@ json ChatDeliveryMessage::serialize_payload() const
 			specific_fields["room_id"] = this->_room_id;
 			specific_fields["sender_uid"] = this->_sender_uid;
 			specific_fields["content"] = this->_content;
+			specific_fields["room_sequence"] = this->_room_sequence;
 			payload["payload"] = specific_fields;
 			return payload;
 		}

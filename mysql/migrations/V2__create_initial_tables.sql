@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS messages (
     sender_uid VARCHAR(28) NOT NULL,
     send_time DATETIME NOT NULL,
     message JSON NOT NULL,
+    room_sequence BIGINT UNSIGNED NOT NULL DEFAULT 0,
     FOREIGN KEY(room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE,
     FOREIGN KEY(sender_uid) REFERENCES users(uid) ON DELETE CASCADE
 );

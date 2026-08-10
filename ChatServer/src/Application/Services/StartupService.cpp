@@ -3,6 +3,7 @@
 #include "Application/Services/RequestDispatcherService.hpp"
 #include "Application/Services/UserManagementService.hpp"
 #include "Application/Services/ChatService.hpp"
+#include "Application/Services/ChatroomManagementService.hpp"
 
 StartupService::StartupService(
     std::shared_ptr<SocketHandler> socket_handler,
@@ -11,17 +12,19 @@ StartupService::StartupService(
     std::shared_ptr<TaskManagementService> task_management_service,
     std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
     std::shared_ptr<UserManagementService> user_management_service,
-    std::shared_ptr<ChatService> chat_service)
-    : _socket_handler(socket_handler),
-      _thread_pool_handler(thread_pool_handler),
-      _protocol_handler(protocol_handler),
-      _task_management_service(task_management_service),
-      _request_dispatcher_service(request_dispatcher_service),
-      _user_management_service(user_management_service),
-      _chat_service(chat_service)
+    std::shared_ptr<ChatService> chat_service,
+    std::shared_ptr<ChatroomManagementService> chatroom_management_service)
+    : _socket_handler(std::move(socket_handler)),
+      _thread_pool_handler(std::move(thread_pool_handler)),
+      _protocol_handler(std::move(protocol_handler)),
+      _task_management_service(std::move(task_management_service)),
+      _request_dispatcher_service(std::move(request_dispatcher_service)),
+      _user_management_service(std::move(user_management_service)),
+      _chat_service(std::move(chat_service)),
+      _chatroom_management_service(std::move(chatroom_management_service))
 {
     if (!_socket_handler || !_thread_pool_handler || !_protocol_handler || 
-        !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service) {
+        !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service || !_chatroom_management_service) {
         throw std::runtime_error("Failed to initialize StartupService dependencies");
     }
     
@@ -297,9 +300,9 @@ bool StartupService::configure_request_dispatching()
                         TaskCategory::CHAT_PROCESSING,
                         "Process chatroom control",
                         [this, message_data = result.message_data, socket = result.socket]() {
-                            // TODO: ChatroomManagementServiceでルーム制御処理を実装
-                            LOG_DEBUG("[RequestDispatcherService] CHATROOM_CONTROL handling not yet implemented - socket: {}", socket);
+                            _chatroom_management_service->process_chatroom_operation(message_data, socket);
                         }
+                        
                     );
                     break;
                     
@@ -310,6 +313,21 @@ bool StartupService::configure_request_dispatching()
                         "Process user disconnection",
                         [this, socket = result.socket]() {
                             _user_management_service->process_user_disconnection(socket);
+                        }
+                    );
+                    break;
+
+                case MessageDispatchResult::Type::USER_SETTING_CONTROL:
+                    //ToDo: USER_SETTING_CONTROLの処理を実装
+                    break;
+                
+                case MessageDispatchResult::Type::USER_SEARCH_REQUEST:
+                    _task_management_service->schedule_task(
+                        TaskPriority::NORMAL,
+                        TaskCategory::USER_MANAGEMENT,
+                        "Process user search request",
+                        [this, message_data = result.message_data, socket = result.socket]() {
+                            _user_management_service->process_user_search(message_data, socket);
                         }
                     );
                     break;

@@ -5,7 +5,6 @@
 #include "Domain/CommunicationHandler.hpp"
 #include "Domain/ChatroomRepositoryHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
-#include "Infrastructure/MySQLClient.hpp"
 #include <memory>
 
 class MessageDeliveryService : public IMessageDeliveryService {
@@ -13,8 +12,7 @@ public:
     MessageDeliveryService(
         std::shared_ptr<CommunicationHandler> communication_handler,
         std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
-        std::shared_ptr<UserRepositoryHandler> user_repository_handler,
-        std::shared_ptr<MySQLClient> mysql_client
+        std::shared_ptr<UserRepositoryHandler> user_repository_handler
     );
     
     ~MessageDeliveryService() override = default;
@@ -42,7 +40,6 @@ private:
     std::shared_ptr<CommunicationHandler> _communication_handler;
     std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
     std::shared_ptr<UserRepositoryHandler> _user_repository_handler;
-    std::shared_ptr<MySQLClient> _mysql_client;
     
     void handle_delivery_error(const std::exception& e, const std::string& operation);
 };
