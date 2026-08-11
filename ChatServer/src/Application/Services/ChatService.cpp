@@ -97,12 +97,12 @@ bool ChatService::send_chat_acknowledgment(
         // 送信状態を決定
         ChatAckMessage::MessageSendStatus send_status;
         
-        if (delivery_result.sent_count == 0 && delivery_result.unsent_uids.empty()) {
-            send_status = ChatAckMessage::MessageSendStatus::SEND_FAILED;
-        } else if (delivery_result.sent_count > 0 && delivery_result.unsent_uids.empty()) {
+        if (!delivery_result.success && !delivery_result.unsent_uids.empty()) {
+            send_status = ChatAckMessage::MessageSendStatus::SEND_PARTIAL_SUCCESS;
+        } else if (delivery_result.success) {
             send_status = ChatAckMessage::MessageSendStatus::SEND_SUCCESS;
         } else {
-            send_status = ChatAckMessage::MessageSendStatus::SEND_PARTIAL_SUCCESS;
+            send_status = ChatAckMessage::MessageSendStatus::SEND_FAILED;
         }
         
         // ChatAckMessageを生成

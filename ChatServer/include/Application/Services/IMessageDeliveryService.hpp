@@ -14,8 +14,8 @@ public:
     
     // 配信結果
     struct DeliveryResult {
-        bool success;
-        int sent_count;
+        bool success = false;
+        int sent_count = 0;
         std::vector<std::string> unsent_uids;
         std::string error_message;
         std::uint64_t room_sequence = 0;

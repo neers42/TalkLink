@@ -219,20 +219,20 @@ ChatroomControlMessage::RoomAction ChatroomControlMessage::parse_room_action(con
 bool ChatroomControlMessage::is_valid_room_id(const std::string &room_id, RoomAction room_action) const
 {
 	if(room_action == RoomAction::CREATE_ROOM) {
-		// ルーム作成の場合、room_idは空文字列であることを許容
-		if (room_id.empty()) {
+		// ルーム作成の場合、room_idは空文字列またはUUID(36)/HEX(32)を許容
+		if (room_id.empty() || room_id.size() == 36 || room_id.size() == 32) {
 			return true;
 		} else {
-			LOG_ERROR("For CREATE_ROOM action, room_id should be empty. Provided room_id size: {}", room_id.size());
+			LOG_ERROR("For CREATE_ROOM action, room_id should be empty or UUID(36)/HEX(32). Provided room_id size: {}", room_id.size());
 			return false;
 		}
 	}
 	else
 	{
-		// その他のアクションの場合、room_idは32文字の16進数文字列であることを期待
-		if (room_id.size() != 32)
+		// その他のアクションの場合、room_idはUUID(36)またはHEX(32)を許容
+		if (room_id.size() != 36 && room_id.size() != 32)
 		{
-			LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {}", room_id.size());
+			LOG_ERROR("dst chatroom id is invalid. expected UUID(36) or HEX(32), actual size : {}", room_id.size());
 			return false;
 		}
 	}
@@ -251,7 +251,7 @@ bool ChatroomControlMessage::is_valid_room_name(const std::string &room_name) co
 
 bool ChatroomControlMessage::is_valid_icon_url(const std::string &icon_url) const
 {
-	if (icon_url.empty() || icon_url.size() > 200) {
+	if (icon_url.size() > 200) {
 		LOG_ERROR("dst chatroom icon url is invalid. dst chatroom icon url size : {}", icon_url.size());
 		return false;
 	}

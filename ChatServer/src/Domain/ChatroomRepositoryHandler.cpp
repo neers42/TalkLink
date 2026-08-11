@@ -112,7 +112,7 @@ std::vector<std::string> ChatroomRepositoryHandler::get_user_infos_by_chatroom_i
         return _chatroom_list[chatroom_list_num]->get_users();
     }
     else {
-        return std::vector<std::string>();
+        return get_chatroom_users_from_db(room_id);
     }
 }
 
@@ -124,18 +124,6 @@ int ChatroomRepositoryHandler::search_chatroom_id_from_list(const std::string& r
 std::vector<std::shared_ptr<Chatroom>>::iterator ChatroomRepositoryHandler::find_chatroom_id_from_list(const std::string& room_id) {
     std::shared_lock<std::shared_mutex> lock(_shared_mtx);
     return find_chatroom_iterator(room_id);
-}
-
-std::vector<std::string> ChatroomRepositoryHandler::get_users_from_chatroom(const std::string& chatroom_id) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    int chatroom_list_num = find_chatroom_index(chatroom_id);
-    if (chatroom_list_num != -1) {
-        return _chatroom_list[chatroom_list_num]->get_users();
-    }
-    else {
-        LOG_ERROR("Chatroom id is not found.");
-        return std::vector<std::string>();
-    }
 }
 
 // ==================== メンバーシップ操作 ====================
@@ -268,6 +256,42 @@ bool ChatroomRepositoryHandler::insert_message(const uint64_t message_id, const 
     }
 }
 
+bool ChatroomRepositoryHandler::insert_chatroom_with_members(const std::string& room_id,
+                                                             const std::string& room_name,
+                                                             const std::string& icon_url,
+                                                             const std::vector<std::string>& member_uids) {
+    try {
+        if (!_mysql_adapter) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+            return false;
+        }
+
+        if (member_uids.empty()) {
+            LOG_ERROR("[ChatroomRepositoryHandler] member_uids is empty for room {}", room_id);
+            return false;
+        }
+
+        const std::string now_mysql = ServerTime::iso8601_to_mysql_datetime(ServerTime::get_current_time_to_milliseconds());
+
+        if (!_mysql_adapter->insert_chatroom(room_id, room_name, icon_url, now_mysql)) {
+            LOG_ERROR("[ChatroomRepositoryHandler] Failed to insert chatroom {}", room_id);
+            return false;
+        }
+
+        if (!_mysql_adapter->insert_chatroom_member(room_id, member_uids, now_mysql)) {
+            LOG_ERROR("[ChatroomRepositoryHandler] Failed to insert chatroom members for room {}", room_id);
+            _mysql_adapter->delete_chatroom_fromDB(room_id);
+            return false;
+        }
+
+        LOG_INFO("[ChatroomRepositoryHandler] Chatroom {} persisted with {} members", room_id, member_uids.size());
+        return true;
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error persisting chatroom {}: {}", room_id, e.what());
+        return false;
+    }
+}
+
 bool ChatroomRepositoryHandler::is_room_id_exist(const std::string& room_id_hex) {
     try {
         if (!_mysql_adapter) {
@@ -320,5 +344,22 @@ std::vector<ChatroomRepositoryHandler::UserInfo> ChatroomRepositoryHandler::get_
     } catch (const std::exception& e) {
         LOG_ERROR("[ChatroomRepositoryHandler] Error getting user infos: {}", e.what());
         return result;
+    }
+}
+std::vector<std::string> ChatroomRepositoryHandler::get_chatroom_users_from_db(const std::string &room_id)
+{
+    try {
+        if (!_mysql_adapter)
+        {
+            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+            return std::vector<std::string>();
+        }
+
+        return _mysql_adapter->get_users_from_chatroom(room_id);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error getting chatroom users for room {}: {}", room_id, e.what());
+        return std::vector<std::string>();
     }
 }

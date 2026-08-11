@@ -97,8 +97,8 @@ bool ChatroomControlAckMessage::validate_payload() const
 
 bool ChatroomControlAckMessage::is_valid_room_id(const std::string &room_id) const
 {
-	if (room_id.size() != 32) {
-		LOG_ERROR("dst chatroom id is invalid. dst chatroom id byte size : {}", room_id.size());
+	if (room_id.size() != 36 && room_id.size() != 32) {
+		LOG_ERROR("dst chatroom id is invalid. expected UUID(36) or HEX(32), actual size : {}", room_id.size());
 		return false;
 	}
 	return true;

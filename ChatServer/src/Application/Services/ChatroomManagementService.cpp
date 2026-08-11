@@ -28,21 +28,33 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
     ChatroomOperationResult result;
     result.success = false;
     result.affected_members = 0;
+    result.room_id = "";
+    std::unique_ptr<ChatroomControlMessage> control_message = nullptr;
     try {
-        auto  control_message = MessageBase::deserialize_message<ChatroomControlMessage>(control_message_json);
+        control_message = MessageBase::deserialize_message<ChatroomControlMessage>(control_message_json);
         // バリデーション
         if (!validate_chatroom_control_message(control_message)) {
             result.error_message = "Invalid chatroom control message";
+            if (control_message) {
+                if (!send_chatroom_acknowledgment(control_message, result)) {
+                    LOG_WARNING("[ChatroomManagementService] Failed to send ACK for invalid control message");
+                }
+            }
             return result;
         }
         
         auto operation_type = control_message->get_room_action();
         auto room_id = control_message->get_room_id();
         auto requester_id = control_message->get_sender_uid();
+        result.room_id = room_id;
         
-        // 権限チェック
-        if (!check_room_permission(room_id, requester_id, "manage")) {
+        // 権限チェック（CREATE_ROOM は未作成ルームのため事前チェック対象外）
+        if (operation_type != ChatroomControlMessage::RoomAction::CREATE_ROOM &&
+            !check_room_permission(room_id, requester_id, "manage")) {
             result.error_message = "Insufficient permissions for room operation";
+            if (!send_chatroom_acknowledgment(control_message, result)) {
+                LOG_WARNING("[ChatroomManagementService] Failed to send ACK for permission denied operation");
+            }
             return result;
         }
         
@@ -58,6 +70,7 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                 result.error_message = creation_result.error_message;
                 result.affected_members = creation_result.initial_members;
                 room_id = creation_result.room_id;
+                result.room_id = room_id;
                 break;
             }
 
@@ -72,6 +85,7 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                 result.error_message = member_result.error_message;
                 result.affected_members = member_result.affected_member_ids.size();
                 result.unsent_notifications = member_result.failed_member_ids;
+                result.room_id = room_id;
                 break;
             }
             
@@ -81,6 +95,7 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                 result.error_message = member_result.error_message;
                 result.affected_members = member_result.affected_member_ids.size();
                 result.unsent_notifications = member_result.failed_member_ids;
+                result.room_id = room_id;
                 break;
             }
             
@@ -88,6 +103,7 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                 auto name_change_result = _chatroom_repository_handler->change_room_name(room_id, control_message->get_room_name());
                 result.success = name_change_result;
                 result.error_message = name_change_result ? "" : "Failed to change room name";
+                result.room_id = room_id;
                 break;
             }
             
@@ -95,17 +111,22 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                 auto icon_change_result = _chatroom_repository_handler->change_room_icon(room_id, control_message->get_icon_url());
                 result.success = icon_change_result;
                 result.error_message = icon_change_result ? "" : "Failed to change room icon";
+                result.room_id = room_id;
                 break;
             }
             
             case ChatroomControlMessage::RoomAction::DELETE_ROOM: {
                 auto deletion_result = delete_chatroom(room_id, requester_id);
                 result = deletion_result;
+                result.room_id = room_id;
                 break;
             }
             
             default:
                 result.error_message = "Unsupported chatroom operation";
+                if (!send_chatroom_acknowledgment(control_message, result)) {
+                    LOG_WARNING("[ChatroomManagementService] Failed to send ACK for unsupported operation");
+                }
                 return result;
         }
         
@@ -115,11 +136,17 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                 if (!remove_room_sequence(room_id)) {
                     result.success = false;
                     result.error_message = "Failed to delete room sequence";
+                    if (!send_chatroom_acknowledgment(control_message, result)) {
+                        LOG_WARNING("[ChatroomManagementService] Failed to send ACK for room sequence deletion failure");
+                    }
                     return result;
                 }
             } else if (!_chatroom_sequence_handler->increment_room_sequence(room_id, result.room_sequence)) {
                 result.success = false;
                 result.error_message = "Failed to update room sequence";
+                if (!send_chatroom_acknowledgment(control_message, result)) {
+                    LOG_WARNING("[ChatroomManagementService] Failed to send ACK for room sequence increment failure");
+                }
                 return result;
             }
             // メッセージを送信
@@ -130,15 +157,24 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                 result.unsent_notifications = delivery_result.unsent_uids;
             }
 
-            if (!this->save_room_operation_to_database(control_message, control_message_json, result.room_sequence))
+            if (!this->save_room_operation_to_database(control_message, control_message_json, result.room_id, result.room_sequence))
             {
                 LOG_WARNING("[ChatroomManagementService] Failed to persist chatroom operation message. room_id={}, message_id={}", room_id, control_message->get_message_id());
             }
+        }
+
+        if (!send_chatroom_acknowledgment(control_message, result)) {
+            LOG_WARNING("[ChatroomManagementService] Failed to send chatroom operation ACK");
         }
         
     } catch (const std::exception& e) {
         handle_operation_error(e, "process_chatroom_operation");
         result.error_message = std::string("Operation failed: ") + e.what();
+        if (control_message) {
+            if (!send_chatroom_acknowledgment(control_message, result)) {
+                LOG_WARNING("[ChatroomManagementService] Failed to send ACK after operation exception");
+            }
+        }
     }
     
     return result;
@@ -182,6 +218,19 @@ RoomCreationResult ChatroomManagementService::create_chatroom(
         bool add_result = _chatroom_repository_handler->add_chatroom(new_room);
         if (!add_result) {
             result.error_message = "Failed to create chatroom in repository";
+            return result;
+        }
+
+        // DBへ永続化（chatrooms, chat_members）
+        bool persist_result = _chatroom_repository_handler->insert_chatroom_with_members(
+            room_id,
+            room_name,
+            icon_url,
+            all_members
+        );
+        if (!persist_result) {
+            _chatroom_repository_handler->delete_chatroom(room_id);
+            result.error_message = "Failed to persist chatroom in database";
             return result;
         }
         
@@ -331,6 +380,7 @@ ChatroomOperationResult ChatroomManagementService::delete_chatroom(const std::st
 {
     IMessageDeliveryService::DeliveryResult result;
     try {
+        const std::string delivery_room_id = operation_result.room_id.empty() ? control_message->get_room_id() : operation_result.room_id;
         // 通知メッセージを作成
         auto delivery_message = create_notification_message(control_message, operation_result);
         if (!delivery_message) {
@@ -341,14 +391,14 @@ ChatroomOperationResult ChatroomManagementService::delete_chatroom(const std::st
         
         // ルームメンバーに配信
         const json& delivery_json = MessageBase::serialize_message(delivery_message);
-        result = _message_delivery_service->deliver_to_room(delivery_json, control_message->get_room_id(), sender_socket, control_message->get_sender_uid());
+        result = _message_delivery_service->deliver_to_room(delivery_json, delivery_room_id, sender_socket, control_message->get_sender_uid());
 
         if(result.success) {
             LOG_INFO("Chatroom notification delivered successfully to room {}, sender: {}, affected members: {}", 
-                    control_message->get_room_id(), control_message->get_sender_uid(), operation_result.affected_members);
+                delivery_room_id, control_message->get_sender_uid(), operation_result.affected_members);
         } else {
             LOG_ERROR("Failed to deliver chatroom notification to room {}, sender: {}, error: {}", 
-                    control_message->get_room_id(), control_message->get_sender_uid(), result.error_message);
+                delivery_room_id, control_message->get_sender_uid(), result.error_message);
             //メッセージの再配信
             // TODO: Implement message retry logic
         }
@@ -369,6 +419,7 @@ bool ChatroomManagementService::send_chatroom_acknowledgment(
 {
     ChatroomControlAckMessage::MessageSendStatus status = ChatroomControlAckMessage::MessageSendStatus::SEND_FAILED;
     try {
+        const std::string ack_room_id = operation_result.room_id.empty() ? control_message->get_room_id() : operation_result.room_id;
         if (operation_result.success) {
             if (operation_result.unsent_notifications.empty()) {
                 status = ChatroomControlAckMessage::MessageSendStatus::SEND_SUCCESS;
@@ -383,7 +434,7 @@ bool ChatroomManagementService::send_chatroom_acknowledgment(
         auto ack_message = std::make_unique<ChatroomControlAckMessage>(
             control_message->get_common_fields(),
             status,
-            control_message->get_room_id(),
+            ack_room_id,
             control_message->get_message_id(),
             operation_result.unsent_notifications,
             operation_result.room_sequence
@@ -503,7 +554,10 @@ bool ChatroomManagementService::validate_member_ids(const std::vector<std::strin
     return true;
 }
 
-bool ChatroomManagementService::save_room_operation_to_database(const std::unique_ptr<ChatroomControlMessage>& control_message, const json& message_json, std::uint64_t room_sequence)
+bool ChatroomManagementService::save_room_operation_to_database(const std::unique_ptr<ChatroomControlMessage>& control_message,
+                                                                const json& message_json,
+                                                                const std::string& room_id,
+                                                                std::uint64_t room_sequence)
 {
     try {
         // ISO 8601からMySQL形式に変換
@@ -511,7 +565,7 @@ bool ChatroomManagementService::save_room_operation_to_database(const std::uniqu
         // チャットルーム操作をメッセージテーブルに保存
         return _chatroom_repository_handler->insert_message(
             control_message->get_message_id(),
-            control_message->get_room_id(),
+            room_id,
             control_message->get_sender_uid(),
             mysql_timestamp,
             message_json.dump(),
@@ -546,13 +600,14 @@ std::unique_ptr<ChatroomControlDeliveryMessage> ChatroomManagementService::creat
     const ChatroomOperationResult& result)
 {
     try {
+        const std::string delivery_room_id = result.room_id.empty() ? control_message->get_room_id() : result.room_id;
         auto user_infos = generate_user_infos(control_message->get_member_list());
         
         return std::make_unique<ChatroomControlDeliveryMessage>(
             control_message->get_common_fields(),
             control_message->get_message_id(),
             control_message->get_sender_uid(),
-            control_message->get_room_id(),
+            delivery_room_id,
             control_message->get_room_name(),
             control_message->get_icon_url(),
             user_infos,

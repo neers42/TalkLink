@@ -45,6 +45,13 @@ public:
     ChatroomRepositoryHandler& operator=(const ChatroomRepositoryHandler&) = delete;
     ChatroomRepositoryHandler(ChatroomRepositoryHandler&&) = delete;
     ChatroomRepositoryHandler& operator=(ChatroomRepositoryHandler&&) = delete;
+
+    struct UserInfo {
+        std::string uid;
+        std::string name;
+        std::string mail_address;
+        std::string icon_url;
+    };
     
     // ==================== 基本CRUD操作 ====================
     
@@ -105,13 +112,6 @@ public:
      */
     std::vector<std::shared_ptr<Chatroom>>::iterator find_chatroom_id_from_list(const std::string& room_id);
     
-    /**
-     * @brief チャットルームのユーザーリストを取得
-     * @param room_id ルームID
-     * @return ユーザーIDリスト
-     */
-    std::vector<std::string> get_users_from_chatroom(const std::string& room_id);
-    
     // ==================== メンバーシップ操作 ====================
     
     /**
@@ -169,6 +169,20 @@ public:
     bool insert_message(const uint64_t message_id, const std::string& room_id, 
                        const std::string& sender_uid, const std::string& send_time,
                        const std::string& message_content, std::uint64_t room_sequence = 0);
+
+
+    /**
+     * @brief チャットルーム作成情報をデータベースに保存
+     * @param room_id ルームID
+     * @param room_name ルーム名
+     * @param icon_url アイコンURL
+     * @param member_uids 初期メンバーUIDリスト
+     * @return 保存成功時true
+     */
+    bool insert_chatroom_with_members(const std::string& room_id,
+                                      const std::string& room_name,
+                                      const std::string& icon_url,
+                                      const std::vector<std::string>& member_uids);
     
     /**
      * @brief ルームIDが存在するかを確認
@@ -190,13 +204,15 @@ public:
      * @param uids ユーザーIDリスト
      * @return UserInfo構造体のベクタ
      */
-    struct UserInfo {
-        std::string uid;
-        std::string name;
-        std::string mail_address;
-        std::string icon_url;
-    };
     std::vector<UserInfo> get_user_infos(const std::vector<std::string>& uids);
+
+
+    /**
+     * @brief チャットルームのユーザーを取得
+     * @param room_id ルームID
+     * @return ユーザーIDのベクタ
+     */
+    std::vector<std::string> get_chatroom_users_from_db(const std::string& room_id);
     
     // ==================== friend クラス ====================
     // ChatroomManagementHandlerに特権アクセスを許可

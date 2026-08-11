@@ -18,6 +18,7 @@ struct ChatroomOperationResult {
     int affected_members;
     std::vector<std::string> unsent_notifications;
     std::uint64_t room_sequence = 0;
+    std::string room_id;
 };
 
 // ルーム作成結果
@@ -110,7 +111,10 @@ private:
     bool validate_member_ids(const std::vector<std::string>& member_ids);
     
     // データベース操作
-    bool save_room_operation_to_database(const std::unique_ptr<ChatroomControlMessage>& control_message, const json& message_json, std::uint64_t room_sequence);
+    bool save_room_operation_to_database(const std::unique_ptr<ChatroomControlMessage> &control_message,
+                                         const json &message_json,
+                                         const std::string &room_id,
+                                         std::uint64_t room_sequence);
     bool remove_room_sequence(const std::string& room_id);
     
     // エラーハンドリング

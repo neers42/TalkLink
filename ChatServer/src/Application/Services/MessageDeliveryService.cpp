@@ -23,7 +23,7 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
     socket_t sender_socket,
     const std::string& sender_uid
 ) {
-    DeliveryResult result;
+    DeliveryResult result = {};
     
     try {
         if (sender_socket == INVALID_SOCKET_FD) {
@@ -36,20 +36,13 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
         // ルームメンバー取得
         auto receivers_uids = _chatroom_repository_handler->get_user_infos_by_chatroom_id(room_id);
         
-        //現在接続中であるメンバーがいない場合はエラーではないため、成功とする
-        if (receivers_uids.empty()) {
-            LOG_WARNING("[MessageDeliveryService] No members for connection found in room: {}", room_id);
-            result.success = true; // エラーではない
-            return result;
-        }
-        
         // 各メンバーにメッセージ送信
         for (const auto& uid : receivers_uids) {
             auto search_user = _user_repository_handler->get_user_by_id(uid);
             
             if (search_user == nullptr) {
                 // 接続していないクライアントはスキップ
-                result.unsent_uids.push_back(uid);
+                LOG_DEBUG("[MessageDeliveryService] User '{}' is offline. Skip realtime delivery and rely on DB-backed sync.", uid);
                 continue;
             }
             
@@ -94,7 +87,7 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_p2p(
     const json& message_json,
     const std::string& target_uid
 ) {
-    DeliveryResult result;
+    DeliveryResult result = {};
     
     try {
         // ターゲットユーザー取得
@@ -134,7 +127,7 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::broadcast(
     const std::string& sender_uid,
     bool exclude_sender
 ) {
-    DeliveryResult result;
+    DeliveryResult result = {};
     
     try {
         // 全ユーザー取得

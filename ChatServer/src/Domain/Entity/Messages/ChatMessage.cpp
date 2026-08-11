@@ -206,9 +206,9 @@ bool ChatMessage::validate_value() const
 }
 bool ChatMessage::is_valid_room_id(const std::string &room_id) const
 {
-	//dst_idが32byteではない場合
-	if (room_id.size() != 32) {
-		LOG_ERROR("[ChatMessage] dst chatroom id is invalid. dst chatroom id byte size : {}", room_id.size());
+	// room_idはUUID(36)またはHEX(32)を許容
+	if (room_id.size() != 36 && room_id.size() != 32) {
+		LOG_ERROR("[ChatMessage] dst chatroom id is invalid. expected UUID(36) or HEX(32), actual size : {}", room_id.size());
 		return false;
 	}
 	return true;

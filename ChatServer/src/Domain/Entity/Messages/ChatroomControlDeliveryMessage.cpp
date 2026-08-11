@@ -200,7 +200,7 @@ bool ChatroomControlDeliveryMessage::is_valid_room_name(const std::string &room_
 
 bool ChatroomControlDeliveryMessage::is_valid_icon_url(const std::string &icon_url) const
 {
-	if (icon_url.empty() || icon_url.size() > 200) {
+	if (icon_url.size() > 200) {
 		LOG_ERROR("dst chatroom icon url is invalid. dst chatroom icon url byte size : {}", icon_url.size());
 		return false;
 	}
