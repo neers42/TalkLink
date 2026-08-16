@@ -133,6 +133,7 @@ bool MySQLAdapter::insert_user_info_data(
 	const std::string& last_login
 )
 {
+	std::lock_guard<std::mutex> lock(_mysql_mutex);
 	try
 	{
 		if (last_login == "" && icon_url == "") {
@@ -200,6 +201,7 @@ bool MySQLAdapter::insert_user_info_data(
 
 UserInfo MySQLAdapter::get_user_info(const std::string& uid)
 {
+	std::lock_guard<std::mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
@@ -245,6 +247,7 @@ UserInfo MySQLAdapter::get_user_info(const std::string& uid)
 
 bool MySQLAdapter::update_last_login(const std::string& uid, const std::string& last_login)
 {
+	std::lock_guard<std::mutex> lock(_mysql_mutex);
 	try
 	{
 		if (uid == "") {
@@ -279,6 +282,7 @@ bool MySQLAdapter::update_last_login(const std::string& uid, const std::string& 
 
 bool MySQLAdapter::is_uid_exist(const std::string& uid)
 {
+	std::lock_guard<std::mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(

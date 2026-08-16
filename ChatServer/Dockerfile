@@ -2,7 +2,7 @@
 # Build Stage
 # ===============================
 # syntax=docker/dockerfile:1.4
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:26.04 AS builder
 
 WORKDIR /app
 
@@ -29,14 +29,14 @@ COPY ThirdParty ./ThirdParty
 
 
 # ビルド
-RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_CHAT_SERVER=ON -DWITH_MYSQL=ON && \
+RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_CHAT_SERVER=ON -DWITH_MYSQL=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && \
     cmake --build build --target ChatServer
 
 
 # ===============================
 # Runtime Stage
 # ===============================
-FROM ubuntu:22.04
+FROM ubuntu:26.04
 
 WORKDIR /app
 

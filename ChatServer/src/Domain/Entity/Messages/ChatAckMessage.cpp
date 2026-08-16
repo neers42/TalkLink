@@ -1,7 +1,7 @@
 ﻿#include "Domain/Entity/Messages/ChatAckMessage.hpp"
 
 ChatAckMessage::ChatAckMessage() 
-	: MessageBase(MessageBase::MessageType::CHAT_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list(), _room_sequence(0)
+	: MessageBase(MessageBase::MessageType::CHAT_ACK), _message_id(0), _send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list(), _room_sequence(0)
 {
 }
 
@@ -12,7 +12,7 @@ ChatAckMessage::ChatAckMessage(
 	const std::string &room_id, 
 	const std::vector<std::string> &_unsend_uid_list,
 	const std::uint64_t room_sequence)
-	: MessageBase(common_fields, MessageBase::MessageType::CHAT_ACK),_send_status(status), _room_id(room_id), _unsend_uid_list(_unsend_uid_list), _room_sequence(room_sequence)
+	: MessageBase(common_fields, MessageBase::MessageType::CHAT_ACK), _message_id(mid), _send_status(status), _room_id(room_id), _unsend_uid_list(_unsend_uid_list), _room_sequence(room_sequence)
 {
 }
 
@@ -85,6 +85,8 @@ json ChatAckMessage::serialize_payload() const
 	try
 	{
 		if (validate_payload() != false) {
+			specific_fields["message_id"] = this->get_message_id();
+			specific_fields["send_message_id"] = this->get_message_id();
 			specific_fields["send_status"] = this->get_send_status();
 			specific_fields["room_id"] = this->get_room_id();
 			specific_fields["room_sequence"] = this->get_room_sequence();

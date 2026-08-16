@@ -13,6 +13,7 @@ public:
 		SEND_FAILED = 2
 	};
 private:
+	uint64_t _message_id;
 	MessageSendStatus _send_status;
 	std::string _room_id;
 	std::vector<std::string> _unsend_uid_list;
@@ -37,6 +38,7 @@ public:
 	//各種アクセッサ(getter/setter)
 	int get_send_status() const;
 	void set_send_status(const int status);
+	uint64_t get_message_id() const { return this->_message_id; }
 	std::string get_room_id() const;
 	void set_room_id(const std::string& room_id);
 	std::uint64_t get_room_sequence() const;

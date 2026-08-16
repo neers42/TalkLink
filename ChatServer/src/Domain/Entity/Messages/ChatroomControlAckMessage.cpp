@@ -1,7 +1,7 @@
 ﻿#include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
 
 ChatroomControlAckMessage::ChatroomControlAckMessage() 
-	: MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_ACK),_send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list(), _room_sequence(0)
+	: MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_ACK), _message_id(0), _send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list(), _room_sequence(0)
 {
 } 
 ChatroomControlAckMessage::ChatroomControlAckMessage(
@@ -50,6 +50,7 @@ json ChatroomControlAckMessage::serialize_payload() const
 				break;
 			}
 			specific_fields["room_id"] = this->_room_id;
+			specific_fields["message_id"] = this->get_message_id();
 			specific_fields["send_message_id"] = this->get_message_id();
 			specific_fields["room_sequence"] = this->_room_sequence;
 			if (this->_unsend_uid_list.size() > 0) {

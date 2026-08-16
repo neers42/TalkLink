@@ -134,12 +134,31 @@ json SessionHandler::get_unreceived_messages(const std::string& uid, uint64_t la
     json unreceived_messages = json::array();
     
     try {
-        // MySQL/Redisから未受信メッセージを取得する実装
-        // 現在は簡易実装
         LOG_DEBUG("[SessionHandler] Getting unreceived messages for user: {}, last_received_id: {}", 
                  uid, last_received_id);
-        
-        // TODO: 実際のメッセージ取得ロジックを実装
+
+        if (uid.empty()) {
+            LOG_WARNING("[SessionHandler] uid is empty while getting unreceived messages");
+            return unreceived_messages;
+        }
+        if (!_mysql_adapter) {
+            LOG_ERROR("[SessionHandler] MySQL adapter is not initialized");
+            return unreceived_messages;
+        }
+
+        json db_result = _mysql_adapter->get_unreceived_messages(uid, last_received_id);
+
+        if (db_result.is_object() && db_result.contains("unreceived_messages") && db_result["unreceived_messages"].is_array()) {
+            LOG_INFO("[SessionHandler] Retrieved {} unreceived messages for user {}", db_result["unreceived_messages"].size(), uid);
+            return db_result;
+        }
+
+        if (db_result.is_array()) {
+            LOG_INFO("[SessionHandler] Retrieved {} unreceived messages(array) for user {}", db_result.size(), uid);
+            return db_result;
+        }
+
+        LOG_WARNING("[SessionHandler] Unexpected unreceived messages format for user {}. Returning empty array.", uid);
         
     } catch (const std::exception& e) {
         LOG_ERROR("[SessionHandler] Failed to get unreceived messages for user {}: {}", uid, e.what());

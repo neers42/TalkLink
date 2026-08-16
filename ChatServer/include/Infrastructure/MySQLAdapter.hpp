@@ -22,6 +22,7 @@ class MySQLAdapter
 {
 private:
 	std::unique_ptr<MySQLHelper> _mysql_helper;
+	mutable std::mutex _mysql_mutex; // Shared MySQL connection is not thread-safe
 	std::string _mysql_host;
     std::string _mysql_user_name;
     std::string _mysql_password;

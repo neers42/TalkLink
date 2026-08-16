@@ -71,7 +71,6 @@ MessageDispatchResult RequestDispatcherService::receive_and_dispatch_message(soc
         }
         
         // メッセージの受信
-        // TODO: 実際のメッセージ受信処理を実装する必要があります
         json receive_json = json::object();
         bool disconnect_flag = false;
         bool recv_flag = true;
