@@ -3,7 +3,7 @@
 
 #include <hiredis/hiredis.h>
 #include "common.h"
-#include "RedisHelper.hpp"
+#include "Database/RedisHelper.hpp"
 
 class RedisAdapter {
 

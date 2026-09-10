@@ -3,7 +3,9 @@
 #include "Utils/common.hpp"
 #include "Domain/UserAggregateStore.hpp"
 #include "Domain/Entity/User.hpp"
-#include "Infrastructure/MySQLAdapter.hpp"
+#include "Domain/DTO/UserInfo.hpp"
+
+class IUserRepository;
 
 struct SearchResult {
     std::vector<UserInfo> user_infos;
@@ -15,12 +17,12 @@ class UserRepositoryHandler
 {
 private:
     std::shared_ptr<UserAggregateStore> _store;
-    std::shared_ptr<MySQLAdapter> _mysql_adapter; // DBアクセス用アダプター
+    std::shared_ptr<IUserRepository> _user_repository; // DBアクセス用アダプター
     std::shared_ptr<ServerTime> _server_time; // 時刻管理用ユーティリティ
     
 public:
-    explicit UserRepositoryHandler(std::shared_ptr<UserAggregateStore> store, std::shared_ptr<MySQLAdapter> mysql_adapter, std::shared_ptr<ServerTime> server_time) 
-        : _store(store), _mysql_adapter(mysql_adapter), _server_time(server_time) {}
+    explicit UserRepositoryHandler(std::shared_ptr<UserAggregateStore> store, std::shared_ptr<IUserRepository> user_repository, std::shared_ptr<ServerTime> server_time) 
+        : _store(store), _user_repository(user_repository), _server_time(server_time) {}
     
     // クライアント管理操作
     bool add_user(socket_t socket, SSL* ssl, const sockaddr_in& addr,

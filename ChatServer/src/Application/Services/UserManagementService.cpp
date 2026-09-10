@@ -1,4 +1,13 @@
 #include "Application/Services/UserManagementService.hpp"
+#include "Domain/CommunicationHandler.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
+#include "Domain/SessionHandler.hpp"
+#include "Domain/Entity/User.hpp"
+#include "Domain/UserAggregateStore.hpp"
+#include "Domain/Entity/Messages/SessionRequestMessage.hpp"
+#include "Domain/Entity/Messages/SessionResponseMessage.hpp"
+#include "Domain/Entity/Messages/UserSearchRequestMessage.hpp"
+#include "Domain/Entity/Messages/UserSearchResponseMessage.hpp"
 
 // Constructor
 UserManagementService::UserManagementService(

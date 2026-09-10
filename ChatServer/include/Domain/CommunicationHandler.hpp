@@ -20,16 +20,16 @@ private:
     
     // 通信関連のインフラを全て管理
     std::shared_ptr<SocketHandler> _socket_handler;      // ソケット操作
-    std::shared_ptr<ProtocolHandler> _protocol_handler;  // SSL/プロトコル
+    std::shared_ptr<TLSConnectionHandler> _tlscon_handler;  // SSL/プロトコル
     
 public:
     explicit CommunicationHandler(
         std::shared_ptr<UserAggregateStore> store,
         std::shared_ptr<SocketHandler> socket_handler,
-        std::shared_ptr<ProtocolHandler> protocol_handler) 
+        std::shared_ptr<TLSConnectionHandler> tlscon_handler) 
         : _store(store), 
           _socket_handler(socket_handler),
-          _protocol_handler(protocol_handler) {}
+          _tlscon_handler(tlscon_handler) {}
     
     // 低レベルな通信操作（UserRepositoryHandlerから呼び出される）
     AcceptResult accept_new_connection();

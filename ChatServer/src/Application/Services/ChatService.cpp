@@ -1,6 +1,12 @@
 #include "Application/Services/ChatService.hpp"
 #include "Domain/ChatroomSequenceHandler.hpp"
 #include "MessageBase.hpp"
+#include "Domain/Entity/Messages/ChatMessage.hpp"
+#include "Domain/Entity/Messages/ChatDeliveryMessage.hpp"
+#include "Domain/Entity/Messages/ChatAckMessage.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
+#include "Domain/ChatroomRepositoryHandler.hpp"
+#include "Application/Interfaces/IMessageDeliveryService.hpp"
 
 ChatService::ChatService(
     std::shared_ptr<IMessageDeliveryService> message_delivery_service,
@@ -25,8 +31,8 @@ ChatService::~ChatService() {
 
 // ==================== チャットメッセージ処理 ====================
 
-IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const std::unique_ptr<ChatMessage>& chat_message, socket_t sender_socket) {
-    IMessageDeliveryService::DeliveryResult delivery_result = {};
+DeliveryResult ChatService::deliver_chat_message(const std::unique_ptr<ChatMessage>& chat_message) {
+    DeliveryResult delivery_result = {};
     
     try {
         // シーケンス番号を採番
@@ -53,7 +59,6 @@ IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const 
         delivery_result = _message_delivery_service->deliver_to_room(
             message_json, 
             chat_message->get_room_id(), 
-            sender_socket, 
             chat_message->get_sender_uid()
         );
         delivery_result.room_sequence = room_sequence;
@@ -90,7 +95,7 @@ IMessageDeliveryService::DeliveryResult ChatService::deliver_chat_message(const 
 // チャットメッセージの確認応答処理
 bool ChatService::send_chat_acknowledgment(
     const std::unique_ptr<ChatMessage>& chat_message,
-    const IMessageDeliveryService::DeliveryResult& delivery_result,
+    const DeliveryResult& delivery_result,
     socket_t sender_socket
 ) {
     try {
@@ -150,7 +155,7 @@ bool ChatService::process_chat_message(
         }
 
         // 2. メッセージを配信
-        auto delivery_result = deliver_chat_message(chat_message, sender_socket);
+        auto delivery_result = deliver_chat_message(chat_message);
         
         // 3. 確認応答を送信
         bool ack_sent = send_chat_acknowledgment(chat_message, delivery_result, sender_socket);
@@ -193,7 +198,7 @@ json ChatService::get_unreceived_messages(const std::string& uid, uint64_t last_
 bool ChatService::save_message_to_database(const std::unique_ptr<ChatMessage>& chat_message, const json& original_json, std::uint64_t room_sequence) {
     try {
         // ルームIDの存在確認
-        if (!_chatroom_repository_handler->is_room_id_exist(chat_message->get_room_id())) {
+        if (!_chatroom_repository_handler->chatroom_exists(chat_message->get_room_id())) {
             LOG_ERROR("[ChatService] Room ID not found: {}", chat_message->get_room_id());
             return false;
         }

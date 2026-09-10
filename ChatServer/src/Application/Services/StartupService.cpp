@@ -8,7 +8,7 @@
 StartupService::StartupService(
     std::shared_ptr<SocketHandler> socket_handler,
     std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
-    std::shared_ptr<ProtocolHandler> protocol_handler,
+    std::shared_ptr<TLSConnectionHandler> protocol_handler,
     std::shared_ptr<TaskManagementService> task_management_service,
     std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
     std::shared_ptr<UserManagementService> user_management_service,
@@ -16,14 +16,14 @@ StartupService::StartupService(
     std::shared_ptr<ChatroomManagementService> chatroom_management_service)
     : _socket_handler(std::move(socket_handler)),
       _thread_pool_handler(std::move(thread_pool_handler)),
-      _protocol_handler(std::move(protocol_handler)),
+      _tlscon_handler(std::move(protocol_handler)),
       _task_management_service(std::move(task_management_service)),
       _request_dispatcher_service(std::move(request_dispatcher_service)),
       _user_management_service(std::move(user_management_service)),
       _chat_service(std::move(chat_service)),
       _chatroom_management_service(std::move(chatroom_management_service))
 {
-    if (!_socket_handler || !_thread_pool_handler || !_protocol_handler || 
+    if (!_socket_handler || !_thread_pool_handler || !_tlscon_handler || 
         !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service || !_chatroom_management_service) {
         throw std::runtime_error("Failed to initialize StartupService dependencies");
     }
@@ -192,7 +192,7 @@ bool StartupService::start_background_services()
     
     try {
         auto thread_pool_handler = _thread_pool_handler;
-        auto protocol_handler = _protocol_handler;
+        auto protocol_handler = _tlscon_handler;
         
         if (!thread_pool_handler || !protocol_handler) {
             LOG_ERROR("[StartupService] Required handlers not available");
@@ -300,7 +300,7 @@ bool StartupService::configure_request_dispatching()
                         TaskCategory::CHAT_PROCESSING,
                         "Process chatroom control",
                         [this, message_data = result.message_data, socket = result.socket]() {
-                            _chatroom_management_service->process_chatroom_operation(message_data, socket);
+                            _chatroom_management_service->process_chatroom_operation(message_data);
                         }
                         
                     );

@@ -2,13 +2,14 @@
 #define CHATSERVICE_HPP
 
 #include "Utils/common.hpp"
-#include "Domain/Entity/Messages/ChatMessage.hpp"
-#include "Domain/Entity/Messages/ChatDeliveryMessage.hpp"
-#include "Domain/Entity/Messages/ChatAckMessage.hpp"
-#include "Domain/UserRepositoryHandler.hpp"
-#include "Domain/ChatroomRepositoryHandler.hpp"
-#include "Application/Services/IMessageDeliveryService.hpp"
+#include "Application/Services/DTO/DeliveryResult.hpp"
 
+class ChatMessage;
+class ChatDeliveryMessage;
+class ChatAckMessage;
+class UserRepositoryHandler;
+class ChatroomRepositoryHandler;
+class IMessageDeliveryService;
 class ChatroomSequenceHandler;
 
 // チャットメッセージ処理結果
@@ -44,12 +45,12 @@ public:
     // ==================== チャットメッセージ処理 ====================
     
     // チャットメッセージの配信処理
-    IMessageDeliveryService::DeliveryResult deliver_chat_message(const std::unique_ptr<ChatMessage>& chat_message, socket_t sender_socket);
+    DeliveryResult deliver_chat_message(const std::unique_ptr<ChatMessage>& chat_message);
     
     // チャットメッセージの確認応答処理
     bool send_chat_acknowledgment(
         const std::unique_ptr<ChatMessage>& chat_message,
-        const IMessageDeliveryService::DeliveryResult& delivery_result,
+        const DeliveryResult& delivery_result,
         socket_t sender_socket
     );
     

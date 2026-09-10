@@ -83,6 +83,7 @@ MySQLAdapter::~MySQLAdapter()
 
 void MySQLAdapter::create_database()
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
@@ -107,6 +108,7 @@ void MySQLAdapter::create_database()
 
 bool MySQLAdapter::create_table()
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	if (this->create_table_users() == false) {
 		return false;
 	}
@@ -133,7 +135,7 @@ bool MySQLAdapter::insert_user_info_data(
 	const std::string& last_login
 )
 {
-	std::lock_guard<std::mutex> lock(_mysql_mutex);
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		if (last_login == "" && icon_url == "") {
@@ -201,7 +203,7 @@ bool MySQLAdapter::insert_user_info_data(
 
 UserInfo MySQLAdapter::get_user_info(const std::string& uid)
 {
-	std::lock_guard<std::mutex> lock(_mysql_mutex);
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
@@ -247,7 +249,7 @@ UserInfo MySQLAdapter::get_user_info(const std::string& uid)
 
 bool MySQLAdapter::update_last_login(const std::string& uid, const std::string& last_login)
 {
-	std::lock_guard<std::mutex> lock(_mysql_mutex);
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		if (uid == "") {
@@ -280,9 +282,9 @@ bool MySQLAdapter::update_last_login(const std::string& uid, const std::string& 
 	}
 }
 
-bool MySQLAdapter::is_uid_exist(const std::string& uid)
+bool MySQLAdapter::user_exists(const std::string& uid)
 {
-	std::lock_guard<std::mutex> lock(_mysql_mutex);
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
@@ -322,8 +324,9 @@ bool MySQLAdapter::is_uid_exist(const std::string& uid)
 	
 }
 
-bool MySQLAdapter::is_room_id_exist(const std::string& room_id)
+bool MySQLAdapter::chatroom_exists(const std::string& room_id)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		//room_idをBinary(16)に変換
@@ -379,8 +382,9 @@ bool MySQLAdapter::is_room_id_exist(const std::string& room_id)
 	}
 }
 
-bool MySQLAdapter::is_room_id_hex_exist(const std::string& room_id_hex)
+bool MySQLAdapter::chatroom_exists_by_hex(const std::string& room_id_hex)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try {
 		// 16進数文字列をバイナリデータに変換
 		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
@@ -429,8 +433,9 @@ bool MySQLAdapter::is_room_id_hex_exist(const std::string& room_id_hex)
 	return false;
 }
 
-bool MySQLAdapter::insert_message(const uint64_t mid, const std::string& room_id_hex, const std::string& sender_uid, const std::string& send_time, const std::string& message_content, std::uint64_t room_sequence)
+bool MySQLAdapter::insert_message(const uint64_t mid, const std::string& room_id_hex, const std::string& sender_uid, const std::string& send_time, const std::string& message_content, std::uint64_t room_sequence, const std::string& target_uid)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 16進数文字列をバイナリデータに変換
@@ -445,8 +450,8 @@ bool MySQLAdapter::insert_message(const uint64_t mid, const std::string& room_id
 		//SQL文のセット
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_messages +
-				"(mid, room_id, sender_uid, send_time, `message`, room_sequence) "
-				"VALUES(?, ?, ?, ?, ?, ?);")
+				"(mid, room_id, sender_uid, send_time, `message`, room_sequence, target_uid) "
+				"VALUES(?, ?, ?, ?, ?, ?, ?);")
 		);
 
 		pre_stmt->setInt64(1, mid);
@@ -455,6 +460,7 @@ bool MySQLAdapter::insert_message(const uint64_t mid, const std::string& room_id
 		pre_stmt->setString(4, send_time);
 		pre_stmt->setString(5, message_content);
 		pre_stmt->setInt64(6, static_cast<int64_t>(room_sequence));
+		pre_stmt->setString(7, target_uid);
 
 		pre_stmt->executeUpdate();
 		LOG_DEBUG("MySQL:insert chat message success.");
@@ -479,6 +485,7 @@ bool MySQLAdapter::insert_message(const uint64_t mid, const std::string& room_id
 
 json MySQLAdapter::get_unreceived_messages(const std::string &uid, const uint64_t last_received_message_id)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
     json result;
 	result["unreceived_messages"] = json::array();
     try
@@ -488,7 +495,8 @@ json MySQLAdapter::get_unreceived_messages(const std::string &uid, const uint64_
     		"SELECT m.mid, m.room_id, m.sender_uid, m.send_time, m.message "
     		"FROM " + _mysql_table_name_messages + " AS m "
     		"JOIN " + _mysql_table_name_chat_members + " AS cm ON m.room_id = cm.room_id "
-    		"WHERE m.mid > ? AND cm.uid = ? AND BINARY m.sender_uid != ?;";
+    		"WHERE m.mid > ? AND cm.uid = ? AND BINARY m.sender_uid != ? "
+    		"AND (m.target_uid = '' OR m.target_uid = ?);";
         std::unique_ptr<sql::PreparedStatement> pre_stmt(
             this->_mysql_helper->get_connection()->prepareStatement(sql)
         );
@@ -496,6 +504,7 @@ json MySQLAdapter::get_unreceived_messages(const std::string &uid, const uint64_
 		pre_stmt->setInt64(1, last_received_message_id);
         pre_stmt->setString(2, uid);
         pre_stmt->setString(3, uid);
+        pre_stmt->setString(4, uid);
 
         std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
 
@@ -545,6 +554,7 @@ json MySQLAdapter::get_unreceived_messages(const std::string &uid, const uint64_
 }
 bool MySQLAdapter::insert_unsend_message(const uint64_t mid, const std::string &uid, const std::string &room_id_hex)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 16進数文字列をバイナリデータに変換
@@ -585,6 +595,7 @@ bool MySQLAdapter::insert_unsend_message(const uint64_t mid, const std::string &
 
 bool MySQLAdapter::insert_chatroom(const std::string& room_id_hex, const std::string& room_name, const std::string& icon_url, const std::string& created_at)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 16進数文字列をバイナリデータに変換
@@ -628,13 +639,15 @@ bool MySQLAdapter::insert_chatroom(const std::string& room_id_hex, const std::st
 
 bool MySQLAdapter::insert_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& uids, const std::string& joined_at)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 	
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_mysql_helper->get_connection()->prepareStatement("INSERT INTO " + _mysql_table_name_chat_members +
 				"(room_id, uid, joined_at) "
-				"VALUES(?, ?, ?);")
+				"VALUES(?, ?, ?) "
+				"ON DUPLICATE KEY UPDATE joined_at = joined_at;")
 		);
 		for (const auto& uid : uids) {
 			// 16進数文字列をバイナリデータに変換
@@ -667,11 +680,97 @@ bool MySQLAdapter::insert_chatroom_member(const std::string& room_id_hex, const 
 	}
 }
 
-bool MySQLAdapter::delete_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& uids)
+MemberInsertResult MySQLAdapter::insert_chatroom_members_within_limit(
+	const std::string& room_id_hex,
+	const std::vector<std::string>& uids,
+	const std::string& joined_at,
+	int max_members)
 {
+	// _mysql_mutex を保持したまま「現在メンバー取得 → 上限判定 → INSERT」を行うため、
+	// 単一インスタンス構成では他の DB 操作に割り込まれず原子的になる。
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
+
+	MemberInsertResult result;
 	try
 	{
-		
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+
+		// 1. 現在のメンバー一覧
+		std::vector<std::string> existing;
+		{
+			std::istringstream blob_stream(binary_str);
+			std::unique_ptr<sql::PreparedStatement> sel(
+				this->_mysql_helper->get_connection()->prepareStatement(
+					"SELECT uid FROM " + _mysql_table_name_chat_members + " WHERE room_id = ?;")
+			);
+			sel->setBlob(1, &blob_stream);
+			std::unique_ptr<sql::ResultSet> res(sel->executeQuery());
+			while (res != nullptr && res->next()) {
+				existing.push_back(res->getString("uid"));
+			}
+		}
+
+		// 2. まだメンバーでない uid のみ抽出（引数内の重複も除去）
+		std::vector<std::string> new_uids;
+		for (const auto& uid : uids) {
+			if (std::find(existing.begin(), existing.end(), uid) != existing.end()) continue;
+			if (std::find(new_uids.begin(), new_uids.end(), uid) != new_uids.end()) continue;
+			new_uids.push_back(uid);
+		}
+
+		if (new_uids.empty()) {
+			result.status = MemberInsertResult::Status::OK;
+			return result;
+		}
+
+		// 3. 上限チェック
+		if (static_cast<int>(existing.size() + new_uids.size()) > max_members) {
+			LOG_WARNING("[MySQLAdapter] Chatroom {} member limit exceeded (current={}, adding={}, max={}).",
+				room_id_hex, existing.size(), new_uids.size(), max_members);
+			result.status = MemberInsertResult::Status::LIMIT_EXCEEDED;
+			return result;
+		}
+
+		// 4. INSERT
+		std::unique_ptr<sql::PreparedStatement> ins(
+			this->_mysql_helper->get_connection()->prepareStatement(
+				"INSERT INTO " + _mysql_table_name_chat_members +
+				"(room_id, uid, joined_at) VALUES(?, ?, ?) "
+				"ON DUPLICATE KEY UPDATE joined_at = joined_at;")
+		);
+		for (const auto& uid : new_uids) {
+			std::istringstream blob_stream(binary_str);
+			ins->setBlob(1, &blob_stream);
+			ins->setString(2, uid);
+			ins->setString(3, joined_at);
+			ins->executeUpdate();
+		}
+
+		LOG_DEBUG("[MySQLAdapter] Inserted {} new member(s) into chatroom {}.", new_uids.size(), room_id_hex);
+		result.status = MemberInsertResult::Status::OK;
+		result.added_uids = std::move(new_uids);
+		return result;
+	}
+	catch (const sql::SQLException& e)
+	{
+		this->_mysql_helper->printError(e);
+		result.status = MemberInsertResult::Status::DB_ERROR;
+		return result;
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("[MySQLAdapter] Exception in insert_chatroom_members_within_limit: {}", e.what());
+		result.status = MemberInsertResult::Status::DB_ERROR;
+		return result;
+	}
+}
+
+bool MySQLAdapter::delete_chatroom_member(const std::string& room_id_hex, const std::vector<std::string>& uids)
+{
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
+	try
+	{	
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
 			this->_mysql_helper->get_connection()->prepareStatement("DELETE FROM " + _mysql_table_name_chat_members +
 				" WHERE room_id = ? AND uid = ?;")
@@ -707,8 +806,9 @@ bool MySQLAdapter::delete_chatroom_member(const std::string& room_id_hex, const 
 
 
 
-std::string MySQLAdapter::get_user_last_login_fromDB(const std::string& uid)
+std::string MySQLAdapter::get_user_last_login(const std::string& uid)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	std::string last_login_time = "";
 
 	try {
@@ -744,6 +844,7 @@ std::string MySQLAdapter::get_user_last_login_fromDB(const std::string& uid)
 
 std::vector<UserInfo> MySQLAdapter::search_user_infos(const std::string& query)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr <sql::PreparedStatement> pre_stmt(
@@ -780,6 +881,7 @@ bool MySQLAdapter::insert_unsend_control_message(
     const std::string &json_payload,
     const std::string &request_time)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::string query = "INSERT INTO " + _mysql_table_name_unsend_control_messages +
@@ -818,8 +920,9 @@ bool MySQLAdapter::insert_unsend_control_message(
 	return true;
 }
 
-json MySQLAdapter::get_unsend_control_message_fromDB(const std::string& uid)
+json MySQLAdapter::get_unsend_control_messages(const std::string& uid)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
@@ -874,6 +977,7 @@ json MySQLAdapter::get_unsend_control_message_fromDB(const std::string& uid)
 
 bool MySQLAdapter::delete_unsend_control_message(const uint64_t mid, const std::string& uid, const std::string& room_id)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
@@ -908,12 +1012,13 @@ bool MySQLAdapter::delete_unsend_control_message(const uint64_t mid, const std::
 	}
 }
 
-json MySQLAdapter::get_unsend_message_fromDB(const std::string& uid, int limit)
+json MySQLAdapter::get_unsend_messages(const std::string& uid, int limit)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 最終ログイン日時を取得
-		std::string last_login_time = get_user_last_login_fromDB(uid);
+		std::string last_login_time = get_user_last_login(uid);
 		if (last_login_time.empty()) {
 			LOG_ERROR("MySQL: No last login time found for user {}", uid);
 			return json();
@@ -979,6 +1084,7 @@ json MySQLAdapter::get_unsend_message_fromDB(const std::string& uid, int limit)
 
 bool MySQLAdapter::delete_unsend_message(const uint64_t mid, const std::string& uid, const std::string& room_id)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement> pre_stmt(
@@ -1012,8 +1118,9 @@ bool MySQLAdapter::delete_unsend_message(const uint64_t mid, const std::string& 
 	}
 }
 
-std::vector<std::string> MySQLAdapter::get_users_from_chatroom(const std::string& room_id_hex)
+std::vector<std::string> MySQLAdapter::get_member_uids(const std::string& room_id_hex)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 16進数文字列をバイナリデータに変換
@@ -1052,8 +1159,9 @@ std::vector<std::string> MySQLAdapter::get_users_from_chatroom(const std::string
 	}
 }
 
-std::string MySQLAdapter::get_chatroom_name_fromDB(const std::string& room_id_hex)
+std::string MySQLAdapter::get_chatroom_name(const std::string& room_id_hex)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 16進数文字列をバイナリデータに変換
@@ -1097,8 +1205,9 @@ std::string MySQLAdapter::get_chatroom_name_fromDB(const std::string& room_id_he
 	}
 }
 
-bool MySQLAdapter::delete_chatroom_fromDB(const std::string& room_id_hex)
+bool MySQLAdapter::delete_chatroom(const std::string& room_id_hex)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 16進数文字列をバイナリデータに変換
@@ -1134,6 +1243,7 @@ bool MySQLAdapter::delete_chatroom_fromDB(const std::string& room_id_hex)
 
 bool MySQLAdapter::update_chatroom_name(const std::string& room_id_hex, const std::string& room_name)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 16進数文字列をバイナリデータに変換
@@ -1171,6 +1281,7 @@ bool MySQLAdapter::update_chatroom_name(const std::string& room_id_hex, const st
 
 bool MySQLAdapter::update_chatroom_icon(const std::string& room_id_hex, const std::string& icon_url)
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		// 16進数文字列をバイナリデータに変換
@@ -1208,6 +1319,7 @@ bool MySQLAdapter::update_chatroom_icon(const std::string& room_id_hex, const st
 
 bool MySQLAdapter::create_table_users()
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
@@ -1236,6 +1348,7 @@ bool MySQLAdapter::create_table_users()
 
 bool MySQLAdapter::create_table_chatrooms()
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
@@ -1264,6 +1377,7 @@ bool MySQLAdapter::create_table_chatrooms()
 
 bool MySQLAdapter::create_table_chat_members()
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
@@ -1292,6 +1406,7 @@ bool MySQLAdapter::create_table_chat_members()
 
 bool MySQLAdapter::create_table_messages()
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
@@ -1302,6 +1417,7 @@ bool MySQLAdapter::create_table_messages()
 				"send_time DATETIME NOT NULL,"
 				"message JSON NOT NULL,"
 				"room_sequence BIGINT UNSIGNED NOT NULL DEFAULT 0,"
+				"target_uid VARCHAR(28) NOT NULL DEFAULT '',"
 				"FOREIGN KEY (room_id) REFERENCES chatrooms(room_id) ON DELETE CASCADE,"
 				"FOREIGN KEY (sender_uid) REFERENCES users(uid) ON DELETE CASCADE);")
 		);
@@ -1322,6 +1438,7 @@ bool MySQLAdapter::create_table_messages()
 
 bool MySQLAdapter::create_table_unsend_messages()
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr < sql::PreparedStatement > pre_stmt(
@@ -1351,6 +1468,7 @@ bool MySQLAdapter::create_table_unsend_messages()
 
 bool MySQLAdapter::create_table_unsend_control_messages()
 {
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
 	{
 		std::unique_ptr<sql::PreparedStatement > pre_stmt(

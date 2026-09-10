@@ -20,8 +20,8 @@
 #include "StringFormat.h"
 #include "ServerTime.hpp"
 #include "ThreadPoolHandler.hpp"
-#include "SocketHandler.hpp"
-#include "ProtocolHandler.hpp"
+#include "Network/SocketHandler.hpp"
+#include "Network/TLSConnectionHandler.hpp"
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <shared_mutex>

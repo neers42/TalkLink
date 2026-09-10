@@ -1,4 +1,7 @@
 #include "Application/Services/MessageDeliveryService.hpp"
+#include "Domain/CommunicationHandler.hpp"
+#include "Domain/ChatroomRepositoryHandler.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
 
 MessageDeliveryService::MessageDeliveryService(
     std::shared_ptr<CommunicationHandler> communication_handler,
@@ -17,24 +20,16 @@ MessageDeliveryService::MessageDeliveryService(
     LOG_INFO("[MessageDeliveryService] MessageDeliveryService initialized successfully");
 }
 
-IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
+DeliveryResult MessageDeliveryService::deliver_to_room(
     const json& message_json,
     const std::string& room_id,
-    socket_t sender_socket,
     const std::string& sender_uid
 ) {
     DeliveryResult result = {};
     
     try {
-        if (sender_socket == INVALID_SOCKET_FD) {
-            LOG_ERROR("[MessageDeliveryService] Sender with UID '{}' not found. Cannot send message.", sender_uid);
-            result.success = false;
-            result.error_message = "Sender not found";
-            return result;
-        }
-        
         // ルームメンバー取得
-        auto receivers_uids = _chatroom_repository_handler->get_user_infos_by_chatroom_id(room_id);
+        auto receivers_uids = _chatroom_repository_handler->get_member_uids(room_id);
         
         // 各メンバーにメッセージ送信
         for (const auto& uid : receivers_uids) {
@@ -83,7 +78,7 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_to_room(
     }
 }
 
-IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_p2p(
+DeliveryResult MessageDeliveryService::deliver_p2p(
     const json& message_json,
     const std::string& target_uid
 ) {
@@ -122,7 +117,7 @@ IMessageDeliveryService::DeliveryResult MessageDeliveryService::deliver_p2p(
     }
 }
 
-IMessageDeliveryService::DeliveryResult MessageDeliveryService::broadcast(
+DeliveryResult MessageDeliveryService::broadcast(
     const json& message_json,
     const std::string& sender_uid,
     bool exclude_sender

@@ -1,4 +1,5 @@
 #include "Domain/UserRepositoryHandler.hpp"
+#include "Domain/Interfaces/IUserRepository.hpp"
 
 // User entity operations
 bool UserRepositoryHandler::add_user(socket_t socket, SSL* ssl, const sockaddr_in& addr,
@@ -86,7 +87,7 @@ bool UserRepositoryHandler::remove_user(socket_t socket)
             user_ip_addr = it->second.ipv4_address;
             if (it->second.user) {
                 uid = it->second.user->get_id();
-                _mysql_adapter->update_last_login(uid, _server_time->get_current_time_to_seconds());
+                _user_repository->update_last_login(uid, _server_time->get_current_time_to_seconds());
             }
         }
 
@@ -192,7 +193,7 @@ bool UserRepositoryHandler::update_user_heartbeat(socket_t socket)
         }
 
         // ハートビートカウントをリセットし、最終活動時間を現在時刻に更新
-        aggregate->user->reset_heart_beat_count();
+        aggregate->user->clear_heart_beat_count();
         aggregate->user->update_last_activity(std::time(nullptr));
         
         LOG_DEBUG("[UserRepositoryHandler] User heartbeat updated: socket={}", socket);
@@ -369,8 +370,8 @@ SearchResult UserRepositoryHandler::search_users(const std::string &query)
             return result;
         }
 
-        // MySQLAdapterを使用してユーザー情報を検索
-        auto user_infos = this->_mysql_adapter->search_user_infos(query);
+        // ユーザー情報を検索
+        auto user_infos = this->_user_repository->search_user_infos(query);
 
         if (user_infos.empty()) {
             LOG_INFO("[UserRepositoryHandler] No users found for query: {}", query);

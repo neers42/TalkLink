@@ -1,4 +1,4 @@
-#include "RedisHelper.hpp"
+#include "Database/RedisHelper.hpp"
 
 RedisHelper::RedisHelper()
     : _host("localhost"), _port(6379), _context(nullptr, redisFree)

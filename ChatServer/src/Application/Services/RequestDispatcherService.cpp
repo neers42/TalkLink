@@ -1,14 +1,14 @@
 #include "Application/Services/RequestDispatcherService.hpp"
+#include "Domain/CommunicationHandler.hpp"
+#include "MessageBase.hpp"
 
 RequestDispatcherService::RequestDispatcherService(
     std::shared_ptr<SocketHandler> socket_handler,
-    std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
     std::shared_ptr<CommunicationHandler> communication_handler
-) : _socket_handler(std::move(socket_handler)), 
-    _thread_pool_handler(std::move(thread_pool_handler)),
+) : _socket_handler(std::move(socket_handler)),
     _communication_handler(std::move(communication_handler))
 {
-    if (!_socket_handler || !_thread_pool_handler || !_communication_handler) {
+    if (!_socket_handler || !_communication_handler) {
         throw std::runtime_error("RequestDispatcherService dependencies cannot be null");
     }
     

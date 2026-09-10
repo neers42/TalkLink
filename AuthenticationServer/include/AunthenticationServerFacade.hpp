@@ -17,7 +17,7 @@ class AunthenticationServerFacade
 private:
 	std::unique_ptr<SocketHandler> _socket_handler;
 	std::unique_ptr<ThreadPoolHandler> _thread_pool_handler;
-	std::unique_ptr<ProtocolHandler> _protocol_handler;
+	std::unique_ptr<TLSConnectionHandler> _tlscon_handler;
 	std::unique_ptr<RedisAdapter> _redis_adapter; // Redisクライアント
 	std::unique_ptr<TokenHandler> _token_handler; // JWTトークンハンドラー
 	std::map<socket_t, SSL*> _ssl_list;

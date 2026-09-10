@@ -2,12 +2,8 @@
 #define REQUESTDISPATCHERSERVICE_HPP
 
 #include "Utils/common.hpp"
-#include "SocketHandler.hpp"
-#include "ThreadPoolHandler.hpp"
-#include "Domain/CommunicationHandler.hpp"
-#include "MessageBase.hpp"
-#include <functional>
-#include <memory>
+
+class CommunicationHandler;
 
 // メッセージ処理結果
 struct MessageDispatchResult {
@@ -41,7 +37,6 @@ public:
 
     RequestDispatcherService(
         std::shared_ptr<SocketHandler> socket_handler,
-        std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
         std::shared_ptr<CommunicationHandler> communication_handler
     );
     
@@ -62,7 +57,6 @@ public:
 
 private:
     std::shared_ptr<SocketHandler> _socket_handler;
-    std::shared_ptr<ThreadPoolHandler> _thread_pool_handler;
     std::shared_ptr<CommunicationHandler> _communication_handler;
     
     AcceptCallback _accept_callback;

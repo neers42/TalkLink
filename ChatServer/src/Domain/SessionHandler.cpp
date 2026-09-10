@@ -1,20 +1,23 @@
 #include "Domain/SessionHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
 #include "Infrastructure/RedisAdapter.hpp"
-#include "Infrastructure/MySQLAdapter.hpp"
+#include "Domain/Interfaces/IUserRepository.hpp"
+#include "Domain/Interfaces/IMessageRepository.hpp"
 #include "ServerTime.hpp"
 
 SessionHandler::SessionHandler(
     std::shared_ptr<UserRepositoryHandler> repository,
     std::shared_ptr<RedisAdapter> redis_adapter,
-    std::shared_ptr<MySQLAdapter> mysql_adapter,
+    std::shared_ptr<IUserRepository> user_repository,
+    std::shared_ptr<IMessageRepository> message_repository,
     std::shared_ptr<ServerTime> server_time)
     : _repository(std::move(repository)), 
     _redis_adapter(std::move(redis_adapter)), 
-    _mysql_adapter(std::move(mysql_adapter)), 
+    _user_repository(std::move(user_repository)),
+    _message_repository(std::move(message_repository)), 
     _server_time(std::move(server_time))
 {
-    if (!_repository || !_redis_adapter || !_mysql_adapter || !_server_time) {
+    if (!_repository || !_redis_adapter || !_user_repository || !_message_repository || !_server_time) {
         throw std::runtime_error("Failed to initialize SessionHandler dependencies");
     }
     
@@ -72,7 +75,7 @@ bool SessionHandler::verify_session_in_redis(const std::string& uid) {
     try {
         // Redis セッションキーの存在確認
         std::string session_key = "session:" + uid;
-        bool session_exists = _redis_adapter->is_user_session_key(session_key);
+        bool session_exists = _redis_adapter->user_session_exists(session_key);
         
         if (session_exists) {
             LOG_DEBUG("[SessionHandler] Session found in Redis for user: {}", uid);
@@ -110,7 +113,7 @@ void SessionHandler::resolve_user_profile(
         std::string db_name;
         std::string db_email;
         std::string db_icon;
-        auto user_info = _mysql_adapter->get_user_info(uid);
+        auto user_info = _user_repository->get_user_info(uid);
         if (out_name.empty() && !user_info.name.empty()) {
             out_name = user_info.name;
         }
@@ -141,12 +144,12 @@ json SessionHandler::get_unreceived_messages(const std::string& uid, uint64_t la
             LOG_WARNING("[SessionHandler] uid is empty while getting unreceived messages");
             return unreceived_messages;
         }
-        if (!_mysql_adapter) {
-            LOG_ERROR("[SessionHandler] MySQL adapter is not initialized");
+        if (!_message_repository) {
+            LOG_ERROR("[SessionHandler] MessageRepository is not initialized");
             return unreceived_messages;
         }
 
-        json db_result = _mysql_adapter->get_unreceived_messages(uid, last_received_id);
+        json db_result = _message_repository->get_unreceived_messages(uid, last_received_id);
 
         if (db_result.is_object() && db_result.contains("unreceived_messages") && db_result["unreceived_messages"].is_array()) {
             LOG_INFO("[SessionHandler] Retrieved {} unreceived messages for user {}", db_result["unreceived_messages"].size(), uid);
@@ -273,7 +276,7 @@ SessionValidationResult SessionHandler::handle_signup_request(
             return result;
         }
         // ユーザの情報をDBに登録
-        auto insert_db_result = _mysql_adapter->insert_user_info_data(
+        auto insert_db_result = _user_repository->insert_user_info_data(
             result.uid, 
             session_message->get_user_name(), 
             session_message->get_user_mail_addr(),

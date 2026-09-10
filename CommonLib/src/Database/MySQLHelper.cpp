@@ -1,4 +1,4 @@
-#include "MySQLHelper.hpp"
+#include "Database/MySQLHelper.hpp"
 
 #ifndef _WIN32
 #include <arpa/inet.h>

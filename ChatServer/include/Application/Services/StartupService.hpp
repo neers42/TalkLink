@@ -9,7 +9,7 @@
 // Forward declarations
 class SocketHandler;
 class ThreadPoolHandler;
-class ProtocolHandler;
+class TLSConnectionHandler;
 class TaskManagementService;
 class RequestDispatcherService;
 class UserManagementService;
@@ -58,7 +58,7 @@ public:
     StartupService(
         std::shared_ptr<SocketHandler> socket_handler,
         std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
-        std::shared_ptr<ProtocolHandler> protocol_handler,
+        std::shared_ptr<TLSConnectionHandler> protocol_handler,
         std::shared_ptr<TaskManagementService> task_management_service,
         std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
         std::shared_ptr<UserManagementService> user_management_service,
@@ -158,7 +158,7 @@ private:
     // Injected dependencies
     std::shared_ptr<SocketHandler> _socket_handler;
     std::shared_ptr<ThreadPoolHandler> _thread_pool_handler;
-    std::shared_ptr<ProtocolHandler> _protocol_handler;
+    std::shared_ptr<TLSConnectionHandler> _tlscon_handler;
     std::shared_ptr<TaskManagementService> _task_management_service;
     std::shared_ptr<RequestDispatcherService> _request_dispatcher_service;
     std::shared_ptr<UserManagementService> _user_management_service;

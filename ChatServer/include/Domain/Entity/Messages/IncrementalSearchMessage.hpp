@@ -1,9 +1,9 @@
-#ifndef INCLIMENTALSEARCH_HPP
-#define INCLIMENTALSEARCH_HPP
+#ifndef INCREMENTALSEARCHMESSAGE_HPP
+#define INCREMENTALSEARCHMESSAGE_HPP
 #include "Utils/common.hpp"
 #include "MessageBase.hpp"
 #include "IReceiveMessage.hpp"
-class InclimentalSearchMessage :
+class IncrementalSearchMessage :
     public MessageBase, public IReceiveMessage
 {
 public:
@@ -20,8 +20,8 @@ private:
     
 public:
     //コンストラクタ
-    InclimentalSearchMessage() = delete;
-    InclimentalSearchMessage(const MessageBase::CommonField& common_fields, SearchType s_type, const std::string& keyword);
+    IncrementalSearchMessage() = delete;
+    IncrementalSearchMessage(const MessageBase::CommonField& common_fields, SearchType s_type, const std::string& keyword);
 
     //各種アクセッサ
     SearchType get_search_type() const;
@@ -36,9 +36,9 @@ public:
 
 
     //デストラクタ
-    ~InclimentalSearchMessage();
+    ~IncrementalSearchMessage();
 
 };
 
 
-#endif // !INCLIMENTALSEARCH_HPP
+#endif // !INCREMENTALSEARCHMESSAGE_HPP

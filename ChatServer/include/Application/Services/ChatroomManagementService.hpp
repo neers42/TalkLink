@@ -2,14 +2,17 @@
 #define CHATROOMSERVICE_HPP
 
 #include "Utils/common.hpp"
+#include "Application/Services/DTO/DeliveryResult.hpp"
 #include "Domain/Entity/Messages/ChatroomControlMessage.hpp"
-#include "Domain/Entity/Messages/ChatroomControlDeliveryMessage.hpp"
-#include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
-#include "Application/Services/IMessageDeliveryService.hpp"
-#include "Domain/ChatroomRepositoryHandler.hpp"
-#include "Domain/ChatroomIDGenerator.hpp"
+#include "Domain/DTO/UserInfo.hpp"
 
+class ChatroomControlMessage;
+class ChatroomControlDeliveryMessage;
+class ChatroomControlAckMessage;
+class IMessageDeliveryService;
+class ChatroomRepositoryHandler;
 class ChatroomSequenceHandler;
+class ChatroomIDGenerator;
 
 // チャットルーム操作結果
 struct ChatroomOperationResult {
@@ -56,7 +59,7 @@ public:
     // ==================== チャットルーム操作 ====================
     
     // チャットルーム操作処理（統合）
-    ChatroomOperationResult process_chatroom_operation(const json& control_message_json, socket_t sender_socket);
+    ChatroomOperationResult process_chatroom_operation(const json& control_message_json);
     
     // チャットルーム作成
     RoomCreationResult create_chatroom(
@@ -76,10 +79,9 @@ public:
     // ==================== 通知配信 ====================
     
     // チャットルーム操作通知の配信
-    IMessageDeliveryService::DeliveryResult deliver_chatroom_notification(
+    DeliveryResult deliver_chatroom_notification(
         const std::unique_ptr<ChatroomControlMessage>& control_message,
-        const ChatroomOperationResult& operation_result,
-        socket_t sender_socket
+        const ChatroomOperationResult& operation_result
     );
     
     // チャットルーム操作の確認応答
@@ -91,7 +93,7 @@ public:
     // ==================== ユーティリティメソッド ====================
     
     // クライアント情報生成
-    std::vector<ChatroomControlDeliveryMessage::UserInfo> generate_user_infos(const std::vector<std::string>& uids);
+    std::vector<UserInfo> generate_user_infos(const std::vector<std::string>& uids);
     
     // ルーム権限チェック
     bool check_room_permission(const std::string& room_id, const std::string& uid, const std::string& operation);
@@ -115,6 +117,13 @@ private:
                                          const json &message_json,
                                          const std::string &room_id,
                                          std::uint64_t room_sequence);
+    // 特定ユーザー宛の通知（ADD_MEMBER 時の新規メンバーへの CREATE_ROOM 等）をDBへ永続化する
+    bool save_targeted_notification_to_database(const std::unique_ptr<ChatroomControlMessage> &control_message,
+                                                const json &message_json,
+                                                const std::string &room_id,
+                                                const std::string &target_uid,
+                                                uint64_t message_id,
+                                                std::uint64_t room_sequence);
     bool remove_room_sequence(const std::string& room_id);
     
     // エラーハンドリング
@@ -123,7 +132,9 @@ private:
     // 通知メッセージ生成
     std::unique_ptr<ChatroomControlDeliveryMessage> create_notification_message(
         const std::unique_ptr<ChatroomControlMessage>& control_message,
-        const ChatroomOperationResult& result
+        const ChatroomControlMessage::RoomAction room_action,
+        const ChatroomOperationResult& result,
+        uint64_t message_id
     );
 
     // プライベートヘルパーメソッド

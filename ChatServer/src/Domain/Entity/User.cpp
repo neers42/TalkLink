@@ -1,9 +1,8 @@
 ﻿#include "Domain/Entity/User.hpp"
-User::User() 
+User::User()
 	: _id{ "" }
 	, _name{ "" }
 	, _mail_address{ "" }
-	, _password{ "" }
 	, _heart_beat_count{ 0 }
 	, _auth_status{ false }
 	, _connection_state{ ConnectState::ACTIVE }
@@ -20,31 +19,12 @@ User::User(
 	: _id{ id },
 	_name{ name },
 	_mail_address{ mail_addr },
-	_password{ "" },
 	_heart_beat_count{ 0 },
 	_auth_status{ false },
 	_connection_state{ ConnectState::ACTIVE },
 	_last_activity{ std::time(nullptr) }
 {
 	// ドメイン情報のみのコンストラクタ
-}
-
-User::User(
-	const std::string& id, 
-	const std::string& name, 
-	const std::string& mail_addr, 
-	const std::string& password
-)
-	: _id{ id },
-	_name{ name },
-	_mail_address{ mail_addr },
-	_password{ password },
-	_heart_beat_count{ 0 },
-	_auth_status{ false },
-	_connection_state{ ConnectState::ACTIVE },
-	_last_activity{ std::time(nullptr) }
-{
-	// パスワード付きドメインコンストラクタ
 }
 
 User::~User()
@@ -66,12 +46,6 @@ std::string User::get_mail_address() const
 {
 	return this->_mail_address;
 }
-
-std::string User::get_password() const
-{
-	return this->_password;
-}
-
 
 int User::get_heart_beat_count() const
 {
@@ -103,12 +77,6 @@ void User::set_mail_address(const std::string& mail_address)
 {
 	this->_mail_address = mail_address;
 }
-
-void User::set_password(const std::string& password)
-{
-	this->_password = password;
-}
-
 
 void User::set_heart_beat_count(const int count)
 {
@@ -151,7 +119,6 @@ User& User::operator=(const User& other_user)
 	_id = other_user._id;
 	_name = other_user._name;
 	_mail_address = other_user._mail_address;
-	_password = other_user._password;
 	_heart_beat_count.store(other_user._heart_beat_count.load());
 	_auth_status.store(other_user._auth_status.load());
 	_connection_state.store(other_user._connection_state.load());
@@ -174,12 +141,6 @@ bool User::can_disconnect() const
 time_t User::get_last_activity() const
 {
 	return _last_activity.load();
-}
-
-void User::reset_heart_beat_count()
-{
-	// clear_heart_beat_countのエイリアス
-	clear_heart_beat_count();
 }
 
 void User::update_last_activity(time_t timestamp)

@@ -10,13 +10,13 @@ AunthenticationServerFacade::AunthenticationServerFacade()
 	spdlog::info("Starting TalkLink Auth-server version 1.0.0!!");
 	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
-	_protocol_handler = std::make_unique<ProtocolHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
+	_tlscon_handler = std::make_unique<TLSConnectionHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
 	_redis_adapter = std::make_unique<RedisAdapter>();
 	_token_handler = std::make_unique<TokenHandler>();
 	
 	if (_socket_handler == nullptr
 		|| _thread_pool_handler == nullptr
-		|| _protocol_handler == nullptr
+		|| _tlscon_handler == nullptr
 		|| _redis_adapter == nullptr
 		|| _token_handler == nullptr)
 	{
@@ -42,7 +42,7 @@ void AunthenticationServerFacade::run() {
 		LOG_ERROR("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
-	this->_thread_pool_handler->enqueue_task([this](){ _protocol_handler->hot_reload_certificates(60, SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH); });
+	this->_thread_pool_handler->enqueue_task([this](){ _tlscon_handler->hot_reload_certificates(60, SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH); });
 	spdlog::info("Start monitoring requests from clients.");
 	//ディスクリプション監視スタート
 	while (true) {
@@ -104,7 +104,7 @@ bool AunthenticationServerFacade::accept_client_socket_process() {
 #endif
 
 	// SSLアクセプト処理
-	SSL* new_client_ssl = this->_protocol_handler->ssl_accept(new_client_socket);
+	SSL* new_client_ssl = this->_tlscon_handler->ssl_accept(new_client_socket);
 	if (new_client_ssl == nullptr)
 	{
 		LOG_ERROR("client ssl is not accepted(socket:{})", new_client_socket);
@@ -113,7 +113,7 @@ bool AunthenticationServerFacade::accept_client_socket_process() {
 	}
 	else
 	{
-		this->_protocol_handler->get_peer_cetificate(new_client_ssl);
+		this->_tlscon_handler->get_peer_cetificate(new_client_ssl);
 		spdlog::info("client ip : {} , success, server accept client(socket:{}).", new_client_ipv4_addr, new_client_socket);
 #ifdef USE_POLL
 		//アクセプトしたクライアントの通知を検知できるようにepollの設定を実施
@@ -149,7 +149,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 		}
 
 		// メッセージの受信
-		std::tie(receive_json, disconnect_flag, recv_flag) = this->_protocol_handler->receive_message_json(client_ssl);
+		std::tie(receive_json, disconnect_flag, recv_flag) = this->_tlscon_handler->receive_message_json(client_ssl);
 
 		//disconnect_flagがfalseの場合、epoll_ctrlにONESHOTを登録する。
 		if (disconnect_flag == false)
@@ -195,7 +195,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 			response = MessageBase::serialize_message(response_instance);
 
 			// レスポンスをクライアントに送信する
-			if (this->_protocol_handler->send_message_json(client_ssl, response) == true)
+			if (this->_tlscon_handler->send_message_json(client_ssl, response) == true)
 			{
 				spdlog::info("Sent response to client(socket : {}).", socket);
 			}
@@ -244,7 +244,7 @@ void AunthenticationServerFacade::handle_disconnect_process(const socket_t socke
 		fcntl(socket, F_SETFL, flags & ~O_NONBLOCK);
 	}
 #endif
-	this->_protocol_handler->shutdown_ssl(client_ssl);
+	this->_tlscon_handler->shutdown_ssl(client_ssl);
 	this->_socket_handler->close_socket(socket);
 	spdlog::info("User with socket {} has been disconnected and cleaned up.", socket);
 	_ssl_list.erase(it);

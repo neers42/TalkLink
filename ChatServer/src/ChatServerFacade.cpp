@@ -1,4 +1,6 @@
 ﻿#include "ChatServerFacade.hpp"
+#include "Application/Services/StartupService.hpp"
+#include "Application/Services/RequestDispatcherService.hpp"
 
 ChatServerFacade::ChatServerFacade() : 
 	_service_container(ServiceContainer::get_instance())

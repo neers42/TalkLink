@@ -1,15 +1,17 @@
 #ifndef USERMANAGEMENTSERVICE_HPP
 #define USERMANAGEMENTSERVICE_HPP
 #include "Utils/common.hpp"
-#include "Domain/CommunicationHandler.hpp"
-#include "Domain/UserRepositoryHandler.hpp"
-#include "Domain/SessionHandler.hpp"
-#include "Domain/Entity/User.hpp"
-#include "Domain/UserAggregateStore.hpp"
-#include "Domain/Entity/Messages/SessionRequestMessage.hpp"
-#include "Domain/Entity/Messages/SessionResponseMessage.hpp"
-#include "Domain/Entity/Messages/UserSearchRequestMessage.hpp"
-#include "Domain/Entity/Messages/UserSearchResponseMessage.hpp"
+#include "Domain/DTO/UserInfo.hpp"
+
+class CommunicationHandler;
+class UserRepositoryHandler;
+class SessionHandler;
+class MySQLAdapter;
+class RedisAdapter;
+class ServerTime;
+
+class SessionRequestMessage;
+class UserSearchRequestMessage;
 
 // ChatServiceから共通のSessionResult構造体を使用
 struct SessionResult {

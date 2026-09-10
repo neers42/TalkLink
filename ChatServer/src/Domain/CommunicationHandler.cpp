@@ -30,7 +30,7 @@ CommunicationHandler::AcceptResult CommunicationHandler::accept_new_connection()
 
         // 3. SSL/TLSハンドシェイク (ProtocolHandlerに委譲)
         // Note: SSLハンドシェイクはブロッキングモードで実行し、完了後に非ブロッキングに設定
-        new_user_ssl = _protocol_handler->ssl_accept(new_user_socket);
+        new_user_ssl = _tlscon_handler->ssl_accept(new_user_socket);
         if (new_user_ssl == nullptr) {
             LOG_ERROR("[CommunicationHandler] SSL handshake failed for socket: {}", new_user_socket);
             _socket_handler->close_socket(new_user_socket);
@@ -51,7 +51,7 @@ CommunicationHandler::AcceptResult CommunicationHandler::accept_new_connection()
 #endif
 
         LOG_DEBUG("[CommunicationHandler] SSL handshake successful for user: {} (socket: {})", user_ip_addr, new_user_socket);
-        _protocol_handler->get_peer_cetificate(new_user_ssl);
+        _tlscon_handler->get_peer_cetificate(new_user_ssl);
 
         // 5. 新しいクライアントソケットをepollに登録
         _socket_handler->add_epoll_ctrl(new_user_socket);
@@ -89,7 +89,7 @@ bool CommunicationHandler::close_connection(socket_t socket)
 
         // SSL/TLS接続終了
         if (ssl) {
-            bool ssl_result = _protocol_handler->shutdown_ssl(ssl);
+            bool ssl_result = _tlscon_handler->shutdown_ssl(ssl);
             if (!ssl_result) {
                 LOG_WARNING("[CommunicationHandler] SSL shutdown failed for socket: {}", socket);
             }
@@ -130,7 +130,7 @@ bool CommunicationHandler::send_message(socket_t socket, const json &message)
         std::lock_guard<std::mutex> aggregate_lock(_store->get_id_map_mutex());
         
         // ProtocolHandlerに委譲
-        bool result = _protocol_handler->send_message_json(ssl, message);
+        bool result = _tlscon_handler->send_message_json(ssl, message);
         
         if (result) {
             LOG_DEBUG("[CommunicationHandler] Message sent successfully to user: {} (socket: {})", it->second.ipv4_address, socket);
@@ -172,7 +172,7 @@ std::tuple<json, bool, bool> CommunicationHandler::receive_message(socket_t sock
         std::lock_guard<std::mutex> aggregate_lock(_store->get_id_map_mutex());
         
         // ProtocolHandlerに委譲
-        auto [recv_json, disconnect_flag, recv_flag] = _protocol_handler->receive_message_json(ssl);
+        auto [recv_json, disconnect_flag, recv_flag] = _tlscon_handler->receive_message_json(ssl);
     
         if (recv_flag && !disconnect_flag) {
             // 最終活動時間更新
@@ -212,7 +212,7 @@ bool CommunicationHandler::shutdown_ssl(socket_t socket)
         }
 
         // ProtocolHandlerに委譲
-        bool result = _protocol_handler->shutdown_ssl(ssl);
+        bool result = _tlscon_handler->shutdown_ssl(ssl);
         
         if (result) {
             LOG_INFO("[CommunicationHandler] SSL shutdown successful for socket: {}", socket);

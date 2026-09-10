@@ -2,6 +2,7 @@
 #define IMESSAGEDELIVERYSERVICE_HPP
 
 #include "Utils/common.hpp"
+#include "Application/Services/DTO/DeliveryResult.hpp"
 
 /**
  * @brief メッセージ配信サービスの抽象インターフェース
@@ -12,27 +13,16 @@ class IMessageDeliveryService {
 public:
     virtual ~IMessageDeliveryService() = default;
     
-    // 配信結果
-    struct DeliveryResult {
-        bool success = false;
-        int sent_count = 0;
-        std::vector<std::string> unsent_uids;
-        std::string error_message;
-        std::uint64_t room_sequence = 0;
-    };
-    
     /**
      * @brief ルームへのメッセージ配信
      * @param message_json シリアライズ済みメッセージ
      * @param room_id 対象ルームID
-     * @param sender_socket 送信者ソケット
      * @param sender_uid 送信者ID
      * @return 配信結果
      */
     virtual DeliveryResult deliver_to_room(
         const json& message_json,
         const std::string& room_id,
-        socket_t sender_socket,
         const std::string& uid
     ) = 0;
     

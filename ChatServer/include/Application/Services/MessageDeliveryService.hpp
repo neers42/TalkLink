@@ -1,11 +1,12 @@
 #ifndef MESSAGEDELIVERYSERVICE_HPP
 #define MESSAGEDELIVERYSERVICE_HPP
 
-#include "Application/Services/IMessageDeliveryService.hpp"
-#include "Domain/CommunicationHandler.hpp"
-#include "Domain/ChatroomRepositoryHandler.hpp"
-#include "Domain/UserRepositoryHandler.hpp"
-#include <memory>
+#include "Application/Interfaces/IMessageDeliveryService.hpp"
+#include "Application/Services/DTO/DeliveryResult.hpp"
+
+class CommunicationHandler;
+class ChatroomRepositoryHandler;
+class UserRepositoryHandler;
 
 class MessageDeliveryService : public IMessageDeliveryService {
 public:
@@ -21,7 +22,6 @@ public:
     DeliveryResult deliver_to_room(
         const json& message_json,
         const std::string& room_id,
-        socket_t sender_socket,
         const std::string& sender_uid
     ) override;
     

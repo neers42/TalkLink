@@ -4,23 +4,11 @@
 #include "ISendMessage.hpp"
 #include "Domain/MessageIDGenerator.hpp"
 #include "Domain/Entity/Messages/ChatroomControlMessage.hpp"
+#include "Domain/DTO/UserInfo.hpp"
 class ChatroomControlDeliveryMessage :
     public MessageBase, public ISendMessage
 {
-public:
-	struct UserInfo {
-		std::string uid;	//ユーザーID
-		std::string name;	//ユーザー名
-		std::string icon_url;
 
-		UserInfo(
-			const std::string& uid,
-			const std::string& name,
-			const std::string& icon_url)
-			:uid{uid}, name{name}, icon_url{icon_url}
-		{
-		}
-	};
 private:
 	std::string _sender_uid;	//送信者ID
 	std::string _room_id;

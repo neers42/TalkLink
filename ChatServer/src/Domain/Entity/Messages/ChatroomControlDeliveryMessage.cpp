@@ -1,6 +1,23 @@
 ﻿#include "Domain/Entity/Messages/ChatroomControlDeliveryMessage.hpp"
 
-ChatroomControlDeliveryMessage::ChatroomControlDeliveryMessage() 
+namespace {
+std::string room_action_to_string(ChatroomControlMessage::RoomAction action)
+{
+	switch (action)
+	{
+	case ChatroomControlMessage::RoomAction::CREATE_ROOM:      return "CREATE_ROOM";
+	case ChatroomControlMessage::RoomAction::LEAVE_ROOM:       return "LEAVE_ROOM";
+	case ChatroomControlMessage::RoomAction::ADD_MEMBER:       return "ADD_MEMBER";
+	case ChatroomControlMessage::RoomAction::REMOVE_MEMBER:    return "REMOVE_MEMBER";
+	case ChatroomControlMessage::RoomAction::ROOM_NAME_CHANGE: return "ROOM_NAME_CHANGE";
+	case ChatroomControlMessage::RoomAction::ROOM_ICON_CHANGE: return "ROOM_ICON_CHANGE";
+	case ChatroomControlMessage::RoomAction::DELETE_ROOM:      return "DELETE_ROOM";
+	}
+	return "";
+}
+}
+
+ChatroomControlDeliveryMessage::ChatroomControlDeliveryMessage()
 	:MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_DELIVERY),
 	 _sender_uid{""},
 	 _room_id{""},
@@ -71,7 +88,7 @@ void ChatroomControlDeliveryMessage::set_icon_url(const std::string& icon_url)
 	this->_icon_url = icon_url;
 }
 
-std::vector<ChatroomControlDeliveryMessage::UserInfo> ChatroomControlDeliveryMessage::get_user_infos() const
+std::vector<UserInfo> ChatroomControlDeliveryMessage::get_user_infos() const
 {
     return this->_user_infos;
 }
@@ -109,6 +126,7 @@ json ChatroomControlDeliveryMessage::serialize_payload() const
 		specific_fields["room_name"] = this->_room_name;
 		specific_fields["room_icon_url"] = this->_icon_url;
 		specific_fields["room_sequence"] = this->_room_sequence;
+		specific_fields["room_action"] = room_action_to_string(this->_room_action);
 
 		switch (this->get_room_action())
 		{

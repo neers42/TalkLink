@@ -1,5 +1,5 @@
-﻿#ifndef PROTOCOLHANDLER_HPP
-#define PROTOCOLHANDLER_HPP
+﻿#ifndef TLSCONNECTIONHANDLER_HPP
+#define TLSCONNECTIONHANDLER_HPP
 #include <sstream>
 #include <shared_mutex>
 #include <iostream>
@@ -44,7 +44,7 @@ using socket_t = int;		//Linuxではintを使用
 //#define SERVER_METHOD_TLS_1_1	//TLS1.1で接続
 #define MESSAGE_SIZE 1024	//SSL readで受信するメッセージのサイズ
 
-class ProtocolHandler
+class TLSConnectionHandler
 {
 
 	struct SSL_CTX_Deleter
@@ -66,12 +66,12 @@ private:
 
 public:
 	//コンストラクタ
-	ProtocolHandler() = delete;
-	ProtocolHandler(const std::string& cert_file_pass, const std::string& private_key_pass);
-	ProtocolHandler(const ProtocolHandler&) = delete; // コピーコンストラクタを削除
+	TLSConnectionHandler() = delete;
+	TLSConnectionHandler(const std::string& cert_file_pass, const std::string& private_key_pass);
+	TLSConnectionHandler(const TLSConnectionHandler&) = delete; // コピーコンストラクタを削除
 
 	//デストラクタ
-	~ProtocolHandler();
+	~TLSConnectionHandler();
 
 	//各種アクセッサ(getter/setter)
 	SSL* get_ssl_object();
@@ -126,7 +126,7 @@ private:
 	bool reload_certificates(SSL_CTX* ctx, const std::string& cert_file, const std::string& key_file);
 
 };
-#endif // !PROTOCOLHANDLER_HPP
+#endif // !TLSCONNECTIONHANDLER_HPP
 
 
 

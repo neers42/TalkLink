@@ -1,249 +1,176 @@
 #include "Domain/ChatroomRepositoryHandler.hpp"
 
-ChatroomRepositoryHandler::ChatroomRepositoryHandler(std::shared_ptr<MySQLAdapter> mysql_adapter) 
-    : _mysql_adapter(std::move(mysql_adapter)) {
-    if (!_mysql_adapter) {
-        throw std::invalid_argument("MySQLAdapter cannot be null");
+ChatroomRepositoryHandler::ChatroomRepositoryHandler(
+    std::shared_ptr<IChatroomRepository> chatroom_repository,
+    std::shared_ptr<IUserRepository> user_repository,
+    std::shared_ptr<IMessageRepository> message_repository)
+    : _chatroom_repository(std::move(chatroom_repository)),
+      _user_repository(std::move(user_repository)),
+      _message_repository(std::move(message_repository))
+{
+    if (!_chatroom_repository || !_user_repository || !_message_repository)
+    {
+        throw std::invalid_argument("ChatroomRepositoryHandler dependencies cannot be null");
     }
     LOG_INFO("[ChatroomRepositoryHandler] ChatroomRepositoryHandler initialized");
 }
 
 ChatroomRepositoryHandler::~ChatroomRepositoryHandler() {
-    std::unique_lock<std::shared_mutex> lock(_shared_mtx);
-    _chatroom_list.clear();
     LOG_INFO("[ChatroomRepositoryHandler] ChatroomRepositoryHandler destroyed");
-}
-
-// ==================== プライベートヘルパーメソッド ====================
-
-std::vector<std::shared_ptr<Chatroom>>::iterator 
-ChatroomRepositoryHandler::find_chatroom_iterator(const std::string& room_id) {
-    return std::find_if(_chatroom_list.begin(), _chatroom_list.end(),
-        [&room_id](const std::shared_ptr<Chatroom>& room) {
-            return room && room->get_chatroom_id() == room_id;
-        });
-}
-
-int ChatroomRepositoryHandler::find_chatroom_index(const std::string& room_id) {
-    for (size_t i = 0; i < _chatroom_list.size(); ++i) {
-        if (_chatroom_list[i] && _chatroom_list[i]->get_chatroom_id() == room_id) {
-            return static_cast<int>(i);
-        }
-    }
-    return -1;
-}
-
-// ==================== 基本CRUD操作 ====================
-
-bool ChatroomRepositoryHandler::add_chatroom(std::shared_ptr<Chatroom> chatroom) {
-    try {
-        std::unique_lock<std::shared_mutex> lock(_shared_mtx);
-        if (!chatroom || chatroom->get_chatroom_name().empty() || chatroom->get_users().empty()) {
-            LOG_ERROR("Chatroom name or user list is empty.");
-            return false;
-        }
-        if (_chatroom_list.size() == MAX_ACTIVE_CHATROOM_NUM) {
-            _chatroom_list.erase(_chatroom_list.begin());
-        }
-
-        _chatroom_list.push_back(std::move(chatroom));
-        LOG_INFO("[ChatroomRepositoryHandler] Chatroom added successfully");
-        return true;
-    }
-    catch (const std::bad_alloc& e) {
-        LOG_ERROR("[ChatroomRepositoryHandler] Memory allocation failed: {}", e.what());
-        return false;
-    }
-    catch (const std::system_error& e) {
-        LOG_ERROR("[ChatroomRepositoryHandler] System error: {}", e.what());
-        return false;
-    }
-    catch (const std::runtime_error& e) {
-        LOG_ERROR("[ChatroomRepositoryHandler] Runtime error: {}", e.what());
-        return false;
-    }
-    catch (const std::logic_error& e) {
-        LOG_ERROR("[ChatroomRepositoryHandler] Logic error: {}", e.what());
-        return false;
-    }
-    catch (const std::exception& e) {
-        LOG_ERROR("[ChatroomRepositoryHandler] Exception: {}", e.what());
-        return false;
-    }
-}
-
-bool ChatroomRepositoryHandler::delete_chatroom(const std::string& room_id) {
-    std::unique_lock<std::shared_mutex> lock(_shared_mtx);
-    auto it = find_chatroom_iterator(room_id);
-    if (it == _chatroom_list.end()) {
-        LOG_ERROR("[ChatroomRepositoryHandler] The chatroom ID({}) you tried to delete could not be found.", room_id);
-        return false;
-    }
-    _chatroom_list.erase(it);
-    LOG_INFO("[ChatroomRepositoryHandler] Chatroom ID:{} deleted from active room list successfully.", room_id);
-    return true;
-}
-
-std::shared_ptr<Chatroom> ChatroomRepositoryHandler::find_chatroom_by_id(const std::string& room_id) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    auto it = find_chatroom_iterator(room_id);
-    return (it != _chatroom_list.end()) ? *it : nullptr;
-}
-
-std::vector<std::shared_ptr<Chatroom>> ChatroomRepositoryHandler::get_chatrooms_snapshot() {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    return _chatroom_list; // コピーを返す
-}
-
-// ==================== 検索・取得操作（既存API互換） ====================
-
-std::vector<std::string> ChatroomRepositoryHandler::get_user_infos_by_chatroom_id(int list_num) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    if (list_num >= 0 && static_cast<size_t>(list_num) < _chatroom_list.size()) {
-        return _chatroom_list[list_num]->get_users();
-    }
-    return std::vector<std::string>();
-}
-
-std::vector<std::string> ChatroomRepositoryHandler::get_user_infos_by_chatroom_id(const std::string& room_id) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    int chatroom_list_num = find_chatroom_index(room_id);
-    if (chatroom_list_num != -1) {
-        return _chatroom_list[chatroom_list_num]->get_users();
-    }
-    else {
-        return get_chatroom_users_from_db(room_id);
-    }
-}
-
-int ChatroomRepositoryHandler::search_chatroom_id_from_list(const std::string& room_id) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    return find_chatroom_index(room_id);
-}
-
-std::vector<std::shared_ptr<Chatroom>>::iterator ChatroomRepositoryHandler::find_chatroom_id_from_list(const std::string& room_id) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    return find_chatroom_iterator(room_id);
 }
 
 // ==================== メンバーシップ操作 ====================
 
-bool ChatroomRepositoryHandler::add_member_to_chatroom(const std::string& room_id, const std::vector<std::string>& uids) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    auto it = find_chatroom_iterator(room_id);
-    if (it == _chatroom_list.end()) {
-        LOG_WARNING("The chatroom ID({}) you tried to add a member to could not be found.", room_id);
-        return false;
+int ChatroomRepositoryHandler::add_members(const std::string& room_id, const std::vector<std::string>& uids) {
+    if (!_chatroom_repository) {
+        LOG_ERROR("[ChatroomRepositoryHandler] ChatroomRepository is not initialized");
+        return -1;
     }
-    for (const auto& uid : uids) {
-        if ((*it)->get_users().size() == MAX_USER_NUM_IN_CHATROOM) {
-            LOG_ERROR("The chatroom ID({}) has reached the maximum number of users.", room_id);
-            return false;
-        }
-        if (!(*it)->add_user_chatroom(uid)) {
-            LOG_ERROR("Failed to add user ID({}) to chatroom ID({}).", uid, room_id);
-            return false;
-        }
+
+    // 上限チェック込みで追加（現在メンバー取得→判定→INSERT を原子的に実行）
+    const std::string now_mysql = ServerTime::iso8601_to_mysql_datetime(ServerTime::get_current_time_to_milliseconds());
+    auto db_result = _chatroom_repository->insert_chatroom_members_within_limit(
+        room_id, uids, now_mysql, MAX_USER_NUM_IN_CHATROOM);
+
+    switch (db_result.status) {
+        case MemberInsertResult::Status::DB_ERROR:
+            LOG_ERROR("[ChatroomRepositoryHandler] Failed to persist chatroom members to DB for room {}", room_id);
+            return -1;
+        case MemberInsertResult::Status::LIMIT_EXCEEDED:
+            return -2;
+        case MemberInsertResult::Status::OK:
+            break;
     }
-    LOG_INFO("[ChatroomRepositoryHandler] {}Users added to chatroom ID({}) successfully.", uids.size(), room_id);
-    return true;
+
+    LOG_INFO("[ChatroomRepositoryHandler] Added {} new member(s) to chatroom {}", db_result.added_uids.size(), room_id);
+    return static_cast<int>(db_result.added_uids.size());
 }
 
-bool ChatroomRepositoryHandler::delete_member_from_chatroom(const std::string& room_id, const std::vector<std::string>& uids) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    auto it = find_chatroom_iterator(room_id);
-    if (it == _chatroom_list.end()) {
-        LOG_WARNING("[ChatroomRepositoryHandler] The chatroom ID({}) you tried to remove a member from could not be found.", room_id);
+bool ChatroomRepositoryHandler::remove_members(const std::string& room_id, const std::vector<std::string>& uids) {
+    if (!_chatroom_repository) {
+        LOG_ERROR("[ChatroomRepositoryHandler] ChatroomRepository is not initialized");
         return false;
     }
-    for (const auto& uid : uids) {
-        if ((*it)->get_users().size() == 0) {
-            LOG_WARNING("[ChatroomRepositoryHandler] The chatroom ID({}) has no users.", room_id);
-            return false;
-        }
-        if (!(*it)->delete_user_chatroom(uid)) {
-            LOG_ERROR("[ChatroomRepositoryHandler] Failed to delete user ID({}) from chatroom ID({}).", uid, room_id);
-            return false;
-        }
+
+    if (!_chatroom_repository->delete_chatroom_member(room_id, uids)) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Failed to remove chatroom members from DB for room {}", room_id);
+        return false;
     }
-    LOG_INFO("[ChatroomRepositoryHandler] {}Users removed from chatroom ID({}) successfully.", uids.size(), room_id);
+
+    LOG_INFO("[ChatroomRepositoryHandler] Removed {} member(s) from chatroom {}", uids.size(), room_id);
     return true;
 }
 
 // ==================== ルーム属性更新 ====================
 
 bool ChatroomRepositoryHandler::change_room_name(const std::string& room_id, const std::string& room_name) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    auto it = find_chatroom_iterator(room_id);
-    if (it == _chatroom_list.end()) {
-        LOG_ERROR("[ChatroomRepositoryHandler] The chatroom ID({}) you tried to change name could not be found.", room_id);
-        return false;
-    }
     if (room_name.empty()) {
         LOG_ERROR("[ChatroomRepositoryHandler] The room name cannot be empty.");
         return false;
     }
-    (*it)->set_chatroom_name(room_name);
-    LOG_INFO("[ChatroomRepositoryHandler] Room name changed to '{}' for chatroom ID: {}", room_name, room_id);
+    if (!_chatroom_repository || !_chatroom_repository->update_chatroom_name(room_id, room_name)) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Failed to persist room name for chatroom {}", room_id);
+        return false;
+    }
+    LOG_INFO("[ChatroomRepositoryHandler] Room name changed to '{}' for chatroom {}", room_name, room_id);
     return true;
 }
 
 bool ChatroomRepositoryHandler::change_room_icon(const std::string& room_id, const std::string& icon_url) {
-    std::shared_lock<std::shared_mutex> lock(_shared_mtx);
-    auto it = find_chatroom_iterator(room_id);
-    if (it == _chatroom_list.end()) {
-        LOG_ERROR("[ChatroomRepositoryHandler] The chatroom ID({}) you tried to change icon could not be found.", room_id);
-        return false;
-    }
     if (icon_url.empty()) {
         LOG_ERROR("[ChatroomRepositoryHandler] The room icon URL cannot be empty.");
         return false;
     }
-    (*it)->set_chatroom_icon(icon_url);
-    LOG_INFO("[ChatroomRepositoryHandler] Room icon changed to '{}' for chatroom ID: {}", icon_url, room_id);
+    if (!_chatroom_repository || !_chatroom_repository->update_chatroom_icon(room_id, icon_url)) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Failed to persist room icon for chatroom {}", room_id);
+        return false;
+    }
+    LOG_INFO("[ChatroomRepositoryHandler] Room icon changed to '{}' for chatroom {}", icon_url, room_id);
     return true;
 }
 
-// ==================== データベース永続化操作 ====================
+// ==================== ルームCRUD ====================
 
-bool ChatroomRepositoryHandler::delete_chatroom_with_mysql(const std::string& room_id) {
+bool ChatroomRepositoryHandler::insert_chatroom_with_members(const std::string& room_id,
+                                                             const std::string& room_name,
+                                                             const std::string& icon_url,
+                                                             const std::vector<std::string>& member_uids) {
     try {
-        if (!_mysql_adapter) {
-            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+        if (!_chatroom_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] ChatroomRepository is not initialized");
             return false;
         }
-        
-        // インメモリから削除
-        bool deleted = delete_chatroom(room_id);
-        if (!deleted) {
-            LOG_ERROR("[ChatroomRepositoryHandler] Failed to delete chatroom from memory: {}", room_id);
+
+        if (member_uids.empty()) {
+            LOG_ERROR("[ChatroomRepositoryHandler] member_uids is empty for room {}", room_id);
             return false;
         }
-        
-        // データベースから削除
-        bool db_deleted = _mysql_adapter->delete_chatroom_fromDB(room_id);
+
+        const std::string now_mysql = ServerTime::iso8601_to_mysql_datetime(ServerTime::get_current_time_to_milliseconds());
+
+        if (!_chatroom_repository->insert_chatroom(room_id, room_name, icon_url, now_mysql)) {
+            LOG_ERROR("[ChatroomRepositoryHandler] Failed to insert chatroom {}", room_id);
+            return false;
+        }
+
+        if (!_chatroom_repository->insert_chatroom_member(room_id, member_uids, now_mysql)) {
+            LOG_ERROR("[ChatroomRepositoryHandler] Failed to insert chatroom members for room {}", room_id);
+            _chatroom_repository->delete_chatroom(room_id);
+            return false;
+        }
+
+        LOG_INFO("[ChatroomRepositoryHandler] Chatroom {} persisted with {} members", room_id, member_uids.size());
+        return true;
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error persisting chatroom {}: {}", room_id, e.what());
+        return false;
+    }
+}
+
+bool ChatroomRepositoryHandler::delete_chatroom_and_persist(const std::string& room_id) {
+    try {
+        if (!_chatroom_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] ChatroomRepository is not initialized");
+            return false;
+        }
+
+        const bool db_deleted = _chatroom_repository->delete_chatroom(room_id);
         if (!db_deleted) {
             LOG_WARNING("[ChatroomRepositoryHandler] Failed to delete chatroom from database: {}", room_id);
-            // インメモリは削除されたので、部分的な成功と見なす
         }
-        
-        return true;
+        return db_deleted;
     } catch (const std::exception& e) {
         LOG_ERROR("[ChatroomRepositoryHandler] Error deleting chatroom {}: {}", room_id, e.what());
         return false;
     }
 }
 
-bool ChatroomRepositoryHandler::insert_message(const uint64_t message_id, const std::string& room_id, 
-                                              const std::string& sender_uid, const std::string& send_time,
-                                              const std::string& message_content, std::uint64_t room_sequence) {
+bool ChatroomRepositoryHandler::chatroom_exists(const std::string& room_id_hex) {
     try {
-        if (!_mysql_adapter) {
-            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+        if (!_chatroom_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] ChatroomRepository is not initialized");
             return false;
         }
-        
-        bool result = _mysql_adapter->insert_message(message_id, room_id, sender_uid, send_time, message_content, room_sequence);
+        return _chatroom_repository->chatroom_exists_by_hex(room_id_hex);
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error checking room existence {}: {}", room_id_hex, e.what());
+        return false;
+    }
+}
+
+// ==================== メッセージ ====================
+
+bool ChatroomRepositoryHandler::insert_message(const uint64_t message_id, const std::string& room_id,
+                                              const std::string& sender_uid, const std::string& send_time,
+                                              const std::string& message_content, std::uint64_t room_sequence,
+                                              const std::string& target_uid) {
+    try {
+        if (!_message_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MessageRepository is not initialized");
+            return false;
+        }
+
+        bool result = _message_repository->insert_message(message_id, room_id, sender_uid, send_time, message_content, room_sequence, target_uid);
         if (!result) {
             LOG_ERROR("[ChatroomRepositoryHandler] Failed to insert message {} to room {}", message_id, room_id);
         } else {
@@ -256,110 +183,53 @@ bool ChatroomRepositoryHandler::insert_message(const uint64_t message_id, const 
     }
 }
 
-bool ChatroomRepositoryHandler::insert_chatroom_with_members(const std::string& room_id,
-                                                             const std::string& room_name,
-                                                             const std::string& icon_url,
-                                                             const std::vector<std::string>& member_uids) {
-    try {
-        if (!_mysql_adapter) {
-            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
-            return false;
-        }
-
-        if (member_uids.empty()) {
-            LOG_ERROR("[ChatroomRepositoryHandler] member_uids is empty for room {}", room_id);
-            return false;
-        }
-
-        const std::string now_mysql = ServerTime::iso8601_to_mysql_datetime(ServerTime::get_current_time_to_milliseconds());
-
-        if (!_mysql_adapter->insert_chatroom(room_id, room_name, icon_url, now_mysql)) {
-            LOG_ERROR("[ChatroomRepositoryHandler] Failed to insert chatroom {}", room_id);
-            return false;
-        }
-
-        if (!_mysql_adapter->insert_chatroom_member(room_id, member_uids, now_mysql)) {
-            LOG_ERROR("[ChatroomRepositoryHandler] Failed to insert chatroom members for room {}", room_id);
-            _mysql_adapter->delete_chatroom_fromDB(room_id);
-            return false;
-        }
-
-        LOG_INFO("[ChatroomRepositoryHandler] Chatroom {} persisted with {} members", room_id, member_uids.size());
-        return true;
-    } catch (const std::exception& e) {
-        LOG_ERROR("[ChatroomRepositoryHandler] Error persisting chatroom {}: {}", room_id, e.what());
-        return false;
-    }
-}
-
-bool ChatroomRepositoryHandler::is_room_id_exist(const std::string& room_id_hex) {
-    try {
-        if (!_mysql_adapter) {
-            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
-            return false;
-        }
-        
-        bool exists = _mysql_adapter->is_room_id_hex_exist(room_id_hex);
-        return exists;
-    } catch (const std::exception& e) {
-        LOG_ERROR("[ChatroomRepositoryHandler] Error checking room existence {}: {}", room_id_hex, e.what());
-        return false;
-    }
-}
-
 json ChatroomRepositoryHandler::get_unreceived_messages(const std::string& uid, const uint64_t last_received_message_id) {
     try {
-        if (!_mysql_adapter) {
-            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+        if (!_message_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MessageRepository is not initialized");
             return json::object();
         }
-        
-        json result = _mysql_adapter->get_unreceived_messages(uid, last_received_message_id);
-        return result;
+        return _message_repository->get_unreceived_messages(uid, last_received_message_id);
     } catch (const std::exception& e) {
         LOG_ERROR("[ChatroomRepositoryHandler] Error getting unreceived messages for user {}: {}", uid, e.what());
         return json::object();
     }
 }
 
-std::vector<ChatroomRepositoryHandler::UserInfo> ChatroomRepositoryHandler::get_user_infos(const std::vector<std::string>& uids) {
+// ==================== 取得 ====================
+
+std::vector<UserInfo> ChatroomRepositoryHandler::get_user_infos(const std::vector<std::string>& uids) {
     std::vector<UserInfo> result;
-    
     try {
-        if (!_mysql_adapter) {
-            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
+        if (!_user_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] UserRepository is not initialized");
             return result;
         }
-        
+
         for (const auto& uid : uids) {
             try {
-                auto user_info = _mysql_adapter->get_user_info(uid);
-                result.emplace_back(UserInfo{uid, user_info.name, user_info.icon_url});
+                auto user_info = _user_repository->get_user_info(uid);
+                result.emplace_back(UserInfo(uid, user_info.name, user_info.mail_address, user_info.icon_url));
             } catch (const std::exception& e) {
                 LOG_WARNING("[ChatroomRepositoryHandler] Failed to get user info for {}: {}", uid, e.what());
             }
         }
-        
         return result;
     } catch (const std::exception& e) {
         LOG_ERROR("[ChatroomRepositoryHandler] Error getting user infos: {}", e.what());
         return result;
     }
 }
-std::vector<std::string> ChatroomRepositoryHandler::get_chatroom_users_from_db(const std::string &room_id)
-{
-    try {
-        if (!_mysql_adapter)
-        {
-            LOG_ERROR("[ChatroomRepositoryHandler] MySQLAdapter is not initialized");
-            return std::vector<std::string>();
-        }
 
-        return _mysql_adapter->get_users_from_chatroom(room_id);
-    }
-    catch (const std::exception& e)
-    {
-        LOG_ERROR("[ChatroomRepositoryHandler] Error getting chatroom users for room {}: {}", room_id, e.what());
-        return std::vector<std::string>();
+std::vector<std::string> ChatroomRepositoryHandler::get_member_uids(const std::string& room_id) {
+    try {
+        if (!_chatroom_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] ChatroomRepository is not initialized");
+            return {};
+        }
+        return _chatroom_repository->get_member_uids(room_id);
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error getting member uids for room {}: {}", room_id, e.what());
+        return {};
     }
 }

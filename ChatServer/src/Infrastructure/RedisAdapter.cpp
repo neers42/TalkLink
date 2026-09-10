@@ -35,7 +35,7 @@ RedisAdapter::~RedisAdapter() {
     }
 }
 
-bool RedisAdapter::is_user_session_key(const std::string &session_key)
+bool RedisAdapter::user_session_exists(const std::string &session_key)
 {
     return _redis_helper->is_key_exists(session_key);
 }
