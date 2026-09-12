@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(TalkLink VERSION 1.0 LANGUAGES CXX)
+project(TalkLink VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,6 +10,8 @@ enable_testing()
 # オプションで AuthenticationServer のビルドを切り替え
 option(BUILD_AUTH_SERVER "Build the authentication server" OFF)
 option(BUILD_CHAT_SERVER "Build the chat server" OFF)
+
+
 
 #サブディレクトリを追加
 # 共通ライブラリは常にビルド

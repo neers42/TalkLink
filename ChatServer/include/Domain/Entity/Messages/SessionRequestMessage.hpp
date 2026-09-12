@@ -16,7 +16,7 @@ public:
 
 private:
     SignType _sign_type;
-    std::string _jwt;
+    std::string _session_token;
     std::string _user_name;
     std::string _user_mail_addr;
     uint64_t _last_received_message_id;
@@ -24,7 +24,13 @@ private:
 public:
     //コンストラクタ
     SessionRequestMessage();
-    SessionRequestMessage(const MessageBase::CommonField& common_fields, SignType s_type, const std::string& jwt, const std::string& user_name, const std::string& user_mail_addr, const uint64_t last_received_message_id);
+    SessionRequestMessage(
+        const MessageBase::CommonField& common_fields, 
+        SignType s_type, 
+        const std::string& session_token, 
+        const std::string& user_name, 
+        const std::string& user_mail_addr, 
+        const uint64_t last_received_message_id);
     //デストラクタ
     ~SessionRequestMessage();
 
@@ -34,8 +40,8 @@ public:
     void set_sign_type(SignType s_type);
     void set_sign_type(int s_type);
 
-    std::string get_jwt() const;
-    void set_jwt(const std::string& jwt);
+    std::string get_session_token() const;
+    void set_session_token(const std::string& session_token);
 
     std::string get_user_name() const;
     void set_user_name(const std::string& name);
@@ -52,7 +58,7 @@ public:
     bool validate_value() const override;
 
 private:
-    bool is_valid_jwt(const std::string& jwt) const;
+    bool is_valid_session_token(const std::string& jwt) const;
     bool is_valid_name(const std::string& name) const;
     bool is_valid_mail_addr(const std::string& mail_addr) const;
 

@@ -70,3 +70,23 @@ bool RedisAdapter::delete_key(const std::string& key)
     return _redis_helper->delete_key({key});
 }
 
+std::optional<std::string> RedisAdapter::get_session(const std::string& session_token_hash)
+{
+    const std::string session_key = "session:" + session_token_hash;
+
+    std::unordered_map<std::string, std::string> fields;
+    if (!_redis_helper->hmget(session_key, {"uid"}, fields))
+    {
+        LOG_WARNING("Session not found for token hash.");
+        return std::nullopt;
+    }
+
+    auto it = fields.find("uid");
+    if (it == fields.end())
+    {
+        LOG_WARNING("Session hash for token hash has no 'uid' field.");
+        return std::nullopt;
+    }
+
+    return it->second;
+}

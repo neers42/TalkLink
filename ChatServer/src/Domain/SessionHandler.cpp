@@ -52,42 +52,23 @@ SessionValidationResult SessionHandler::validate_session(
     }
 }
 
-std::string SessionHandler::extract_uid_from_jwt(const std::string& jwt) {
+std::string SessionHandler::get_uid_from_session_token(const std::string& session_token) {
     try {
-        auto decoded_token = jwt::decode(jwt);
-        if(decoded_token.has_subject() == false) {
-            throw std::runtime_error("JWT does not contain user_id claim");
-        }
-        std::string uid = decoded_token.get_subject();
-        if (uid.empty()) {
-            throw std::runtime_error("Missing user_id claim in JWT");
-        }
-        
-        return uid;
-    
-    } catch (const jwt::error::invalid_json_exception& e) {
-        LOG_ERROR("[SessionHandler] Invalid JWT format: {}", e.what());
-        throw;
-    }
-}
+        //sessionからuidを抽出
+        const auto session_token_hash =this->hash_token(session_token);
+        const auto uid = _redis_adapter->get_session(session_token_hash);
 
-bool SessionHandler::verify_session_in_redis(const std::string& uid) {
-    try {
-        // Redis セッションキーの存在確認
-        std::string session_key = "session:" + uid;
-        bool session_exists = _redis_adapter->user_session_exists(session_key);
-        
-        if (session_exists) {
-            LOG_DEBUG("[SessionHandler] Session found in Redis for user: {}", uid);
-        } else {
-            LOG_WARNING("[SessionHandler] Session not found in Redis for user: {}", uid);
+        if (!uid)
+        {
+            // セッション無効
+            throw std::runtime_error("Invalid Session.");
         }
-        
-        return session_exists;
-        
-    } catch (const std::exception& e) {
-        LOG_ERROR("[SessionHandler] Redis session verification failed for user {}: {}", uid, e.what());
-        return false;
+
+        return uid.value();
+    
+    } catch (const std::runtime_error& e) {
+        LOG_ERROR("[SessionHandler] Invalid Session format: {}", e.what());
+        throw;
     }
 }
 
@@ -133,6 +114,47 @@ void SessionHandler::resolve_user_profile(
     }
 }
 
+std::string SessionHandler::hash_token(const std::string &token) const
+{
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int hash_length = 0;
+
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+
+    if (ctx == nullptr)
+    {
+        throw std::runtime_error("Failed to create EVP_MD_CTX");
+    }
+
+    if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr) != 1 ||
+        EVP_DigestUpdate(
+            ctx,
+            token.data(),
+            token.size()) != 1 ||
+        EVP_DigestFinal_ex(
+            ctx,
+            hash,
+            &hash_length) != 1)
+    {
+        EVP_MD_CTX_free(ctx);
+        throw std::runtime_error("Failed to hash session token");
+    }
+
+    EVP_MD_CTX_free(ctx);
+
+    std::ostringstream oss;
+
+    for (unsigned int i = 0; i < hash_length; ++i)
+    {
+        oss << std::hex
+            << std::setw(2)
+            << std::setfill('0')
+            << static_cast<int>(hash[i]);
+    }
+
+    return oss.str();
+}
+
 json SessionHandler::get_unreceived_messages(const std::string& uid, uint64_t last_received_id) {
     json unreceived_messages = json::array();
     
@@ -176,7 +198,7 @@ bool SessionHandler::validate_session_message(const std::unique_ptr<SessionReque
         return false;
     }
 
-    std::string jwt = session_message->get_jwt();
+    std::string jwt = session_message->get_session_token();
     if (jwt.empty()) {
         LOG_WARNING("[SessionHandler] JWT token is empty in session message");
         return false;
@@ -220,15 +242,8 @@ SessionValidationResult SessionHandler::handle_signin_request(
             log_session_event("unknown", "null_session_message", socket);
             return result;
         }
-        // JWTからクライアントIDを抽出
-        result.uid = extract_uid_from_jwt(session_message->get_jwt());
-        
-        // Redisでセッション存在確認
-        if (!verify_session_in_redis(result.uid)) {
-            result.error_message = "Session not found or expired";
-            log_session_event(result.uid, "session_not_found", socket);
-            return result;
-        }
+        // session_tokenからUIDを抽出
+        result.uid = get_uid_from_session_token(session_message->get_session_token());
         
         // payload値を優先し、空ならDBから補完
         resolve_user_profile(result.uid, session_message, result.name, result.email);
@@ -266,15 +281,11 @@ SessionValidationResult SessionHandler::handle_signup_request(
             log_session_event("unknown", "null_session_message", socket);
             return result;
         }
-        // SIGNUP時もJWTから認証情報を確認
-        result.uid = extract_uid_from_jwt(session_message->get_jwt());
+        // SIGNUP時もセッショントークンから認証情報を確認
+        // （get_uid_from_session_token が Redis 上のセッションを検証し、
+        //   無効な場合は例外を投げるため、ここで別途確認する必要はない）
+        result.uid = get_uid_from_session_token(session_message->get_session_token());
 
-        // Redisでセッション存在確認
-        if (!verify_session_in_redis(result.uid)) {
-            result.error_message = "Session not found or expired";
-            log_session_event(result.uid, "session_not_found", socket);
-            return result;
-        }
         // ユーザの情報をDBに登録
         auto insert_db_result = _user_repository->insert_user_info_data(
             result.uid, 
@@ -320,7 +331,7 @@ SessionValidationResult SessionHandler::handle_signout_request(
             return result;
         }
         // SIGNOUT時はセッション無効化処理
-        result.uid = extract_uid_from_jwt(session_message->get_jwt());
+        result.uid = get_uid_from_session_token(session_message->get_session_token());
         
         // TODO: Redisからセッション削除処理を実装
         // _redis_adapter->delete_session(result.uid);

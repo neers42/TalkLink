@@ -1,24 +1,28 @@
 ﻿#include "AunthenticationServerFacade.hpp"
+#include "RedisAdapter.hpp"
+#include "TokenHandler.hpp"
+#include "SessionTokenHandler.hpp"
 
 AunthenticationServerFacade::AunthenticationServerFacade()
 {
-
     ////ログのフォーマット設定
 	spdlog::set_level(spdlog::level::debug);
 	// Use fixed-width level field so info/debug align visually.
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%-5l%$] %v");
-	spdlog::info("Starting TalkLink Auth-server version 1.0.0!!");
+	LOG_INFO("Starting TalkLink Auth-server version {}!!", TALKLINK_VERSION);
 	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
 	_tlscon_handler = std::make_unique<TLSConnectionHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
 	_redis_adapter = std::make_unique<RedisAdapter>();
 	_token_handler = std::make_unique<TokenHandler>();
+	_session_token_handler = std::make_unique<SessionTokenHandler>();
 	
 	if (_socket_handler == nullptr
 		|| _thread_pool_handler == nullptr
 		|| _tlscon_handler == nullptr
 		|| _redis_adapter == nullptr
-		|| _token_handler == nullptr)
+		|| _token_handler == nullptr
+		|| _session_token_handler == nullptr)
 	{
 		LOG_ERROR("Failed to initialize AunthenticationServerFacade components. Please check the configuration and try again.");
 		exit(1);
@@ -43,7 +47,7 @@ void AunthenticationServerFacade::run() {
 		exit(1);
 	}
 	this->_thread_pool_handler->enqueue_task([this](){ _tlscon_handler->hot_reload_certificates(60, SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH); });
-	spdlog::info("Start monitoring requests from clients.");
+	LOG_INFO("Start monitoring requests from clients.");
 	//ディスクリプション監視スタート
 	while (true) {
 		// クライアントからの接続を待機
@@ -134,6 +138,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 	json response;
 	json receive_json;
 	std::string _message_type = "";
+	std::string session_token = "";
 
 	try
 	{
@@ -161,7 +166,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 		// クライアントの切断を検知した場合
 		else
 		{
-			spdlog::info("client(socket : {}) is disconnected, server initialize client info.", socket);
+			LOG_INFO("client(socket : {}) is disconnected, server initialize client info.", socket);
 			this->handle_disconnect_process(socket);
 			return;
 		}
@@ -181,13 +186,19 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 				return;
 			}
 			receive_token = auth_request_instance->get_jwt();
-			verify_result = this->verify_auth_process(receive_token, uid, expire, ttl);
+			verify_result = this->verify_auth_process(receive_token, uid, expire, ttl, session_token);
 			if(verify_result == true){
-				spdlog::info("Authentication succeeded for client(socket : {}). CID: {}, Expire: {}, TTL: {}.", socket, uid, expire, ttl);
+				LOG_INFO("Authentication succeeded for client(socket : {}). CID: {}, Expire: {}, TTL: {}.", socket, uid, expire, ttl);
 			}else{
 				LOG_ERROR("Authentication failed for client(socket : {}).", socket);
 			}
-			auto response_instance = std::make_unique<AuthResponseMessage>(MessageBase::CommonField(MessageBase::MessageType::AUTHENTICATION_RESPONSE, auth_request_instance->get_correlation_id()), verify_result, expire);
+			auto response_instance = std::make_unique<AuthResponseMessage>(MessageBase::CommonField(
+				MessageBase::MessageType::AUTHENTICATION_RESPONSE, 
+				auth_request_instance->get_correlation_id()), 
+				verify_result, 
+				expire, 
+				session_token);
+				
 			if(response_instance == nullptr) {
 					LOG_ERROR("Failed to create AuthResponseMessage instance for failure response.");
 					return;
@@ -197,7 +208,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 			// レスポンスをクライアントに送信する
 			if (this->_tlscon_handler->send_message_json(client_ssl, response) == true)
 			{
-				spdlog::info("Sent response to client(socket : {}).", socket);
+				LOG_INFO("Sent response to client(socket : {}).", socket);
 			}
 			else
 			{
@@ -264,25 +275,41 @@ json AunthenticationServerFacade::make_auth_response(const std::string &status, 
 	return response;
 }
 
-bool AunthenticationServerFacade::verify_auth_process(const std::string &token, std::string &uid, std::uint64_t &expire, std::uint64_t& ttl)
+bool AunthenticationServerFacade::verify_auth_process(
+	const std::string &jwt, 
+	std::string &uid, 
+	std::uint64_t &expire, 
+	std::uint64_t& ttl, 
+	std::string& session_token)
 {
-	// 検証を実施し、トークンが有効な場合の処理
-	if (this->_token_handler->verify_token(token, uid, expire) == true)
+	try
 	{
-		if (this->_redis_adapter->save_session(uid, token, expire, ttl) == true)
+		// 検証を実施し、トークンが有効な場合の処理
+		if (this->_token_handler->verify_token(jwt, uid, expire) == true)
 		{
-			spdlog::info("Session saved in Redis for CID: {} with TTL: {}.", uid, ttl);
-			return true;
+			session_token = _session_token_handler->generate_token();
+			auto session_token_hash = _session_token_handler->hash_token(session_token);
+
+			if (this->_redis_adapter->save_session(uid, session_token_hash, expire, ttl) == true)
+			{
+				spdlog::info("Session saved in Redis for CID: {} with TTL: {}.", uid, ttl);
+				return true;
+			}
+			else
+			{
+				LOG_ERROR("Failed to save session in Redis for CID: {}.", uid);
+				return false;
+			}
 		}
 		else
 		{
-			LOG_ERROR("Failed to save session in Redis for CID: {}.", uid);
+			LOG_ERROR("Invalid jwt received from client(socket : {}).", socket);
 			return false;
 		}
 	}
-	else
+	catch (const std::exception &e)
 	{
-		LOG_ERROR("Invalid token received from client(socket : {}).", socket);
+		LOG_ERROR("Exception : {}", e.what());
 		return false;
 	}
 }

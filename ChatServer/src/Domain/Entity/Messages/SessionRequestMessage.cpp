@@ -3,16 +3,22 @@
 SessionRequestMessage::SessionRequestMessage()
     : MessageBase(MessageBase::MessageType::SESSION_REQUEST),
       _sign_type{SignType::SIGNIN},
-      _jwt{""},
+      _session_token{""},
       _user_name{""},
       _user_mail_addr{""},
       _last_received_message_id{0}
 {
 }
-SessionRequestMessage::SessionRequestMessage(const MessageBase::CommonField& common_fields,SignType s_type, const std::string &jwt, const std::string &name, const std::string &mail_addr, const uint64_t last_received_message_id)    
+SessionRequestMessage::SessionRequestMessage(
+    const MessageBase::CommonField& common_fields, 
+    SignType s_type, 
+    const std::string &session_token, 
+    const std::string &name, 
+    const std::string &mail_addr, 
+    const uint64_t last_received_message_id)    
     : MessageBase(common_fields, MessageBase::MessageType::SESSION_REQUEST), 
       _sign_type{s_type},
-      _jwt{jwt},
+      _session_token{session_token},
       _user_name{name},
       _user_mail_addr{mail_addr},
       _last_received_message_id{last_received_message_id}
@@ -71,13 +77,13 @@ void SessionRequestMessage::set_sign_type(int s_type)
     }
 }
 
-std::string SessionRequestMessage::get_jwt() const
+std::string SessionRequestMessage::get_session_token() const
 {
-    return this->_jwt;
+    return this->_session_token;
 }
-void SessionRequestMessage::set_jwt(const std::string &jwt)
+void SessionRequestMessage::set_session_token(const std::string &session_token)
 {
-    this->_jwt = jwt;
+    this->_session_token = session_token;
 }
 
 std::string SessionRequestMessage::get_user_name() const
@@ -123,7 +129,7 @@ bool SessionRequestMessage::validate_payload(const json& message) const
         // 基本的な必須キー
         std::vector<std::string> required_keys = {
             "sign_type",
-            "jwt", 
+            "session_token", 
             "last_received_message_id"
         };
 
@@ -149,8 +155,8 @@ bool SessionRequestMessage::validate_payload(const json& message) const
         if (!payload["sign_type"].is_string()) {
 			throw std::runtime_error("Invalid type for 'sign_type'");
         }
-        if (!payload["jwt"].is_string()) {
-            throw std::runtime_error("Invalid type for 'jwt'");
+        if (!payload["session_token"].is_string()) {
+            throw std::runtime_error("Invalid type for 'session_token'");
         }
         
         // nameフィールドが存在する場合のみ型チェック
@@ -184,7 +190,7 @@ std::unique_ptr<MessageBase> SessionRequestMessage::create_instance(const json &
     try
     {
 		// 各フィールドを読み取る
-        std::string jwt = message["payload"]["jwt"];
+        std::string session_token = message["payload"]["session_token"];
         uint64_t last_received_message_id = message["payload"]["last_received_message_id"];
         std::string sign_type_str = message["payload"]["sign_type"];
 		std::string user_name = "";
@@ -206,7 +212,7 @@ std::unique_ptr<MessageBase> SessionRequestMessage::create_instance(const json &
             return std::make_unique<SessionRequestMessage>(
             this->parse_common_fields(message),
             static_cast<SignType>(sign_type),
-            jwt,
+            session_token,
             user_name,
             user_mail_addr,
             last_received_message_id
@@ -225,7 +231,7 @@ std::unique_ptr<MessageBase> SessionRequestMessage::create_instance(const json &
         return std::make_unique<SessionRequestMessage>(
             this->parse_common_fields(message),
             static_cast<SignType>(sign_type),
-            jwt,
+            session_token,
             user_name,
             user_mail_addr,
             last_received_message_id
@@ -248,7 +254,7 @@ std::unique_ptr<MessageBase> SessionRequestMessage::create_instance(const json &
 
 bool SessionRequestMessage::validate_value() const
 {
-    if (is_valid_jwt(this->_jwt) == true &&
+    if (is_valid_session_token(this->_session_token) == true &&
         is_valid_name(this->_user_name) == true &&
         is_valid_mail_addr(this->_user_mail_addr) == true) {
         return true;
@@ -259,17 +265,17 @@ bool SessionRequestMessage::validate_value() const
     }
 }
 
-bool SessionRequestMessage::is_valid_jwt(const std::string &jwt) const
+bool SessionRequestMessage::is_valid_session_token(const std::string &session_token) const
 {
     if(this->get_sign_type() == SignType::SIGNOUT){
-        // SIGN OUTの場合はJWTのバリデーションをスキップ
+        // SIGN OUTの場合はsession_tokenのバリデーションをスキップ
         return true;
     }
-    if (jwt.size() > 0) {
+    if (session_token.size() > 0) {
         return true;
     }
     else {
-        LOG_ERROR("JWT is invalid by byte size error(jwt byte size : {:d}).", jwt.size());
+        LOG_ERROR("Session Token is invalid by byte size error(session token byte size : {:d}).", session_token.size());
         return false;
     }
 }

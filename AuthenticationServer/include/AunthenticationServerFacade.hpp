@@ -1,8 +1,6 @@
 ﻿#ifndef AUNTHENTICATIONSERVERFACADE_HPP
 #define AUNTHENTICATIONSERVERFACADE_HPP
 #include "common.h"
-#include "RedisAdapter.hpp"
-#include "TokenHandler.hpp"
 #include "Messages/AuthRequestMessage.hpp"
 #include "Messages/AuthResponseMessage.hpp"
 #define DISCONNECT_SOCKET 0
@@ -11,6 +9,11 @@
 #define SOCKET_CONFIG_FILE_PATH "/app/AuthenticationServer/conf/socket_setting.ini"
 #define SERVER_CERT_FILE_PATH "/app/AuthenticationServer/certs/server-cert.pem"
 #define SERVER_PRIVATEKEY_FILE_PATH "/app/AuthenticationServer/certs/server-key.pem"
+
+class RedisAdapter;
+class TokenHandler;
+class SessionTokenHandler;
+
 class AunthenticationServerFacade
 {
 //メンバー変数
@@ -20,6 +23,7 @@ private:
 	std::unique_ptr<TLSConnectionHandler> _tlscon_handler;
 	std::unique_ptr<RedisAdapter> _redis_adapter; // Redisクライアント
 	std::unique_ptr<TokenHandler> _token_handler; // JWTトークンハンドラー
+	std::unique_ptr<SessionTokenHandler> _session_token_handler; //Session用のトークンハンドラー
 	std::map<socket_t, SSL*> _ssl_list;
 
 public:
@@ -40,7 +44,7 @@ private:
 	void auth_handle_process(const socket_t socket);
 	void handle_disconnect_process(const socket_t socket);
 	json make_auth_response(const std::string& status, const std::uint64_t ttl);
-	bool verify_auth_process(const std::string& token, std::string& uid, std::uint64_t& expire, std::uint64_t& ttl);
+	bool verify_auth_process(const std::string& jwt, std::string& uid, std::uint64_t& expire, std::uint64_t& ttl, std::string& session_token);
 };
 
 

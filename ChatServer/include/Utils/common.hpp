@@ -40,6 +40,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <jwt-cpp/jwt.h>
+#include <optional>
 using json = nlohmann::json;
 
 // ソケット関連の型定義

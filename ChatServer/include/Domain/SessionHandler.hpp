@@ -86,15 +86,7 @@ public:
      * @return User ID extracted from token
      * @throws jwt::error exceptions on parsing failure
      */
-    std::string extract_uid_from_jwt(const std::string& jwt);
-
-    /**
-     * @brief Verify session exists in Redis
-     * 
-     * @param uid User identifier to check
-     * @return true if session exists and is valid, false otherwise
-     */
-    bool verify_session_in_redis(const std::string& uid);
+    std::string get_uid_from_session_token(const std::string& session_token);
 
     /**
      * @brief Get unreceived messages for user
@@ -194,5 +186,7 @@ private:
         std::string& out_name,
         std::string& out_email
     );
+
+    std::string hash_token(const std::string& token) const;
 };
 #endif // SESSION_HANDLER_HPP

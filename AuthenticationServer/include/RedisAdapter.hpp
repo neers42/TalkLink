@@ -14,7 +14,7 @@ public:
     RedisAdapter();
     ~RedisAdapter();
 
-    bool save_session(const std::string& uid, const std::string& jwt_token, std::uint64_t expire, std::uint64_t& ttl);
+    bool save_session(const std::string& uid, const std::string& session_token_hash, std::uint64_t expire, std::uint64_t& ttl);
     bool get_session(const std::string& uid, std::string& jwt_token, std::uint64_t& expire);
     bool delete_session(const std::string& uid);
 

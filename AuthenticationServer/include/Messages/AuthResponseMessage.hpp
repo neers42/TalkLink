@@ -7,7 +7,7 @@
 class AuthResponseMessage : public MessageBase, public ISendMessage {
 public:
     AuthResponseMessage();
-    AuthResponseMessage(const MessageBase::CommonField& common_fields, bool _verify_status, const std::uint64_t ttl);
+    AuthResponseMessage(const MessageBase::CommonField& common_fields, bool _verify_status, const std::uint64_t ttl, const std::string session_token);
     bool get_verify_status() const;
     std::uint64_t get_ttl() const;
 
@@ -18,6 +18,7 @@ public:
 private:
     bool _verify_status;
     std::uint64_t ttl;
+    std::string _session_token;
 };
 
 #endif // AUTH_RESPONSE_MESSAGE_HPP

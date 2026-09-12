@@ -237,10 +237,7 @@ bool RedisHelper::hmget(const std::string& key, const std::vector<std::string>& 
         {
             out_fields[fields_to_get[i]] = reply->element[i]->str;
         }
-        else
-        {
-            out_fields[fields_to_get[i]] = ""; // フィールドがなければ空文字
-        }
+        // nil の場合は out_fields に入れない（キー未挿入のままにする
     }
 
     freeReplyObject(reply);

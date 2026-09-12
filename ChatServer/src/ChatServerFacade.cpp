@@ -16,7 +16,7 @@ ChatServerFacade::ChatServerFacade() :
 	////ログのフォーマット設定
 	// Use fixed-width level field so info/debug align visually.
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%-5l%$] %v");
-	LOG_INFO("[Facade] Starting TalkLink chat server version 1.0.0!!");
+	LOG_INFO("[ChatServerFacade] Starting TalkLink chat server version {} ...", TALKLINK_VERSION);
 	
 	// ServiceContainerを初期化
 	try {

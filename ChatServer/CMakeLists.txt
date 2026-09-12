@@ -75,7 +75,11 @@ target_include_directories(
 )
 
 # マクロ定義
-target_compile_definitions(ChatServer PRIVATE CHAT_SERVER)
+target_compile_definitions(
+    ChatServer 
+    PRIVATE 
+    CHAT_SERVER
+    TALKLINK_VERSION="${PROJECT_VERSION}" )
 
 # ChatServerにライブラリをリンク
 target_link_libraries(

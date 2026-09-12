@@ -7,6 +7,7 @@ file(GLOB_RECURSE AUTHENTICATIONSERVER_SRC
     src/*.cpp
 )
 
+
 # AuthenticationServer 実行ファイルを生成
 add_executable(AuthenticationServer ${AUTHENTICATIONSERVER_SRC})
 
@@ -15,6 +16,14 @@ target_include_directories(AuthenticationServer PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${jwt-cpp_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/CommonLib/src
+)
+
+# マクロ定義
+target_compile_definitions(
+    AuthenticationServer
+    PRIVATE
+        AUTHENTICATION_SERVER
+        TALKLINK_VERSION="${PROJECT_VERSION}"
 )
 
 target_link_libraries(AuthenticationServer PRIVATE 

@@ -16,7 +16,7 @@ public:
     bool increment_counter_key(const std::string& key, std::uint64_t& next_value);
     std::uint64_t get_counter_value(const std::string& key);
     bool delete_key(const std::string& key);
-
+    std::optional<std::string> get_session(const std::string& session_token_hash);
 };
 
 #endif // !REDISADAPTER_HPP

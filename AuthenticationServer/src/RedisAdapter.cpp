@@ -36,34 +36,52 @@ RedisAdapter::~RedisAdapter()
     }
 }
 
-bool RedisAdapter::save_session(const std::string &uid, const std::string &jwt_token, std::uint64_t expire, std::uint64_t& ttl)
+bool RedisAdapter::save_session(
+    const std::string& uid,
+    const std::string& session_token_hash,
+    std::uint64_t expire_seconds,
+    std::uint64_t& ttl)
 {
-   
-    std::string session_key = "session:" + uid;
-    std::unordered_map<std::string, std::string> fields = {
-        {"expire", std::to_string(expire)},
-        {"jwt_token", jwt_token}};
-    if (_redis_helper->hmset(session_key, fields) == true)
+    const std::string session_key = "session:" + session_token_hash;
+
+    const std::unordered_map<std::string, std::string> fields = {
+        {"uid", uid}
+    };
+
+    // セッション情報を保存
+    if (!_redis_helper->hmset(session_key, fields))
     {
-        //TTL設定
-        if (this->_redis_helper->expire(session_key, expire, ttl) == true) {
-            spdlog::info("Session data for CID: {} has been stored in Redis.", uid);
-        }else{
-            spdlog::warn("Failed to set TTL for session data for CID: {} in Redis.", uid);
-            if (_redis_helper->delete_key({session_key}) == true) {
-                spdlog::info("Session data for CID: {} has been deleted from Redis.", uid);
-            }else{
-                //keyの削除に失敗しセッションが残り続けてしまう可能性がある
-                spdlog::critical("Failed to delete session data for CID: {} from Redis.", uid);
-            }
-            return false;
-        }
-    }
-    else
-    {
-        LOG_ERROR("Failed to store session data for CID: {} in Redis.", uid);
+        LOG_ERROR("Failed to store session data for UID: {} in Redis.", uid);
+
         return false;
     }
+
+    // TTL設定
+    if (!_redis_helper->expire(
+            session_key,
+            expire_seconds,
+            ttl))
+    {
+        LOG_WARNING("Failed to set TTL for session data for UID: {} in Redis.", uid);
+
+        // TTL設定に失敗した場合、
+        // セッションが永続的に残るのを防ぐため削除
+        if (_redis_helper->delete_key({session_key}))
+        {
+            LOG_INFO("Session data for UID: {} has been deleted from Redis.", uid);
+        }
+        else
+        {
+            spdlog::critical(
+                "Failed to delete session data for UID: {} from Redis.",
+                uid);
+        }
+
+        return false;
+    }
+
+    LOG_INFO("Session data for UID: {} has been stored in Redis.", uid);
+
     return true;
 }
 
