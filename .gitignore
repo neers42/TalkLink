@@ -17,7 +17,7 @@
 mono_crash.*
 
 #cert
-*.pem
+**/*-key.pem
 
 # Build results
 [Dd]ebug/
