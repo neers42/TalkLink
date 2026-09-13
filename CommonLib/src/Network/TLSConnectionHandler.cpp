@@ -454,6 +454,11 @@ void TLSConnectionHandler::hot_reload_certificates(int interval_seconds, const s
 				LOG_ERROR("[TLSConnectionHandler] Failed to create new SSL_CTX.");
 				continue;
 			}
+			if (SSL_CTX_set_min_proto_version(new_ctx.get(), TLS1_2_VERSION) == 0)
+			{
+				LOG_ERROR("[TLSConnectionHandler] Failed to set minimum TLS version on new SSL_CTX.");
+				continue;
+			}
 			if (!reload_certificates(new_ctx.get(), cert_file_pass, private_key_file_pass))
 			{
 				LOG_ERROR("[TLSConnectionHandler] Failed to reload certificates.");
@@ -558,6 +563,11 @@ void TLSConnectionHandler::generate_ssl_context(const SSL_METHOD* method)
 	SSL_CTX* raw_ctx = SSL_CTX_new(method);
     if (!raw_ctx) {
         LOG_ERROR("[TLSConnectionHandler] SSL context creation failed.");
+        exit(1);
+    }
+    if (SSL_CTX_set_min_proto_version(raw_ctx, TLS1_2_VERSION) == 0) {
+        LOG_ERROR("[TLSConnectionHandler] Failed to set minimum TLS version.");
+        SSL_CTX_free(raw_ctx);
         exit(1);
     }
     this->_server_ctx = std::shared_ptr<SSL_CTX>(raw_ctx, SSL_CTX_Deleter{});
