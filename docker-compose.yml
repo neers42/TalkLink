@@ -21,19 +21,19 @@ services:
       - talklink-net
 
   flyway:
-    image: flyway/flyway:latest
+    image: flyway/flyway:13.6.0
     container_name: flyway
     depends_on:
       mysql:
         condition: service_healthy
-    command: -url=jdbc:mysql://${DB_HOST}:${DB_PORT}/${MYSQL_DATABASE} -user=root -password=${MYSQL_ROOT_PASSWORD} -connectRetries=60 -baselineOnMigrate=true migrate
+    command: -url=jdbc:mysql://${DB_HOST}:${DB_PORT}/${MYSQL_DATABASE}?permitMysqlScheme=true -user=root -password=${MYSQL_ROOT_PASSWORD} -connectRetries=60 -baselineOnMigrate=true migrate
     volumes:
       - ./mysql/migrations:/flyway/sql
     networks:
       - talklink-net
 
   redis:
-    image: redis:latest
+    image: redis:8.8
     container_name: redis
     ports:
       - "6379:6379"

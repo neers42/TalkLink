@@ -1,0 +1,114 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql/conf.d/talklink.cnf:/etc/mysql/conf.d/talklink.cnf:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - talklink-net
+
+  flyway:
+    image: flyway/flyway:13.6.0
+    container_name: flyway
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command:
+      - -url=jdbc:mysql://${DB_HOST}:${DB_PORT}/${MYSQL_DATABASE}?permitMysqlScheme=true
+      - -user=root
+      - -password=${MYSQL_ROOT_PASSWORD}
+      - -connectRetries=60
+      - -baselineOnMigrate=true
+      - migrate
+    volumes:
+      - ./mysql/migrations:/flyway/sql:ro
+    networks:
+      - talklink-net
+
+  redis:
+    image: redis:8.8
+    container_name: redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - talklink-net
+
+  chat-server:
+    image: ghcr.io/neers42/talklink-chat-server:${TALKLINK_VERSION}
+    container_name: chat-server
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "50000:50000"
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      TZ: Asia/Tokyo
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./ChatServer/certs:/app/certs:ro
+    networks:
+      - talklink-net
+
+  auth-server:
+    image: ghcr.io/neers42/talklink-auth-server:${TALKLINK_VERSION}
+    container_name: auth-server
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "50002:50002"
+    environment:
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      JWT_EXP_LEEWAY_SEC: ${JWT_EXP_LEEWAY_SEC:-60}
+      TZ: Asia/Tokyo
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./AuthenticationServer/certs:/app/certs:ro
+    networks:
+      - talklink-net
+
+volumes:
+  db_data:
+
+networks:
+  talklink-net:
