@@ -1,0 +1,25 @@
+#ビルド成果物
+*.o
+*.so
+*.exe
+build/
+
+# CMakeキャッシュ
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# ログファイルなど
+*.log
+
+# 秘密鍵
+**/*.pem

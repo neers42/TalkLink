@@ -20,3 +20,6 @@ cmake_install.cmake
 
 # ログファイルなど
 *.log
+
+# 秘密鍵
+**/*.pem
