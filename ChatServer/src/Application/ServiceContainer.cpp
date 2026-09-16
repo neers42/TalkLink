@@ -50,12 +50,16 @@ void ServiceContainer::initialize() {
     }
     
     try {
+        //Phase 0 : 環境変数の読み取り
+        const std::string cert_path = get_env("TLS_CERT_PATH");
+        const std::string key_path  = get_env("TLS_KEY_PATH");
+
         // Phase 1: インフラストラクチャ層の共有リソースを初期化
         _server_time = std::make_shared<ServerTime>();
         _socket_handler = std::make_shared<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
         _mysql_adapter = std::make_shared<MySQLAdapter>();
         _redis_adapter = std::make_shared<RedisAdapter>();
-        _tlscon_handler = std::make_shared<TLSConnectionHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
+        _tlscon_handler = std::make_shared<TLSConnectionHandler>(cert_path, key_path);
         _thread_pool_handler = std::make_shared<ThreadPoolHandler>(10);
 
         // Interface binding
@@ -310,4 +314,17 @@ void ServiceContainer::cleanup() {
     catch (const std::exception& e) {
         LOG_ERROR("ServiceContainer cleanup failed: " + std::string(e.what()));
     }
+}
+
+std::string ServiceContainer::get_env(const char *name)
+{
+    const char *value = std::getenv(name);
+
+    if (value == nullptr)
+    {
+        throw std::runtime_error(
+            std::string("Environment variable is not set: ") + name);
+    }
+
+    return value;
 }

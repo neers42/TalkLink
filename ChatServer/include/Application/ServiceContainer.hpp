@@ -50,6 +50,7 @@ public:
     // 初期化とクリーンアップ
     void initialize();
     void cleanup();
+    std::string get_env(const char* name);
     
     // 共有リソースのゲッター
     std::shared_ptr<SocketHandler> get_socket_handler();

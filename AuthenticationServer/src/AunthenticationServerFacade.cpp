@@ -10,9 +10,11 @@ AunthenticationServerFacade::AunthenticationServerFacade()
 	// Use fixed-width level field so info/debug align visually.
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%-5l%$] %v");
 	LOG_INFO("Starting TalkLink Auth-server version {}!!", TALKLINK_VERSION);
+	const std::string cert_path = get_env("TLS_CERT_PATH");
+	const std::string key_path  = get_env("TLS_KEY_PATH");
 	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
-	_tlscon_handler = std::make_unique<TLSConnectionHandler>(SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
+	_tlscon_handler = std::make_unique<TLSConnectionHandler>(cert_path, key_path);
 	_redis_adapter = std::make_unique<RedisAdapter>();
 	_token_handler = std::make_unique<TokenHandler>();
 	_session_token_handler = std::make_unique<SessionTokenHandler>();
@@ -56,6 +58,19 @@ void AunthenticationServerFacade::run() {
 												   { allocate_process(changed_socket); });
 #endif
 	}
+}
+
+std::string AunthenticationServerFacade::get_env(const char *name)
+{
+    const char* value = std::getenv(name);
+
+    if (value == nullptr) {
+        throw std::runtime_error(
+            std::string("Environment variable is not set: ") + name
+        );
+    }
+
+    return value;
 }
 
 void AunthenticationServerFacade::allocate_process(const socket_t socket) {

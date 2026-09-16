@@ -76,11 +76,11 @@ RUN apt-get update && \
 COPY --from=builder /app/build/bin/ChatServer ./ChatServer/bin/ChatServer
 RUN test -s ./ChatServer/bin/ChatServer
 COPY ChatServer/conf ./ChatServer/conf
-COPY ChatServer/certs ./ChatServer/certs
+COPY /certs/chat-server ./certs/chat-server
 COPY ThirdParty/lib/mysql-connector-c++-9.1.0/linux/lib64/libmysqlcppconn.so.10 /usr/local/lib/libmysqlcppconn.so.10
 
 # certs ディレクトリの確認用ログを出すようにしてもよい
-RUN ls -l ./ChatServer/certs
+RUN ls -l ./certs/chat-server
 
 # 共有ライブラリのリンクを更新
 RUN ldconfig

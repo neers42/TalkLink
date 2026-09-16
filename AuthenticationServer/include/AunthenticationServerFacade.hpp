@@ -35,6 +35,7 @@ public:
 	AunthenticationServerFacade();
 	~AunthenticationServerFacade();
 	void run();
+	std::string get_env(const char* name);
 
 
 private:

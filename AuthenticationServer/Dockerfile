@@ -57,7 +57,7 @@ RUN apt-get update && \
 # ビルド成果物と必要ファイルコピー
 COPY --from=builder /app/build/bin/AuthenticationServer ./AuthenticationServer/bin/AuthenticationServer
 COPY AuthenticationServer/conf ./AuthenticationServer/conf
-COPY AuthenticationServer/certs ./AuthenticationServer/certs
+COPY /certs/auth-server ./certs/auth-server
 COPY AuthenticationServer/scripts ./AuthenticationServer/scripts
 
 # 実行権限付与及びスクリプト実行

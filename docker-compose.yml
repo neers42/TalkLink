@@ -69,6 +69,8 @@ services:
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
       TZ: Asia/Tokyo
+      TLS_CERT_PATH: /app/certs/chat-server/server-cert.pem
+      TLS_KEY_PATH: /app/certs/chat-server/server-key.pem
     
     volumes:
       - /etc/localtime:/etc/localtime:ro
@@ -94,6 +96,8 @@ services:
       REDIS_PORT: ${REDIS_PORT}
       JWT_EXP_LEEWAY_SEC: ${JWT_EXP_LEEWAY_SEC:-60}
       TZ: Asia/Tokyo
+      TLS_CERT_PATH: /app/certs/auth-server/server-cert.pem
+      TLS_KEY_PATH: /app/certs/auth-server/server-key.pem
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
