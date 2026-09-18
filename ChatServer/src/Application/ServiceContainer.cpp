@@ -1,4 +1,5 @@
 #include "Application/ServiceContainer.hpp"
+#include "EnvHelper.hpp"
 
 // Application層
 #include "Application/Services/ChatService.hpp"
@@ -316,15 +317,3 @@ void ServiceContainer::cleanup() {
     }
 }
 
-std::string ServiceContainer::get_env(const char *name)
-{
-    const char *value = std::getenv(name);
-
-    if (value == nullptr)
-    {
-        throw std::runtime_error(
-            std::string("Environment variable is not set: ") + name);
-    }
-
-    return value;
-}

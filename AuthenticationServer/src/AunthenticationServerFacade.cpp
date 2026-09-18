@@ -2,6 +2,7 @@
 #include "RedisAdapter.hpp"
 #include "TokenHandler.hpp"
 #include "SessionTokenHandler.hpp"
+#include "EnvHelper.hpp"
 
 AunthenticationServerFacade::AunthenticationServerFacade()
 {
@@ -60,18 +61,6 @@ void AunthenticationServerFacade::run() {
 	}
 }
 
-std::string AunthenticationServerFacade::get_env(const char *name)
-{
-    const char* value = std::getenv(name);
-
-    if (value == nullptr) {
-        throw std::runtime_error(
-            std::string("Environment variable is not set: ") + name
-        );
-    }
-
-    return value;
-}
 
 void AunthenticationServerFacade::allocate_process(const socket_t socket) {
 	// socketがINVALIDの場合は処理をしない
