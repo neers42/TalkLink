@@ -11,11 +11,11 @@ AunthenticationServerFacade::AunthenticationServerFacade()
 	// Use fixed-width level field so info/debug align visually.
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%-5l%$] %v");
 	LOG_INFO("Starting TalkLink Auth-server version {}!!", TALKLINK_VERSION);
-	const std::string cert_path = get_env("TLS_CERT_PATH");
-	const std::string key_path  = get_env("TLS_KEY_PATH");
+	_cert_path = get_env("TLS_CERT_PATH");
+	_key_path  = get_env("TLS_KEY_PATH");
 	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
-	_tlscon_handler = std::make_unique<TLSConnectionHandler>(cert_path, key_path);
+	_tlscon_handler = std::make_unique<TLSConnectionHandler>(_cert_path, _key_path);
 	_redis_adapter = std::make_unique<RedisAdapter>();
 	_token_handler = std::make_unique<TokenHandler>();
 	_session_token_handler = std::make_unique<SessionTokenHandler>();
@@ -49,7 +49,7 @@ void AunthenticationServerFacade::run() {
 		LOG_ERROR("The program terminates because it failed to create a socket for multicast transmission. Please reset the settings.");
 		exit(1);
 	}
-	this->_thread_pool_handler->enqueue_task([this](){ _tlscon_handler->hot_reload_certificates(60, SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH); });
+	this->_thread_pool_handler->enqueue_task([this](){ _tlscon_handler->hot_reload_certificates(60, _cert_path, _key_path); });
 	LOG_INFO("Start monitoring requests from clients.");
 	//ディスクリプション監視スタート
 	while (true) {

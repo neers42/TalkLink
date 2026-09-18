@@ -13,7 +13,9 @@ StartupService::StartupService(
     std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
     std::shared_ptr<UserManagementService> user_management_service,
     std::shared_ptr<ChatService> chat_service,
-    std::shared_ptr<ChatroomManagementService> chatroom_management_service)
+    std::shared_ptr<ChatroomManagementService> chatroom_management_service,
+    std::string cert_path,
+    std::string key_path)
     : _socket_handler(std::move(socket_handler)),
       _thread_pool_handler(std::move(thread_pool_handler)),
       _tlscon_handler(std::move(protocol_handler)),
@@ -21,7 +23,9 @@ StartupService::StartupService(
       _request_dispatcher_service(std::move(request_dispatcher_service)),
       _user_management_service(std::move(user_management_service)),
       _chat_service(std::move(chat_service)),
-      _chatroom_management_service(std::move(chatroom_management_service))
+      _chatroom_management_service(std::move(chatroom_management_service)),
+      _cert_path(std::move(cert_path)),
+      _key_path(std::move(key_path))
 {
     if (!_socket_handler || !_thread_pool_handler || !_tlscon_handler || 
         !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service || !_chatroom_management_service) {
@@ -219,8 +223,8 @@ bool StartupService::start_background_services()
                 TaskPriority::LOW,
                 TaskCategory::MAINTENANCE,
                 "Certificate hot reload task",
-                [protocol_handler]() {
-                    protocol_handler->hot_reload_certificates(60, SERVER_CERT_FILE_PATH, SERVER_PRIVATEKEY_FILE_PATH);
+                [protocol_handler, cert_path = _cert_path, key_path = _key_path]() {
+                    protocol_handler->hot_reload_certificates(60, cert_path, key_path);
                 }
             );
         }

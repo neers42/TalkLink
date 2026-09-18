@@ -106,7 +106,9 @@ void ServiceContainer::initialize() {
             _request_dispatcher_service,
             _user_management_service,
             _chat_service,
-            _chatroom_management_service
+            _chatroom_management_service,
+            cert_path,
+            key_path
         );
         
         _initialized = true;

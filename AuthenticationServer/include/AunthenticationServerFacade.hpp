@@ -7,8 +7,6 @@
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
 #define SOCKET_CONFIG_FILE_PATH "/app/AuthenticationServer/conf/socket_setting.ini"
-#define SERVER_CERT_FILE_PATH "/app/AuthenticationServer/certs/server-cert.pem"
-#define SERVER_PRIVATEKEY_FILE_PATH "/app/AuthenticationServer/certs/server-key.pem"
 
 class RedisAdapter;
 class TokenHandler;
@@ -25,6 +23,8 @@ private:
 	std::unique_ptr<TokenHandler> _token_handler; // JWTトークンハンドラー
 	std::unique_ptr<SessionTokenHandler> _session_token_handler; //Session用のトークンハンドラー
 	std::map<socket_t, SSL*> _ssl_list;
+	std::string _cert_path; // 環境変数TLS_CERT_PATHから取得した証明書パス
+	std::string _key_path;  // 環境変数TLS_KEY_PATHから取得した秘密鍵パス
 
 public:
 	std::shared_mutex smtx;

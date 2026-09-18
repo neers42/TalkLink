@@ -6,8 +6,6 @@
 #include <memory> 
 
 // Configuration constants
-#define SERVER_CERT_FILE_PATH "/app/ChatServer/certs/server-cert.pem"
-#define SERVER_PRIVATEKEY_FILE_PATH "/app/ChatServer/certs/server-key.pem"
 #define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.ini"
 
 // Forward declarations

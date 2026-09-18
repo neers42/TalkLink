@@ -2,8 +2,6 @@
 #define STARTUPSERVICE_HPP
 
 #include "Utils/common.hpp"
-#define SERVER_CERT_FILE_PATH "/app/ChatServer/certs/server-cert.pem"
-#define SERVER_PRIVATEKEY_FILE_PATH "/app/ChatServer/certs/server-key.pem"
 #define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.ini"
 
 // Forward declarations
@@ -63,7 +61,9 @@ public:
         std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
         std::shared_ptr<UserManagementService> user_management_service,
         std::shared_ptr<ChatService> chat_service,
-        std::shared_ptr<ChatroomManagementService> chatroom_management_service
+        std::shared_ptr<ChatroomManagementService> chatroom_management_service,
+        std::string cert_path,
+        std::string key_path
     );
     ~StartupService();
 
@@ -164,6 +164,8 @@ private:
     std::shared_ptr<UserManagementService> _user_management_service;
     std::shared_ptr<ChatService> _chat_service;
     std::shared_ptr<ChatroomManagementService> _chatroom_management_service;
+    std::string _cert_path; // 環境変数TLS_CERT_PATHから取得した証明書パス
+    std::string _key_path;  // 環境変数TLS_KEY_PATHから取得した秘密鍵パス
     // 起動状態管理
     std::atomic<ServerStartupPhase> _current_phase{ServerStartupPhase::NOT_STARTED};
     mutable std::mutex _phase_mutex;
