@@ -577,7 +577,7 @@ void TLSConnectionHandler::generate_ssl_context(const SSL_METHOD* method)
 void TLSConnectionHandler::load_cert_file(const std::string &cert_file_pass)
 {
 		//サーバ証明書のロード
-	if (SSL_CTX_use_certificate_file(_server_ctx.get(), cert_file_pass.c_str(), SSL_FILETYPE_PEM) == 0) {
+	if (SSL_CTX_use_certificate_chain_file(_server_ctx.get(), cert_file_pass.c_str()) == 0) {
 		LOG_ERROR("[TLSConnectionHandler] Failed to load server certificate file: {}", cert_file_pass);
 		exit(1);
 	}
@@ -618,7 +618,7 @@ bool TLSConnectionHandler::modify_file(const std::string& cert_file_pass, time_t
 bool TLSConnectionHandler::reload_certificates(SSL_CTX* ctx, const std::string &cert_file, const std::string &key_file)
 {
 	//証明書の再ロード
-    if (SSL_CTX_use_certificate_file(ctx, cert_file.c_str(), SSL_FILETYPE_PEM) <= 0){
+    if (SSL_CTX_use_certificate_chain_file(ctx, cert_file.c_str()) <= 0){
 		LOG_ERROR("[TLSConnectionHandler] Failed to reload server certificate file: {}", cert_file);
 		return false;
 	}
