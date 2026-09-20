@@ -461,7 +461,10 @@ void TLSConnectionHandler::hot_reload_certificates(int interval_seconds, const s
 			}
 			if (!reload_certificates(new_ctx.get(), cert_file_pass, private_key_file_pass))
 			{
-				LOG_ERROR("[TLSConnectionHandler] Failed to reload certificates.");
+				// 証明書/秘密鍵を別々に配置している場合、更新の一瞬だけ両ファイルが
+				// 一致しない状態になり得るため、ここでの失敗は一時的な事象の可能性がある。
+				// (稼働中のコンテキストはスワップされないため、サービスへの影響はない)
+				LOG_WARNING("[TLSConnectionHandler] Failed to reload certificates (may be a transient mismatch during rotation). Will retry.");
 				std::this_thread::sleep_for(std::chrono::seconds(5));  // 5秒待機してから再試行
 				continue;
 			}
@@ -618,18 +621,20 @@ bool TLSConnectionHandler::modify_file(const std::string& cert_file_pass, time_t
 bool TLSConnectionHandler::reload_certificates(SSL_CTX* ctx, const std::string &cert_file, const std::string &key_file)
 {
 	//証明書の再ロード
+	//(配置スクリプトがcert/keyを別々に書き込んでいる場合、更新の一瞬だけ内容が
+	// 不完全/不整合になり得るため、以下の失敗はWARNING扱いとし次回ポーリングで再試行する)
     if (SSL_CTX_use_certificate_chain_file(ctx, cert_file.c_str()) <= 0){
-		LOG_ERROR("[TLSConnectionHandler] Failed to reload server certificate file: {}", cert_file);
+		LOG_WARNING("[TLSConnectionHandler] Failed to reload server certificate file: {}", cert_file);
 		return false;
 	}
 	//秘密鍵の再ロード
     if (SSL_CTX_use_PrivateKey_file(ctx, key_file.c_str(), SSL_FILETYPE_PEM) <= 0) {
-		LOG_ERROR("[TLSConnectionHandler] Failed to reload server private key file: {}", key_file);
+		LOG_WARNING("[TLSConnectionHandler] Failed to reload server private key file: {}", key_file);
 		return false;
 	}
 	//秘密鍵とCTXにロードされた証明書との整合性をチェック
     if (!SSL_CTX_check_private_key(ctx)) {
-		LOG_ERROR("[TLSConnectionHandler] Server private key does not match the certificate public key.");
+		LOG_WARNING("[TLSConnectionHandler] Server private key does not match the certificate public key (may be transient during rotation).");
 		return false;
 	}
 	LOG_DEBUG("[TLSConnectionHandler] Server certificate and private key reloaded successfully.");

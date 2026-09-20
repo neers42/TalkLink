@@ -106,7 +106,6 @@ MySQLHelper::MySQLHelper()
     _mysql_user_name = env_user ? env_user : "chat_user";
     _mysql_password = env_pass ? env_pass : "chat_pass";
     _mysql_db_name = env_db ? env_db : "TalkLinkDB";
-	spdlog::debug("MySQL: host: {}, user: {}, password: {}, db_name: {}", _mysql_host, _mysql_user_name, _mysql_password, _mysql_db_name);
 #ifdef _WIN32
 	free(env_host);
 	free(env_user);
