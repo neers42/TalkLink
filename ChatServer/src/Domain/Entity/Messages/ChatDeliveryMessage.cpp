@@ -1,24 +1,24 @@
 ﻿#include "Domain/Entity/Messages/ChatDeliveryMessage.hpp"
 
-ChatDeliveryMessage::ChatDeliveryMessage() 
+ChatDeliveryMessage::ChatDeliveryMessage()
     : MessageBase(MessageBase::MessageType::CHAT_DELIVERY),
-      _send_message_id(0),
+      _message_id(0),
       _room_id(""),
       _sender_uid(""),
       _content(""),
       _room_sequence(0)
 {
 
-} 
+}
 ChatDeliveryMessage::ChatDeliveryMessage(
 	const MessageBase::CommonField& common_fields,
-	const uint64_t send_message_id,
+	const uint64_t message_id,
     const std::string &room_id,
     const std::string &sender_uid,
     const std::string &content,
     const std::uint64_t room_sequence)
     : MessageBase(common_fields, MessageBase::MessageType::CHAT_DELIVERY),
-      _send_message_id(send_message_id),
+      _message_id(message_id),
       _room_id(room_id),
       _sender_uid(sender_uid),
       _content(content),
@@ -34,9 +34,9 @@ ChatDeliveryMessage::~ChatDeliveryMessage()
 {
 }
 
-uint64_t ChatDeliveryMessage::get_send_message_id() const
+uint64_t ChatDeliveryMessage::get_message_id() const
 {
-	return this->_send_message_id;
+	return this->_message_id;
 }
 
 std::string ChatDeliveryMessage::get_room_id() const
@@ -58,6 +58,11 @@ std::string ChatDeliveryMessage::get_content() const
 std::uint64_t ChatDeliveryMessage::get_room_sequence() const
 {
 	return this->_room_sequence;
+}
+
+void ChatDeliveryMessage::set_message_id(const uint64_t message_id)
+{
+	this->_message_id = message_id;
 }
 
 void ChatDeliveryMessage::set_room_id(const std::string& room_id)
@@ -87,6 +92,7 @@ json ChatDeliveryMessage::serialize_payload() const
 	{
 		if (validate_payload() == true)
 		{
+			specific_fields["message_id"] = this->_message_id;
 			specific_fields["room_id"] = this->_room_id;
 			specific_fields["sender_uid"] = this->_sender_uid;
 			specific_fields["content"] = this->_content;

@@ -83,6 +83,7 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                         result.success = creation_result.success;
                         result.error_message = creation_result.error_message;
                         result.affected_members = creation_result.initial_members;
+                        result.room_reused = creation_result.reused_existing;
                         if (!creation_result.room_id.empty()) {
                             result.room_id = creation_result.room_id;
                         }
@@ -142,6 +143,14 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
 
                 // mutation が失敗した場合はここで終了（error_message は switch 内で設定済み）。
                 if (!result.success) {
+                    return;
+                }
+
+                // CREATE_ROOMが既存のDirectルームを再利用した場合、そのルームは既に
+                // シーケンス初期化・メッセージ永続化・通知配信を済ませているので、
+                // ここで二重に行わない（他メンバーへの重複CREATE_ROOM通知も防げる）。
+                // ACKには既存のroom_idが載るので、requester側は正しいルームに正規化できる。
+                if (result.room_reused) {
                     return;
                 }
 
@@ -216,7 +225,23 @@ RoomCreationResult ChatroomManagementService::create_chatroom(
         if (std::find(all_members.begin(), all_members.end(), creator_id) == all_members.end()) {
             all_members.push_back(creator_id);
         }
-        
+
+        // Directルーム(2人)の場合、同じ組み合わせの既存ルームがあれば重複作成せず再利用する
+        // (クライアント側のローカル状態が失われた場合などにCREATE_ROOMが重複送信されることへの対策)
+        if (all_members.size() == 2) {
+            const std::string existing_room_id = _chatroom_repository_handler->find_direct_room_by_members(
+                all_members[0], all_members[1]);
+            if (!existing_room_id.empty()) {
+                result.room_id = existing_room_id;
+                result.initial_members = 2;
+                result.success = true;
+                result.reused_existing = true;
+                LOG_INFO("Direct room already exists between '{}' and '{}'. Reusing room_id={}",
+                         all_members[0], all_members[1], existing_room_id);
+                return result;
+            }
+        }
+
         // 新しいチャットルームIDを生成
         const std::string room_id = ChatroomIDGenerator::issue_chatroom_id_unhex();
 

@@ -59,6 +59,7 @@ public:
 	//テーブル：chatrooms操作
 	bool chatroom_exists(const std::string& room_id);
 	bool chatroom_exists_by_hex(const std::string& room_id_hex);
+	std::string find_direct_room_by_members(const std::string& uid_a, const std::string& uid_b);
 
 	bool insert_chatroom(
 		const std::string& room_id, 

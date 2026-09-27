@@ -22,6 +22,7 @@ struct ChatroomOperationResult {
     std::vector<std::string> unsent_notifications;
     std::uint64_t room_sequence = 0;
     std::string room_id;
+    bool room_reused = false; // CREATE_ROOMで既存のDirectルームを再利用した場合true
 };
 
 // ルーム作成結果
@@ -30,6 +31,7 @@ struct RoomCreationResult {
     std::string room_id;
     std::string error_message;
     int initial_members;
+    bool reused_existing = false; // 既存のDirectルームを再利用した場合true(新規作成していない)
 };
 
 // メンバー管理結果
