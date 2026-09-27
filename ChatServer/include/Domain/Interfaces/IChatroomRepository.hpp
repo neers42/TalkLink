@@ -50,6 +50,13 @@ public:
         const std::string& room_id_hex
     ) = 0;
 
+    // uid_a, uid_b の2人だけで構成される(Direct)ルームを検索する。
+    // 見つかった場合はそのroom_idを16進数文字列で返し、無ければ空文字列を返す。
+    virtual std::string find_direct_room_by_members(
+        const std::string& uid_a,
+        const std::string& uid_b
+    ) = 0;
+
     virtual bool insert_chatroom(
         const std::string& room_id,
         const std::string& room_name,

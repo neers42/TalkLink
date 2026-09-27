@@ -158,6 +158,22 @@ bool ChatroomRepositoryHandler::chatroom_exists(const std::string& room_id_hex) 
     }
 }
 
+std::string ChatroomRepositoryHandler::find_direct_room_by_members(const std::string& uid_a, const std::string& uid_b) {
+    try {
+        if (!_chatroom_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] ChatroomRepository is not initialized");
+            return "";
+        }
+        if (uid_a.empty() || uid_b.empty() || uid_a == uid_b) {
+            return "";
+        }
+        return _chatroom_repository->find_direct_room_by_members(uid_a, uid_b);
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error finding direct room between {} and {}: {}", uid_a, uid_b, e.what());
+        return "";
+    }
+}
+
 // ==================== メッセージ ====================
 
 bool ChatroomRepositoryHandler::insert_message(const uint64_t message_id, const std::string& room_id,

@@ -432,6 +432,51 @@ bool MySQLAdapter::chatroom_exists_by_hex(const std::string& room_id_hex)
 	return false;
 }
 
+std::string MySQLAdapter::find_direct_room_by_members(const std::string& uid_a, const std::string& uid_b)
+{
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
+	try
+	{
+		// uid_a, uid_bの2人だけがメンバーであるルームを検索する
+		// (メンバー数がちょうど2で、かつ両方が含まれるルーム)
+		std::string sql =
+			"SELECT cm1.room_id "
+			"FROM " + _mysql_table_name_chat_members + " AS cm1 "
+			"JOIN " + _mysql_table_name_chat_members + " AS cm2 ON cm1.room_id = cm2.room_id "
+			"WHERE cm1.uid = ? AND cm2.uid = ? "
+			"AND (SELECT COUNT(*) FROM " + _mysql_table_name_chat_members + " AS cm3 WHERE cm3.room_id = cm1.room_id) = 2 "
+			"LIMIT 1;";
+
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_mysql_helper->get_connection()->prepareStatement(sql)
+		);
+		pre_stmt->setString(1, uid_a);
+		pre_stmt->setString(2, uid_b);
+
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+		if (res != nullptr && res->next())
+		{
+			std::string room_id_bin = res->getString("room_id");
+			return this->to_hex_string(room_id_bin);
+		}
+		return "";
+	}
+	catch (const sql::SQLException& e)
+	{
+		this->_mysql_helper->printError(e);
+		return "";
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("Runtime Error:{}", e.what());
+		return "";
+	}
+	catch (const std::exception& e) {
+		LOG_ERROR("Exception:{}.", e.what());
+		return "";
+	}
+}
+
 bool MySQLAdapter::insert_message(const uint64_t mid, const std::string& room_id_hex, const std::string& sender_uid, const std::string& send_time, const std::string& message_content, std::uint64_t room_sequence, const std::string& target_uid)
 {
 	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);

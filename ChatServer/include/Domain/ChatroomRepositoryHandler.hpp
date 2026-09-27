@@ -74,6 +74,12 @@ public:
      */
     bool chatroom_exists(const std::string& room_id_hex);
 
+    /**
+     * @brief uid_a, uid_bの2人だけで構成されるDirectルームを検索する
+     * @return 見つかった場合はroom_id(16進数)、無ければ空文字列
+     */
+    std::string find_direct_room_by_members(const std::string& uid_a, const std::string& uid_b);
+
     // ==================== メッセージ ====================
 
     bool insert_message(const uint64_t message_id, const std::string& room_id,
