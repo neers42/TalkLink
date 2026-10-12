@@ -6,7 +6,7 @@
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
-#define SOCKET_CONFIG_FILE_PATH "/app/AuthenticationServer/conf/socket_setting.ini"
+#define SOCKET_CONFIG_FILE_PATH "/app/AuthenticationServer/conf/socket_setting.conf"
 
 class RedisAdapter;
 class TokenHandler;

@@ -129,7 +129,8 @@ set_target_properties(ChatServer PROPERTIES
 
 # 設定ファイルをビルドディレクトリの bin/ にコピー
 set(CONFIG_FILES
-    socket_setting.ini
+    socket_setting.conf
+    chat.conf
 )
 
 foreach(CONFIG_FILE ${CONFIG_FILES})

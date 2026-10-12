@@ -21,9 +21,7 @@ using socket_t = int; // POSIX systems use int for sockets
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
 #define DEBUG_MODE
-#define LOAD_MESSAGE_NUM 20
-#define MAX_RESEND_COUNT 3
-#define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.ini"
+#define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.conf"
 
 class ChatServerFacade
 {

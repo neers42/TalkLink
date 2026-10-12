@@ -6,7 +6,8 @@
 #include <memory> 
 
 // Configuration constants
-#define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.ini"
+#define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.conf"
+#define CHAT_CONFIG_FILE_PATH "/app/ChatServer/conf/chat.conf"
 
 // Forward declarations
 // CommonLib

@@ -125,10 +125,6 @@ private:
     std::shared_ptr<MySQLAdapter> _mysql_adapter;
     std::shared_ptr<ServerTime> _server_time;
 
-    // JWT configuration
-    static constexpr const char* JWT_SECRET_KEY = "your-secret-key"; // TODO: Move to config
-    static constexpr const char* JWT_ISSUER = "TalkLink";
-
     /**
      * @brief Log session validation events
      * 

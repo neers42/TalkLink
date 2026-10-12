@@ -3,10 +3,12 @@
 ChatroomRepositoryHandler::ChatroomRepositoryHandler(
     std::shared_ptr<IChatroomRepository> chatroom_repository,
     std::shared_ptr<IUserRepository> user_repository,
-    std::shared_ptr<IMessageRepository> message_repository)
+    std::shared_ptr<IMessageRepository> message_repository,
+    int max_user_num_in_chatroom)
     : _chatroom_repository(std::move(chatroom_repository)),
       _user_repository(std::move(user_repository)),
-      _message_repository(std::move(message_repository))
+      _message_repository(std::move(message_repository)),
+      _max_user_num_in_chatroom(max_user_num_in_chatroom)
 {
     if (!_chatroom_repository || !_user_repository || !_message_repository)
     {
@@ -30,7 +32,7 @@ int ChatroomRepositoryHandler::add_members(const std::string& room_id, const std
     // 上限チェック込みで追加（現在メンバー取得→判定→INSERT を原子的に実行）
     const std::string now_mysql = ServerTime::iso8601_to_mysql_datetime(ServerTime::get_current_time_to_milliseconds());
     auto db_result = _chatroom_repository->insert_chatroom_members_within_limit(
-        room_id, uids, now_mysql, MAX_USER_NUM_IN_CHATROOM);
+        room_id, uids, now_mysql, _max_user_num_in_chatroom);
 
     switch (db_result.status) {
         case MemberInsertResult::Status::DB_ERROR:

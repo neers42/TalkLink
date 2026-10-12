@@ -79,6 +79,8 @@ services:
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
       TZ: Asia/Tokyo
+      # 複数インスタンスで稼働させる場合はインスタンスごとに一意な値を設定すること
+      CHAT_SERVER_MACHINE_ID: ${CHAT_SERVER_MACHINE_ID:-1}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro

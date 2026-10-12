@@ -12,11 +12,13 @@ ChatService::ChatService(
     std::shared_ptr<IMessageDeliveryService> message_delivery_service,
     std::shared_ptr<UserRepositoryHandler> user_repository_handler,
     std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
-    std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler
+    std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler,
+    int max_resend_count
 ) : _message_delivery_service(std::move(message_delivery_service)),
     _user_repository_handler(std::move(user_repository_handler)),
     _chatroom_repository_handler(std::move(chatroom_repository_handler)),
-    _chatroom_sequence_handler(std::move(chatroom_sequence_handler))
+    _chatroom_sequence_handler(std::move(chatroom_sequence_handler)),
+    _max_resend_count(max_resend_count)
 {
     if (!_message_delivery_service || !_user_repository_handler || !_chatroom_repository_handler || !_chatroom_sequence_handler) {
         throw std::runtime_error("All dependencies must be non-null");
@@ -241,7 +243,7 @@ bool ChatService::execute_message_resend(const json& message_json, const std::ve
         {
             LOG_INFO("[ChatService] Attempting to resend message to user: {}", uid);
             // 再送試行
-            for (int resend_count = 1; resend_count < MAX_RESEND_COUNT; resend_count++)
+            for (int resend_count = 1; resend_count < _max_resend_count; resend_count++)
             {
                 if (resend_count == 2)
                 {
@@ -258,7 +260,7 @@ bool ChatService::execute_message_resend(const json& message_json, const std::ve
                     LOG_DEBUG("[ChatService] Resend message to user {} succeeded on attempt {}", uid, resend_count);
                     break;
                 }
-                if(resend_result.success == false && resend_count == MAX_RESEND_COUNT - 1)
+                if(resend_result.success == false && resend_count == _max_resend_count - 1)
                 {
                     LOG_WARNING("[ChatService] Resend message to user {} failed after {} attempts", uid, resend_count);
                     unsent_count++;

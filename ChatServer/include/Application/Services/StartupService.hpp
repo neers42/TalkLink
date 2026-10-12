@@ -2,7 +2,7 @@
 #define STARTUPSERVICE_HPP
 
 #include "Utils/common.hpp"
-#define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.ini"
+#define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.conf"
 
 // Forward declarations
 class SocketHandler;

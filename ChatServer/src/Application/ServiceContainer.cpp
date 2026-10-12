@@ -23,6 +23,8 @@
 #include "Domain/SessionHandler.hpp"
 #include "Domain/ChatroomSequenceHandler.hpp"
 #include "Domain/CommunicationHandler.hpp"
+#include "Domain/MessageIDGenerator.hpp"
+#include "inicpp.h"
 
 // Domain層インタフェース
 #include "Domain/Interfaces/IChatroomRepository.hpp"
@@ -55,6 +57,14 @@ void ServiceContainer::initialize() {
         //Phase 0 : 環境変数の読み取り
         const std::string cert_path = get_env("TLS_CERT_PATH");
         const std::string key_path  = get_env("TLS_KEY_PATH");
+        // CHAT_SERVER_MACHINE_IDの設定不備を起動時に検出する(実際の値はgenerate_message_id内で遅延キャッシュされる)
+        MessageIDGenerator::resolve_machine_id();
+
+        // chat.confの読み込み
+        ini::IniFile chat_config;
+        chat_config.load(CHAT_CONFIG_FILE_PATH);
+        const int max_resend_count = chat_config["ChatSettings"]["max_resend_count"].as<int>();
+        const int max_user_num_in_chatroom = chat_config["ChatSettings"]["max_user_num_in_chatroom"].as<int>();
 
         // Phase 1: インフラストラクチャ層の共有リソースを初期化
         _server_time = std::make_shared<ServerTime>();
@@ -74,7 +84,7 @@ void ServiceContainer::initialize() {
         
         // Phase 3: データストレージを初期化
         _user_store = std::make_shared<UserAggregateStore>();
-        _chatroom_repository_handler = std::make_shared<ChatroomRepositoryHandler>(_chatroom_repository, _user_repository, _message_repository);
+        _chatroom_repository_handler = std::make_shared<ChatroomRepositoryHandler>(_chatroom_repository, _user_repository, _message_repository, max_user_num_in_chatroom);
         _user_repository_handler = std::make_shared<UserRepositoryHandler>(_user_store, _user_repository, _server_time);
         _communication_handler = std::make_shared<CommunicationHandler>(_user_store, _socket_handler, _tlscon_handler);
         
@@ -93,7 +103,7 @@ void ServiceContainer::initialize() {
             _message_delivery_service, _chatroom_repository_handler, _chatroom_sequence_handler);
             
         _chat_service = std::make_shared<ChatService>(
-            _message_delivery_service, _user_repository_handler, _chatroom_repository_handler, _chatroom_sequence_handler);
+            _message_delivery_service, _user_repository_handler, _chatroom_repository_handler, _chatroom_sequence_handler, max_resend_count);
 
         _sync_service = std::make_shared<SyncService>(
             _message_delivery_service, _chatroom_repository_handler);

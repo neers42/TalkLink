@@ -8,8 +8,6 @@
 #include <memory>
 #include <string>
 
-#define MAX_USER_NUM_IN_CHATROOM 100 // チャットルーム内の最大ユーザー数
-
 /**
  * @brief チャットルームのデータアクセスを担当する Repository 層
  *
@@ -21,12 +19,14 @@ private:
     std::shared_ptr<IChatroomRepository> _chatroom_repository;
     std::shared_ptr<IUserRepository> _user_repository;
     std::shared_ptr<IMessageRepository> _message_repository;
+    int _max_user_num_in_chatroom; // チャットルーム内の最大ユーザー数(chat.confから取得)
 
 public:
     explicit ChatroomRepositoryHandler(
         std::shared_ptr<IChatroomRepository> chatroom_repository,
         std::shared_ptr<IUserRepository> user_repository,
-        std::shared_ptr<IMessageRepository> message_repository);
+        std::shared_ptr<IMessageRepository> message_repository,
+        int max_user_num_in_chatroom);
     ~ChatroomRepositoryHandler();
 
     // コピー・移動を禁止

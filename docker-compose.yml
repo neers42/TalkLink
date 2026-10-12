@@ -71,7 +71,9 @@ services:
       TZ: Asia/Tokyo
       TLS_CERT_PATH: /app/certs/chat-server/server-cert.pem
       TLS_KEY_PATH: /app/certs/chat-server/server-key.pem
-    
+      # 複数インスタンスで稼働させる場合はインスタンスごとに一意な値を設定すること
+      CHAT_SERVER_MACHINE_ID: ${CHAT_SERVER_MACHINE_ID:-1}
+
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro

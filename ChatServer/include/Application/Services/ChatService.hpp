@@ -27,18 +27,18 @@ private:
     std::shared_ptr<UserRepositoryHandler> _user_repository_handler;
     std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
     std::shared_ptr<ChatroomSequenceHandler> _chatroom_sequence_handler;
-    
-    // 設定
-    static constexpr int MAX_RESEND_COUNT = 3;
-    static constexpr int LOAD_MESSAGE_NUM = 20;
-    
+
+    // 設定(chat.confから取得)
+    int _max_resend_count;
+
 public:
     // コンストラクタ・デストラクタ
     explicit ChatService(
         std::shared_ptr<IMessageDeliveryService> message_delivery_service,
         std::shared_ptr<UserRepositoryHandler> user_repository_handler,
         std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
-        std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler
+        std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler,
+        int max_resend_count
     );
     ~ChatService();
     
