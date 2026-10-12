@@ -24,6 +24,7 @@ COPY CMakeLists.txt ./
 COPY CommonLib ./CommonLib
 COPY AuthenticationServer ./AuthenticationServer
 COPY ThirdParty ./ThirdParty
+COPY config ./config
 
 # ビルド
 RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_AUTH_SERVER=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && \
@@ -56,7 +57,7 @@ RUN apt-get update && \
 
 # ビルド成果物と必要ファイルコピー
 COPY --from=builder /app/build/bin/AuthenticationServer ./AuthenticationServer/bin/AuthenticationServer
-COPY AuthenticationServer/conf ./AuthenticationServer/conf
+COPY config/auth-server ./AuthenticationServer/conf
 COPY /certs/auth-server ./certs/auth-server
 COPY AuthenticationServer/scripts ./AuthenticationServer/scripts
 

@@ -10,7 +10,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
-      - ./mysql/conf.d/talklink.cnf:/etc/mysql/conf.d/talklink.cnf:ro
+      - ./config/mysql/talklink.cnf:/etc/mysql/conf.d/talklink.cnf:ro
     healthcheck:
       test:
         [

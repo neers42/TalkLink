@@ -27,6 +27,7 @@ COPY CommonLib ./CommonLib
 COPY ChatServer ./ChatServer
 COPY ThirdParty ./ThirdParty
 COPY Tests ./Tests
+COPY config ./config
 
 
 # ビルド
@@ -75,7 +76,7 @@ RUN apt-get update && \
 # ビルド成果物と必要ファイルコピー
 COPY --from=builder /app/build/bin/ChatServer ./ChatServer/bin/ChatServer
 RUN test -s ./ChatServer/bin/ChatServer
-COPY ChatServer/conf ./ChatServer/conf
+COPY config/chat-server ./ChatServer/conf
 COPY /certs/chat-server ./certs/chat-server
 COPY ThirdParty/lib/mysql-connector-c++-9.1.0/linux/lib64/libmysqlcppconn.so.10 /usr/local/lib/libmysqlcppconn.so.10
 

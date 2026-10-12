@@ -134,7 +134,7 @@ set(CONFIG_FILES
 
 foreach(CONFIG_FILE ${CONFIG_FILES})
     configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/conf/${CONFIG_FILE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../config/chat-server/${CONFIG_FILE}
         ${CMAKE_BINARY_DIR}/bin/${CONFIG_FILE}
         COPYONLY
     )

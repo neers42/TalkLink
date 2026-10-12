@@ -34,9 +34,9 @@ set_target_properties(AuthenticationServer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-# conf/socket_setting.ini をビルドディレクトリの bin/ にコピー
+# config/auth-server/socket_setting.ini をビルドディレクトリの bin/ にコピー
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/conf/socket_setting.ini
+    ${CMAKE_CURRENT_SOURCE_DIR}/../config/auth-server/socket_setting.ini
     ${CMAKE_BINARY_DIR}/bin/socket_setting.ini
     COPYONLY
 )
