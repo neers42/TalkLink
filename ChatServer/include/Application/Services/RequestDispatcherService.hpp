@@ -15,6 +15,7 @@ struct MessageDispatchResult {
         CHATROOM_CONTROL,   // チャットルーム制御
         USER_SETTING_CONTROL,    // 設定制御
         USER_SEARCH_REQUEST,    // ユーザー検索リクエスト
+        SYNC_REQUEST,       // ルームシーケンス欠番の同期リクエスト
         DISCONNECT,         // クライアント切断
         ERROR               // エラー
     };

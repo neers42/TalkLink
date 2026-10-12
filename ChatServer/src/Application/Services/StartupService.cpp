@@ -4,6 +4,7 @@
 #include "Application/Services/UserManagementService.hpp"
 #include "Application/Services/ChatService.hpp"
 #include "Application/Services/ChatroomManagementService.hpp"
+#include "Application/Services/SyncService.hpp"
 
 StartupService::StartupService(
     std::shared_ptr<SocketHandler> socket_handler,
@@ -14,6 +15,7 @@ StartupService::StartupService(
     std::shared_ptr<UserManagementService> user_management_service,
     std::shared_ptr<ChatService> chat_service,
     std::shared_ptr<ChatroomManagementService> chatroom_management_service,
+    std::shared_ptr<SyncService> sync_service,
     std::string cert_path,
     std::string key_path)
     : _socket_handler(std::move(socket_handler)),
@@ -24,11 +26,12 @@ StartupService::StartupService(
       _user_management_service(std::move(user_management_service)),
       _chat_service(std::move(chat_service)),
       _chatroom_management_service(std::move(chatroom_management_service)),
+      _sync_service(std::move(sync_service)),
       _cert_path(std::move(cert_path)),
       _key_path(std::move(key_path))
 {
-    if (!_socket_handler || !_thread_pool_handler || !_tlscon_handler || 
-        !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service || !_chatroom_management_service) {
+    if (!_socket_handler || !_thread_pool_handler || !_tlscon_handler ||
+        !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service || !_chatroom_management_service || !_sync_service) {
         throw std::runtime_error("Failed to initialize StartupService dependencies");
     }
     
@@ -324,7 +327,18 @@ bool StartupService::configure_request_dispatching()
                 case MessageDispatchResult::Type::USER_SETTING_CONTROL:
                     //ToDo: USER_SETTING_CONTROLの処理を実装
                     break;
-                
+
+                case MessageDispatchResult::Type::SYNC_REQUEST:
+                    _task_management_service->schedule_task(
+                        TaskPriority::NORMAL,
+                        TaskCategory::CHAT_PROCESSING,
+                        "Process sync request",
+                        [this, message_data = result.message_data, socket = result.socket]() {
+                            _sync_service->process_sync_request(message_data, socket);
+                        }
+                    );
+                    break;
+
                 case MessageDispatchResult::Type::USER_SEARCH_REQUEST:
                     _task_management_service->schedule_task(
                         TaskPriority::NORMAL,

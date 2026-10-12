@@ -212,6 +212,19 @@ json ChatroomRepositoryHandler::get_unreceived_messages(const std::string& uid, 
     }
 }
 
+json ChatroomRepositoryHandler::get_room_messages_after_sequence(const std::string& room_id, const uint64_t from_sequence, const std::string& requester_uid) {
+    try {
+        if (!_message_repository) {
+            LOG_ERROR("[ChatroomRepositoryHandler] MessageRepository is not initialized");
+            return json::object();
+        }
+        return _message_repository->get_room_messages_after_sequence(room_id, from_sequence, requester_uid);
+    } catch (const std::exception& e) {
+        LOG_ERROR("[ChatroomRepositoryHandler] Error getting gap messages for room {}: {}", room_id, e.what());
+        return json::object();
+    }
+}
+
 // ==================== 取得 ====================
 
 std::vector<UserInfo> ChatroomRepositoryHandler::get_user_infos(const std::vector<std::string>& uids) {

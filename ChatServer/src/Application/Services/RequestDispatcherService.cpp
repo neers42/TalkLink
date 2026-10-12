@@ -138,6 +138,8 @@ MessageDispatchResult::Type RequestDispatcherService::determine_message_type(con
                 return MessageDispatchResult::Type::USER_SETTING_CONTROL;
             case MessageBase::MessageType::USER_SEARCH_REQUEST:
                 return MessageDispatchResult::Type::USER_SEARCH_REQUEST;
+            case MessageBase::MessageType::SYNC_REQUEST:
+                return MessageDispatchResult::Type::SYNC_REQUEST;
             default:
                 return MessageDispatchResult::Type::ERROR;
         }

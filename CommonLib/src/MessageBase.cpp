@@ -63,6 +63,10 @@ MessageBase::MessageType MessageBase::parse_message_type(const std::string& mess
             return MessageBase::MessageType::USER_SEARCH_REQUEST;
         } else if (message_type_str == "USER_SEARCH_RESPONSE") {
             return MessageBase::MessageType::USER_SEARCH_RESPONSE;
+        } else if (message_type_str == "SYNC_REQUEST") {
+            return MessageBase::MessageType::SYNC_REQUEST;
+        } else if (message_type_str == "SYNC_RESPONSE") {
+            return MessageBase::MessageType::SYNC_RESPONSE;
         } else {
             throw std::invalid_argument("Unknown message type string: " + message_type_str);
         }
@@ -115,6 +119,12 @@ std::string MessageBase::message_type_to_string(const MessageBase::MessageType &
             break;
         case MessageBase::MessageType::USER_SEARCH_RESPONSE:
             return "USER_SEARCH_RESPONSE";
+            break;
+        case MessageBase::MessageType::SYNC_REQUEST:
+            return "SYNC_REQUEST";
+            break;
+        case MessageBase::MessageType::SYNC_RESPONSE:
+            return "SYNC_RESPONSE";
             break;
         default:
             LOG_ERROR("Unknown MessageType enum value.");

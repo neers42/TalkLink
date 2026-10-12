@@ -20,6 +20,15 @@ public:
         const std::string& uid,
         uint64_t last_received_message_id
     ) = 0;
+
+    // 指定ルーム内で、room_sequenceがfrom_sequenceより大きいメッセージを
+    // room_sequence昇順で取得する(SyncRequestの欠番補充用)。
+    // target_uidが設定されているメッセージはrequester_uid宛のものだけを含める。
+    virtual json get_room_messages_after_sequence(
+        const std::string& room_id,
+        uint64_t from_sequence,
+        const std::string& requester_uid
+    ) = 0;
 };
 
 #endif // IMESSAGEREPOSITORY_HPP

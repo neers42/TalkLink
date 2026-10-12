@@ -55,6 +55,7 @@ public:
 		const std::string& target_uid = "") override;
 
 	json get_unreceived_messages(const std::string& uid, const uint64_t last_received_message_id);
+	json get_room_messages_after_sequence(const std::string& room_id_hex, const uint64_t from_sequence, const std::string& requester_uid);
 
 	//テーブル：chatrooms操作
 	bool chatroom_exists(const std::string& room_id);

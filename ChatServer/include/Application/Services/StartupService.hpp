@@ -13,6 +13,7 @@ class RequestDispatcherService;
 class UserManagementService;
 class ChatService;
 class ChatroomManagementService;
+class SyncService;
 
 // サーバー起動フェーズ定義
 enum class ServerStartupPhase {
@@ -62,6 +63,7 @@ public:
         std::shared_ptr<UserManagementService> user_management_service,
         std::shared_ptr<ChatService> chat_service,
         std::shared_ptr<ChatroomManagementService> chatroom_management_service,
+        std::shared_ptr<SyncService> sync_service,
         std::string cert_path,
         std::string key_path
     );
@@ -164,6 +166,7 @@ private:
     std::shared_ptr<UserManagementService> _user_management_service;
     std::shared_ptr<ChatService> _chat_service;
     std::shared_ptr<ChatroomManagementService> _chatroom_management_service;
+    std::shared_ptr<SyncService> _sync_service;
     std::string _cert_path; // 環境変数TLS_CERT_PATHから取得した証明書パス
     std::string _key_path;  // 環境変数TLS_KEY_PATHから取得した秘密鍵パス
     // 起動状態管理

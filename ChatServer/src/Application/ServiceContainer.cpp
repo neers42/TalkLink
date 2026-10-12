@@ -3,6 +3,7 @@
 
 // Application層
 #include "Application/Services/ChatService.hpp"
+#include "Application/Services/SyncService.hpp"
 #include "Application/Services/ChatroomManagementService.hpp"
 #include "Application/Services/UserManagementService.hpp"
 #include "Application/Services/RequestDispatcherService.hpp"
@@ -93,10 +94,13 @@ void ServiceContainer::initialize() {
             
         _chat_service = std::make_shared<ChatService>(
             _message_delivery_service, _user_repository_handler, _chatroom_repository_handler, _chatroom_sequence_handler);
-        
+
+        _sync_service = std::make_shared<SyncService>(
+            _message_delivery_service, _chatroom_repository_handler);
+
         _request_dispatcher_service = std::make_shared<RequestDispatcherService>(
             _socket_handler, _communication_handler);
-            
+
         // Phase 6: スタートアップサービスを初期化（すべてのサービスが準備された後）
         _startup_service = std::make_shared<StartupService>(
             _socket_handler,
@@ -107,6 +111,7 @@ void ServiceContainer::initialize() {
             _user_management_service,
             _chat_service,
             _chatroom_management_service,
+            _sync_service,
             cert_path,
             key_path
         );
@@ -248,6 +253,13 @@ std::shared_ptr<ChatService> ServiceContainer::get_chat_service() {
     return _chat_service;
 }
 
+std::shared_ptr<SyncService> ServiceContainer::get_sync_service() {
+    if (!_initialized || !_sync_service) {
+        throw std::runtime_error("ServiceContainer not initialized or SyncService not available");
+    }
+    return _sync_service;
+}
+
 std::shared_ptr<RequestDispatcherService> ServiceContainer::get_request_dispatcher_service() {
     if (!_initialized || !_request_dispatcher_service) {
         throw std::runtime_error("ServiceContainer not initialized or RequestDispatcherService not available");
@@ -284,6 +296,7 @@ void ServiceContainer::cleanup() {
         // サービスをクリーンアップ (依存関係の逆順で実施)
         _startup_service.reset();
         _request_dispatcher_service.reset();
+        _sync_service.reset();
         _chat_service.reset();
         _chatroom_management_service.reset();
         _user_management_service.reset();

@@ -596,6 +596,81 @@ json MySQLAdapter::get_unreceived_messages(const std::string &uid, const uint64_
     }
     return result;
 }
+
+json MySQLAdapter::get_room_messages_after_sequence(const std::string &room_id_hex, const uint64_t from_sequence, const std::string &requester_uid)
+{
+	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
+	json result;
+	result["gap_messages"] = json::array();
+	try
+	{
+		// 16進数文字列をバイナリデータに変換
+		std::vector<uint8_t> room_id_bin = hex_to_binary(room_id_hex);
+		std::string binary_str(reinterpret_cast<const char*>(room_id_bin.data()), room_id_bin.size());
+
+		// room_sequenceがfrom_sequenceより大きいメッセージを昇順で取得
+		// (送信者自身のメッセージも除外しない。room_sequenceは送受信者問わず連番として
+		//  クライアント側で追跡されるため、除外すると欠番が永久に埋まらなくなる)
+		std::string sql =
+			"SELECT m.mid, m.room_id, m.sender_uid, m.send_time, m.message, m.room_sequence "
+			"FROM " + _mysql_table_name_messages + " AS m "
+			"WHERE m.room_id = ? AND m.room_sequence > ? "
+			"AND (m.target_uid = '' OR m.target_uid = ?) "
+			"ORDER BY m.room_sequence ASC;";
+
+		std::unique_ptr<sql::PreparedStatement> pre_stmt(
+			this->_mysql_helper->get_connection()->prepareStatement(sql)
+		);
+
+		std::istringstream blob_stream(binary_str);
+		pre_stmt->setBlob(1, &blob_stream);
+		pre_stmt->setInt64(2, static_cast<int64_t>(from_sequence));
+		pre_stmt->setString(3, requester_uid);
+
+		std::unique_ptr<sql::ResultSet> res(pre_stmt->executeQuery());
+
+		while (res != nullptr && res->next())
+		{
+			json message;
+			message["mid"] = res->getInt64("mid");
+
+			std::string room_id_bin_out = res->getString("room_id");
+			message["room_id"] = this->to_hex_string(room_id_bin_out);
+
+			message["sender_uid"] = res->getString("sender_uid");
+			std::string mysql_timestamp = res->getString("send_time");
+			message["send_time"] = ServerTime::mysql_datetime_to_iso8601(mysql_timestamp);
+			message["room_sequence"] = res->getUInt64("room_sequence");
+
+			try
+			{
+				std::string message_str = static_cast<std::string>(res->getString("message"));
+				message["message"] = json::parse(message_str, nullptr, true);
+			}
+			catch (const json::parse_error &e)
+			{
+				LOG_ERROR("Invalid JSON in message (mid={}): {}", res->getInt64("mid"), e.what());
+				message["message"] = nullptr;
+			}
+
+			result["gap_messages"].push_back(message);
+		}
+	}
+	catch (const sql::SQLException& e)
+	{
+		this->_mysql_helper->printError(e);
+	}
+	catch (const std::runtime_error& e)
+	{
+		LOG_ERROR("Runtime Error:{}", e.what());
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("Exception:{}.", e.what());
+	}
+	return result;
+}
+
 bool MySQLAdapter::insert_unsend_message(const uint64_t mid, const std::string &uid, const std::string &room_id_hex)
 {
 	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);

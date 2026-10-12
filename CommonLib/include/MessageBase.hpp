@@ -24,7 +24,9 @@ public :
         INCLIMENTAL_SEARCH,
         USER_SETTING_CONTROL,
         USER_SEARCH_REQUEST,
-        USER_SEARCH_RESPONSE
+        USER_SEARCH_RESPONSE,
+        SYNC_REQUEST,
+        SYNC_RESPONSE
     };
 
     struct CommonField

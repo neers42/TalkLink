@@ -89,6 +89,12 @@ public:
 
     json get_unreceived_messages(const std::string& uid, const uint64_t last_received_message_id);
 
+    /**
+     * @brief 指定ルーム内でroom_sequenceがfrom_sequenceより大きいメッセージを昇順で取得する
+     * (SyncRequestの欠番補充用)
+     */
+    json get_room_messages_after_sequence(const std::string& room_id, const uint64_t from_sequence, const std::string& requester_uid);
+
     // ==================== 取得 ====================
 
     /**
