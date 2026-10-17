@@ -373,7 +373,7 @@ AuthenticationServer/certs/firebase/pubkeys.json
 AuthenticationServer/AuthenticationServer.vcxproj
 AuthenticationServer/AuthenticationServer.vcxproj.filters
 .gitignore
-.gitignore
 CommonLib/CommonLib.vcxproj
-.gitignore
 .env
+.gz
+*.sql.gz
