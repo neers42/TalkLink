@@ -31,14 +31,26 @@ private:
     std::shared_ptr<MySQLAdapter> _mysql_adapter;  // DB操作
     std::shared_ptr<RedisAdapter> _redis_adapter;  // セッション管理・キャッシュ
     std::shared_ptr<ServerTime> _server_time;    // 時刻管理
-    
-    
+
+    // 設定(chat.confから取得)
+    int _max_connections;
+    int _heartbeat_timeout_sec;
+    int _heartbeat_check_interval_sec;
+
+    // ハートビート監視ループの制御
+    std::atomic<bool> _running{true};
+    std::mutex _heartbeat_mutex;
+    std::condition_variable _heartbeat_cv;
+
 public:
     UserManagementService(
         std::shared_ptr<ServerTime> server_time,
         std::shared_ptr<SessionHandler> session_handler,
         std::shared_ptr<UserRepositoryHandler> repository_handler,
-        std::shared_ptr<CommunicationHandler> communication_handler
+        std::shared_ptr<CommunicationHandler> communication_handler,
+        int max_connections,
+        int heartbeat_timeout_sec,
+        int heartbeat_check_interval_sec
         );
     ~UserManagementService();
 
@@ -48,7 +60,10 @@ public:
     void process_user_disconnection(socket_t socket);
     void update_user_session(socket_t socket, const std::unique_ptr<SessionRequestMessage>& session_message);
     void process_heartbeat(socket_t socket);
+    // バックグラウンドタスクとして呼び出す、ハートビート監視の常駐ループ
     void start_heartbeat_monitoring();
+    // 常駐ループを停止する(デストラクタから呼び出される)
+    void stop_heartbeat_monitoring();
     void cleanup_inactive_users();
     
     // メッセージ処理

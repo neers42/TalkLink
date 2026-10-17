@@ -200,22 +200,22 @@ bool StartupService::start_background_services()
     try {
         auto thread_pool_handler = _thread_pool_handler;
         auto protocol_handler = _tlscon_handler;
-        
-        if (!thread_pool_handler || !protocol_handler) {
+        auto user_mgmt = _user_management_service;
+
+        if (!thread_pool_handler || !protocol_handler || !user_mgmt) {
             LOG_ERROR("[StartupService] Required handlers not available");
             return false;
         }
-        
-        // ハートビートチェックタスクを開始
+
+        // ハートビートチェックタスクを開始(非アクティブ/未認証接続の定期クリーンアップ)
         auto task_mgmt = _task_management_service;
         if (task_mgmt) {
             task_mgmt->schedule_task(
-                TaskPriority::CRITICAL, 
+                TaskPriority::CRITICAL,
                 TaskCategory::HEARTBEAT,
                 "Heartbeat monitoring task",
-                [this]() {
-                    // ハートビートチェック処理の実装
-                    // TODO: ChatServerFacadeからheartbeat_check_process()を移動
+                [user_mgmt]() {
+                    user_mgmt->start_heartbeat_monitoring();
                 }
             );
         }
@@ -257,8 +257,19 @@ bool StartupService::configure_request_dispatching()
         }
         
         // Accept callback設定
-        dispatcher->set_accept_callback([user_mgmt]() {
-            user_mgmt->process_accept_new_user();
+        // accept()/SSL_accept()はブロッキング呼び出しのため、ディスパッチャースレッド上で
+        // 直接実行すると、ハンドシェイクが滞留した1接続が全体の処理を止めてしまう。
+        // スレッドプール側のタスクとして実行することで、他の接続への影響を防ぐ。
+        auto task_mgmt = _task_management_service;
+        dispatcher->set_accept_callback([task_mgmt, user_mgmt]() {
+            task_mgmt->schedule_task(
+                TaskPriority::HIGH,
+                TaskCategory::USER_MANAGEMENT,
+                "Accept new connection",
+                [user_mgmt]() {
+                    user_mgmt->process_accept_new_user();
+                }
+            );
         });
         
         // Message handle callback設定 - TaskManagementService経由でマルチスレッド処理

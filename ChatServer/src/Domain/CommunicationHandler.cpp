@@ -20,6 +20,15 @@ CommunicationHandler::AcceptResult CommunicationHandler::accept_new_connection()
 
         LOG_DEBUG("[CommunicationHandler] Successfully accepted user socket: {}", new_user_socket);
 
+        // TLSハンドシェイクが無期限にブロックしないよう、送受信タイムアウトを設定する
+        // (このソケットはまだブロッキングモードのまま。ハンドシェイクが滞留しても
+        //  このタイムアウトで必ず抜けられるようにする)
+        if (!_socket_handler->set_socket_timeout(new_user_socket, _handshake_timeout_sec)) {
+            LOG_ERROR("[CommunicationHandler] Failed to set handshake timeout for socket: {}", new_user_socket);
+            _socket_handler->close_socket(new_user_socket);
+            return {INVALID_SOCKET_FD, nullptr, {}, ""};
+        }
+
         // 2. IPアドレス抽出
         user_ip_addr = _socket_handler->extraction_user_ip_address(new_user_sockaddr_in, 64);
         if (user_ip_addr.empty()) {
@@ -46,7 +55,13 @@ CommunicationHandler::AcceptResult CommunicationHandler::accept_new_connection()
             _socket_handler->close_socket(new_user_socket);
             return {INVALID_SOCKET_FD, nullptr, {}, ""};
         }
-        
+        if (fcntl(new_user_socket, F_SETFL, flags | O_NONBLOCK) == -1) {
+            LOG_ERROR("[CommunicationHandler] fcntl F_SETFL failed for socket: {}, error: {}", new_user_socket, strerror(errno));
+            SSL_free(new_user_ssl);
+            _socket_handler->close_socket(new_user_socket);
+            return {INVALID_SOCKET_FD, nullptr, {}, ""};
+        }
+
         LOG_DEBUG("[CommunicationHandler] Socket {} set to non-blocking mode after SSL handshake", new_user_socket);
 #endif
 

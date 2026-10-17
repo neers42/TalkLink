@@ -17,19 +17,22 @@ class CommunicationHandler {
     };
 private:
     std::shared_ptr<UserAggregateStore> _store;
-    
+
     // 通信関連のインフラを全て管理
     std::shared_ptr<SocketHandler> _socket_handler;      // ソケット操作
     std::shared_ptr<TLSConnectionHandler> _tlscon_handler;  // SSL/プロトコル
-    
+    int _handshake_timeout_sec; // TLSハンドシェイクの無限ブロックを防ぐためのタイムアウト(chat.confから取得)
+
 public:
     explicit CommunicationHandler(
         std::shared_ptr<UserAggregateStore> store,
         std::shared_ptr<SocketHandler> socket_handler,
-        std::shared_ptr<TLSConnectionHandler> tlscon_handler) 
-        : _store(store), 
+        std::shared_ptr<TLSConnectionHandler> tlscon_handler,
+        int handshake_timeout_sec)
+        : _store(store),
           _socket_handler(socket_handler),
-          _tlscon_handler(tlscon_handler) {}
+          _tlscon_handler(tlscon_handler),
+          _handshake_timeout_sec(handshake_timeout_sec) {}
     
     // 低レベルな通信操作（UserRepositoryHandlerから呼び出される）
     AcceptResult accept_new_connection();

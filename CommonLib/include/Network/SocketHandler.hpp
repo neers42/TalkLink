@@ -189,6 +189,8 @@ public:
 	void close_socket(const socket_t user_socket);
 	//ソケットが有効であるか判定する【未実装】
 	bool check_valid_socket(socket_t request_socket);
+	//ソケットの送受信タイムアウトを設定する(主にTLSハンドシェイクの無限ブロック防止用)
+	bool set_socket_timeout(socket_t target_socket, int timeout_seconds);
 
 #ifdef USE_SELECT
 	//select関数の初期化

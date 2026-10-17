@@ -14,22 +14,30 @@ UserManagementService::UserManagementService(
     std::shared_ptr<ServerTime> server_time,
     std::shared_ptr<SessionHandler> session_handler,
     std::shared_ptr<UserRepositoryHandler> repository_handler,
-    std::shared_ptr<CommunicationHandler> communication_handler
+    std::shared_ptr<CommunicationHandler> communication_handler,
+    int max_connections,
+    int heartbeat_timeout_sec,
+    int heartbeat_check_interval_sec
   )
     : _server_time(std::move(server_time)),
     _session_handler(std::move(session_handler)),
     _repository(std::move(repository_handler)),
-    _communication(std::move(communication_handler))
+    _communication(std::move(communication_handler)),
+    _max_connections(max_connections),
+    _heartbeat_timeout_sec(heartbeat_timeout_sec),
+    _heartbeat_check_interval_sec(heartbeat_check_interval_sec)
 {
     if (!_repository || !_communication || !_session_handler || !_server_time) {
         throw std::runtime_error("Failed to initialize UserManagementService dependencies");
     }
-    
+
     LOG_INFO("[UserManagementService] Service initialized successfully with injected dependencies");
 }
 
 // Destructor
-UserManagementService::~UserManagementService() = default;
+UserManagementService::~UserManagementService() {
+    stop_heartbeat_monitoring();
+}
 
 // Public API Methods
 
@@ -152,18 +160,33 @@ void UserManagementService::process_heartbeat(socket_t socket) {
 }
 
 void UserManagementService::start_heartbeat_monitoring() {
-    try {
-        LOG_INFO("[UserManagementService] Starting heartbeat monitoring system");
-        
-        // 定期的なハートビート監視をバックグラウンドで開始
-        // TODO: 実際のタイマータスクまたはスレッドプールでの実装
-        // 現在は手動でcleanup_inactive_users()を呼び出すことを想定
-        
-        LOG_INFO("[UserManagementService] Heartbeat monitoring system started successfully");
-        
-    } catch (const std::exception& e) {
-        LOG_ERROR("[UserManagementService] Exception in start_heartbeat_monitoring: {}", e.what());
+    LOG_INFO("[UserManagementService] Starting heartbeat monitoring loop (interval: {}s, timeout: {}s)",
+             _heartbeat_check_interval_sec, _heartbeat_timeout_sec);
+
+    while (_running) {
+        std::unique_lock<std::mutex> lock(_heartbeat_mutex);
+        bool stopped = _heartbeat_cv.wait_for(
+            lock,
+            std::chrono::seconds(_heartbeat_check_interval_sec),
+            [this]() { return !_running.load(); });
+        if (stopped) {
+            break;
+        }
+        lock.unlock();
+
+        try {
+            cleanup_inactive_users();
+        } catch (const std::exception& e) {
+            LOG_ERROR("[UserManagementService] Exception during heartbeat cleanup: {}", e.what());
+        }
     }
+
+    LOG_INFO("[UserManagementService] Heartbeat monitoring loop stopped");
+}
+
+void UserManagementService::stop_heartbeat_monitoring() {
+    _running = false;
+    _heartbeat_cv.notify_all();
 }
 
 void UserManagementService::cleanup_inactive_users() {
@@ -173,8 +196,8 @@ void UserManagementService::cleanup_inactive_users() {
         auto all_users = _repository->get_all_users();
         size_t cleaned_count = 0;
         auto current_time = _server_time->get_current_unix_time();
-        const time_t HEARTBEAT_TIMEOUT = 30; // 30秒のタイムアウト
-        
+        const time_t HEARTBEAT_TIMEOUT = _heartbeat_timeout_sec;
+
         LOG_DEBUG("[UserManagementService] Checking {} users for timeout (threshold: {}s)", all_users.size(), HEARTBEAT_TIMEOUT);
         
         for (const auto& [socket, user] : all_users) {
@@ -220,11 +243,9 @@ void UserManagementService::cleanup_inactive_users() {
 // Private Helper Methods
 
 bool UserManagementService::can_accept_new_connection() {
-    const size_t MAX_CONNECTIONS = 1000; // 設定から読み取るべき値
-    
     try {
         size_t current_count = _repository->get_connected_user_count();
-        return current_count < MAX_CONNECTIONS;
+        return current_count < static_cast<size_t>(_max_connections);
         
     } catch (const std::exception& e) {
         LOG_ERROR("[UserManagementService] Exception in can_accept_new_connection: {}", e.what());

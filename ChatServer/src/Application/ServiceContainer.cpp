@@ -65,6 +65,10 @@ void ServiceContainer::initialize() {
         chat_config.load(CHAT_CONFIG_FILE_PATH);
         const int max_resend_count = chat_config["ChatSettings"]["max_resend_count"].as<int>();
         const int max_user_num_in_chatroom = chat_config["ChatSettings"]["max_user_num_in_chatroom"].as<int>();
+        const int max_connections = chat_config["ChatSettings"]["max_connections"].as<int>();
+        const int handshake_timeout_sec = chat_config["ChatSettings"]["handshake_timeout_sec"].as<int>();
+        const int heartbeat_timeout_sec = chat_config["ChatSettings"]["heartbeat_timeout_sec"].as<int>();
+        const int heartbeat_check_interval_sec = chat_config["ChatSettings"]["heartbeat_check_interval_sec"].as<int>();
 
         // Phase 1: インフラストラクチャ層の共有リソースを初期化
         _server_time = std::make_shared<ServerTime>();
@@ -86,7 +90,7 @@ void ServiceContainer::initialize() {
         _user_store = std::make_shared<UserAggregateStore>();
         _chatroom_repository_handler = std::make_shared<ChatroomRepositoryHandler>(_chatroom_repository, _user_repository, _message_repository, max_user_num_in_chatroom);
         _user_repository_handler = std::make_shared<UserRepositoryHandler>(_user_store, _user_repository, _server_time);
-        _communication_handler = std::make_shared<CommunicationHandler>(_user_store, _socket_handler, _tlscon_handler);
+        _communication_handler = std::make_shared<CommunicationHandler>(_user_store, _socket_handler, _tlscon_handler, handshake_timeout_sec);
         
         // Phase 3.5: ドメインハンドラーを初期化
         _session_handler = std::make_shared<SessionHandler>(_user_repository_handler, _redis_adapter, _user_repository, _message_repository,_server_time);
@@ -97,7 +101,8 @@ void ServiceContainer::initialize() {
         
         // Phase 5: ビジネスサービスを初期化
         _user_management_service = std::make_shared<UserManagementService>(
-            _server_time, _session_handler, _user_repository_handler, _communication_handler);
+            _server_time, _session_handler, _user_repository_handler, _communication_handler,
+            max_connections, heartbeat_timeout_sec, heartbeat_check_interval_sec);
             
         _chatroom_management_service = std::make_shared<ChatroomManagementService>(
             _message_delivery_service, _chatroom_repository_handler, _chatroom_sequence_handler);

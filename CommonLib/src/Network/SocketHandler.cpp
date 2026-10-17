@@ -1060,6 +1060,34 @@ void SocketHandler::close_socket(const socket_t user_socket)
 	}
 }
 
+bool SocketHandler::set_socket_timeout(socket_t target_socket, int timeout_seconds)
+{
+	if (target_socket == INVALID_SOCKET_FD)
+	{
+		LOG_ERROR("[SocketHandler] set_socket_timeout: invalid socket.");
+		return false;
+	}
+
+#ifdef _WIN32
+	DWORD timeout_ms = static_cast<DWORD>(timeout_seconds) * 1000;
+	int recv_result = setsockopt(target_socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&timeout_ms), sizeof(timeout_ms));
+	int send_result = setsockopt(target_socket, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&timeout_ms), sizeof(timeout_ms));
+#else
+	struct timeval timeout{};
+	timeout.tv_sec = timeout_seconds;
+	timeout.tv_usec = 0;
+	int recv_result = setsockopt(target_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+	int send_result = setsockopt(target_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+#endif // _WIN32
+
+	if (recv_result == SOCKET_ERROR_FD || send_result == SOCKET_ERROR_FD)
+	{
+		LOG_ERROR("[SocketHandler] Failed to set socket timeout ({}s) for socket: {}", timeout_seconds, target_socket);
+		return false;
+	}
+	return true;
+}
+
 bool SocketHandler::generate_tcp_listen_socket()
 {
 
