@@ -83,8 +83,10 @@ services:
       TZ: Asia/Tokyo
       # 複数インスタンスで稼働させる場合はインスタンスごとに一意な値を設定すること
       CHAT_SERVER_MACHINE_ID: ${CHAT_SERVER_MACHINE_ID:-1}
+      TLS_CERT_PATH: /app/certs/server-cert.pem
+      TLS_KEY_PATH: /app/certs/server-key.pem
     volumes:
-      - ./ChatServer/certs:/app/certs:ro
+      - ./certs/chat-server:/app/certs:ro
     networks:
       - talklink-net
 
@@ -102,8 +104,10 @@ services:
       REDIS_PORT: ${REDIS_PORT}
       JWT_EXP_LEEWAY_SEC: ${JWT_EXP_LEEWAY_SEC:-60}
       TZ: Asia/Tokyo
+      TLS_CERT_PATH: /app/certs/server-cert.pem
+      TLS_KEY_PATH: /app/certs/server-key.pem
     volumes:
-      - ./AuthenticationServer/certs:/app/certs:ro
+      - ./certs/auth-server:/app/certs:ro
     networks:
       - talklink-net
 
