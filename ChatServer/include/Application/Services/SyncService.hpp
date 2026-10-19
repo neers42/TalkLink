@@ -6,18 +6,21 @@
 class SyncRequestMessage;
 class ChatroomRepositoryHandler;
 class IMessageDeliveryService;
+class UserRepositoryHandler;
 
 class SyncService {
 private:
     // 依存関係 - インターフェースのみに依存
     std::shared_ptr<IMessageDeliveryService> _message_delivery_service;
     std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
+    std::shared_ptr<UserRepositoryHandler> _user_repository_handler;
 
 public:
     // コンストラクタ・デストラクタ
     explicit SyncService(
         std::shared_ptr<IMessageDeliveryService> message_delivery_service,
-        std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler
+        std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
+        std::shared_ptr<UserRepositoryHandler> user_repository_handler
     );
     ~SyncService();
 

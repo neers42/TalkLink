@@ -6,19 +6,22 @@
 #include "Domain/ChatroomSequenceHandler.hpp"
 #include "Domain/ChatroomIDGenerator.hpp"
 #include "Domain/MessageIDGenerator.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
 
 ChatroomManagementService::ChatroomManagementService(
     std::shared_ptr<IMessageDeliveryService> message_delivery_service,
     std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
-    std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler
+    std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler,
+    std::shared_ptr<UserRepositoryHandler> user_repository_handler
 ) : _message_delivery_service(std::move(message_delivery_service)),
     _chatroom_repository_handler(std::move(chatroom_repository_handler)),
-    _chatroom_sequence_handler(std::move(chatroom_sequence_handler))
+    _chatroom_sequence_handler(std::move(chatroom_sequence_handler)),
+    _user_repository_handler(std::move(user_repository_handler))
 {
-    if (!_message_delivery_service || !_chatroom_repository_handler || !_chatroom_sequence_handler) {
+    if (!_message_delivery_service || !_chatroom_repository_handler || !_chatroom_sequence_handler || !_user_repository_handler) {
         throw std::runtime_error("ChatroomManagementService dependencies cannot be null");
     }
-    
+
     LOG_INFO("ChatroomManagementService initialized successfully");
 }
 
@@ -29,7 +32,7 @@ ChatroomManagementService::~ChatroomManagementService()
 
 // ==================== チャットルーム操作 ====================
 
-ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(const json& control_message_json)
+ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(const json& control_message_json, socket_t sender_socket)
 {
     using RoomAction = ChatroomControlMessage::RoomAction;
 
@@ -51,6 +54,16 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                 const RoomAction operation_type = control_message->get_room_action();
                 const std::string requester_id = control_message->get_sender_uid();
                 result.room_id = control_message->get_room_id();
+
+                // なりすまし対策: payloadのsender_uidが、このソケットで実際に
+                // 認証済みのuidと一致することを確認する
+                const std::string authenticated_uid = _user_repository_handler->get_uid_by_socket(sender_socket);
+                if (authenticated_uid.empty() || authenticated_uid != requester_id) {
+                    LOG_WARNING("[ChatroomManagementService] sender_uid mismatch for socket {}: claimed='{}', authenticated='{}'",
+                                sender_socket, requester_id, authenticated_uid);
+                    result.error_message = "sender_uid does not match the authenticated user";
+                    return;
+                }
 
                 // 権限チェック（CREATE_ROOM は未作成ルームのため事前チェック対象外）
                 if (operation_type != RoomAction::CREATE_ROOM &&

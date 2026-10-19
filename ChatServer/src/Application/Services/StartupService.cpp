@@ -274,9 +274,26 @@ bool StartupService::configure_request_dispatching()
         
         // Message handle callback設定 - TaskManagementService経由でマルチスレッド処理
         dispatcher->set_message_handle_callback([this](const MessageDispatchResult& result) {
-            LOG_DEBUG("[RequestDispatcherService] Message dispatch callback triggered - socket: {}, type: {}, success: {}", 
+            LOG_DEBUG("[RequestDispatcherService] Message dispatch callback triggered - socket: {}, type: {}, success: {}",
                      result.socket, static_cast<int>(result.type), result.success);
-            
+
+            // 認証が必要なメッセージ種別は、未認証のソケットからの場合は処理せず破棄する
+            // (SESSION_REQUEST/HEARTBEAT/DISCONNECTはSIGNIN前の接続でも必要なため対象外)
+            switch (result.type) {
+                case MessageDispatchResult::Type::CHAT_MESSAGE:
+                case MessageDispatchResult::Type::CHATROOM_CONTROL:
+                case MessageDispatchResult::Type::SYNC_REQUEST:
+                case MessageDispatchResult::Type::USER_SEARCH_REQUEST:
+                    if (!_user_management_service->is_socket_authenticated(result.socket)) {
+                        LOG_WARNING("[StartupService] Rejecting message type {} from unauthenticated socket: {}",
+                                    static_cast<int>(result.type), result.socket);
+                        return;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
             // メッセージタイプに応じて適切な優先度でタスクスケジューリング
             switch (result.type) {
                 case MessageDispatchResult::Type::HEARTBEAT:
@@ -318,7 +335,7 @@ bool StartupService::configure_request_dispatching()
                         TaskCategory::CHAT_PROCESSING,
                         "Process chatroom control",
                         [this, message_data = result.message_data, socket = result.socket]() {
-                            _chatroom_management_service->process_chatroom_operation(message_data);
+                            _chatroom_management_service->process_chatroom_operation(message_data, socket);
                         }
                         
                     );

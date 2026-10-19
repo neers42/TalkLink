@@ -105,13 +105,13 @@ void ServiceContainer::initialize() {
             max_connections, heartbeat_timeout_sec, heartbeat_check_interval_sec);
             
         _chatroom_management_service = std::make_shared<ChatroomManagementService>(
-            _message_delivery_service, _chatroom_repository_handler, _chatroom_sequence_handler);
+            _message_delivery_service, _chatroom_repository_handler, _chatroom_sequence_handler, _user_repository_handler);
             
         _chat_service = std::make_shared<ChatService>(
             _message_delivery_service, _user_repository_handler, _chatroom_repository_handler, _chatroom_sequence_handler, max_resend_count);
 
         _sync_service = std::make_shared<SyncService>(
-            _message_delivery_service, _chatroom_repository_handler);
+            _message_delivery_service, _chatroom_repository_handler, _user_repository_handler);
 
         _request_dispatcher_service = std::make_shared<RequestDispatcherService>(
             _socket_handler, _communication_handler);

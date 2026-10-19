@@ -156,6 +156,15 @@ bool ChatService::process_chat_message(
             return false;
         }
 
+        // なりすまし対策: payloadのsender_uidが、このソケットで実際に
+        // 認証済みのuidと一致することを確認する
+        const std::string authenticated_uid = _user_repository_handler->get_uid_by_socket(sender_socket);
+        if (authenticated_uid.empty() || authenticated_uid != chat_message->get_sender_uid()) {
+            LOG_WARNING("[ChatService] sender_uid mismatch for socket {}: claimed='{}', authenticated='{}'",
+                        sender_socket, chat_message->get_sender_uid(), authenticated_uid);
+            return false;
+        }
+
         // 2. メッセージを配信
         auto delivery_result = deliver_chat_message(chat_message);
         

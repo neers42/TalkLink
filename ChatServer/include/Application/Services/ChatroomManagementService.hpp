@@ -13,6 +13,7 @@ class IMessageDeliveryService;
 class ChatroomRepositoryHandler;
 class ChatroomSequenceHandler;
 class ChatroomIDGenerator;
+class UserRepositoryHandler;
 
 // チャットルーム操作結果
 struct ChatroomOperationResult {
@@ -48,20 +49,24 @@ private:
     std::shared_ptr<IMessageDeliveryService> _message_delivery_service;
     std::shared_ptr<ChatroomRepositoryHandler> _chatroom_repository_handler;
     std::shared_ptr<ChatroomSequenceHandler> _chatroom_sequence_handler;
+    std::shared_ptr<UserRepositoryHandler> _user_repository_handler;
 
 public:
     // コンストラクタ・デストラクタ
     explicit ChatroomManagementService(
         std::shared_ptr<IMessageDeliveryService> message_delivery_service,
         std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
-        std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler
+        std::shared_ptr<ChatroomSequenceHandler> chatroom_sequence_handler,
+        std::shared_ptr<UserRepositoryHandler> user_repository_handler
     );
     ~ChatroomManagementService();
-    
+
     // ==================== チャットルーム操作 ====================
-    
+
     // チャットルーム操作処理（統合）
-    ChatroomOperationResult process_chatroom_operation(const json& control_message_json);
+    // sender_socket: payload内のsender_uidが、実際にこのソケットで認証済みのuidと
+    // 一致するかを検証するために使用する(なりすまし対策)
+    ChatroomOperationResult process_chatroom_operation(const json& control_message_json, socket_t sender_socket);
     
     // チャットルーム作成
     RoomCreationResult create_chatroom(

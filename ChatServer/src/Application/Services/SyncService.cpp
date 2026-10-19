@@ -2,15 +2,18 @@
 #include "Domain/Entity/Messages/SyncRequestMessage.hpp"
 #include "Domain/Entity/Messages/SyncResponseMessage.hpp"
 #include "Domain/ChatroomRepositoryHandler.hpp"
+#include "Domain/UserRepositoryHandler.hpp"
 #include "Application/Interfaces/IMessageDeliveryService.hpp"
 
 SyncService::SyncService(
     std::shared_ptr<IMessageDeliveryService> message_delivery_service,
-    std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler
+    std::shared_ptr<ChatroomRepositoryHandler> chatroom_repository_handler,
+    std::shared_ptr<UserRepositoryHandler> user_repository_handler
 ) : _message_delivery_service(std::move(message_delivery_service)),
-    _chatroom_repository_handler(std::move(chatroom_repository_handler))
+    _chatroom_repository_handler(std::move(chatroom_repository_handler)),
+    _user_repository_handler(std::move(user_repository_handler))
 {
-    if (!_message_delivery_service || !_chatroom_repository_handler) {
+    if (!_message_delivery_service || !_chatroom_repository_handler || !_user_repository_handler) {
         throw std::runtime_error("SyncService dependencies cannot be null");
     }
 
@@ -38,6 +41,15 @@ bool SyncService::process_sync_request(
         const std::string room_id = sync_request->get_room_id();
         const std::string target_uid = sync_request->get_target_uid();
         const std::uint64_t from_sequence = sync_request->get_from_sequence();
+
+        // なりすまし対策: payloadのtarget_uidが、このソケットで実際に
+        // 認証済みのuidと一致することを確認する
+        const std::string authenticated_uid = _user_repository_handler->get_uid_by_socket(sender_socket);
+        if (authenticated_uid.empty() || authenticated_uid != target_uid) {
+            LOG_WARNING("[SyncService] target_uid mismatch for socket {}: claimed='{}', authenticated='{}'",
+                        sender_socket, target_uid, authenticated_uid);
+            return false;
+        }
 
         // 2. リクエスト元がそのルームのメンバーであることを確認
         //    (他人のルームの内容を覗けないようにするための権限チェック)

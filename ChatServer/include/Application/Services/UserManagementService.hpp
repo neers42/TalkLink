@@ -69,7 +69,10 @@ public:
     // メッセージ処理
     bool process_session_request(const json& session_data, socket_t socket);
     bool process_user_search(const json& query_data, socket_t socket);
-    
+
+    // 認証ゲート用: このソケットが現在認証済みかどうか
+    bool is_socket_authenticated(socket_t socket);
+
 private:
     bool can_accept_new_connection();  // ビジネスルールのみ
     void log_connection_event(const std::string& uid, const std::string& event);

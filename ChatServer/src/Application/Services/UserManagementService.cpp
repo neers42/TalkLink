@@ -159,6 +159,19 @@ void UserManagementService::process_heartbeat(socket_t socket) {
     }
 }
 
+bool UserManagementService::is_socket_authenticated(socket_t socket) {
+    try {
+        auto user = _repository->get_user(socket);
+        if (user == nullptr) {
+            return false;
+        }
+        return user->is_authenticated();
+    } catch (const std::exception& e) {
+        LOG_ERROR("[UserManagementService] Exception in is_socket_authenticated for socket {}: {}", socket, e.what());
+        return false;
+    }
+}
+
 void UserManagementService::start_heartbeat_monitoring() {
     LOG_INFO("[UserManagementService] Starting heartbeat monitoring loop (interval: {}s, timeout: {}s)",
              _heartbeat_check_interval_sec, _heartbeat_timeout_sec);
@@ -282,9 +295,12 @@ SessionResult UserManagementService::authenticate_session(const std::unique_ptr<
         result.unreceived_messages = validation_result.unreceived_messages;
 
         _repository->update_user_info(socket, validation_result.uid, validation_result.name, validation_result.email);
-        
+
         if (result.verified) {
-            LOG_INFO("[UserManagementService] Session authentication successful for socket: {}, uid: {}", 
+            // SIGNOUTは認証解除、SIGNIN/SIGNUPは認証成立として反映する
+            const bool new_auth_status = session_message->get_sign_type() != SessionRequestMessage::SignType::SIGNOUT;
+            _repository->update_user_auth_status(socket, new_auth_status);
+            LOG_INFO("[UserManagementService] Session authentication successful for socket: {}, uid: {}",
                      socket, validation_result.uid);
         } else {
             LOG_WARNING("[UserManagementService] Session authentication failed for socket: {}: {}", 
