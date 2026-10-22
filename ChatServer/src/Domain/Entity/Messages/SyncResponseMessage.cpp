@@ -8,7 +8,7 @@ SyncResponseMessage::SyncResponseMessage(
 	: MessageBase(common_fields, MessageBase::MessageType::SYNC_RESPONSE),
 	_target_room_id{target_room_id},
 	_target_uid{target_uid},
-	_gap_messages{gap_messages}
+	_gap_messages(gap_messages)
 {
 }
 

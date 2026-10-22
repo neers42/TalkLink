@@ -18,6 +18,8 @@ FetchContent_MakeAvailable(googletest)
 add_executable(
     domain_tests
     ChatServer/Domain/ChatroomIDGeneratorTest.cpp
+    ChatServer/Domain/MessageValidationTest.cpp
+    ChatServer/Domain/UserAuthStatusTest.cpp
 )
 
 # Domainのテストに必要なインクルードディレクトリを設定

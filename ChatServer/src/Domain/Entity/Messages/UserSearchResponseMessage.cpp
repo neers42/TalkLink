@@ -2,7 +2,7 @@
 
 UserSearchResponseMessage::UserSearchResponseMessage(const MessageBase::CommonField &common_fields, const json &search_results, const std::string &error_message)
     : MessageBase(common_fields, MessageBase::MessageType::USER_SEARCH_RESPONSE),
-      _search_results{search_results},
+      _search_results(search_results),
       _error_message{error_message}
 {
 }

@@ -6,7 +6,7 @@ SessionResponseMessage::SessionResponseMessage(const MessageBase::CommonField& c
 	_uid{ uid },
 	_verify_result{ verify_result },
 	_error_message{ error_message },
-	_unsend_messages{ unsend_messages }
+	_unsend_messages( unsend_messages )
 {
 }
 
