@@ -52,22 +52,22 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
             // ACK 送信を経由する（ACK 送信の重複を避けるため単一箇所に集約）。
             [&] {
                 const RoomAction operation_type = control_message->get_room_action();
-                const std::string requester_id = control_message->get_sender_uid();
+                const std::string requester_uid = control_message->get_sender_uid();
                 result.room_id = control_message->get_room_id();
 
                 // なりすまし対策: payloadのsender_uidが、このソケットで実際に
                 // 認証済みのuidと一致することを確認する
                 const std::string authenticated_uid = _user_repository_handler->get_uid_by_socket(sender_socket);
-                if (authenticated_uid.empty() || authenticated_uid != requester_id) {
+                if (authenticated_uid.empty() || authenticated_uid != requester_uid) {
                     LOG_WARNING("[ChatroomManagementService] sender_uid mismatch for socket {}: claimed='{}', authenticated='{}'",
-                                sender_socket, requester_id, authenticated_uid);
+                                sender_socket, requester_uid, authenticated_uid);
                     result.error_message = "sender_uid does not match the authenticated user";
                     return;
                 }
 
                 // 権限チェック（CREATE_ROOM は未作成ルームのため事前チェック対象外）
                 if (operation_type != RoomAction::CREATE_ROOM &&
-                    !check_room_permission(result.room_id, requester_id, "manage")) {
+                    !check_room_permission(result.room_id, requester_uid, "manage")) {
                     result.error_message = "Insufficient permissions for room operation";
                     return;
                 }
@@ -91,7 +91,7 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                             control_message->get_room_name(),
                             control_message->get_icon_url(),
                             control_message->get_member_list(),
-                            requester_id
+                            requester_uid
                         );
                         result.success = creation_result.success;
                         result.error_message = creation_result.error_message;
@@ -103,10 +103,16 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
                         break;
                     }
 
-                    case RoomAction::LEAVE_ROOM:
-                        // ToDo: 退出処理の実装（メンバー削除と同様の処理で対応予定）
-                        result.error_message = "LEAVE_ROOM operation is not implemented yet";
+                    case RoomAction::LEAVE_ROOM: {
+                        // LEAVE_ROOMは本人の退出のみを対象とする(他人を退出させる場合はREMOVE_MEMBERを使う)。
+                        // クライアントがmember_listに何を送ってきても無視し、認証済みのrequester_uidのみ除去する。
+                        auto member_result = remove_members(result.room_id, { requester_uid });
+                        result.success = member_result.success;
+                        result.error_message = member_result.error_message;
+                        result.affected_members = member_result.affected_member_ids.size();
+                        result.unsent_notifications = member_result.failed_member_ids;
                         break;
+                    }
 
                     case RoomAction::ADD_MEMBER: {
                         auto member_result = add_members(result.room_id, control_message->get_member_list());
@@ -144,7 +150,7 @@ ChatroomOperationResult ChatroomManagementService::process_chatroom_operation(co
 
                     case RoomAction::DELETE_ROOM: {
                         const std::string room_id = result.room_id;
-                        result = delete_chatroom(room_id, requester_id);
+                        result = delete_chatroom(room_id, requester_uid);
                         result.room_id = room_id;
                         break;
                     }
@@ -360,7 +366,7 @@ MemberManagementResult ChatroomManagementService::remove_members(const std::stri
     return result;
 }
 
-ChatroomOperationResult ChatroomManagementService::delete_chatroom(const std::string& room_id, const std::string& requester_id)
+ChatroomOperationResult ChatroomManagementService::delete_chatroom(const std::string& room_id, const std::string& requester_uid)
 {
     ChatroomOperationResult result;
     result.success = false;
@@ -380,7 +386,7 @@ ChatroomOperationResult ChatroomManagementService::delete_chatroom(const std::st
         bool deleted = _chatroom_repository_handler->delete_chatroom_and_persist(room_id);
         if (deleted) {
             result.success = true;
-            spdlog::info("Chatroom {} deleted by {}, {} members affected", room_id, requester_id, result.affected_members);
+            spdlog::info("Chatroom {} deleted by {}, {} members affected", room_id, requester_uid, result.affected_members);
         } else {
             result.error_message = "Failed to delete chatroom from database";
         }
@@ -689,9 +695,14 @@ std::unique_ptr<ChatroomControlDeliveryMessage> ChatroomManagementService::creat
             auto member_list = _chatroom_repository_handler->get_member_uids(delivery_room_id);
             user_infos = generate_user_infos(member_list);
         }
+        else if (room_action == ChatroomControlMessage::RoomAction::LEAVE_ROOM)
+        {
+            // LEAVE_ROOMは退出した本人(sender)を通知対象とする(member_listは信頼しない)
+            user_infos = generate_user_infos({ control_message->get_sender_uid() });
+        }
         else
         {
-            // 既存メンバー向け (ADD_MEMBER): 追加分の差分のみ
+            // 既存メンバー向け (ADD_MEMBER/REMOVE_MEMBER): 追加/削除分の差分のみ
             user_infos = generate_user_infos(control_message->get_member_list());
         }
 
