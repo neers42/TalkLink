@@ -26,8 +26,11 @@ COPY AuthenticationServer ./AuthenticationServer
 COPY ThirdParty ./ThirdParty
 COPY config ./config
 
+# ビルドタイプ(dockerコンポーズ等から --build-arg で上書き可能、デフォルトは本番用のRelease)
+ARG BUILD_TYPE=Release
+
 # ビルド
-RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_AUTH_SERVER=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && \
+RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_AUTH_SERVER=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && \
     cmake --build build --target AuthenticationServer
 
 # ===============================

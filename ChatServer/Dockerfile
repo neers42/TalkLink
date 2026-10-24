@@ -6,6 +6,9 @@ FROM ubuntu:26.04 AS builder
 
 WORKDIR /app
 
+# ビルドタイプ(dockerコンポーズ等から --build-arg で上書き可能、デフォルトは本番用のRelease)
+ARG BUILD_TYPE=Release
+
 # パッケージインストール
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -34,13 +37,13 @@ COPY config ./config
 # -s : ソースディレクトリ（CMakeLists.txt がある場所）を指定
 # -B : ビルドディレクトリを指定
 # -G : ビルドシステムを指定（Ninjaを使用）
-# -DCMAKE_BUILD_TYPE=Release : リリースビルドを指定
+# -DCMAKE_BUILD_TYPE=${BUILD_TYPE} : ビルドタイプを指定(デフォルトはRelease。NDEBUGが定義され、ログレベルがinfoになる)
 # -DBUILD_CHAT_SERVER=ON : ChatServerをビルドするオプションを有効化
 # -DWITH_MYSQL=ON : MySQLサポートを有効化
 # -DCMAKE_POLICY_VERSION_MINIMUM=3.5 : CMakeのポリシーバージョンを指定
 # cmake --build build --target ChatServer : 指定したターゲット（ChatServer）をビルド
 RUN cmake -S . -B build -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DBUILD_CHAT_SERVER=ON \
     -DBUILD_TESTS=ON \
     -DWITH_MYSQL=ON \

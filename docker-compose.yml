@@ -51,6 +51,8 @@ services:
     build:
       context: .
       dockerfile: ChatServer/Dockerfile
+      args:
+        BUILD_TYPE: Debug
     container_name: chat-server
 
     #先にmysqlのコンテナを上げる
@@ -87,6 +89,8 @@ services:
     build:
       context: .
       dockerfile: AuthenticationServer/Dockerfile
+      args:
+        BUILD_TYPE: Debug
     container_name: auth-server
      #先にmysqlのコンテナを上げる
     depends_on:
