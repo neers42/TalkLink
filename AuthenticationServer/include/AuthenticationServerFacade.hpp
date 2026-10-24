@@ -12,7 +12,7 @@ class RedisAdapter;
 class TokenHandler;
 class SessionTokenHandler;
 
-class AunthenticationServerFacade
+class AuthenticationServerFacade
 {
 //メンバー変数
 private:
@@ -32,8 +32,8 @@ public:
 
 //メンバー関数
 public:
-	AunthenticationServerFacade();
-	~AunthenticationServerFacade();
+	AuthenticationServerFacade();
+	~AuthenticationServerFacade();
 	void run();
 
 

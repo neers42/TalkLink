@@ -1,10 +1,10 @@
-﻿#include "AunthenticationServerFacade.hpp"
+﻿#include "AuthenticationServerFacade.hpp"
 #include "RedisAdapter.hpp"
 #include "TokenHandler.hpp"
 #include "SessionTokenHandler.hpp"
 #include "EnvHelper.hpp"
 
-AunthenticationServerFacade::AunthenticationServerFacade()
+AuthenticationServerFacade::AuthenticationServerFacade()
 {
     ////ログのフォーマット設定
 	spdlog::set_level(spdlog::level::debug);
@@ -27,17 +27,17 @@ AunthenticationServerFacade::AunthenticationServerFacade()
 		|| _token_handler == nullptr
 		|| _session_token_handler == nullptr)
 	{
-		LOG_ERROR("Failed to initialize AunthenticationServerFacade components. Please check the configuration and try again.");
+		LOG_ERROR("Failed to initialize AuthenticationServerFacade components. Please check the configuration and try again.");
 		exit(1);
 	}
 }
 
-AunthenticationServerFacade::~AunthenticationServerFacade()
+AuthenticationServerFacade::~AuthenticationServerFacade()
 {
 	this->_ssl_list.clear();
 }
 
-void AunthenticationServerFacade::run() {
+void AuthenticationServerFacade::run() {
 	LOG_TRACE;       
 	//リッスンソケットの生成
 	if (_socket_handler->open_tcp_listen_socket() == false) {
@@ -62,7 +62,7 @@ void AunthenticationServerFacade::run() {
 }
 
 
-void AunthenticationServerFacade::allocate_process(const socket_t socket) {
+void AuthenticationServerFacade::allocate_process(const socket_t socket) {
 	// socketがINVALIDの場合は処理をしない
 	if (socket == INVALID_SOCKET_FD)
 	{
@@ -82,7 +82,7 @@ void AunthenticationServerFacade::allocate_process(const socket_t socket) {
 	}
 }
 
-bool AunthenticationServerFacade::accept_client_socket_process() {
+bool AuthenticationServerFacade::accept_client_socket_process() {
 	LOG_TRACE;
 	socket_t new_client_socket = INVALID_SOCKET_FD;
 	struct sockaddr_in new_client_sockaddr_in = {0};
@@ -132,7 +132,7 @@ bool AunthenticationServerFacade::accept_client_socket_process() {
 	}
 }
 
-void AunthenticationServerFacade::auth_handle_process(const socket_t socket) 
+void AuthenticationServerFacade::auth_handle_process(const socket_t socket) 
 {
 	std::string receive_token = "", uid = "";
 	std::uint64_t expire = 0, ttl = 0;
@@ -237,7 +237,7 @@ void AunthenticationServerFacade::auth_handle_process(const socket_t socket)
 }
 
 
-void AunthenticationServerFacade::handle_disconnect_process(const socket_t socket) 
+void AuthenticationServerFacade::handle_disconnect_process(const socket_t socket) 
 {
 	auto it = _ssl_list.find(socket);
 		if (it == _ssl_list.end()) {
@@ -266,7 +266,7 @@ void AunthenticationServerFacade::handle_disconnect_process(const socket_t socke
 }
 
 
-json AunthenticationServerFacade::make_auth_response(const std::string &status, const std::uint64_t ttl)
+json AuthenticationServerFacade::make_auth_response(const std::string &status, const std::uint64_t ttl)
 {
 	json response;
 	response["status"] = status;
@@ -279,7 +279,7 @@ json AunthenticationServerFacade::make_auth_response(const std::string &status, 
 	return response;
 }
 
-bool AunthenticationServerFacade::verify_auth_process(
+bool AuthenticationServerFacade::verify_auth_process(
 	const std::string &jwt, 
 	std::string &uid, 
 	std::uint64_t &expire, 
