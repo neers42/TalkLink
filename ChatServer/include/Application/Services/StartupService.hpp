@@ -196,6 +196,12 @@ private:
     void record_startup_metrics();
     void cleanup_resources();
 
+    // 起動シーケンスのタイムアウト制御
+    bool enforce_phase_timeout(const std::chrono::steady_clock::time_point& phase_start,
+                                std::chrono::milliseconds budget,
+                                const std::string& phase_name);
+    bool enforce_total_timeout(const ServerStartupConfig& config);
+
     // ヘルス監視
     void start_health_monitoring();
     void stop_health_monitoring();

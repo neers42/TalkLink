@@ -6,12 +6,13 @@ ChatServerFacade::ChatServerFacade() :
 	_service_container(ServiceContainer::get_instance())
 {
 	// ログレベルの設定
-#ifdef DEBUG_MODE
+	// NDEBUGはCMakeがRelease/MinSizeRelビルドで自動的に定義するマクロ。
+	// Debugビルド(NDEBUG未定義)ではdebug、それ以外(本番相当)ではinfoにする。
+#ifndef NDEBUG
 	spdlog::set_level(spdlog::level::debug);
 #else
-	// ログのレベル設定
 	spdlog::set_level(spdlog::level::info);
-#endif // DEBUG_MODE
+#endif // NDEBUG
 
 	////ログのフォーマット設定
 	// Use fixed-width level field so info/debug align visually.

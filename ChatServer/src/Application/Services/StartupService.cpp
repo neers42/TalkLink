@@ -9,6 +9,14 @@
 #include <sstream>
 #include <string>
 
+namespace {
+// ハートビート監視など、意図的に常駐し続けるバックグラウンドループタスク用の
+// max_execution_time。デフォルトの30秒を使うと、TaskManagementServiceの
+// 過負荷監視(check_system_overload)から「長時間実行タスク」として
+// 常に警告されてしまうため、実質無期限とみなせる十分大きな値を設定する。
+constexpr auto kPermanentTaskTimeout = std::chrono::hours(24 * 365);
+}
+
 StartupService::StartupService(
     std::shared_ptr<SocketHandler> socket_handler,
     std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
@@ -75,26 +83,40 @@ bool StartupService::execute_server_startup_with_config(const ServerStartupConfi
     try {
         // フェーズ1: ソケット初期化
         set_startup_phase(ServerStartupPhase::SOCKET_INITIALIZATION);
+        auto phase_start = std::chrono::steady_clock::now();
         if (!initialize_tcp_socket()) {
             LOG_ERROR("[StartupService] TCP socket initialization failed");
             set_startup_phase(ServerStartupPhase::FAILED);
             return false;
         }
-        
+
         if (!initialize_udp_socket()) {
             LOG_ERROR("[StartupService] UDP socket initialization failed");
             set_startup_phase(ServerStartupPhase::FAILED);
             return false;
         }
-        
+
+        if (!enforce_phase_timeout(phase_start, config.socket_timeout, "SOCKET_INITIALIZATION") ||
+            !enforce_total_timeout(config)) {
+            set_startup_phase(ServerStartupPhase::FAILED);
+            return false;
+        }
+
         // フェーズ2: バックグラウンドサービス起動
         set_startup_phase(ServerStartupPhase::BACKGROUND_SERVICES);
+        phase_start = std::chrono::steady_clock::now();
         if (!start_background_services()) {
             LOG_ERROR("[StartupService] Background services startup failed");
             set_startup_phase(ServerStartupPhase::FAILED);
             return false;
         }
-        
+
+        if (!enforce_phase_timeout(phase_start, config.service_init_timeout, "BACKGROUND_SERVICES") ||
+            !enforce_total_timeout(config)) {
+            set_startup_phase(ServerStartupPhase::FAILED);
+            return false;
+        }
+
         // フェーズ3: リクエストディスパッチャ設定
         set_startup_phase(ServerStartupPhase::REQUEST_CONFIGURATION);
         if (!configure_request_dispatching()) {
@@ -102,11 +124,19 @@ bool StartupService::execute_server_startup_with_config(const ServerStartupConfi
             set_startup_phase(ServerStartupPhase::FAILED);
             return false;
         }
-        
+
+        if (!enforce_total_timeout(config)) {
+            set_startup_phase(ServerStartupPhase::FAILED);
+            return false;
+        }
+
         // フェーズ4: 監視開始
         set_startup_phase(ServerStartupPhase::MONITORING_START);
         if (config.enable_health_monitoring) {
             start_health_monitoring();
+        }
+        if (config.enable_overload_protection && _task_management_service) {
+            _task_management_service->enable_overload_protection(true);
         }
         
         // 完了
@@ -213,22 +243,24 @@ bool StartupService::start_background_services()
         // ハートビートチェックタスクを開始(非アクティブ/未認証接続の定期クリーンアップ)
         auto task_mgmt = _task_management_service;
         if (task_mgmt) {
-            task_mgmt->schedule_task(
+            task_mgmt->schedule_task_with_timeout(
                 TaskPriority::CRITICAL,
                 TaskCategory::HEARTBEAT,
                 "Heartbeat monitoring task",
+                kPermanentTaskTimeout,
                 [user_mgmt]() {
                     user_mgmt->start_heartbeat_monitoring();
                 }
             );
         }
-        
+
         // 証明書リロードタスクを開始
         if (task_mgmt) {
-            task_mgmt->schedule_task(
+            task_mgmt->schedule_task_with_timeout(
                 TaskPriority::LOW,
                 TaskCategory::MAINTENANCE,
                 "Certificate hot reload task",
+                kPermanentTaskTimeout,
                 [protocol_handler, cert_path = _cert_path, key_path = _key_path]() {
                     protocol_handler->hot_reload_certificates(60, cert_path, key_path);
                 }
@@ -467,6 +499,33 @@ const ServerStartupConfig& StartupService::get_startup_config() const
 
 // ==================== 内部ヘルパーメソッド ====================
 
+bool StartupService::enforce_phase_timeout(
+    const std::chrono::steady_clock::time_point& phase_start,
+    std::chrono::milliseconds budget,
+    const std::string& phase_name)
+{
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - phase_start);
+    if (elapsed > budget) {
+        LOG_ERROR("[StartupService] Phase '{}' exceeded its timeout budget ({}ms > {}ms)",
+                   phase_name, elapsed.count(), budget.count());
+        return false;
+    }
+    return true;
+}
+
+bool StartupService::enforce_total_timeout(const ServerStartupConfig& config)
+{
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - _startup_begin_time);
+    if (elapsed > config.total_timeout) {
+        LOG_ERROR("[StartupService] Server startup exceeded total timeout budget ({}ms > {}ms)",
+                   elapsed.count(), config.total_timeout.count());
+        return false;
+    }
+    return true;
+}
+
 void StartupService::set_startup_phase(ServerStartupPhase new_phase)
 {
     _current_phase = new_phase;
@@ -506,10 +565,11 @@ void StartupService::start_health_monitoring()
     // ループがthisを安全に参照し続けられるよう、shared_ptrでthisの寿命を延長する
     // (UserManagementService::start_heartbeat_monitoringと同様のライフタイム管理)
     auto self = shared_from_this();
-    task_mgmt->schedule_task(
+    task_mgmt->schedule_task_with_timeout(
         TaskPriority::LOW,
         TaskCategory::HEARTBEAT,
         "Health monitoring task",
+        kPermanentTaskTimeout,
         [self]() {
             self->run_health_monitoring_loop();
         }
@@ -546,6 +606,16 @@ void StartupService::run_health_monitoring_loop()
             if (status.cpu_usage_percent >= 90.0 || status.memory_usage_percent >= 90.0) {
                 LOG_WARNING("[StartupService] High resource usage detected - cpu: {:.1f}%, mem: {:.1f}%",
                             status.cpu_usage_percent, status.memory_usage_percent);
+            }
+
+            const auto max_connections = get_startup_config().max_concurrent_connections;
+            if (status.active_connections >= max_connections) {
+                // 新規接続の受付自体はUserManagementService::can_accept_new_connectionが
+                // chat.confのmax_connectionsで別途判定している。ここでは監視用の警告のみ
+                // (この値をis_system_healthy()には反映しない。main loopの継続条件になっており、
+                //  満杯を"不健全"とみなすとサーバーが監視ループを抜けてしまうため)。
+                LOG_WARNING("[StartupService] Active connections at or above configured capacity: {}/{}",
+                            status.active_connections, max_connections);
             }
         } catch (const std::exception& e) {
             LOG_ERROR("[StartupService] Exception during health check: {}", e.what());

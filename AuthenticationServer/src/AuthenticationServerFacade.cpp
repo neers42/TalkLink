@@ -6,8 +6,15 @@
 
 AuthenticationServerFacade::AuthenticationServerFacade()
 {
-    ////ログのフォーマット設定
+    ////ログレベルの設定
+	// NDEBUGはCMakeがRelease/MinSizeRelビルドで自動的に定義するマクロ。
+	// Debugビルド(NDEBUG未定義)ではdebug、それ以外(本番相当)ではinfoにする。
+#ifndef NDEBUG
 	spdlog::set_level(spdlog::level::debug);
+#else
+	spdlog::set_level(spdlog::level::info);
+#endif // NDEBUG
+	////ログのフォーマット設定
 	// Use fixed-width level field so info/debug align visually.
 	spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [thread id : %t] [%^%-5l%$] %v");
 	LOG_INFO("Starting TalkLink Auth-server version {}!!", TALKLINK_VERSION);

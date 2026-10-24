@@ -26,17 +26,18 @@ TaskManagementService::~TaskManagementService() {
 
 // ==================== タスク実行 & モニタリング ====================
 
-void TaskManagementService::execute_managed_task(const std::string& task_id, std::function<void()> task)
+void TaskManagementService::execute_managed_task(const std::string& task_id, std::function<void()> task,
+                                                   std::chrono::milliseconds max_execution_time)
 {
     auto start_time = std::chrono::steady_clock::now();
-    
+
     // スレッドローカルタスクIDを設定
     set_current_task_id(task_id);
-    
+
     // アクティブタスクを登録
     {
         std::lock_guard<std::mutex> lock(_active_tasks_mutex);
-        _active_tasks[task_id] = start_time;
+        _active_tasks[task_id] = ActiveTaskInfo{start_time, max_execution_time};
     }
     
     bool success = false;
@@ -80,7 +81,7 @@ void TaskManagementService::enqueue_by_priority(ManagedTask managed_task)
 {
     // マネージドタスクを実行するラッパーを作成
     _thread_pool->enqueue_task([this, task = std::move(managed_task)]() mutable {
-        execute_managed_task(task.metadata.task_id, task.task_function);
+        execute_managed_task(task.metadata.task_id, task.task_function, task.max_execution_time);
     });
 }
 
@@ -107,8 +108,8 @@ TaskManagementService::TaskMetrics TaskManagementService::get_task_metrics() con
     double total_time = 0.0;
     if (!_active_tasks.empty()) {
         auto now = std::chrono::steady_clock::now();
-        for (const auto& [task_id, start_time] : _active_tasks) {
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
+        for (const auto& [task_id, info] : _active_tasks) {
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - info.start_time);
             total_time += duration.count();
         }
         metrics.average_execution_time = total_time / _active_tasks.size();
@@ -184,7 +185,7 @@ uint32_t TaskManagementService::get_user_task_count(socket_t socket) const
         std::lock_guard<std::mutex> lock(_active_tasks_mutex);
         
         uint32_t count = 0;
-        for (const auto& [task_id, start_time] : _active_tasks) {
+        for (const auto& [task_id, info] : _active_tasks) {
             // ノート：実際の実装では、ソケットの関連付けを保存する必要があります
             if (task_id.find("_socket_" + std::to_string(socket) + "_") != std::string::npos) {
                 ++count;
@@ -201,22 +202,25 @@ uint32_t TaskManagementService::get_user_task_count(socket_t socket) const
 
 void TaskManagementService::enable_overload_protection(bool enabled)
 {
-    _overload_protection.store(enabled);
-    
+    const bool was_enabled = _overload_protection_enabled.exchange(enabled);
+
     if (enabled) {
         LOG_INFO("[TaskManagementService] Task overload protection enabled");
-        
-        // 定期的な過負荷チェックをスケジュールする
-        schedule_task(
-            TaskPriority::LOW,
-            TaskCategory::SYSTEM,
-            "Overload Monitoring",
-            [this]() {
-                check_system_overload();
-            }
-        );
+
+        if (!was_enabled) {
+            // 定期的な過負荷チェックをスケジュールする(既に起動中なら再スケジュールしない)
+            schedule_task(
+                TaskPriority::LOW,
+                TaskCategory::SYSTEM,
+                "Overload Monitoring",
+                [this]() {
+                    check_system_overload();
+                }
+            );
+        }
     } else {
         LOG_INFO("[TaskManagementService] Task overload protection disabled");
+        _overload_protection.store(false);
     }
 }
 
@@ -271,16 +275,22 @@ void TaskManagementService::check_system_overload()
             _overload_protection.store(false);
         }
         
-        // 長時間実行中のタスクをチェック
-        for (const auto& [task_id, start_time] : this->_active_tasks) {
-            auto duration = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time);
-            if (duration > std::chrono::seconds(60)) { // 60秒以上実行中のタスクを警告
-                LOG_WARNING("[TaskManagementService] Long-running task detected: {} running for {}s", task_id, duration.count());
+        // 長時間実行中のタスクをチェック(ハートビート監視など意図的に常駐する
+        // タスクは、十分に大きいmax_execution_timeで登録されているため対象外になる)
+        for (const auto& [task_id, info] : this->_active_tasks) {
+            auto duration = std::chrono::duration_cast<std::chrono::seconds>(current_time - info.start_time);
+            if (duration > std::chrono::duration_cast<std::chrono::seconds>(info.max_execution_time)) {
+                LOG_WARNING("[TaskManagementService] Long-running task detected: {} running for {}s (limit: {}s)",
+                            task_id, duration.count(),
+                            std::chrono::duration_cast<std::chrono::seconds>(info.max_execution_time).count());
             }
         }
         
-        // 過負荷保護が有効な場合は次の過負荷チェックをスケジュールする
-        if (this->_overload_protection) {
+        // 過負荷監視機能自体が有効な場合は次の過負荷チェックをスケジュールする
+        // (現在の過負荷状態_overload_protectionではなく、機能の有効/無効で判定する。
+        //  過負荷状態を条件にすると、負荷が正常域に戻った直後にポーリングが
+        //  永久に停止してしまい、再度過負荷になっても検知できなくなるため)
+        if (this->_overload_protection_enabled) {
             schedule_task(
                 TaskPriority::LOW,
                 TaskCategory::SYSTEM,

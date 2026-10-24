@@ -49,13 +49,19 @@ struct ManagedTask {
         : metadata(meta), task_function(std::move(func)), max_execution_time(timeout) {}
 };
 
+// アクティブタスク1件分の監視情報
+struct ActiveTaskInfo {
+    std::chrono::steady_clock::time_point start_time;
+    std::chrono::milliseconds max_execution_time;
+};
+
 class TaskManagementService {
 private:
     std::shared_ptr<ThreadPoolHandler> _thread_pool;
-    
+
     // タスク監視用の内部状態
     std::atomic<uint64_t> _task_counter{0};
-    std::unordered_map<std::string, std::chrono::steady_clock::time_point> _active_tasks;
+    std::unordered_map<std::string, ActiveTaskInfo> _active_tasks;
     mutable std::mutex _active_tasks_mutex;
     
     // メトリクス
@@ -64,7 +70,8 @@ private:
     std::atomic<uint64_t> _timeout_tasks{0};
     
     // リソース管理
-    std::atomic<bool> _overload_protection{false};
+    std::atomic<bool> _overload_protection{false};        // 現在過負荷状態かどうか
+    std::atomic<bool> _overload_protection_enabled{false}; // 過負荷監視機能自体の有効/無効
     std::chrono::milliseconds _overload_threshold{100}; // タスク平均実行時間(ms)
     
 public:
@@ -92,9 +99,9 @@ public:
         auto metadata = TaskMetadata(task_id, priority, category, description);
         
         auto bound_task = std::bind(std::forward<F>(func), std::forward<Args>(args)...);
-        auto managed_task = ManagedTask(metadata, 
-                                       [this, task_id, bound_task]() {
-                                           execute_managed_task(task_id, bound_task);
+        auto managed_task = ManagedTask(metadata,
+                                       [this, task_id, bound_task, timeout]() {
+                                           execute_managed_task(task_id, bound_task, timeout);
                                        }, timeout);
         
         enqueue_by_priority(std::move(managed_task));
@@ -135,7 +142,8 @@ public:
     
 private:
     // タスク実行ラッパー
-    void execute_managed_task(const std::string& task_id, std::function<void()> task);
+    void execute_managed_task(const std::string& task_id, std::function<void()> task,
+                               std::chrono::milliseconds max_execution_time);
     
     // 優先度キュー管理
     void enqueue_by_priority(ManagedTask managed_task);

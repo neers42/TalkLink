@@ -20,7 +20,6 @@ using socket_t = int; // POSIX systems use int for sockets
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
-#define DEBUG_MODE
 #define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.conf"
 
 class ChatServerFacade
