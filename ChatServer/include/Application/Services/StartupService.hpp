@@ -2,6 +2,7 @@
 #define STARTUPSERVICE_HPP
 
 #include "Utils/common.hpp"
+#include <condition_variable>
 #define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.conf"
 
 // Forward declarations
@@ -47,12 +48,13 @@ struct ServerStartupConfig {
     bool enable_overload_protection{true};
     bool enable_health_monitoring{true};
     uint32_t max_concurrent_connections{1000};
+    std::chrono::seconds health_check_interval{30};
 };
 
 /**
  * @brief サーバーのスタートアップシーケンスを管理するサービス
  */
-class StartupService {
+class StartupService : public std::enable_shared_from_this<StartupService> {
 public:
     StartupService(
         std::shared_ptr<SocketHandler> socket_handler,
@@ -193,11 +195,22 @@ private:
     bool wait_for_phase_completion(ServerStartupPhase phase, std::chrono::milliseconds timeout);
     void record_startup_metrics();
     void cleanup_resources();
-    
+
     // ヘルス監視
     void start_health_monitoring();
     void stop_health_monitoring();
+    void run_health_monitoring_loop();
     std::atomic<bool> _health_monitoring_active{false};
+    std::mutex _health_monitor_mutex;
+    std::condition_variable _health_monitor_cv;
+
+    // システムリソース計測(Linux /proc ベース)
+    double calculate_cpu_usage_percent() const;
+    double calculate_memory_usage_percent() const;
+    mutable std::mutex _cpu_sample_mutex;
+    mutable uint64_t _prev_cpu_total_jiffies{0};
+    mutable uint64_t _prev_cpu_idle_jiffies{0};
+    mutable bool _has_cpu_sample{false};
 };
 
 #endif // STARTUPSERVICE_HPP

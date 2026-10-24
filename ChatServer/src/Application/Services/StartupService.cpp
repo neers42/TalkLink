@@ -5,6 +5,9 @@
 #include "Application/Services/ChatService.hpp"
 #include "Application/Services/ChatroomManagementService.hpp"
 #include "Application/Services/SyncService.hpp"
+#include <fstream>
+#include <sstream>
+#include <string>
 
 StartupService::StartupService(
     std::shared_ptr<SocketHandler> socket_handler,
@@ -413,9 +416,11 @@ SystemResourceStatus StartupService::get_system_status() const
     status.udp_socket_ready = _udp_socket_ready.load();
     status.background_tasks_running = _background_services_running.load();
     status.request_dispatcher_configured = _request_dispatcher_configured.load();
-    status.active_connections = 0; // TODO: UserManagementServiceから取得
-    status.cpu_usage_percent = 0.0; // TODO: システム監視実装
-    status.memory_usage_percent = 0.0; // TODO: システム監視実装
+    status.active_connections = _user_management_service
+        ? static_cast<uint32_t>(_user_management_service->get_connected_user_count())
+        : 0;
+    status.cpu_usage_percent = calculate_cpu_usage_percent();
+    status.memory_usage_percent = calculate_memory_usage_percent();
     status.startup_time = _startup_begin_time;
     
     if (_current_phase == ServerStartupPhase::COMPLETED) {
@@ -486,15 +491,147 @@ void StartupService::cleanup_resources()
 
 void StartupService::start_health_monitoring()
 {
-    if (!_health_monitoring_active.exchange(true)) {
-        LOG_INFO("[StartupService] Health monitoring started");
-        // TODO: ヘルス監視タスクの実装
+    if (_health_monitoring_active.exchange(true)) {
+        return; // 既に起動済み
     }
+    LOG_INFO("[StartupService] Health monitoring started");
+
+    auto task_mgmt = _task_management_service;
+    if (!task_mgmt) {
+        LOG_ERROR("[StartupService] Cannot start health monitoring: TaskManagementService not available");
+        _health_monitoring_active = false;
+        return;
+    }
+
+    // ループがthisを安全に参照し続けられるよう、shared_ptrでthisの寿命を延長する
+    // (UserManagementService::start_heartbeat_monitoringと同様のライフタイム管理)
+    auto self = shared_from_this();
+    task_mgmt->schedule_task(
+        TaskPriority::LOW,
+        TaskCategory::HEARTBEAT,
+        "Health monitoring task",
+        [self]() {
+            self->run_health_monitoring_loop();
+        }
+    );
 }
 
 void StartupService::stop_health_monitoring()
 {
     if (_health_monitoring_active.exchange(false)) {
+        _health_monitor_cv.notify_all();
         LOG_INFO("[StartupService] Health monitoring stopped");
+    }
+}
+
+void StartupService::run_health_monitoring_loop()
+{
+    const auto interval = get_startup_config().health_check_interval;
+
+    while (_health_monitoring_active.load()) {
+        std::unique_lock<std::mutex> lock(_health_monitor_mutex);
+        const bool stopped = _health_monitor_cv.wait_for(
+            lock, interval, [this]() { return !_health_monitoring_active.load(); });
+        if (stopped) {
+            break;
+        }
+        lock.unlock();
+
+        try {
+            const auto status = get_system_status();
+            LOG_INFO("[StartupService] Health check - connections: {}, cpu: {:.1f}%, mem: {:.1f}%, healthy: {}",
+                     status.active_connections, status.cpu_usage_percent, status.memory_usage_percent,
+                     is_system_healthy());
+
+            if (status.cpu_usage_percent >= 90.0 || status.memory_usage_percent >= 90.0) {
+                LOG_WARNING("[StartupService] High resource usage detected - cpu: {:.1f}%, mem: {:.1f}%",
+                            status.cpu_usage_percent, status.memory_usage_percent);
+            }
+        } catch (const std::exception& e) {
+            LOG_ERROR("[StartupService] Exception during health check: {}", e.what());
+        }
+    }
+
+    LOG_DEBUG("[StartupService] Health monitoring loop exited");
+}
+
+double StartupService::calculate_cpu_usage_percent() const
+{
+    try {
+        std::ifstream stat_file("/proc/stat");
+        if (!stat_file.is_open()) {
+            return 0.0;
+        }
+
+        std::string cpu_label;
+        uint64_t user = 0, nice = 0, system = 0, idle = 0, iowait = 0, irq = 0, softirq = 0, steal = 0;
+        std::string first_line;
+        std::getline(stat_file, first_line);
+        std::istringstream iss(first_line);
+        iss >> cpu_label >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
+
+        const uint64_t total = user + nice + system + idle + iowait + irq + softirq + steal;
+        const uint64_t idle_total = idle + iowait;
+
+        std::lock_guard<std::mutex> lock(_cpu_sample_mutex);
+        if (!_has_cpu_sample) {
+            _prev_cpu_total_jiffies = total;
+            _prev_cpu_idle_jiffies = idle_total;
+            _has_cpu_sample = true;
+            return 0.0; // 初回は前回値が無いため算出不可
+        }
+
+        const uint64_t delta_total = total - _prev_cpu_total_jiffies;
+        const uint64_t delta_idle = idle_total - _prev_cpu_idle_jiffies;
+        _prev_cpu_total_jiffies = total;
+        _prev_cpu_idle_jiffies = idle_total;
+
+        if (delta_total == 0) {
+            return 0.0;
+        }
+
+        return (1.0 - static_cast<double>(delta_idle) / static_cast<double>(delta_total)) * 100.0;
+
+    } catch (const std::exception& e) {
+        LOG_ERROR("[StartupService] Failed to read CPU usage: {}", e.what());
+        return 0.0;
+    }
+}
+
+double StartupService::calculate_memory_usage_percent() const
+{
+    try {
+        std::ifstream meminfo_file("/proc/meminfo");
+        if (!meminfo_file.is_open()) {
+            return 0.0;
+        }
+
+        uint64_t mem_total_kb = 0;
+        uint64_t mem_available_kb = 0;
+        std::string line;
+        while (std::getline(meminfo_file, line)) {
+            std::istringstream iss(line);
+            std::string key;
+            uint64_t value = 0;
+            iss >> key >> value;
+            if (key == "MemTotal:") {
+                mem_total_kb = value;
+            } else if (key == "MemAvailable:") {
+                mem_available_kb = value;
+            }
+            if (mem_total_kb != 0 && mem_available_kb != 0) {
+                break;
+            }
+        }
+
+        if (mem_total_kb == 0) {
+            return 0.0;
+        }
+
+        return (1.0 - static_cast<double>(mem_available_kb) / static_cast<double>(mem_total_kb)) * 100.0;
+
+    } catch (const std::exception& e) {
+        LOG_ERROR("[StartupService] Failed to read memory usage: {}", e.what());
+        return 0.0;
     }
 }

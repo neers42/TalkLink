@@ -172,6 +172,10 @@ bool UserManagementService::is_socket_authenticated(socket_t socket) {
     }
 }
 
+size_t UserManagementService::get_connected_user_count() const {
+    return _repository->get_connected_user_count();
+}
+
 void UserManagementService::start_heartbeat_monitoring() {
     LOG_INFO("[UserManagementService] Starting heartbeat monitoring loop (interval: {}s, timeout: {}s)",
              _heartbeat_check_interval_sec, _heartbeat_timeout_sec);

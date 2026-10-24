@@ -332,10 +332,14 @@ SessionValidationResult SessionHandler::handle_signout_request(
         }
         // SIGNOUT時はセッション無効化処理
         result.uid = get_uid_from_session_token(session_message->get_session_token());
-        
-        // TODO: Redisからセッション削除処理を実装
-        // _redis_adapter->delete_session(result.uid);
-        
+
+        // Redisからセッションを削除し、以後このトークンでの認証を無効化する
+        // (キーはget_session/save_sessionと同じ"session:"+トークンハッシュの形式)
+        const std::string session_key = "session:" + this->hash_token(session_message->get_session_token());
+        if (!_redis_adapter->delete_key(session_key)) {
+            LOG_WARNING("[SessionHandler] Failed to delete session from Redis for user: {}", result.uid);
+        }
+
         result.is_valid = true;
         result.error_message = "Signout successful";
         result.unreceived_messages = json::array();

@@ -70,6 +70,16 @@ void ServiceContainer::initialize() {
         const int heartbeat_timeout_sec = chat_config["ChatSettings"]["heartbeat_timeout_sec"].as<int>();
         const int heartbeat_check_interval_sec = chat_config["ChatSettings"]["heartbeat_check_interval_sec"].as<int>();
 
+        // StartupSettingsの読み込み(StartupServiceの起動設定パラメータ)
+        ServerStartupConfig startup_config;
+        startup_config.socket_timeout = std::chrono::milliseconds(chat_config["StartupSettings"]["socket_timeout_ms"].as<int>());
+        startup_config.service_init_timeout = std::chrono::milliseconds(chat_config["StartupSettings"]["service_init_timeout_ms"].as<int>());
+        startup_config.total_timeout = std::chrono::milliseconds(chat_config["StartupSettings"]["total_timeout_ms"].as<int>());
+        startup_config.enable_overload_protection = chat_config["StartupSettings"]["enable_overload_protection"].as<bool>();
+        startup_config.enable_health_monitoring = chat_config["StartupSettings"]["enable_health_monitoring"].as<bool>();
+        startup_config.max_concurrent_connections = static_cast<uint32_t>(chat_config["StartupSettings"]["max_concurrent_connections"].as<int>());
+        startup_config.health_check_interval = std::chrono::seconds(chat_config["StartupSettings"]["health_check_interval_sec"].as<int>());
+
         // Phase 1: インフラストラクチャ層の共有リソースを初期化
         _server_time = std::make_shared<ServerTime>();
         _socket_handler = std::make_shared<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
@@ -130,7 +140,8 @@ void ServiceContainer::initialize() {
             cert_path,
             key_path
         );
-        
+        _startup_service->update_startup_config(startup_config);
+
         _initialized = true;
         
         LOG_INFO("ServiceContainer initialized successfully with new service architecture");

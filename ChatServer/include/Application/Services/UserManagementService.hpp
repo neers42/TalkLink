@@ -73,6 +73,9 @@ public:
     // 認証ゲート用: このソケットが現在認証済みかどうか
     bool is_socket_authenticated(socket_t socket);
 
+    // システム監視用: 現在接続中のソケット数(未認証のハンドシェイク中も含む)
+    size_t get_connected_user_count() const;
+
 private:
     bool can_accept_new_connection();  // ビジネスルールのみ
     void log_connection_event(const std::string& uid, const std::string& event);
