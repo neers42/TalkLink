@@ -2,7 +2,6 @@
 #define STARTUPSERVICE_HPP
 
 #include "Utils/common.hpp"
-#include <condition_variable>
 #define SOCKET_CONFIG_FILE_PATH "/app/ChatServer/conf/socket_setting.conf"
 
 // Forward declarations
@@ -15,6 +14,7 @@ class UserManagementService;
 class ChatService;
 class ChatroomManagementService;
 class SyncService;
+class SystemMonitorService;
 
 // サーバー起動フェーズ定義
 enum class ServerStartupPhase {
@@ -27,19 +27,6 @@ enum class ServerStartupPhase {
     FAILED
 };
 
-// システムリソース状態
-struct SystemResourceStatus {
-    bool tcp_socket_ready;
-    bool udp_socket_ready;
-    bool background_tasks_running;
-    bool request_dispatcher_configured;
-    uint32_t active_connections;
-    double cpu_usage_percent;
-    double memory_usage_percent;
-    std::chrono::steady_clock::time_point startup_time;
-    std::chrono::milliseconds total_startup_duration;
-};
-
 // 起動設定パラメータ
 struct ServerStartupConfig {
     std::chrono::milliseconds socket_timeout{5000};       // 5秒
@@ -47,14 +34,15 @@ struct ServerStartupConfig {
     std::chrono::milliseconds total_timeout{30000};       // 30秒
     bool enable_overload_protection{true};
     bool enable_health_monitoring{true};
-    uint32_t max_concurrent_connections{1000};
-    std::chrono::seconds health_check_interval{30};
 };
 
 /**
  * @brief サーバーのスタートアップシーケンスを管理するサービス
+ *
+ * CPU/メモリ/接続数の継続監視はSystemMonitorServiceの責務。StartupServiceは
+ * 起動完了後にそのループを開始/停止するだけで、監視内容そのものは持たない。
  */
-class StartupService : public std::enable_shared_from_this<StartupService> {
+class StartupService {
 public:
     StartupService(
         std::shared_ptr<SocketHandler> socket_handler,
@@ -66,6 +54,7 @@ public:
         std::shared_ptr<ChatService> chat_service,
         std::shared_ptr<ChatroomManagementService> chatroom_management_service,
         std::shared_ptr<SyncService> sync_service,
+        std::shared_ptr<SystemMonitorService> system_monitor_service,
         std::string cert_path,
         std::string key_path
     );
@@ -127,12 +116,6 @@ public:
     ServerStartupPhase get_startup_phase() const;
     
     /**
-     * @brief システムリソース状態を取得
-     * @return リソース状態の詳細
-     */
-    SystemResourceStatus get_system_status() const;
-    
-    /**
      * @brief サーバーが完全に起動済みかチェック
      * @return 起動完了の可否
      */
@@ -169,6 +152,7 @@ private:
     std::shared_ptr<ChatService> _chat_service;
     std::shared_ptr<ChatroomManagementService> _chatroom_management_service;
     std::shared_ptr<SyncService> _sync_service;
+    std::shared_ptr<SystemMonitorService> _system_monitor_service;
     std::string _cert_path; // 環境変数TLS_CERT_PATHから取得した証明書パス
     std::string _key_path;  // 環境変数TLS_KEY_PATHから取得した秘密鍵パス
     // 起動状態管理
@@ -201,22 +185,6 @@ private:
                                 std::chrono::milliseconds budget,
                                 const std::string& phase_name);
     bool enforce_total_timeout(const ServerStartupConfig& config);
-
-    // ヘルス監視
-    void start_health_monitoring();
-    void stop_health_monitoring();
-    void run_health_monitoring_loop();
-    std::atomic<bool> _health_monitoring_active{false};
-    std::mutex _health_monitor_mutex;
-    std::condition_variable _health_monitor_cv;
-
-    // システムリソース計測(Linux /proc ベース)
-    double calculate_cpu_usage_percent() const;
-    double calculate_memory_usage_percent() const;
-    mutable std::mutex _cpu_sample_mutex;
-    mutable uint64_t _prev_cpu_total_jiffies{0};
-    mutable uint64_t _prev_cpu_idle_jiffies{0};
-    mutable bool _has_cpu_sample{false};
 };
 
 #endif // STARTUPSERVICE_HPP

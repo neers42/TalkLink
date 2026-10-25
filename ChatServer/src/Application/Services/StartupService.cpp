@@ -5,9 +5,7 @@
 #include "Application/Services/ChatService.hpp"
 #include "Application/Services/ChatroomManagementService.hpp"
 #include "Application/Services/SyncService.hpp"
-#include <fstream>
-#include <sstream>
-#include <string>
+#include "Application/Services/SystemMonitorService.hpp"
 
 namespace {
 // ハートビート監視など、意図的に常駐し続けるバックグラウンドループタスク用の
@@ -27,6 +25,7 @@ StartupService::StartupService(
     std::shared_ptr<ChatService> chat_service,
     std::shared_ptr<ChatroomManagementService> chatroom_management_service,
     std::shared_ptr<SyncService> sync_service,
+    std::shared_ptr<SystemMonitorService> system_monitor_service,
     std::string cert_path,
     std::string key_path)
     : _socket_handler(std::move(socket_handler)),
@@ -38,11 +37,12 @@ StartupService::StartupService(
       _chat_service(std::move(chat_service)),
       _chatroom_management_service(std::move(chatroom_management_service)),
       _sync_service(std::move(sync_service)),
+      _system_monitor_service(std::move(system_monitor_service)),
       _cert_path(std::move(cert_path)),
       _key_path(std::move(key_path))
 {
     if (!_socket_handler || !_thread_pool_handler || !_tlscon_handler ||
-        !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service || !_chatroom_management_service || !_sync_service) {
+        !_task_management_service || !_request_dispatcher_service || !_user_management_service || !_chat_service || !_chatroom_management_service || !_sync_service || !_system_monitor_service) {
         throw std::runtime_error("Failed to initialize StartupService dependencies");
     }
     
@@ -52,8 +52,8 @@ StartupService::StartupService(
 
 StartupService::~StartupService()
 {
-    if (_health_monitoring_active) {
-        stop_health_monitoring();
+    if (_system_monitor_service) {
+        _system_monitor_service->stop_monitoring();
     }
     cleanup_resources();
     LOG_INFO("[StartupService] StartupService shutdown.");
@@ -132,8 +132,8 @@ bool StartupService::execute_server_startup_with_config(const ServerStartupConfi
 
         // フェーズ4: 監視開始
         set_startup_phase(ServerStartupPhase::MONITORING_START);
-        if (config.enable_health_monitoring) {
-            start_health_monitoring();
+        if (config.enable_health_monitoring && _system_monitor_service) {
+            _system_monitor_service->start_monitoring();
         }
         if (config.enable_overload_protection && _task_management_service) {
             _task_management_service->enable_overload_protection(true);
@@ -158,10 +158,12 @@ bool StartupService::shutdown_server()
 {
     LOG_INFO("[StartupService] Initiating graceful server shutdown");
     _server_shutdown_requested = true;
-    
+
     // ヘルス監視停止
-    stop_health_monitoring();
-    
+    if (_system_monitor_service) {
+        _system_monitor_service->stop_monitoring();
+    }
+
     // リソースクリーンアップ
     cleanup_resources();
     
@@ -441,32 +443,6 @@ ServerStartupPhase StartupService::get_startup_phase() const
     return _current_phase.load();
 }
 
-SystemResourceStatus StartupService::get_system_status() const
-{
-    SystemResourceStatus status;
-    status.tcp_socket_ready = _tcp_socket_ready.load();
-    status.udp_socket_ready = _udp_socket_ready.load();
-    status.background_tasks_running = _background_services_running.load();
-    status.request_dispatcher_configured = _request_dispatcher_configured.load();
-    status.active_connections = _user_management_service
-        ? static_cast<uint32_t>(_user_management_service->get_connected_user_count())
-        : 0;
-    status.cpu_usage_percent = calculate_cpu_usage_percent();
-    status.memory_usage_percent = calculate_memory_usage_percent();
-    status.startup_time = _startup_begin_time;
-    
-    if (_current_phase == ServerStartupPhase::COMPLETED) {
-        status.total_startup_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-            _startup_complete_time - _startup_begin_time);
-    } else {
-        auto now = std::chrono::steady_clock::now();
-        status.total_startup_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-            now - _startup_begin_time);
-    }
-    
-    return status;
-}
-
 bool StartupService::is_server_ready() const
 {
     return _current_phase.load() == ServerStartupPhase::COMPLETED;
@@ -548,160 +524,3 @@ void StartupService::cleanup_resources()
     _request_dispatcher_configured = false;
 }
 
-void StartupService::start_health_monitoring()
-{
-    if (_health_monitoring_active.exchange(true)) {
-        return; // 既に起動済み
-    }
-    LOG_INFO("[StartupService] Health monitoring started");
-
-    auto task_mgmt = _task_management_service;
-    if (!task_mgmt) {
-        LOG_ERROR("[StartupService] Cannot start health monitoring: TaskManagementService not available");
-        _health_monitoring_active = false;
-        return;
-    }
-
-    // ループがthisを安全に参照し続けられるよう、shared_ptrでthisの寿命を延長する
-    // (UserManagementService::start_heartbeat_monitoringと同様のライフタイム管理)
-    auto self = shared_from_this();
-    task_mgmt->schedule_task_with_timeout(
-        TaskPriority::LOW,
-        TaskCategory::HEARTBEAT,
-        "Health monitoring task",
-        kPermanentTaskTimeout,
-        [self]() {
-            self->run_health_monitoring_loop();
-        }
-    );
-}
-
-void StartupService::stop_health_monitoring()
-{
-    if (_health_monitoring_active.exchange(false)) {
-        _health_monitor_cv.notify_all();
-        LOG_INFO("[StartupService] Health monitoring stopped");
-    }
-}
-
-void StartupService::run_health_monitoring_loop()
-{
-    const auto interval = get_startup_config().health_check_interval;
-
-    while (_health_monitoring_active.load()) {
-        std::unique_lock<std::mutex> lock(_health_monitor_mutex);
-        const bool stopped = _health_monitor_cv.wait_for(
-            lock, interval, [this]() { return !_health_monitoring_active.load(); });
-        if (stopped) {
-            break;
-        }
-        lock.unlock();
-
-        try {
-            const auto status = get_system_status();
-            LOG_INFO("[StartupService] Health check - connections: {}, cpu: {:.1f}%, mem: {:.1f}%, healthy: {}",
-                     status.active_connections, status.cpu_usage_percent, status.memory_usage_percent,
-                     is_system_healthy());
-
-            if (status.cpu_usage_percent >= 90.0 || status.memory_usage_percent >= 90.0) {
-                LOG_WARNING("[StartupService] High resource usage detected - cpu: {:.1f}%, mem: {:.1f}%",
-                            status.cpu_usage_percent, status.memory_usage_percent);
-            }
-
-            const auto max_connections = get_startup_config().max_concurrent_connections;
-            if (status.active_connections >= max_connections) {
-                // 新規接続の受付自体はUserManagementService::can_accept_new_connectionが
-                // chat.confのmax_connectionsで別途判定している。ここでは監視用の警告のみ
-                // (この値をis_system_healthy()には反映しない。main loopの継続条件になっており、
-                //  満杯を"不健全"とみなすとサーバーが監視ループを抜けてしまうため)。
-                LOG_WARNING("[StartupService] Active connections at or above configured capacity: {}/{}",
-                            status.active_connections, max_connections);
-            }
-        } catch (const std::exception& e) {
-            LOG_ERROR("[StartupService] Exception during health check: {}", e.what());
-        }
-    }
-
-    LOG_DEBUG("[StartupService] Health monitoring loop exited");
-}
-
-double StartupService::calculate_cpu_usage_percent() const
-{
-    try {
-        std::ifstream stat_file("/proc/stat");
-        if (!stat_file.is_open()) {
-            return 0.0;
-        }
-
-        std::string cpu_label;
-        uint64_t user = 0, nice = 0, system = 0, idle = 0, iowait = 0, irq = 0, softirq = 0, steal = 0;
-        std::string first_line;
-        std::getline(stat_file, first_line);
-        std::istringstream iss(first_line);
-        iss >> cpu_label >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
-
-        const uint64_t total = user + nice + system + idle + iowait + irq + softirq + steal;
-        const uint64_t idle_total = idle + iowait;
-
-        std::lock_guard<std::mutex> lock(_cpu_sample_mutex);
-        if (!_has_cpu_sample) {
-            _prev_cpu_total_jiffies = total;
-            _prev_cpu_idle_jiffies = idle_total;
-            _has_cpu_sample = true;
-            return 0.0; // 初回は前回値が無いため算出不可
-        }
-
-        const uint64_t delta_total = total - _prev_cpu_total_jiffies;
-        const uint64_t delta_idle = idle_total - _prev_cpu_idle_jiffies;
-        _prev_cpu_total_jiffies = total;
-        _prev_cpu_idle_jiffies = idle_total;
-
-        if (delta_total == 0) {
-            return 0.0;
-        }
-
-        return (1.0 - static_cast<double>(delta_idle) / static_cast<double>(delta_total)) * 100.0;
-
-    } catch (const std::exception& e) {
-        LOG_ERROR("[StartupService] Failed to read CPU usage: {}", e.what());
-        return 0.0;
-    }
-}
-
-double StartupService::calculate_memory_usage_percent() const
-{
-    try {
-        std::ifstream meminfo_file("/proc/meminfo");
-        if (!meminfo_file.is_open()) {
-            return 0.0;
-        }
-
-        uint64_t mem_total_kb = 0;
-        uint64_t mem_available_kb = 0;
-        std::string line;
-        while (std::getline(meminfo_file, line)) {
-            std::istringstream iss(line);
-            std::string key;
-            uint64_t value = 0;
-            iss >> key >> value;
-            if (key == "MemTotal:") {
-                mem_total_kb = value;
-            } else if (key == "MemAvailable:") {
-                mem_available_kb = value;
-            }
-            if (mem_total_kb != 0 && mem_available_kb != 0) {
-                break;
-            }
-        }
-
-        if (mem_total_kb == 0) {
-            return 0.0;
-        }
-
-        return (1.0 - static_cast<double>(mem_available_kb) / static_cast<double>(mem_total_kb)) * 100.0;
-
-    } catch (const std::exception& e) {
-        LOG_ERROR("[StartupService] Failed to read memory usage: {}", e.what());
-        return 0.0;
-    }
-}

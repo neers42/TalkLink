@@ -9,6 +9,7 @@
 #include "Application/Services/RequestDispatcherService.hpp"
 #include "Application/Services/TaskManagementService.hpp"
 #include "Application/Services/StartupService.hpp"
+#include "Application/Services/SystemMonitorService.hpp"
 #include "Application/Interfaces/IMessageDeliveryService.hpp"
 #include "Application/Services/MessageDeliveryService.hpp"
 
@@ -77,8 +78,12 @@ void ServiceContainer::initialize() {
         startup_config.total_timeout = std::chrono::milliseconds(chat_config["StartupSettings"]["total_timeout_ms"].as<int>());
         startup_config.enable_overload_protection = chat_config["StartupSettings"]["enable_overload_protection"].as<bool>();
         startup_config.enable_health_monitoring = chat_config["StartupSettings"]["enable_health_monitoring"].as<bool>();
-        startup_config.max_concurrent_connections = static_cast<uint32_t>(chat_config["StartupSettings"]["max_concurrent_connections"].as<int>());
-        startup_config.health_check_interval = std::chrono::seconds(chat_config["StartupSettings"]["health_check_interval_sec"].as<int>());
+
+        // SystemMonitorServiceの監視設定(同じStartupSettingsセクションから読み込む)
+        SystemMonitorConfig monitor_config;
+        monitor_config.max_concurrent_connections = static_cast<uint32_t>(chat_config["StartupSettings"]["max_concurrent_connections"].as<int>());
+        monitor_config.check_interval = std::chrono::seconds(chat_config["StartupSettings"]["health_check_interval_sec"].as<int>());
+        monitor_config.high_usage_warning_threshold_percent = chat_config["StartupSettings"]["high_usage_warning_threshold_percent"].as<double>();
 
         // Phase 1: インフラストラクチャ層の共有リソースを初期化
         _server_time = std::make_shared<ServerTime>();
@@ -126,6 +131,11 @@ void ServiceContainer::initialize() {
         _request_dispatcher_service = std::make_shared<RequestDispatcherService>(
             _socket_handler, _communication_handler);
 
+        // Phase 5.5: システム監視サービスを初期化
+        _system_monitor_service = std::make_shared<SystemMonitorService>(
+            _task_management_service, _user_management_service);
+        _system_monitor_service->update_monitor_config(monitor_config);
+
         // Phase 6: スタートアップサービスを初期化（すべてのサービスが準備された後）
         _startup_service = std::make_shared<StartupService>(
             _socket_handler,
@@ -137,6 +147,7 @@ void ServiceContainer::initialize() {
             _chat_service,
             _chatroom_management_service,
             _sync_service,
+            _system_monitor_service,
             cert_path,
             key_path
         );
@@ -307,6 +318,13 @@ std::shared_ptr<StartupService> ServiceContainer::get_startup_service() {
     return _startup_service;
 }
 
+std::shared_ptr<SystemMonitorService> ServiceContainer::get_system_monitor_service() {
+    if (!_initialized || !_system_monitor_service) {
+        throw std::runtime_error("ServiceContainer not initialized or SystemMonitorService not available");
+    }
+    return _system_monitor_service;
+}
+
 std::shared_ptr<IMessageDeliveryService> ServiceContainer::get_message_delivery_service() {
     if (!_initialized) {
         throw std::runtime_error("ServiceContainer not initialized");
@@ -321,6 +339,7 @@ void ServiceContainer::cleanup() {
     try {
         // サービスをクリーンアップ (依存関係の逆順で実施)
         _startup_service.reset();
+        _system_monitor_service.reset();
         _request_dispatcher_service.reset();
         _sync_service.reset();
         _chat_service.reset();

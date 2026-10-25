@@ -42,6 +42,7 @@ class TaskManagementService;
 class StartupService;
 class IMessageDeliveryService;
 class SyncService;
+class SystemMonitorService;
 
 class ServiceContainer {
 public:
@@ -80,6 +81,7 @@ public:
     std::shared_ptr<StartupService> get_startup_service();
     std::shared_ptr<IMessageDeliveryService> get_message_delivery_service();
     std::shared_ptr<SyncService> get_sync_service();
+    std::shared_ptr<SystemMonitorService> get_system_monitor_service();
 
 private:
     ServiceContainer() = default;
@@ -118,6 +120,7 @@ private:
     std::shared_ptr<StartupService> _startup_service;
     std::shared_ptr<IMessageDeliveryService> _message_delivery_service;
     std::shared_ptr<SyncService> _sync_service;
+    std::shared_ptr<SystemMonitorService> _system_monitor_service;
 
     std::mutex _mutex;
     bool _initialized = false;
