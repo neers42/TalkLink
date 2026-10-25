@@ -1,5 +1,7 @@
 #include "Application/ServiceContainer.hpp"
 #include "EnvHelper.hpp"
+#include <cmath>
+#include <thread>
 
 // Application層
 #include "Application/Services/ChatService.hpp"
@@ -85,13 +87,33 @@ void ServiceContainer::initialize() {
         monitor_config.check_interval = std::chrono::seconds(chat_config["StartupSettings"]["health_check_interval_sec"].as<int>());
         monitor_config.high_usage_warning_threshold_percent = chat_config["StartupSettings"]["high_usage_warning_threshold_percent"].as<double>();
 
+        // ThreadPoolSettingsの読み込み(カテゴリ別スレッドプールのサイズ)
+        // 比率(0.0〜1.0)×実コア数で算出することで、本番/開発などコア数が異なる
+        // 環境でも同じ設定値のままバランスの取れたスレッド数になる(最低1スレッド)。
+        const double heartbeat_pool_ratio = chat_config["ThreadPoolSettings"]["heartbeat_pool_ratio"].as<double>();
+        const double realtime_pool_ratio = chat_config["ThreadPoolSettings"]["realtime_pool_ratio"].as<double>();
+        const double background_pool_ratio = chat_config["ThreadPoolSettings"]["background_pool_ratio"].as<double>();
+
+        const unsigned int hardware_concurrency = std::max(1u, std::thread::hardware_concurrency());
+        const int heartbeat_pool_threads = std::max(1, static_cast<int>(std::round(heartbeat_pool_ratio * hardware_concurrency)));
+        const int realtime_pool_threads = std::max(1, static_cast<int>(std::round(realtime_pool_ratio * hardware_concurrency)));
+        const int background_pool_threads = std::max(1, static_cast<int>(std::round(background_pool_ratio * hardware_concurrency)));
+
+        LOG_INFO("[ServiceContainer] Thread pool sizing - hardware_concurrency: {}, heartbeat: {}, realtime: {}, background: {}",
+                 hardware_concurrency, heartbeat_pool_threads, realtime_pool_threads, background_pool_threads);
+
         // Phase 1: インフラストラクチャ層の共有リソースを初期化
         _server_time = std::make_shared<ServerTime>();
         _socket_handler = std::make_shared<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
         _mysql_adapter = std::make_shared<MySQLAdapter>();
         _redis_adapter = std::make_shared<RedisAdapter>();
         _tlscon_handler = std::make_shared<TLSConnectionHandler>(cert_path, key_path);
-        _thread_pool_handler = std::make_shared<ThreadPoolHandler>(10);
+        // カテゴリ別にスレッドプールを分離する(他の処理の渋滞でハートビートが
+        // 止まる、といった飢餓状態を避けるため、1プールを優先度で並び替えるのではなく
+        // 物理的に別プールにする)
+        _heartbeat_pool = std::make_shared<ThreadPoolHandler>(heartbeat_pool_threads);
+        _realtime_pool = std::make_shared<ThreadPoolHandler>(realtime_pool_threads);
+        _background_pool = std::make_shared<ThreadPoolHandler>(background_pool_threads);
 
         // Interface binding
         _chatroom_repository = _mysql_adapter;
@@ -99,7 +121,8 @@ void ServiceContainer::initialize() {
         _user_repository = _mysql_adapter;
 
         // Phase 2: タスク管理層を初期化
-        _task_management_service = std::make_shared<TaskManagementService>(_thread_pool_handler);
+        _task_management_service = std::make_shared<TaskManagementService>(
+            _heartbeat_pool, _realtime_pool, _background_pool);
         
         // Phase 3: データストレージを初期化
         _user_store = std::make_shared<UserAggregateStore>();
@@ -139,7 +162,7 @@ void ServiceContainer::initialize() {
         // Phase 6: スタートアップサービスを初期化（すべてのサービスが準備された後）
         _startup_service = std::make_shared<StartupService>(
             _socket_handler,
-            _thread_pool_handler,
+            _realtime_pool,
             _tlscon_handler,
             _task_management_service,
             _request_dispatcher_service,
@@ -193,11 +216,25 @@ std::shared_ptr<ServerTime> ServiceContainer::get_server_time() {
     return this->_server_time;
 }
 
-std::shared_ptr<ThreadPoolHandler> ServiceContainer::get_thread_pool_handler() {
+std::shared_ptr<ThreadPoolHandler> ServiceContainer::get_heartbeat_thread_pool() {
     if (!_initialized) {
         throw std::runtime_error("ServiceContainer not initialized");
     }
-    return this->_thread_pool_handler;
+    return this->_heartbeat_pool;
+}
+
+std::shared_ptr<ThreadPoolHandler> ServiceContainer::get_realtime_thread_pool() {
+    if (!_initialized) {
+        throw std::runtime_error("ServiceContainer not initialized");
+    }
+    return this->_realtime_pool;
+}
+
+std::shared_ptr<ThreadPoolHandler> ServiceContainer::get_background_thread_pool() {
+    if (!_initialized) {
+        throw std::runtime_error("ServiceContainer not initialized");
+    }
+    return this->_background_pool;
 }
 
 // ドメイン層のゲッター
@@ -361,7 +398,9 @@ void ServiceContainer::cleanup() {
         _task_management_service.reset();
         
         // インフラストラクチャをクリーンアップ (初期化の逆順で実施)
-        _thread_pool_handler.reset();
+        _heartbeat_pool.reset();
+        _realtime_pool.reset();
+        _background_pool.reset();
         _tlscon_handler.reset();
         _redis_adapter.reset();
         _mysql_adapter.reset();

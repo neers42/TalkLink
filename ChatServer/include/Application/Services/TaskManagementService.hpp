@@ -57,7 +57,14 @@ struct ActiveTaskInfo {
 
 class TaskManagementService {
 private:
-    std::shared_ptr<ThreadPoolHandler> _thread_pool;
+    // カテゴリごとに物理的に分離したスレッドプール。
+    // 1つのプールを優先度で並び替えるより、用途ごとにプールを分けた方が
+    // 「他の処理の渋滞でハートビートが止まる」といった飢餓状態を避けやすい。
+    std::shared_ptr<ThreadPoolHandler> _heartbeat_pool;  // HEARTBEAT
+    std::shared_ptr<ThreadPoolHandler> _realtime_pool;   // AUTHENTICATION, USER_MANAGEMENT, CHAT_PROCESSING
+    std::shared_ptr<ThreadPoolHandler> _background_pool; // MAINTENANCE, SYSTEM
+
+    std::shared_ptr<ThreadPoolHandler>& select_pool_for_category(TaskCategory category);
 
     // タスク監視用の内部状態
     std::atomic<uint64_t> _task_counter{0};
@@ -75,7 +82,11 @@ private:
     std::chrono::milliseconds _overload_threshold{100}; // タスク平均実行時間(ms)
     
 public:
-    explicit TaskManagementService(std::shared_ptr<ThreadPoolHandler> thread_pool);
+    TaskManagementService(
+        std::shared_ptr<ThreadPoolHandler> heartbeat_pool,
+        std::shared_ptr<ThreadPoolHandler> realtime_pool,
+        std::shared_ptr<ThreadPoolHandler> background_pool
+    );
     ~TaskManagementService();
     
     // ==================== 優先度ベースのタスク実行 ====================

@@ -3,14 +3,35 @@
 // CommonLibのスレッドローカル変数を使用
 extern thread_local std::string g_current_task_id;
 
-TaskManagementService::TaskManagementService(std::shared_ptr<ThreadPoolHandler> thread_pool)
-    : _thread_pool(std::move(thread_pool))
+TaskManagementService::TaskManagementService(
+    std::shared_ptr<ThreadPoolHandler> heartbeat_pool,
+    std::shared_ptr<ThreadPoolHandler> realtime_pool,
+    std::shared_ptr<ThreadPoolHandler> background_pool)
+    : _heartbeat_pool(std::move(heartbeat_pool)),
+      _realtime_pool(std::move(realtime_pool)),
+      _background_pool(std::move(background_pool))
 {
-    if (!_thread_pool) {
+    if (!_heartbeat_pool || !_realtime_pool || !_background_pool) {
         throw std::runtime_error("ThreadPoolHandler is null");
     }
-    
+
     LOG_INFO("[TaskManagementService] TaskManagementService initialized as infrastructure layer (no service dependencies)");
+}
+
+std::shared_ptr<ThreadPoolHandler>& TaskManagementService::select_pool_for_category(TaskCategory category)
+{
+    switch (category) {
+        case TaskCategory::HEARTBEAT:
+            return _heartbeat_pool;
+        case TaskCategory::AUTHENTICATION:
+        case TaskCategory::USER_MANAGEMENT:
+        case TaskCategory::CHAT_PROCESSING:
+            return _realtime_pool;
+        case TaskCategory::MAINTENANCE:
+        case TaskCategory::SYSTEM:
+        default:
+            return _background_pool;
+    }
 }
 
 TaskManagementService::~TaskManagementService() {
@@ -79,8 +100,9 @@ void TaskManagementService::execute_managed_task(const std::string& task_id, std
 
 void TaskManagementService::enqueue_by_priority(ManagedTask managed_task)
 {
-    // マネージドタスクを実行するラッパーを作成
-    _thread_pool->enqueue_task([this, task = std::move(managed_task)]() mutable {
+    // カテゴリに応じたプールへ振り分けてから、マネージドタスクを実行するラッパーを登録する
+    auto& pool = select_pool_for_category(managed_task.metadata.category);
+    pool->enqueue_task([this, task = std::move(managed_task)]() mutable {
         execute_managed_task(task.metadata.task_id, task.task_function, task.max_execution_time);
     });
 }

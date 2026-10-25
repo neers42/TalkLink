@@ -57,7 +57,9 @@ public:
     std::shared_ptr<RedisAdapter> get_redis_adapter();
     std::shared_ptr<TLSConnectionHandler> get_protocol_handler();
     std::shared_ptr<ServerTime> get_server_time();
-    std::shared_ptr<ThreadPoolHandler> get_thread_pool_handler();
+    std::shared_ptr<ThreadPoolHandler> get_heartbeat_thread_pool();
+    std::shared_ptr<ThreadPoolHandler> get_realtime_thread_pool();
+    std::shared_ptr<ThreadPoolHandler> get_background_thread_pool();
     
     // ドメイン層のゲッター
     std::shared_ptr<UserAggregateStore> get_user_store();
@@ -95,7 +97,9 @@ private:
     std::shared_ptr<RedisAdapter> _redis_adapter;
     std::shared_ptr<TLSConnectionHandler> _tlscon_handler;
     std::shared_ptr<ServerTime> _server_time;
-    std::shared_ptr<ThreadPoolHandler> _thread_pool_handler;
+    std::shared_ptr<ThreadPoolHandler> _heartbeat_pool;
+    std::shared_ptr<ThreadPoolHandler> _realtime_pool;
+    std::shared_ptr<ThreadPoolHandler> _background_pool;
     
     
     // ドメイン層
