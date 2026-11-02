@@ -37,3 +37,27 @@ gtest_discover_tests(
     PROPERTIES
     LABELS "domain"
 )
+
+# AuthenticationServerのテストをビルド(auth_coreライブラリが存在する場合のみ)
+if(TARGET auth_core)
+    add_executable(
+        auth_tests
+        AuthenticationServer/SessionTokenHandlerTest.cpp
+        AuthenticationServer/AuthMessageValidationTest.cpp
+        AuthenticationServer/AuthenticationServiceTest.cpp
+    )
+
+    target_link_libraries(
+        auth_tests
+        PRIVATE
+        auth_core
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    gtest_discover_tests(
+        auth_tests
+        PROPERTIES
+        LABELS "auth"
+    )
+endif()

@@ -1,4 +1,4 @@
-#include "TokenHandler.hpp"
+#include "Infrastructure/TokenHandler.hpp"
 
 namespace {
 std::uint64_t get_exp_leeway_seconds() {
@@ -11,14 +11,15 @@ std::uint64_t get_exp_leeway_seconds() {
     try {
         return std::stoull(raw);
     } catch (...) {
-        spdlog::warn("Invalid JWT_EXP_LEEWAY_SEC value: {}. Fallback to {} sec.", raw, kDefaultLeewaySec);
+        LOG_WARNING("Invalid JWT_EXP_LEEWAY_SEC value: {}. Fallback to {} sec.", raw, kDefaultLeewaySec);
         return kDefaultLeewaySec;
     }
 }
 }
 
-TokenHandler::TokenHandler() {
-    // 必要なら初期化処理を書く
+TokenHandler::TokenHandler(const std::string& firebase_project_id)
+    : _firebase_project_id(firebase_project_id)
+{
 }
 
 TokenHandler::~TokenHandler() {
@@ -35,7 +36,7 @@ bool TokenHandler::verify_token(const std::string &token, std::string &uid, std:
         // jwtトークンをデコード
         auto decoded_token = jwt::decode(token);
         std::string kid = decoded_token.get_key_id();
-        spdlog::debug("Setting up JWT verifier with KID: {}", kid);
+        LOG_DEBUG("Setting up JWT verifier with KID: {}", kid);
         std::string key_pass = get_key_pass(kid);
         if (key_pass.empty()) {
             LOG_ERROR("No PEM file found for KID: {}", kid);
@@ -46,20 +47,20 @@ bool TokenHandler::verify_token(const std::string &token, std::string &uid, std:
             LOG_ERROR("Failed to read PEM file for KID: {}", kid);
             return false; // Failed to read the PEM file
         }else{
-            spdlog::debug("PEM file content read successfully for KID: {}", kid);
+            LOG_DEBUG("PEM file content read successfully for KID: {}", kid);
         }
         const auto leeway_sec = get_exp_leeway_seconds();
         auto verify = jwt::verify()
                           .allow_algorithm(jwt::algorithm::rs256(rsa_pub_key, "", "", ""))
-                          .with_issuer("https://securetoken.google.com/talklink-8b0d0")
-                          .with_audience("talklink-8b0d0")
+                          .with_issuer("https://securetoken.google.com/" + _firebase_project_id)
+                          .with_audience(_firebase_project_id)
                           .leeway(leeway_sec);
 
         verify.verify(decoded_token); // Verify the token
 
         if(decoded_token.has_subject() == true) {
             uid = decoded_token.get_subject();
-            spdlog::debug("Token subject (CID): {}", uid);
+            LOG_DEBUG("Token subject (CID): {}", uid);
         }else{
             LOG_ERROR("Token does not have a subject.");
             return false; // Token does not have a subject

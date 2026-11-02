@@ -1,4 +1,4 @@
-#include "Messages/AuthRequestMessage.hpp"
+#include "Domain/Entity/Messages/AuthRequestMessage.hpp"
 
 
 // コンストラクタ
@@ -83,7 +83,7 @@ bool AuthRequestMessage::validate_value() const
         if(is_valid_jwt(this->jwt) == false){
             throw std::runtime_error("Invalid JWT value.");
         }
-        spdlog::debug("AuthRequestMessage value validation succeeded.");
+        LOG_DEBUG("AuthRequestMessage value validation succeeded.");
         return true;
     }
     catch(const std::exception& e)
@@ -147,7 +147,7 @@ bool AuthRequestMessage::is_valid_jwt(const std::string &jwt) const
             return false;
         }
         
-        spdlog::debug("JWT format validation passed");
+        LOG_DEBUG("JWT format validation passed");
         return true;
     }
     catch (const std::exception& e)

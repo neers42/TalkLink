@@ -1,4 +1,4 @@
-#include "RedisAdapter.hpp"
+#include "Infrastructure/RedisAdapter.hpp"
 
 RedisAdapter::RedisAdapter()
 {
@@ -8,12 +8,12 @@ RedisAdapter::RedisAdapter()
 #ifdef _WIN32
     size_t len = 0;
     if (_dupenv_s(&env_host, &len, "REDIS_HOST") == 0 && env_host != nullptr) {
-        spdlog::debug("REDIS_HOST: {}", env_host);
+        LOG_DEBUG("REDIS_HOST: {}", env_host);
     } else {
         LOG_ERROR("REDIS_HOST environment variable is not set.");
     }
     if (_dupenv_s(&env_port, &len, "REDIS_PORT") == 0 && env_port != nullptr) {
-        spdlog::debug("REDIS_PORT: {}", env_port);
+        LOG_DEBUG("REDIS_PORT: {}", env_port);
     } else {
         LOG_ERROR("REDIS_PORT environment variable is not set.");
     }
@@ -72,7 +72,7 @@ bool RedisAdapter::save_session(
         }
         else
         {
-            spdlog::critical(
+            LOG_ERROR(
                 "Failed to delete session data for UID: {} from Redis.",
                 uid);
         }
@@ -83,14 +83,4 @@ bool RedisAdapter::save_session(
     LOG_INFO("Session data for UID: {} has been stored in Redis.", uid);
 
     return true;
-}
-
-bool RedisAdapter::get_session(const std::string &uid, std::string &jwt_token, std::uint64_t &expire)
-{
-    return false;
-}
-
-bool RedisAdapter::delete_session(const std::string &uid)
-{
-    return false;
 }

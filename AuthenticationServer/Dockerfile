@@ -24,14 +24,20 @@ COPY CMakeLists.txt ./
 COPY CommonLib ./CommonLib
 COPY AuthenticationServer ./AuthenticationServer
 COPY ThirdParty ./ThirdParty
+COPY Tests ./Tests
 COPY config ./config
 
 # ビルドタイプ(dockerコンポーズ等から --build-arg で上書き可能、デフォルトは本番用のRelease)
 ARG BUILD_TYPE=Release
 
-# ビルド
-RUN cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_AUTH_SERVER=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && \
-    cmake --build build --target AuthenticationServer
+# ビルド(テストも実行し、失敗したらイメージを作らない)
+RUN cmake -S . -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    -DBUILD_AUTH_SERVER=ON \
+    -DBUILD_TESTS=ON \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && \
+    cmake --build build --target AuthenticationServer auth_tests && \
+    ctest --test-dir build -L auth --output-on-failure
 
 # ===============================
 # Runtime Stage

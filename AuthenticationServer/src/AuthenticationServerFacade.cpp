@@ -1,8 +1,10 @@
 ﻿#include "AuthenticationServerFacade.hpp"
-#include "RedisAdapter.hpp"
-#include "TokenHandler.hpp"
-#include "SessionTokenHandler.hpp"
+#include "Infrastructure/RedisAdapter.hpp"
+#include "Infrastructure/TokenHandler.hpp"
+#include "Domain/SessionTokenHandler.hpp"
+#include "Application/Services/AuthenticationService.hpp"
 #include "EnvHelper.hpp"
+#include "inicpp.h"
 
 AuthenticationServerFacade::AuthenticationServerFacade()
 {
@@ -23,16 +25,26 @@ AuthenticationServerFacade::AuthenticationServerFacade()
 	_socket_handler = std::make_unique<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
 	_thread_pool_handler = std::make_unique<ThreadPoolHandler>(10);
 	_tlscon_handler = std::make_unique<TLSConnectionHandler>(_cert_path, _key_path);
-	_redis_adapter = std::make_unique<RedisAdapter>();
-	_token_handler = std::make_unique<TokenHandler>();
-	_session_token_handler = std::make_unique<SessionTokenHandler>();
-	
+
+	// auth.confの読み込み(Firebaseプロジェクト設定)
+	ini::IniFile auth_config;
+	auth_config.load(AUTH_CONFIG_FILE_PATH);
+	const std::string firebase_project_id = auth_config["Firebase"]["project_id"].as<std::string>();
+
+	// JWT検証->セッション発行のオーケストレーションはAuthenticationServiceに委譲する。
+	// (本番用の実装をここで組み立てる。テストではAuthenticationServiceを
+	//  フェイク実装と直接構築することで、本物のRedis/Firebase証明書無しに
+	//  検証ロジックだけをテストできる)
+	_authentication_service = std::make_shared<AuthenticationService>(
+		std::make_shared<TokenHandler>(firebase_project_id),
+		std::make_shared<RedisAdapter>(),
+		std::make_shared<SessionTokenHandler>()
+	);
+
 	if (_socket_handler == nullptr
 		|| _thread_pool_handler == nullptr
 		|| _tlscon_handler == nullptr
-		|| _redis_adapter == nullptr
-		|| _token_handler == nullptr
-		|| _session_token_handler == nullptr)
+		|| _authentication_service == nullptr)
 	{
 		LOG_ERROR("Failed to initialize AuthenticationServerFacade components. Please check the configuration and try again.");
 		exit(1);
@@ -105,7 +117,7 @@ bool AuthenticationServerFacade::accept_client_socket_process() {
 	}
 	else
 	{
-		spdlog::info("accept success!! client socket :{}", new_client_socket);
+		LOG_INFO("accept success!! client socket :{}", new_client_socket);
 		new_client_ipv4_addr = this->_socket_handler->extraction_user_ip_address(new_client_sockaddr_in, sizeof(new_client_ipv4_addr));
 	}
 #ifdef USE_POLL
@@ -129,7 +141,7 @@ bool AuthenticationServerFacade::accept_client_socket_process() {
 	else
 	{
 		this->_tlscon_handler->get_peer_cetificate(new_client_ssl);
-		spdlog::info("client ip : {} , success, server accept client(socket:{}).", new_client_ipv4_addr, new_client_socket);
+		LOG_INFO("client ip : {} , success, server accept client(socket:{}).", new_client_ipv4_addr, new_client_socket);
 #ifdef USE_POLL
 		//アクセプトしたクライアントの通知を検知できるようにepollの設定を実施
 		this->_socket_handler->add_epoll_ctrl(new_client_socket);
@@ -197,7 +209,7 @@ void AuthenticationServerFacade::auth_handle_process(const socket_t socket)
 				return;
 			}
 			receive_token = auth_request_instance->get_jwt();
-			verify_result = this->verify_auth_process(receive_token, uid, expire, ttl, session_token);
+			verify_result = this->_authentication_service->verify_auth_process(receive_token, uid, expire, ttl, session_token);
 			if(verify_result == true){
 				LOG_INFO("Authentication succeeded for client(socket : {}). CID: {}, Expire: {}, TTL: {}.", socket, uid, expire, ttl);
 			}else{
@@ -268,7 +280,7 @@ void AuthenticationServerFacade::handle_disconnect_process(const socket_t socket
 #endif
 	this->_tlscon_handler->shutdown_ssl(client_ssl);
 	this->_socket_handler->close_socket(socket);
-	spdlog::info("User with socket {} has been disconnected and cleaned up.", socket);
+	LOG_INFO("User with socket {} has been disconnected and cleaned up.", socket);
 	_ssl_list.erase(it);
 }
 
@@ -286,41 +298,3 @@ json AuthenticationServerFacade::make_auth_response(const std::string &status, c
 	return response;
 }
 
-bool AuthenticationServerFacade::verify_auth_process(
-	const std::string &jwt, 
-	std::string &uid, 
-	std::uint64_t &expire, 
-	std::uint64_t& ttl, 
-	std::string& session_token)
-{
-	try
-	{
-		// 検証を実施し、トークンが有効な場合の処理
-		if (this->_token_handler->verify_token(jwt, uid, expire) == true)
-		{
-			session_token = _session_token_handler->generate_token();
-			auto session_token_hash = _session_token_handler->hash_token(session_token);
-
-			if (this->_redis_adapter->save_session(uid, session_token_hash, expire, ttl) == true)
-			{
-				spdlog::info("Session saved in Redis for CID: {} with TTL: {}.", uid, ttl);
-				return true;
-			}
-			else
-			{
-				LOG_ERROR("Failed to save session in Redis for CID: {}.", uid);
-				return false;
-			}
-		}
-		else
-		{
-			LOG_ERROR("Invalid jwt received from client(socket : {}).", socket);
-			return false;
-		}
-	}
-	catch (const std::exception &e)
-	{
-		LOG_ERROR("Exception : {}", e.what());
-		return false;
-	}
-}

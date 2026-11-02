@@ -1,4 +1,4 @@
-#include "SessionTokenHandler.hpp"
+#include "Domain/SessionTokenHandler.hpp"
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
