@@ -312,7 +312,7 @@ bool StartupService::configure_request_dispatching()
         // Message handle callback設定 - TaskManagementService経由でマルチスレッド処理
         dispatcher->set_message_handle_callback([this](const MessageDispatchResult& result) {
             LOG_DEBUG("[RequestDispatcherService] Message dispatch callback triggered - socket: {}, type: {}, success: {}",
-                     result.socket, static_cast<int>(result.type), result.success);
+                     result.socket, to_string(result.type), result.success);
 
             // 認証が必要なメッセージ種別は、未認証のソケットからの場合は処理せず破棄する
             // (SESSION_REQUEST/HEARTBEAT/DISCONNECTはSIGNIN前の接続でも必要なため対象外)

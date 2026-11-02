@@ -30,6 +30,24 @@ struct MessageDispatchResult {
         : type(t), socket(s), success(true) {}
 };
 
+// MessageDispatchResult::Typeをログ出力用の文字列に変換
+inline const char* to_string(MessageDispatchResult::Type type) {
+    using Type = MessageDispatchResult::Type;
+    switch (type) {
+    case Type::ACCEPT_REQUEST:       return "ACCEPT REQUEST";
+    case Type::HEARTBEAT:            return "HEARTBEAT";
+    case Type::SESSION_REQUEST:      return "SESSION REQUEST";
+    case Type::CHAT_MESSAGE:         return "CHAT MESSAGE";
+    case Type::CHATROOM_CONTROL:     return "CHATROOM CONTROL";
+    case Type::USER_SETTING_CONTROL: return "USER SETTING CONTROL";
+    case Type::USER_SEARCH_REQUEST:  return "USER SEARCH REQUEST";
+    case Type::SYNC_REQUEST:         return "SYNC REQUEST";
+    case Type::DISCONNECT:           return "DISCONNECT";
+    case Type::ERROR:                return "ERROR";
+    }
+    return "UNKNOWN";
+}
+
 class RequestDispatcherService {
 public:
     // コールバック型定義
