@@ -64,7 +64,7 @@ void TaskManagementService::execute_managed_task(const std::string& task_id, std
     bool success = false;
     try {
         // 過負荷保護をチェック
-        if (_overload_protection && _active_tasks.size() > 150) {
+        if (_overload_protection && _active_tasks.size() > get_overload_config().active_task_hard_limit) {
             LOG_WARNING("[TaskManagementService] Task {} skipped due to overload protection", task_id);
             clear_current_task_id();
             return;
@@ -147,6 +147,20 @@ TaskManagementService::TaskMetrics TaskManagementService::get_task_metrics() con
 bool TaskManagementService::is_overloaded() const
 {
     return _overload_protection.load();
+}
+
+void TaskManagementService::update_overload_config(const OverloadProtectionConfig& config)
+{
+    std::lock_guard<std::mutex> lock(_overload_config_mutex);
+    _overload_config = config;
+    LOG_INFO("[TaskManagementService] Overload protection config updated - max_active_tasks: {}, active_task_hard_limit: {}, overload_recovery_ratio: {}",
+             config.max_active_tasks, config.active_task_hard_limit, config.overload_recovery_ratio);
+}
+
+OverloadProtectionConfig TaskManagementService::get_overload_config() const
+{
+    std::lock_guard<std::mutex> lock(_overload_config_mutex);
+    return _overload_config;
 }
 
 
@@ -286,14 +300,15 @@ void TaskManagementService::check_system_overload()
         
         size_t active_count = _active_tasks.size();
         auto current_time = std::chrono::steady_clock::now();
-        
+
         // シンプルな過負荷検出: アクティブタスクが多すぎる
-        const size_t MAX_ACTIVE_TASKS = 100;
-        
+        const auto overload_config = get_overload_config();
+        const size_t MAX_ACTIVE_TASKS = overload_config.max_active_tasks;
+
         if (active_count > MAX_ACTIVE_TASKS) {
             _overload_protection.store(true);
             LOG_WARNING("[TaskManagementService] System overload detected: {} active tasks", active_count);
-        } else if (active_count < MAX_ACTIVE_TASKS * 0.7) { // 70% 以下で過負荷解除
+        } else if (active_count < MAX_ACTIVE_TASKS * overload_config.overload_recovery_ratio) {
             _overload_protection.store(false);
         }
         

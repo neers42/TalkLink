@@ -10,7 +10,7 @@
 #include "LogHandler.hpp"
 
 class UserRepositoryHandler;
-class RedisAdapter;
+class ISessionRepository;
 class MySQLAdapter;
 class ServerTime;
 class IUserRepository;
@@ -53,7 +53,7 @@ public:
      */
     SessionHandler(
         std::shared_ptr<UserRepositoryHandler> repository,
-        std::shared_ptr<RedisAdapter> redis_client,
+        std::shared_ptr<ISessionRepository> redis_client,
         std::shared_ptr<IUserRepository> user_repository,
         std::shared_ptr<IMessageRepository> message_repository,
         std::shared_ptr<ServerTime> server_time
@@ -119,7 +119,7 @@ public:
 
 private:
     std::shared_ptr<UserRepositoryHandler> _repository;
-    std::shared_ptr<RedisAdapter> _redis_adapter;
+    std::shared_ptr<ISessionRepository> _redis_adapter;
     std::shared_ptr<IUserRepository> _user_repository;
     std::shared_ptr<IMessageRepository> _message_repository;
     std::shared_ptr<MySQLAdapter> _mysql_adapter;

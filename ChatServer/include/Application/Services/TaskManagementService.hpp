@@ -55,6 +55,13 @@ struct ActiveTaskInfo {
     std::chrono::milliseconds max_execution_time;
 };
 
+// 過負荷保護の設定パラメータ
+struct OverloadProtectionConfig {
+    size_t max_active_tasks{100};        // この値を超えたアクティブタスク数で過負荷と判定する
+    size_t active_task_hard_limit{150};  // 過負荷中にこの値を超えたら新規タスクの実行をスキップする
+    double overload_recovery_ratio{0.7}; // max_active_tasks×この比率を下回ったら過負荷状態を解除する
+};
+
 class TaskManagementService {
 private:
     // カテゴリごとに物理的に分離したスレッドプール。
@@ -80,7 +87,9 @@ private:
     std::atomic<bool> _overload_protection{false};        // 現在過負荷状態かどうか
     std::atomic<bool> _overload_protection_enabled{false}; // 過負荷監視機能自体の有効/無効
     std::chrono::milliseconds _overload_threshold{100}; // タスク平均実行時間(ms)
-    
+    OverloadProtectionConfig _overload_config;
+    mutable std::mutex _overload_config_mutex;
+
 public:
     TaskManagementService(
         std::shared_ptr<ThreadPoolHandler> heartbeat_pool,
@@ -110,11 +119,11 @@ public:
         auto metadata = TaskMetadata(task_id, priority, category, description);
         
         auto bound_task = std::bind(std::forward<F>(func), std::forward<Args>(args)...);
-        auto managed_task = ManagedTask(metadata,
-                                       [this, task_id, bound_task, timeout]() {
-                                           execute_managed_task(task_id, bound_task, timeout);
-                                       }, timeout);
-        
+        // task_functionはそのままbound_taskを持たせる(enqueue_by_priorityが
+        // execute_managed_taskを呼ぶため、ここでさらにラップすると
+        // execute_managed_taskが二重に呼ばれ、メトリクスが二重計上されてしまう)
+        auto managed_task = ManagedTask(metadata, bound_task, timeout);
+
         enqueue_by_priority(std::move(managed_task));
         return task_id;
     }
@@ -142,6 +151,10 @@ public:
     // システムヘルスモニタリングと過負荷保護
     void enable_overload_protection(bool enabled = true);
     bool is_overloaded() const;
+
+    // 過負荷保護の設定(しきい値等)を更新/取得する
+    void update_overload_config(const OverloadProtectionConfig& config);
+    OverloadProtectionConfig get_overload_config() const;
     
     // ==================== スレッドローカルタスク管理 ====================
     

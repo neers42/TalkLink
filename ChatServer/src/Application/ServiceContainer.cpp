@@ -102,6 +102,12 @@ void ServiceContainer::initialize() {
         LOG_INFO("[ServiceContainer] Thread pool sizing - hardware_concurrency: {}, heartbeat: {}, realtime: {}, background: {}",
                  hardware_concurrency, heartbeat_pool_threads, realtime_pool_threads, background_pool_threads);
 
+        // OverloadProtectionSettingsの読み込み(TaskManagementServiceの過負荷保護しきい値)
+        OverloadProtectionConfig overload_protection_config;
+        overload_protection_config.max_active_tasks = static_cast<size_t>(chat_config["OverloadProtectionSettings"]["max_active_tasks"].as<int>());
+        overload_protection_config.active_task_hard_limit = static_cast<size_t>(chat_config["OverloadProtectionSettings"]["active_task_hard_limit"].as<int>());
+        overload_protection_config.overload_recovery_ratio = chat_config["OverloadProtectionSettings"]["overload_recovery_ratio"].as<double>();
+
         // Phase 1: インフラストラクチャ層の共有リソースを初期化
         _server_time = std::make_shared<ServerTime>();
         _socket_handler = std::make_shared<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
@@ -123,6 +129,7 @@ void ServiceContainer::initialize() {
         // Phase 2: タスク管理層を初期化
         _task_management_service = std::make_shared<TaskManagementService>(
             _heartbeat_pool, _realtime_pool, _background_pool);
+        _task_management_service->update_overload_config(overload_protection_config);
         
         // Phase 3: データストレージを初期化
         _user_store = std::make_shared<UserAggregateStore>();

@@ -311,7 +311,7 @@ bool StartupService::configure_request_dispatching()
         
         // Message handle callback設定 - TaskManagementService経由でマルチスレッド処理
         dispatcher->set_message_handle_callback([this](const MessageDispatchResult& result) {
-            LOG_DEBUG("[RequestDispatcherService] Message dispatch callback triggered - socket: {}, type: {}, success: {}",
+            LOG_DEBUG("[StartupService] Message dispatch callback triggered - socket: {}, type: {}, success: {}",
                      result.socket, to_string(result.type), result.success);
 
             // 認証が必要なメッセージ種別は、未認証のソケットからの場合は処理せず破棄する
@@ -416,10 +416,10 @@ bool StartupService::configure_request_dispatching()
                     break;
                     
                 default:
-                    LOG_ERROR("[RequestDispatcherService] Unknown message type ({}) or error occurred for socket: {}", 
+                    LOG_ERROR("[StartupService] Unknown message type ({}) or error occurred for socket: {}",
                              static_cast<int>(result.type), result.socket);
                     if (!result.success) {
-                        LOG_ERROR("[RequestDispatcherService] Error message: {}", result.error_message);
+                        LOG_ERROR("[StartupService] Error message: {}", result.error_message);
                     }
                     break;
             }

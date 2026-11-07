@@ -1,13 +1,13 @@
 #include "Domain/SessionHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
-#include "Infrastructure/RedisAdapter.hpp"
+#include "Domain/Interfaces/ISessionRepository.hpp"
 #include "Domain/Interfaces/IUserRepository.hpp"
 #include "Domain/Interfaces/IMessageRepository.hpp"
 #include "ServerTime.hpp"
 
 SessionHandler::SessionHandler(
     std::shared_ptr<UserRepositoryHandler> repository,
-    std::shared_ptr<RedisAdapter> redis_adapter,
+    std::shared_ptr<ISessionRepository> redis_adapter,
     std::shared_ptr<IUserRepository> user_repository,
     std::shared_ptr<IMessageRepository> message_repository,
     std::shared_ptr<ServerTime> server_time)

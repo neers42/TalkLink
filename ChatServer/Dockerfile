@@ -48,8 +48,8 @@ RUN cmake -S . -B build -G Ninja \
     -DBUILD_TESTS=ON \
     -DWITH_MYSQL=ON \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 && \
-    cmake --build build --target ChatServer domain_tests && \
-    ctest --test-dir build -L domain --output-on-failure
+    cmake --build build --target ChatServer domain_tests application_tests && \
+    ctest --test-dir build -L "domain|application" --output-on-failure
 
 
 # ===============================

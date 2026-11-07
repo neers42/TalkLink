@@ -30,8 +30,6 @@ void RequestDispatcherService::allocate_process(socket_t socket) {
         return;
     }
     
-    LOG_DEBUG("[RequestDispatcherService] Processing socket: {}", socket);
-    
     // リッスンソケットかどうかで処理を振り分け
     if (is_listen_socket(socket)) {
         // 新しいクライアントの接続リクエスト
@@ -43,13 +41,12 @@ void RequestDispatcherService::allocate_process(socket_t socket) {
         }
     } else {
         // 既存クライアントからのメッセージ
-        LOG_DEBUG("[RequestDispatcherService] User socket detected - processing message for socket: {}", socket);
         if (_message_handle_callback) {
             auto result = receive_and_dispatch_message(socket);
-            LOG_DEBUG("[RequestDispatcherService] Dispatching message result for socket: {} - type: {}, success: {}", 
-                     socket, static_cast<int>(result.type), result.success);
+            // 結果の内容はこの直後に呼ばれるmessage_handle_callback側
+            // ("Message dispatch callback triggered")で型名付きで出力されるため、
+            // ここで同じ内容を重複して出力しない
             _message_handle_callback(result);
-            LOG_DEBUG("[RequestDispatcherService] Message handle callback completed for socket: {}", socket);
         } else {
             LOG_WARNING("[RequestDispatcherService] Message handle callback not set");
         }
@@ -60,8 +57,6 @@ MessageDispatchResult RequestDispatcherService::receive_and_dispatch_message(soc
     MessageDispatchResult result(MessageDispatchResult::Type::ERROR, socket);
     
     try {
-        LOG_DEBUG("[RequestDispatcherService] Starting message processing for socket: {}", socket);
-        
         // ソケット状態確認
         if (_socket_handler->is_socket_closed(socket)) {
             LOG_WARNING("[RequestDispatcherService] Socket {} is already closed - returning DISCONNECT", socket);
@@ -75,7 +70,6 @@ MessageDispatchResult RequestDispatcherService::receive_and_dispatch_message(soc
         bool disconnect_flag = false;
         bool recv_flag = true;
         
-        LOG_DEBUG("[RequestDispatcherService] Calling communication_handler->receive_message for socket: {}", socket);
         //オリジナルのJSONを受信
         std::tie(receive_json, disconnect_flag, recv_flag) = _communication_handler->receive_message(socket);
         
@@ -158,12 +152,7 @@ bool RequestDispatcherService::is_listen_socket(socket_t socket) {
     }
     
     socket_t listen_socket = _socket_handler->get_listen_socket();
-    bool is_listen = socket == listen_socket;
-    
-    LOG_DEBUG("[RequestDispatcherService] Socket check - input: {}, listen: {}, is_listen: {}", 
-              socket, listen_socket, is_listen);
-    
-    return is_listen;
+    return socket == listen_socket;
 }
 
 void RequestDispatcherService::start_socket_monitoring() {

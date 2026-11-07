@@ -1,8 +1,7 @@
 #include "Domain/ChatroomSequenceHandler.hpp"
+#include "Domain/Interfaces/IRoomSequenceRepository.hpp"
 
-#include "Infrastructure/RedisAdapter.hpp"
-
-ChatroomSequenceHandler::ChatroomSequenceHandler(std::shared_ptr<RedisAdapter> redis_adapter)
+ChatroomSequenceHandler::ChatroomSequenceHandler(std::shared_ptr<IRoomSequenceRepository> redis_adapter)
     : _redis_adapter(std::move(redis_adapter))
 {
     if (!_redis_adapter) {

@@ -20,6 +20,7 @@ add_executable(
     ChatServer/Domain/ChatroomIDGeneratorTest.cpp
     ChatServer/Domain/MessageValidationTest.cpp
     ChatServer/Domain/UserAuthStatusTest.cpp
+    ChatServer/Domain/ChatroomSequenceHandlerTest.cpp
 )
 
 # Domainのテストに必要なインクルードディレクトリを設定
@@ -36,6 +37,7 @@ gtest_discover_tests(
     domain_tests
     PROPERTIES
     LABELS "domain"
+    ENVIRONMENT "CHAT_SERVER_MACHINE_ID=1"
 )
 
 # AuthenticationServerのテストをビルド(auth_coreライブラリが存在する場合のみ)
@@ -59,5 +61,31 @@ if(TARGET auth_core)
         auth_tests
         PROPERTIES
         LABELS "auth"
+    )
+endif()
+
+# ChatServer Application層のテストをビルド(applicationライブラリが存在する場合のみ)
+if(TARGET application)
+    add_executable(
+        application_tests
+        ChatServer/Application/SyncServiceTest.cpp
+        ChatServer/Application/TaskManagementServiceTest.cpp
+        ChatServer/Application/ChatroomManagementServiceTest.cpp
+        ChatServer/Application/ChatServiceTest.cpp
+    )
+
+    target_link_libraries(
+        application_tests
+        PRIVATE
+        application
+        GTest::gtest
+        GTest::gtest_main
+    )
+
+    gtest_discover_tests(
+        application_tests
+        PROPERTIES
+        LABELS "application"
+        ENVIRONMENT "CHAT_SERVER_MACHINE_ID=1"
     )
 endif()
