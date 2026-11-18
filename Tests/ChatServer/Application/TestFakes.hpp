@@ -123,9 +123,15 @@ public:
 // IUserRepositoryのテスト用フェイク実装
 class FakeUserRepository : public IUserRepository {
 public:
-    bool insert_user_info_data(const std::string&, const std::string&, const std::string&,
+    bool insert_user_info_data_called = false;
+    bool insert_user_info_data_result = true;
+    std::string last_inserted_uid;
+
+    bool insert_user_info_data(const std::string& uid, const std::string&, const std::string&,
                                 const std::string&, const std::string&, const std::string&) override {
-        return true;
+        insert_user_info_data_called = true;
+        last_inserted_uid = uid;
+        return insert_user_info_data_result;
     }
     UserInfo get_user_info(const std::string& uid) override {
         return UserInfo(uid, "", "", "");
@@ -232,7 +238,9 @@ public:
     }
 
     std::optional<std::string> get_session(const std::string& session_token_hash) override {
-        auto it = sessions.find(session_token_hash);
+        // 実際のRedisAdapter::get_sessionは"session:"+ハッシュのキーで保存しているため、
+        // フェイクも同じキー形式(sessionsマップには"session:"プレフィックス付きで格納)を再現する。
+        auto it = sessions.find("session:" + session_token_hash);
         if (it == sessions.end()) {
             return std::nullopt;
         }

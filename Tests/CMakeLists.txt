@@ -21,6 +21,13 @@ add_executable(
     ChatServer/Domain/MessageValidationTest.cpp
     ChatServer/Domain/UserAuthStatusTest.cpp
     ChatServer/Domain/ChatroomSequenceHandlerTest.cpp
+    ChatServer/Domain/MessageIDGeneratorTest.cpp
+    ChatServer/Domain/UserAggregateStoreTest.cpp
+    ChatServer/Domain/UserEntityTest.cpp
+    ChatServer/Domain/ControlAndSessionMessageValidationTest.cpp
+    ChatServer/Domain/UnimplementedMessageStubTest.cpp
+    ChatServer/Domain/ChatroomRepositoryHandlerTest.cpp
+    ChatServer/Domain/SessionHandlerTest.cpp
 )
 
 # Domainのテストに必要なインクルードディレクトリを設定
