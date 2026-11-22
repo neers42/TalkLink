@@ -4,9 +4,9 @@
 #include <hiredis/hiredis.h>
 #include "common.h"
 #include "Database/RedisHelper.hpp"
-#include "Domain/Interfaces/IRedisAdapter.hpp"
+#include "Domain/Interfaces/ISessionStore.hpp"
 
-class RedisAdapter : public IRedisAdapter {
+class RedisAdapter : public ISessionStore {
 
 private:
     std::unique_ptr<RedisHelper> _redis_helper; // Redisヘルパーオブジェクト

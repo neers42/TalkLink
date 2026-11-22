@@ -5,7 +5,7 @@
 #include <cstdint>
 
 class ITokenVerifier;
-class IRedisAdapter;
+class ISessionStore;
 class SessionTokenHandler;
 
 /**
@@ -13,7 +13,7 @@ class SessionTokenHandler;
  * 認証処理のオーケストレーションのみを担う(ソケット/TLS等のネットワーク
  * 処理はAuthenticationServerFacade側に残す)。
  *
- * 依存をITokenVerifier/IRedisAdapterのインターフェース経由で受け取るため、
+ * 依存をITokenVerifier/ISessionStoreのインターフェース経由で受け取るため、
  * 実際のFirebase証明書やRedisサーバーを用意せずに単体テストできる。
  */
 class AuthenticationService
@@ -21,7 +21,7 @@ class AuthenticationService
 public:
     AuthenticationService(
         std::shared_ptr<ITokenVerifier> token_verifier,
-        std::shared_ptr<IRedisAdapter> redis_adapter,
+        std::shared_ptr<ISessionStore> session_store,
         std::shared_ptr<SessionTokenHandler> session_token_handler
     );
 
@@ -35,7 +35,7 @@ public:
 
 private:
     std::shared_ptr<ITokenVerifier> _token_verifier;
-    std::shared_ptr<IRedisAdapter> _redis_adapter;
+    std::shared_ptr<ISessionStore> _session_store;
     std::shared_ptr<SessionTokenHandler> _session_token_handler;
 };
 

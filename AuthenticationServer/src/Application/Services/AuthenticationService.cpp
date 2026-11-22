@@ -1,19 +1,19 @@
 #include "Application/Services/AuthenticationService.hpp"
 #include "Domain/Interfaces/ITokenVerifier.hpp"
-#include "Domain/Interfaces/IRedisAdapter.hpp"
+#include "Domain/Interfaces/ISessionStore.hpp"
 #include "Domain/SessionTokenHandler.hpp"
 #include "LogHandler.hpp"
 #include <stdexcept>
 
 AuthenticationService::AuthenticationService(
     std::shared_ptr<ITokenVerifier> token_verifier,
-    std::shared_ptr<IRedisAdapter> redis_adapter,
+    std::shared_ptr<ISessionStore> session_store,
     std::shared_ptr<SessionTokenHandler> session_token_handler)
     : _token_verifier(std::move(token_verifier)),
-      _redis_adapter(std::move(redis_adapter)),
+      _session_store(std::move(session_store)),
       _session_token_handler(std::move(session_token_handler))
 {
-    if (!_token_verifier || !_redis_adapter || !_session_token_handler) {
+    if (!_token_verifier || !_session_store || !_session_token_handler) {
         throw std::runtime_error("Failed to initialize AuthenticationService dependencies");
     }
 }
@@ -33,7 +33,7 @@ bool AuthenticationService::verify_auth_process(
             session_token = _session_token_handler->generate_token();
             auto session_token_hash = _session_token_handler->hash_token(session_token);
 
-            if (this->_redis_adapter->save_session(uid, session_token_hash, expire, ttl) == true)
+            if (this->_session_store->save_session(uid, session_token_hash, expire, ttl) == true)
             {
                 LOG_INFO("Session saved in Redis for CID: {} with TTL: {}.", uid, ttl);
                 return true;

@@ -2,7 +2,7 @@
 
 #include "Application/Services/AuthenticationService.hpp"
 #include "Domain/Interfaces/ITokenVerifier.hpp"
-#include "Domain/Interfaces/IRedisAdapter.hpp"
+#include "Domain/Interfaces/ISessionStore.hpp"
 #include "Domain/SessionTokenHandler.hpp"
 
 namespace {
@@ -24,8 +24,8 @@ public:
     }
 };
 
-// IRedisAdapterのテスト用フェイク実装(実際のRedisサーバーに接続しない)
-class FakeRedisAdapter : public IRedisAdapter {
+// ISessionStoreのテスト用フェイク実装(実際のRedisサーバーに接続しない)
+class FakeSessionStore : public ISessionStore {
 public:
     bool should_succeed = true;
     std::string last_uid;
@@ -56,14 +56,14 @@ class AuthenticationServiceTest : public ::testing::Test {
 protected:
     void SetUp() override {
         fake_token_verifier = std::make_shared<FakeTokenVerifier>();
-        fake_redis_adapter = std::make_shared<FakeRedisAdapter>();
+        fake_session_store = std::make_shared<FakeSessionStore>();
         session_token_handler = std::make_shared<SessionTokenHandler>();
         service = std::make_shared<AuthenticationService>(
-            fake_token_verifier, fake_redis_adapter, session_token_handler);
+            fake_token_verifier, fake_session_store, session_token_handler);
     }
 
     std::shared_ptr<FakeTokenVerifier> fake_token_verifier;
-    std::shared_ptr<FakeRedisAdapter> fake_redis_adapter;
+    std::shared_ptr<FakeSessionStore> fake_session_store;
     std::shared_ptr<SessionTokenHandler> session_token_handler;
     std::shared_ptr<AuthenticationService> service;
 };
@@ -82,8 +82,8 @@ TEST_F(AuthenticationServiceTest, ValidJwtProducesSessionTokenAndSavesSession)
     EXPECT_EQ(expire, 1234567890u);
     EXPECT_EQ(ttl, 3600u);
     EXPECT_EQ(session_token.size(), 64u); // SessionTokenHandler::generate_tokenの実装に基づく
-    EXPECT_EQ(fake_redis_adapter->last_uid, "uid_test_0000000001");
-    EXPECT_FALSE(fake_redis_adapter->last_session_token_hash.empty());
+    EXPECT_EQ(fake_session_store->last_uid, "uid_test_0000000001");
+    EXPECT_FALSE(fake_session_store->last_session_token_hash.empty());
 }
 
 TEST_F(AuthenticationServiceTest, InvalidJwtFailsWithoutTouchingRedis)
@@ -96,12 +96,12 @@ TEST_F(AuthenticationServiceTest, InvalidJwtFailsWithoutTouchingRedis)
 
     EXPECT_FALSE(result);
     EXPECT_TRUE(session_token.empty());
-    EXPECT_TRUE(fake_redis_adapter->last_uid.empty()); // Redisには保存されていないはず
+    EXPECT_TRUE(fake_session_store->last_uid.empty()); // Redisには保存されていないはず
 }
 
 TEST_F(AuthenticationServiceTest, RedisSaveFailureReturnsFalse)
 {
-    fake_redis_adapter->should_succeed = false;
+    fake_session_store->should_succeed = false;
     std::string uid, session_token;
     std::uint64_t expire = 0, ttl = 0;
 
