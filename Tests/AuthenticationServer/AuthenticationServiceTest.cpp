@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 
 #include "Application/Services/AuthenticationService.hpp"
-#include "Domain/Interfaces/ITokenHandler.hpp"
+#include "Domain/Interfaces/ITokenVerifier.hpp"
 #include "Domain/Interfaces/IRedisAdapter.hpp"
 #include "Domain/SessionTokenHandler.hpp"
 
 namespace {
 
-// ITokenHandlerのテスト用フェイク実装(実際のFirebase証明書を使わない)
-class FakeTokenHandler : public ITokenHandler {
+// ITokenVerifierのテスト用フェイク実装(実際のFirebase証明書を使わない)
+class FakeTokenVerifier : public ITokenVerifier {
 public:
     bool should_succeed = true;
     std::string fake_uid = "uid_test_0000000001";
@@ -39,19 +39,30 @@ public:
         ttl = ttl_to_return;
         return should_succeed;
     }
+
+    std::optional<std::string> get_session(const std::string& session_token_hash) override {
+        if (session_token_hash == last_session_token_hash) {
+            return last_uid;
+        }
+        return std::nullopt;
+    }
+
+    bool delete_key(const std::string& /*key*/) override {
+        return should_succeed;
+    }
 };
 
 class AuthenticationServiceTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        fake_token_handler = std::make_shared<FakeTokenHandler>();
+        fake_token_verifier = std::make_shared<FakeTokenVerifier>();
         fake_redis_adapter = std::make_shared<FakeRedisAdapter>();
         session_token_handler = std::make_shared<SessionTokenHandler>();
         service = std::make_shared<AuthenticationService>(
-            fake_token_handler, fake_redis_adapter, session_token_handler);
+            fake_token_verifier, fake_redis_adapter, session_token_handler);
     }
 
-    std::shared_ptr<FakeTokenHandler> fake_token_handler;
+    std::shared_ptr<FakeTokenVerifier> fake_token_verifier;
     std::shared_ptr<FakeRedisAdapter> fake_redis_adapter;
     std::shared_ptr<SessionTokenHandler> session_token_handler;
     std::shared_ptr<AuthenticationService> service;
@@ -77,7 +88,7 @@ TEST_F(AuthenticationServiceTest, ValidJwtProducesSessionTokenAndSavesSession)
 
 TEST_F(AuthenticationServiceTest, InvalidJwtFailsWithoutTouchingRedis)
 {
-    fake_token_handler->should_succeed = false;
+    fake_token_verifier->should_succeed = false;
     std::string uid, session_token;
     std::uint64_t expire = 0, ttl = 0;
 

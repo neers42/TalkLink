@@ -17,11 +17,16 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     libwolfssl-dev \
     libcurl4-openssl-dev \
+    libgrpc++-dev \
+    libprotobuf-dev \
+    protobuf-compiler \
+    protobuf-compiler-grpc \
     && rm -rf /var/lib/apt/lists/*
 
 # キャッシュを有効にするため、先に依存ファイルだけコピー
 COPY CMakeLists.txt ./
 COPY CommonLib ./CommonLib
+COPY Proto ./Proto
 COPY AuthenticationServer ./AuthenticationServer
 COPY ThirdParty ./ThirdParty
 COPY Tests ./Tests
@@ -61,7 +66,9 @@ RUN apt-get update && \
         python3 \
         python3-pip \
         python3-cryptography \
-        curl && \
+        curl \
+        libgrpc++1.51t64 \
+        libprotobuf32t64 && \
     rm -rf /var/lib/apt/lists/*
 
 # ビルド成果物と必要ファイルコピー

@@ -28,6 +28,7 @@ target_compile_definitions(
 
 target_link_libraries(auth_core PUBLIC
     CommonLib
+    session_proto
 )
 
 # AuthenticationServer 実行ファイルを生成(main.cppのみ)

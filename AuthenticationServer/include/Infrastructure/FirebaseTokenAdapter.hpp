@@ -1,13 +1,13 @@
-#ifndef TOKEN_HANDLER_HPP
-#define TOKEN_HANDLER_HPP
+#ifndef FIREBASE_TOKEN_ADAPTER_HPP
+#define FIREBASE_TOKEN_ADAPTER_HPP
 #include "common.h"
-#include "Domain/Interfaces/ITokenHandler.hpp"
+#include "Domain/Interfaces/ITokenVerifier.hpp"
 #define CERTS_DIR "/app/AuthenticationServer/certs/firebase"
-class TokenHandler : public ITokenHandler
+class FirebaseTokenAdapter : public ITokenVerifier
 {
 public:
-    explicit TokenHandler(const std::string& firebase_project_id);
-    ~TokenHandler();
+    explicit FirebaseTokenAdapter(const std::string& firebase_project_id);
+    ~FirebaseTokenAdapter();
     bool verify_token(const std::string& token, std::string& uid, std::uint64_t& expire) override;
 
 private:
@@ -18,4 +18,4 @@ private:
 };
 
 
-#endif // TOKEN_HANDLER_HPP
+#endif // FIREBASE_TOKEN_ADAPTER_HPP

@@ -19,6 +19,7 @@ class ThreadPoolHandler;
 // Infrastructure
 class MySQLAdapter;
 class RedisAdapter;
+class GrpcSessionRepository;
 
 // Domain
 class UserAggregateStore;
@@ -95,6 +96,7 @@ private:
     std::shared_ptr<SocketHandler> _socket_handler;
     std::shared_ptr<MySQLAdapter> _mysql_adapter;
     std::shared_ptr<RedisAdapter> _redis_adapter;
+    std::shared_ptr<GrpcSessionRepository> _grpc_session_repository; // AuthenticationServer経由のセッション検証/削除(ISessionRepository)
     std::shared_ptr<TLSConnectionHandler> _tlscon_handler;
     std::shared_ptr<ServerTime> _server_time;
     std::shared_ptr<ThreadPoolHandler> _heartbeat_pool;

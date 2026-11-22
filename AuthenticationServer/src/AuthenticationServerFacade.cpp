@@ -1,10 +1,13 @@
 ﻿#include "AuthenticationServerFacade.hpp"
 #include "Infrastructure/RedisAdapter.hpp"
-#include "Infrastructure/TokenHandler.hpp"
+#include "Infrastructure/FirebaseTokenAdapter.hpp"
+#include "Infrastructure/SessionGrpcAdapter.hpp"
 #include "Domain/SessionTokenHandler.hpp"
 #include "Application/Services/AuthenticationService.hpp"
 #include "EnvHelper.hpp"
 #include "inicpp.h"
+#include <grpcpp/grpcpp.h>
+#include <cstdlib>
 
 AuthenticationServerFacade::AuthenticationServerFacade()
 {
@@ -35,9 +38,12 @@ AuthenticationServerFacade::AuthenticationServerFacade()
 	// (本番用の実装をここで組み立てる。テストではAuthenticationServiceを
 	//  フェイク実装と直接構築することで、本物のRedis/Firebase証明書無しに
 	//  検証ロジックだけをテストできる)
+	// _redis_adapterはAuthenticationServiceとSessionGrpcAdapter(ChatServer向け
+	// セッション検証API)の両方から共有される、唯一のセッションストアへの入口。
+	_redis_adapter = std::make_shared<RedisAdapter>();
 	_authentication_service = std::make_shared<AuthenticationService>(
-		std::make_shared<TokenHandler>(firebase_project_id),
-		std::make_shared<RedisAdapter>(),
+		std::make_shared<FirebaseTokenAdapter>(firebase_project_id),
+		_redis_adapter,
 		std::make_shared<SessionTokenHandler>()
 	);
 
@@ -49,11 +55,48 @@ AuthenticationServerFacade::AuthenticationServerFacade()
 		LOG_ERROR("Failed to initialize AuthenticationServerFacade components. Please check the configuration and try again.");
 		exit(1);
 	}
+
+	start_grpc_server();
 }
 
 AuthenticationServerFacade::~AuthenticationServerFacade()
 {
+	if (_grpc_server) {
+		_grpc_server->Shutdown();
+	}
+	if (_grpc_server_thread.joinable()) {
+		_grpc_server_thread.join();
+	}
 	this->_ssl_list.clear();
+}
+
+void AuthenticationServerFacade::start_grpc_server()
+{
+	// ChatServerはこのポート経由でのみセッション情報にアクセスする(Redis直接参照はしない)。
+	// ポートは内部ネットワーク限定で、docker-compose上もホストには公開しない想定。
+	const char* env_port = std::getenv("AUTH_GRPC_PORT");
+	const std::string grpc_port = env_port ? env_port : "50010";
+	const std::string server_address = "0.0.0.0:" + grpc_port;
+
+	_session_grpc_adapter = std::make_unique<SessionGrpcAdapter>(_redis_adapter);
+
+	grpc::ServerBuilder builder;
+	// TODO: 本番ではgrpc::SslServerCredentials(既存のTLS証明書)に切り替える。
+	// 現状はInsecureServerCredentials(内部ネットワーク限定の想定)。
+	builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+	builder.RegisterService(_session_grpc_adapter.get());
+
+	_grpc_server = builder.BuildAndStart();
+	if (!_grpc_server) {
+		LOG_ERROR("Failed to start SessionService gRPC server on {}", server_address);
+		exit(1);
+	}
+
+	LOG_INFO("SessionService gRPC server listening on {}", server_address);
+
+	_grpc_server_thread = std::thread([this]() {
+		_grpc_server->Wait();
+	});
 }
 
 void AuthenticationServerFacade::run() {

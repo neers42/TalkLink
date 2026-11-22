@@ -3,6 +3,11 @@
 #include "common.h"
 #include "Domain/Entity/Messages/AuthRequestMessage.hpp"
 #include "Domain/Entity/Messages/AuthResponseMessage.hpp"
+#include <thread>
+#include <memory>
+
+namespace grpc { class Server; }
+
 #define DISCONNECT_SOCKET 0
 #define ACCEPT_FAILED 0
 #define ACCEPT_SUCCEEDED 1
@@ -10,9 +15,10 @@
 #define AUTH_CONFIG_FILE_PATH "/app/AuthenticationServer/conf/auth.conf"
 
 class RedisAdapter;
-class TokenHandler;
+class FirebaseTokenAdapter;
 class SessionTokenHandler;
 class AuthenticationService;
+class SessionGrpcAdapter;
 
 class AuthenticationServerFacade
 {
@@ -21,7 +27,11 @@ private:
 	std::unique_ptr<SocketHandler> _socket_handler;
 	std::unique_ptr<ThreadPoolHandler> _thread_pool_handler;
 	std::unique_ptr<TLSConnectionHandler> _tlscon_handler;
+	std::shared_ptr<RedisAdapter> _redis_adapter; // セッション保存用(AuthenticationServiceとSessionGrpcAdapterで共有)
 	std::shared_ptr<AuthenticationService> _authentication_service; // JWT検証->セッション発行のオーケストレーション
+	std::unique_ptr<SessionGrpcAdapter> _session_grpc_adapter; // ChatServer向けセッション検証/削除APIの実装
+	std::unique_ptr<grpc::Server> _grpc_server;
+	std::thread _grpc_server_thread;
 	std::map<socket_t, SSL*> _ssl_list;
 	std::string _cert_path; // 環境変数TLS_CERT_PATHから取得した証明書パス
 	std::string _key_path;  // 環境変数TLS_KEY_PATHから取得した秘密鍵パス
@@ -39,6 +49,7 @@ public:
 
 private:
 	//シーケンス関連
+	void start_grpc_server();
 	void allocate_process(const socket_t socket);
 	bool accept_client_socket_process();
 	void auth_handle_process(const socket_t socket);

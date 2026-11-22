@@ -1,4 +1,4 @@
-#include "Infrastructure/TokenHandler.hpp"
+#include "Infrastructure/FirebaseTokenAdapter.hpp"
 
 namespace {
 std::uint64_t get_exp_leeway_seconds() {
@@ -17,16 +17,16 @@ std::uint64_t get_exp_leeway_seconds() {
 }
 }
 
-TokenHandler::TokenHandler(const std::string& firebase_project_id)
+FirebaseTokenAdapter::FirebaseTokenAdapter(const std::string& firebase_project_id)
     : _firebase_project_id(firebase_project_id)
 {
 }
 
-TokenHandler::~TokenHandler() {
+FirebaseTokenAdapter::~FirebaseTokenAdapter() {
     // 必要なら破棄処理を書く
 }
 
-bool TokenHandler::verify_token(const std::string &token, std::string &uid, std::uint64_t &expire)
+bool FirebaseTokenAdapter::verify_token(const std::string &token, std::string &uid, std::uint64_t &expire)
 {
     try {
         if(token.empty()) {
@@ -93,7 +93,7 @@ bool TokenHandler::verify_token(const std::string &token, std::string &uid, std:
     }
 }
 
-const std::string TokenHandler::get_key_pass(const std::string& kid) const {
+const std::string FirebaseTokenAdapter::get_key_pass(const std::string& kid) const {
     for(const auto& file : std::filesystem::directory_iterator(CERTS_DIR)) {
         if (file.path().filename() == kid + ".pem") {
             return file.path().string();
@@ -102,7 +102,7 @@ const std::string TokenHandler::get_key_pass(const std::string& kid) const {
     return std::string();
 }
 
-const std::string TokenHandler::read_pem_file(const std::string &file_path) const
+const std::string FirebaseTokenAdapter::read_pem_file(const std::string &file_path) const
 {
     std::ifstream file(file_path);
     if (!file.is_open()) {

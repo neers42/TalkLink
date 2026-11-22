@@ -18,6 +18,10 @@ option(BUILD_CHAT_SERVER "Build the chat server" OFF)
 add_subdirectory(CommonLib)
 add_subdirectory(ThirdParty)
 
+# AuthenticationServer<->ChatServer間のgRPC API用スタブ。
+# 両サーバーが参照する可能性があるため常にビルドする。
+add_subdirectory(Proto)
+
 # ChatServer をビルドする場合
 if (BUILD_CHAT_SERVER)
     add_subdirectory(ChatServer)

@@ -18,6 +18,8 @@
 // Infrastructure層
 #include "Infrastructure/MySQLAdapter.hpp"
 #include "Infrastructure/RedisAdapter.hpp"
+#include "Infrastructure/GrpcSessionRepository.hpp"
+#include <grpcpp/grpcpp.h>
 
 // Domain層
 #include "Domain/UserAggregateStore.hpp"
@@ -112,7 +114,18 @@ void ServiceContainer::initialize() {
         _server_time = std::make_shared<ServerTime>();
         _socket_handler = std::make_shared<SocketHandler>(SOCKET_CONFIG_FILE_PATH);
         _mysql_adapter = std::make_shared<MySQLAdapter>();
+        // _redis_adapterはIRoomSequenceRepository(ルームシーケンスカウンター)専用。
+        // セッションの検証/削除はAuthenticationServerのgRPC API(GrpcSessionRepository)
+        // 経由で行い、Redisには直接アクセスしない。
         _redis_adapter = std::make_shared<RedisAdapter>();
+        {
+            const char* env_auth_grpc_address = std::getenv("AUTH_SERVER_GRPC_ADDRESS");
+            const std::string auth_grpc_address = env_auth_grpc_address ? env_auth_grpc_address : "auth-server:50010";
+            // TODO: 本番ではgrpc::SslCredentials(既存のTLS証明書)に切り替える。
+            // 現状はInsecureChannelCredentials(内部ネットワーク限定の想定)。
+            auto auth_grpc_channel = grpc::CreateChannel(auth_grpc_address, grpc::InsecureChannelCredentials());
+            _grpc_session_repository = std::make_shared<GrpcSessionRepository>(auth_grpc_channel);
+        }
         _tlscon_handler = std::make_shared<TLSConnectionHandler>(cert_path, key_path);
         // カテゴリ別にスレッドプールを分離する(他の処理の渋滞でハートビートが
         // 止まる、といった飢餓状態を避けるため、1プールを優先度で並び替えるのではなく
@@ -138,7 +151,7 @@ void ServiceContainer::initialize() {
         _communication_handler = std::make_shared<CommunicationHandler>(_user_store, _socket_handler, _tlscon_handler, handshake_timeout_sec);
         
         // Phase 3.5: ドメインハンドラーを初期化
-        _session_handler = std::make_shared<SessionHandler>(_user_repository_handler, _redis_adapter, _user_repository, _message_repository,_server_time);
+        _session_handler = std::make_shared<SessionHandler>(_user_repository_handler, _grpc_session_repository, _user_repository, _message_repository,_server_time);
         _chatroom_sequence_handler = std::make_shared<ChatroomSequenceHandler>(_redis_adapter);
         
         // Phase 4: メッセージ配信サービス

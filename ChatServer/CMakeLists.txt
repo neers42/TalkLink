@@ -105,11 +105,12 @@ target_link_libraries(
 )
 
 target_link_libraries(
-    infrastructure 
+    infrastructure
     PUBLIC
     CommonLib
     hiredis
     ${OPENSSL_LIBRARIES}
+    session_proto
 )
 
 # Linux固有のリンク

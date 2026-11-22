@@ -18,7 +18,7 @@ constexpr auto kPermanentTaskTimeout = std::chrono::hours(24 * 365);
 StartupService::StartupService(
     std::shared_ptr<SocketHandler> socket_handler,
     std::shared_ptr<ThreadPoolHandler> thread_pool_handler,
-    std::shared_ptr<TLSConnectionHandler> protocol_handler,
+    std::shared_ptr<TLSConnectionHandler> tlscon_handler,
     std::shared_ptr<TaskManagementService> task_management_service,
     std::shared_ptr<RequestDispatcherService> request_dispatcher_service,
     std::shared_ptr<UserManagementService> user_management_service,
@@ -30,7 +30,7 @@ StartupService::StartupService(
     std::string key_path)
     : _socket_handler(std::move(socket_handler)),
       _thread_pool_handler(std::move(thread_pool_handler)),
-      _tlscon_handler(std::move(protocol_handler)),
+      _tlscon_handler(std::move(tlscon_handler)),
       _task_management_service(std::move(task_management_service)),
       _request_dispatcher_service(std::move(request_dispatcher_service)),
       _user_management_service(std::move(user_management_service)),
@@ -234,10 +234,10 @@ bool StartupService::start_background_services()
     
     try {
         auto thread_pool_handler = _thread_pool_handler;
-        auto protocol_handler = _tlscon_handler;
+        auto tlscon_handler = _tlscon_handler;
         auto user_mgmt = _user_management_service;
 
-        if (!thread_pool_handler || !protocol_handler || !user_mgmt) {
+        if (!thread_pool_handler || !tlscon_handler || !user_mgmt) {
             LOG_ERROR("[StartupService] Required handlers not available");
             return false;
         }
@@ -263,8 +263,8 @@ bool StartupService::start_background_services()
                 TaskCategory::MAINTENANCE,
                 "Certificate hot reload task",
                 kPermanentTaskTimeout,
-                [protocol_handler, cert_path = _cert_path, key_path = _key_path]() {
-                    protocol_handler->hot_reload_certificates(60, cert_path, key_path);
+                [tlscon_handler, cert_path = _cert_path, key_path = _key_path]() {
+                    tlscon_handler->hot_reload_certificates(60, cert_path, key_path);
                 }
             );
         }
