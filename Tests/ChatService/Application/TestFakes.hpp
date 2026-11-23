@@ -126,18 +126,30 @@ public:
     bool insert_user_info_data_called = false;
     bool insert_user_info_data_result = true;
     std::string last_inserted_uid;
+    // DBに登録済みとして扱うuid(user_existsの判定に使う)
+    std::set<std::string> registered_uids;
+    // trueの場合、user_existsはDB障害(DB_ERROR)を返す
+    bool user_exists_db_error = false;
 
     bool insert_user_info_data(const std::string& uid, const std::string&, const std::string&,
                                 const std::string&, const std::string&, const std::string&) override {
         insert_user_info_data_called = true;
         last_inserted_uid = uid;
+        if (insert_user_info_data_result) {
+            registered_uids.insert(uid);
+        }
         return insert_user_info_data_result;
     }
     UserInfo get_user_info(const std::string& uid) override {
         return UserInfo(uid, "", "", "");
     }
     bool update_last_login(const std::string&, const std::string&) override { return true; }
-    bool user_exists(const std::string&) override { return false; }
+    UserExistence user_exists(const std::string& uid) override {
+        if (user_exists_db_error) {
+            return UserExistence::DB_ERROR;
+        }
+        return registered_uids.count(uid) > 0 ? UserExistence::EXISTS : UserExistence::NOT_FOUND;
+    }
     std::string get_user_last_login(const std::string&) override { return ""; }
     std::vector<UserInfo> search_user_infos(const std::string&) override { return {}; }
 };

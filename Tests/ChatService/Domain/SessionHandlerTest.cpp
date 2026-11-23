@@ -63,12 +63,39 @@ protected:
 TEST_F(SessionHandlerTest, SigninWithValidSessionSucceeds)
 {
     seed_session("token-abc", "uid-1");
+    user_repo->registered_uids.insert("uid-1");
     auto request = make_request(SessionRequestMessage::SignType::SIGNIN, "token-abc");
 
     auto result = handler.validate_session(request, 1);
 
     EXPECT_TRUE(result.is_valid);
     EXPECT_EQ(result.uid, "uid-1");
+}
+
+// Firebase認証済み(セッションは有効)でもDB未登録ならSIGNINを拒否すること
+TEST_F(SessionHandlerTest, SigninFailsWhenUserIsNotRegistered)
+{
+    seed_session("token-abc", "uid-1");
+    auto request = make_request(SessionRequestMessage::SignType::SIGNIN, "token-abc");
+
+    auto result = handler.validate_session(request, 1);
+
+    EXPECT_FALSE(result.is_valid);
+    EXPECT_EQ(result.error_message, SessionHandler::ERROR_USER_NOT_REGISTERED);
+}
+
+// DB障害で登録状態を確認できない場合は「未登録」と区別して拒否すること
+TEST_F(SessionHandlerTest, SigninFailsWhenUserLookupFails)
+{
+    seed_session("token-abc", "uid-1");
+    user_repo->registered_uids.insert("uid-1");
+    user_repo->user_exists_db_error = true;
+    auto request = make_request(SessionRequestMessage::SignType::SIGNIN, "token-abc");
+
+    auto result = handler.validate_session(request, 1);
+
+    EXPECT_FALSE(result.is_valid);
+    EXPECT_EQ(result.error_message, SessionHandler::ERROR_USER_LOOKUP_FAILED);
 }
 
 TEST_F(SessionHandlerTest, SigninWithUnknownTokenFails)
@@ -91,6 +118,34 @@ TEST_F(SessionHandlerTest, SignupWithValidSessionInsertsUserAndSucceeds)
     EXPECT_TRUE(result.is_valid);
     EXPECT_TRUE(user_repo->insert_user_info_data_called);
     EXPECT_EQ(user_repo->last_inserted_uid, "uid-1");
+}
+
+// 登録済みのuidでSIGNUPしてもDBへ再登録せず拒否すること
+TEST_F(SessionHandlerTest, SignupFailsWhenUserIsAlreadyRegistered)
+{
+    seed_session("token-abc", "uid-1");
+    user_repo->registered_uids.insert("uid-1");
+    auto request = make_request(SessionRequestMessage::SignType::SIGNUP, "token-abc", "Alice", "alice@example.com");
+
+    auto result = handler.validate_session(request, 1);
+
+    EXPECT_FALSE(result.is_valid);
+    EXPECT_EQ(result.error_message, SessionHandler::ERROR_USER_ALREADY_REGISTERED);
+    EXPECT_FALSE(user_repo->insert_user_info_data_called);
+}
+
+// DB障害で登録状態を確認できない場合はDBへ書き込まずに拒否すること
+TEST_F(SessionHandlerTest, SignupFailsWhenUserLookupFails)
+{
+    seed_session("token-abc", "uid-1");
+    user_repo->user_exists_db_error = true;
+    auto request = make_request(SessionRequestMessage::SignType::SIGNUP, "token-abc", "Alice", "alice@example.com");
+
+    auto result = handler.validate_session(request, 1);
+
+    EXPECT_FALSE(result.is_valid);
+    EXPECT_EQ(result.error_message, SessionHandler::ERROR_USER_LOOKUP_FAILED);
+    EXPECT_FALSE(user_repo->insert_user_info_data_called);
 }
 
 TEST_F(SessionHandlerTest, SignupFailsWhenDbInsertFails)

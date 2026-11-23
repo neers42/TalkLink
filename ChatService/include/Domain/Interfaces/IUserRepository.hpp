@@ -5,6 +5,9 @@
 #include <vector>
 #include "Domain/DTO/UserInfo.hpp"
 
+// ユーザ存在確認の結果(DB障害を「未登録」と区別するため3値で返す)
+enum class UserExistence { EXISTS, NOT_FOUND, DB_ERROR };
+
 class IUserRepository
 {
 public:
@@ -28,7 +31,7 @@ public:
         const std::string& last_login
     ) = 0;
 
-    virtual bool user_exists(
+    virtual UserExistence user_exists(
         const std::string& uid
     ) = 0;
 

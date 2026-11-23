@@ -83,7 +83,7 @@ public:
 		const std::string& last_login);
 	UserInfo get_user_info(const std::string& uid) override;
 	bool update_last_login(const std::string& uid, const std::string& last_login) override;
-	bool user_exists(const std::string& uid);
+	UserExistence user_exists(const std::string& uid) override;
 	std::string get_user_last_login(const std::string& uid);
 	std::vector<UserInfo> search_user_infos(const std::string& query);
 

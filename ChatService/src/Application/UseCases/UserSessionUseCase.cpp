@@ -298,9 +298,9 @@ SessionResult UserSessionUseCase::authenticate_session(const std::unique_ptr<Ses
         result.error_message = validation_result.error_message;
         result.unreceived_messages = validation_result.unreceived_messages;
 
-        _repository->update_user_info(socket, validation_result.uid, validation_result.name, validation_result.email);
-
         if (result.verified) {
+            // 検証に失敗した接続にはuidを紐付けない(未登録ユーザ宛ての配信先にさせないため)
+            _repository->update_user_info(socket, validation_result.uid, validation_result.name, validation_result.email);
             // SIGNOUTは認証解除、SIGNIN/SIGNUPは認証成立として反映する
             const bool new_auth_status = session_message->get_sign_type() != SessionRequestMessage::SignType::SIGNOUT;
             _repository->update_user_auth_status(socket, new_auth_status);

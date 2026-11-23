@@ -18,7 +18,7 @@ public:
     }
     UserInfo get_user_info(const std::string&) override { return UserInfo{}; }
     bool update_last_login(const std::string&, const std::string&) override { return true; }
-    bool user_exists(const std::string&) override { return false; }
+    UserExistence user_exists(const std::string&) override { return UserExistence::NOT_FOUND; }
     std::string get_user_last_login(const std::string&) override { return ""; }
     std::vector<UserInfo> search_user_infos(const std::string&) override { return {}; }
 };

@@ -244,7 +244,22 @@ SessionValidationResult SessionHandler::handle_signin_request(
         }
         // session_tokenからUIDを抽出
         result.uid = get_uid_from_session_token(session_message->get_session_token());
-        
+
+        // Firebase認証済みでもSIGNUP(DB登録)が完了していないユーザはSIGNINさせない
+        const auto existence = _user_repository->user_exists(result.uid);
+        if (existence == UserExistence::DB_ERROR) {
+            result.error_message = ERROR_USER_LOOKUP_FAILED;
+            log_session_event(result.uid, "signin_user_lookup_failed", socket);
+            LOG_ERROR("[SessionHandler] SIGNIN failed because user registration could not be checked: {}", result.uid);
+            return result;
+        }
+        if (existence == UserExistence::NOT_FOUND) {
+            result.error_message = ERROR_USER_NOT_REGISTERED;
+            log_session_event(result.uid, "signin_user_not_registered", socket);
+            LOG_WARNING("[SessionHandler] SIGNIN rejected because user is not registered: {}", result.uid);
+            return result;
+        }
+
         // payload値を優先し、空ならDBから補完
         resolve_user_profile(result.uid, session_message, result.name, result.email);
         
@@ -285,6 +300,21 @@ SessionValidationResult SessionHandler::handle_signup_request(
         // （get_uid_from_session_token が Redis 上のセッションを検証し、
         //   無効な場合は例外を投げるため、ここで別途確認する必要はない）
         result.uid = get_uid_from_session_token(session_message->get_session_token());
+
+        // 登録済みのユーザは再登録させない(クライアントはSIGNINし直す)
+        const auto existence = _user_repository->user_exists(result.uid);
+        if (existence == UserExistence::DB_ERROR) {
+            result.error_message = ERROR_USER_LOOKUP_FAILED;
+            log_session_event(result.uid, "signup_user_lookup_failed", socket);
+            LOG_ERROR("[SessionHandler] SIGNUP failed because user registration could not be checked: {}", result.uid);
+            return result;
+        }
+        if (existence == UserExistence::EXISTS) {
+            result.error_message = ERROR_USER_ALREADY_REGISTERED;
+            log_session_event(result.uid, "signup_user_already_registered", socket);
+            LOG_WARNING("[SessionHandler] SIGNUP rejected because user is already registered: {}", result.uid);
+            return result;
+        }
 
         // ユーザの情報をDBに登録
         auto insert_db_result = _user_repository->insert_user_info_data(

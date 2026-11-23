@@ -281,7 +281,7 @@ bool MySQLAdapter::update_last_login(const std::string& uid, const std::string& 
 	}
 }
 
-bool MySQLAdapter::user_exists(const std::string& uid)
+UserExistence MySQLAdapter::user_exists(const std::string& uid)
 {
 	std::lock_guard<std::recursive_mutex> lock(_mysql_mutex);
 	try
@@ -295,32 +295,33 @@ bool MySQLAdapter::user_exists(const std::string& uid)
 			int is_exist = res->getBoolean(1);
 			if (is_exist == 1) {
 				LOG_DEBUG("MySQL:user id exists.");
-				return true;
+				return UserExistence::EXISTS;
 			}
 			else {
 				LOG_DEBUG("MySQL:user id does not exist.");
-				return false;
+				return UserExistence::NOT_FOUND;
 			}
 		}
 		else {
+			// SELECT EXISTSは必ず1行返すため、行が無いのは異常系として扱う
 			LOG_ERROR("MySQL: no data found for uid: {}", uid);
-			return false;
+			return UserExistence::DB_ERROR;
 		}
 	}
 	catch (const sql::SQLException& e)
 	{
 		this->_mysql_helper->printError(e);
-		return false;
+		return UserExistence::DB_ERROR;
 	}
 	catch (const std::runtime_error& e) {
 		LOG_ERROR("Runtime Error:{}", e.what());
-		return false;
+		return UserExistence::DB_ERROR;
 	}
 	catch (const std::exception& e) {
 		LOG_ERROR("Exception:{}.", e.what());
-		return false;
+		return UserExistence::DB_ERROR;
 	}
-	
+
 }
 
 bool MySQLAdapter::chatroom_exists(const std::string& room_id)

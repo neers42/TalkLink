@@ -43,6 +43,13 @@ struct SessionValidationResult {
  */
 class SessionHandler {
 public:
+    // SessionResponseのerror_messageとしてクライアントへ返す固定のエラーコード。
+    // クライアントはこの値を見てSIGNUP画面/SIGNIN画面への遷移を判断する。
+    static constexpr const char* ERROR_USER_NOT_REGISTERED = "USER_NOT_REGISTERED";
+    static constexpr const char* ERROR_USER_ALREADY_REGISTERED = "USER_ALREADY_REGISTERED";
+    // DB障害などで登録状態を確認できなかった場合。クライアントは画面遷移せずに再試行する。
+    static constexpr const char* ERROR_USER_LOOKUP_FAILED = "USER_LOOKUP_FAILED";
+
     /**
      * @brief Constructor
      * 
