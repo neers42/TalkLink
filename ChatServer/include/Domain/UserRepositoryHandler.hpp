@@ -38,7 +38,7 @@ public:
     bool update_user_heartbeat(socket_t socket);
     bool update_user_auth_status(socket_t socket, bool auth_status);
     
-    // クエリ操作 (UserManagementServiceに公開)
+    // クエリ操作 (UserSessionUseCaseに公開)
     std::shared_ptr<User> get_user(socket_t socket);
     std::shared_ptr<User> get_user_by_id(const std::string& uid);
     socket_t get_socket_by_uid(const std::string& uid);

@@ -17,7 +17,7 @@ namespace grpc { class Server; }
 class RedisAdapter;
 class FirebaseTokenAdapter;
 class SessionTokenHandler;
-class AuthenticationService;
+class AuthenticationUseCase;
 class SessionGrpcAdapter;
 
 class AuthenticationServerFacade
@@ -27,8 +27,8 @@ private:
 	std::unique_ptr<SocketHandler> _socket_handler;
 	std::unique_ptr<ThreadPoolHandler> _thread_pool_handler;
 	std::unique_ptr<TLSConnectionHandler> _tlscon_handler;
-	std::shared_ptr<RedisAdapter> _redis_adapter; // セッション保存用(AuthenticationServiceとSessionGrpcAdapterで共有)
-	std::shared_ptr<AuthenticationService> _authentication_service; // JWT検証->セッション発行のオーケストレーション
+	std::shared_ptr<RedisAdapter> _redis_adapter; // セッション保存用(AuthenticationUseCaseとSessionGrpcAdapterで共有)
+	std::shared_ptr<AuthenticationUseCase> _authentication_use_case; // JWT検証->セッション発行のオーケストレーション
 	std::unique_ptr<SessionGrpcAdapter> _session_grpc_adapter; // ChatServer向けセッション検証/削除APIの実装
 	std::unique_ptr<grpc::Server> _grpc_server;
 	std::thread _grpc_server_thread;

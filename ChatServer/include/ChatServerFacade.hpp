@@ -1,6 +1,6 @@
 #ifndef CHATSERVERFACADE_HPP
 #define CHATSERVERFACADE_HPP
-#include "Application/ServiceContainer.hpp"
+#include "Application/AppContainer.hpp"
 #include "Utils/common.hpp"
 #include "MessageBase.hpp"
 #ifdef _WIN32
@@ -25,8 +25,8 @@ using socket_t = int; // POSIX systems use int for sockets
 class ChatServerFacade
 {
 private:
-	// ServiceContainerで依存関係を管理
-	ServiceContainer& _service_container;
+	// AppContainerで依存関係を管理
+	AppContainer& _app_container;
 
 public:
 	// コンストラクタ

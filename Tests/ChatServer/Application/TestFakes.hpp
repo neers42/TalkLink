@@ -6,7 +6,7 @@
 #include "Domain/Interfaces/IMessageRepository.hpp"
 #include "Domain/Interfaces/ISessionRepository.hpp"
 #include "Domain/Interfaces/IRoomSequenceRepository.hpp"
-#include "Application/Interfaces/IMessageDeliveryService.hpp"
+#include "Application/Interfaces/IMessageSender.hpp"
 #include "MessageBase.hpp"
 #include "ServerTime.hpp"
 #include <map>
@@ -161,13 +161,13 @@ public:
     }
 };
 
-// IMessageDeliveryServiceのテスト用フェイク実装
-class FakeMessageDeliveryService : public IMessageDeliveryService {
+// IMessageSenderのテスト用フェイク実装
+class FakeMessageSender : public IMessageSender {
 public:
     bool should_succeed = true;
     int sent_count_to_return = 1;
     // should_succeed=false の場合にDeliveryResult::unsent_uidsへ入れる値。
-    // 実際のMessageDeliveryServiceは配信失敗した宛先をunsent_uidsに積むため、
+    // 実際のMessageSenderは配信失敗した宛先をunsent_uidsに積むため、
     // それを模倣しないと呼び出し元の再送ロジックが「対象0件で成功扱い」に
     // なってしまい、失敗シナリオを正しく再現できない。
     std::vector<std::string> unsent_uids_to_return;

@@ -54,7 +54,7 @@ if(TARGET auth_core)
         auth_tests
         AuthenticationServer/SessionTokenHandlerTest.cpp
         AuthenticationServer/AuthMessageValidationTest.cpp
-        AuthenticationServer/AuthenticationServiceTest.cpp
+        AuthenticationServer/AuthenticationUseCaseTest.cpp
     )
 
     target_link_libraries(
@@ -76,10 +76,10 @@ endif()
 if(TARGET application)
     add_executable(
         application_tests
-        ChatServer/Application/SyncServiceTest.cpp
-        ChatServer/Application/TaskManagementServiceTest.cpp
-        ChatServer/Application/ChatroomManagementServiceTest.cpp
-        ChatServer/Application/ChatServiceTest.cpp
+        ChatServer/Application/SyncUseCaseTest.cpp
+        ChatServer/Application/TaskSchedulerTest.cpp
+        ChatServer/Application/ChatroomUseCaseTest.cpp
+        ChatServer/Application/ChatUseCaseTest.cpp
     )
 
     target_link_libraries(

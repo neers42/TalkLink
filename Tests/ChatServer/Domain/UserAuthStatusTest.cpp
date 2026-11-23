@@ -83,7 +83,7 @@ TEST_F(UserAuthStatusTest, UpdateAuthStatusTrueReflectsOnUser)
 }
 
 // SIGNOUT後もidは残るが、is_authenticated()はfalseに戻る、という
-// ChatroomManagementService/ChatService等のなりすまし対策チェックだけでは
+// ChatroomUseCase/ChatUseCase等のなりすまし対策チェックだけでは
 // 検出できない「ログアウト済みだが本人のuidは一致する」ケースの土台を確認する。
 TEST_F(UserAuthStatusTest, SignOutKeepsUidButClearsAuthStatus)
 {

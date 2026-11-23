@@ -3,7 +3,7 @@
 #include "Infrastructure/FirebaseTokenAdapter.hpp"
 #include "Infrastructure/SessionGrpcAdapter.hpp"
 #include "Domain/SessionTokenHandler.hpp"
-#include "Application/Services/AuthenticationService.hpp"
+#include "Application/UseCases/AuthenticationUseCase.hpp"
 #include "EnvHelper.hpp"
 #include "inicpp.h"
 #include <grpcpp/grpcpp.h>
@@ -34,14 +34,14 @@ AuthenticationServerFacade::AuthenticationServerFacade()
 	auth_config.load(AUTH_CONFIG_FILE_PATH);
 	const std::string firebase_project_id = auth_config["Firebase"]["project_id"].as<std::string>();
 
-	// JWT検証->セッション発行のオーケストレーションはAuthenticationServiceに委譲する。
-	// (本番用の実装をここで組み立てる。テストではAuthenticationServiceを
+	// JWT検証->セッション発行のオーケストレーションはAuthenticationUseCaseに委譲する。
+	// (本番用の実装をここで組み立てる。テストではAuthenticationUseCaseを
 	//  フェイク実装と直接構築することで、本物のRedis/Firebase証明書無しに
 	//  検証ロジックだけをテストできる)
-	// _redis_adapterはAuthenticationServiceとSessionGrpcAdapter(ChatServer向け
+	// _redis_adapterはAuthenticationUseCaseとSessionGrpcAdapter(ChatServer向け
 	// セッション検証API)の両方から共有される、唯一のセッションストアへの入口。
 	_redis_adapter = std::make_shared<RedisAdapter>();
-	_authentication_service = std::make_shared<AuthenticationService>(
+	_authentication_use_case = std::make_shared<AuthenticationUseCase>(
 		std::make_shared<FirebaseTokenAdapter>(firebase_project_id),
 		_redis_adapter,
 		std::make_shared<SessionTokenHandler>()
@@ -50,7 +50,7 @@ AuthenticationServerFacade::AuthenticationServerFacade()
 	if (_socket_handler == nullptr
 		|| _thread_pool_handler == nullptr
 		|| _tlscon_handler == nullptr
-		|| _authentication_service == nullptr)
+		|| _authentication_use_case == nullptr)
 	{
 		LOG_ERROR("Failed to initialize AuthenticationServerFacade components. Please check the configuration and try again.");
 		exit(1);
@@ -252,7 +252,7 @@ void AuthenticationServerFacade::auth_handle_process(const socket_t socket)
 				return;
 			}
 			receive_token = auth_request_instance->get_jwt();
-			verify_result = this->_authentication_service->verify_auth_process(receive_token, uid, expire, ttl, session_token);
+			verify_result = this->_authentication_use_case->verify_auth_process(receive_token, uid, expire, ttl, session_token);
 			if(verify_result == true){
 				LOG_INFO("Authentication succeeded for client(socket : {}). CID: {}, Expire: {}, TTL: {}.", socket, uid, expire, ttl);
 			}else{
