@@ -60,13 +60,13 @@ services:
     networks:
       - talklink-net
 
-  chat-server:
+  chat-service:
     build:
       context: .
-      dockerfile: ChatServer/Dockerfile
+      dockerfile: ChatService/Dockerfile
       args:
         BUILD_TYPE: Debug
-    container_name: chat-server
+    container_name: chat-service
 
     #先にmysqlのコンテナを上げる
     depends_on:
@@ -83,16 +83,16 @@ services:
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
-      # ルームシーケンス用。ChatServer専用のRedis(auth-serverとは分離)
+      # ルームシーケンス用。ChatService専用のRedis(auth-serviceとは分離)
       REDIS_HOST: ${CHAT_REDIS_HOST:-chat-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       TZ: Asia/Tokyo
-      TLS_CERT_PATH: /app/certs/chat-server/server-cert.pem
-      TLS_KEY_PATH: /app/certs/chat-server/server-key.pem
+      TLS_CERT_PATH: /app/certs/chat-service/server-cert.pem
+      TLS_KEY_PATH: /app/certs/chat-service/server-key.pem
       # 複数インスタンスで稼働させる場合はインスタンスごとに一意な値を設定すること
-      CHAT_SERVER_MACHINE_ID: ${CHAT_SERVER_MACHINE_ID:-1}
-      # セッションの検証/削除はauth-serverのgRPC API経由で行う(Redis直接参照はしない)
-      AUTH_SERVER_GRPC_ADDRESS: auth-server:50010
+      CHAT_SERVICE_MACHINE_ID: ${CHAT_SERVICE_MACHINE_ID:-1}
+      # セッションの検証/削除はauth-serviceのgRPC API経由で行う(Redis直接参照はしない)
+      AUTH_SERVICE_GRPC_ADDRESS: auth-service:50010
 
     volumes:
       - /etc/localtime:/etc/localtime:ro
@@ -101,13 +101,13 @@ services:
     networks:
       - talklink-net
   
-  auth-server:
+  auth-service:
     build:
       context: .
-      dockerfile: AuthenticationServer/Dockerfile
+      dockerfile: AuthenticationService/Dockerfile
       args:
         BUILD_TYPE: Debug
-    container_name: auth-server
+    container_name: auth-service
      #先にauth-redisのコンテナを上げる
     depends_on:
       auth-redis:
@@ -116,14 +116,14 @@ services:
       - "50002:50002"       #TCPのリッスン用のポート
       - "50003:50003/udp"   #UDPポート(マルチキャスト送信用)
     environment:
-      # セッション用。AuthenticationServer専用のRedis(chat-serverとは分離)
+      # セッション用。AuthenticationService専用のRedis(chat-serviceとは分離)
       REDIS_HOST: ${AUTH_REDIS_HOST:-auth-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       JWT_EXP_LEEWAY_SEC: ${JWT_EXP_LEEWAY_SEC:-60}
       TZ: Asia/Tokyo
-      TLS_CERT_PATH: /app/certs/auth-server/server-cert.pem
-      TLS_KEY_PATH: /app/certs/auth-server/server-key.pem
-      # ChatServer向けセッション検証/削除gRPC APIのリッスンポート。
+      TLS_CERT_PATH: /app/certs/auth-service/server-cert.pem
+      TLS_KEY_PATH: /app/certs/auth-service/server-key.pem
+      # ChatService向けセッション検証/削除gRPC APIのリッスンポート。
       # 内部ネットワーク限定のためホストには公開しない(portsに追加しない)。
       AUTH_GRPC_PORT: 50010
     volumes:

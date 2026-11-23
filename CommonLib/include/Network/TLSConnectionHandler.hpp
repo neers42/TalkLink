@@ -26,8 +26,8 @@ using socket_t = SOCKET;	//WindowsではSOCKETを使用
 #define SERVER_PRIVATEKEY_FILE_PASS "./certs/server-key.pem"
 #else
 using socket_t = int;		//Linuxではintを使用
-	#define SERVER_CERT_FILE_PASS "/app/ChatServer/certs/server-cert.pem"
-	#define SERVER_PRIVATEKEY_FILE_PASS "/app/ChatServer/certs/server-key.pem"
+	#define SERVER_CERT_FILE_PASS "/app/ChatService/certs/server-cert.pem"
+	#define SERVER_PRIVATEKEY_FILE_PASS "/app/ChatService/certs/server-key.pem"
 	#include <sys/stat.h>
 #endif //_WIN32
 #include <openssl/err.h>

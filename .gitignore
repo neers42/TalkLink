@@ -368,10 +368,10 @@ FodyWeavers.xsd
 /build/
 
 .vscode/
-AuthenticationServer/conf/firebase_jwk.json
-AuthenticationServer/certs/firebase/pubkeys.json
-AuthenticationServer/AuthenticationServer.vcxproj
-AuthenticationServer/AuthenticationServer.vcxproj.filters
+AuthenticationService/conf/firebase_jwk.json
+AuthenticationService/certs/firebase/pubkeys.json
+AuthenticationService/AuthenticationService.vcxproj
+AuthenticationService/AuthenticationService.vcxproj.filters
 .gitignore
 CommonLib/CommonLib.vcxproj
 .env

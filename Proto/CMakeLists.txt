@@ -1,8 +1,8 @@
 #-----------------------------------------
 # Proto CMakeLists.txt
 # session.protoからC++のメッセージ/gRPCスタブを生成し、session_protoという
-# 静的ライブラリとして公開する。AuthenticationServer(サーバー側実装)と
-# ChatServer(クライアント側実装)の両方がこれをリンクする。
+# 静的ライブラリとして公開する。AuthenticationService(サーバー側実装)と
+# ChatService(クライアント側実装)の両方がこれをリンクする。
 #-----------------------------------------
 
 find_package(PkgConfig REQUIRED)

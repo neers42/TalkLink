@@ -35,19 +35,19 @@ if [ "$CMAKE_VERSION" != "$IMAGE_TAG_VERSION" ]; then
     exit 1
 fi
 
-CHAT_IMAGE="ghcr.io/neers42/talklink-chat-server:${IMAGE_TAG_VERSION}"
-AUTH_IMAGE="ghcr.io/neers42/talklink-auth-server:${IMAGE_TAG_VERSION}"
+CHAT_IMAGE="ghcr.io/neers42/talklink-chat-service:${IMAGE_TAG_VERSION}"
+AUTH_IMAGE="ghcr.io/neers42/talklink-auth-service:${IMAGE_TAG_VERSION}"
 GIT_TAG="v${IMAGE_TAG_VERSION}"
 
 echo "=== Build TalkLink ${IMAGE_TAG_VERSION} ==="
 
 docker build \
-    -f ChatServer/Dockerfile \
+    -f ChatService/Dockerfile \
     -t "${CHAT_IMAGE}" \
     .
 
 docker build \
-    -f AuthenticationServer/Dockerfile \
+    -f AuthenticationService/Dockerfile \
     -t "${AUTH_IMAGE}" \
     .
 

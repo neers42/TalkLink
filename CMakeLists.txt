@@ -7,9 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # GoogleTest の有効化
 enable_testing()
 
-# オプションで AuthenticationServer のビルドを切り替え
-option(BUILD_AUTH_SERVER "Build the authentication server" OFF)
-option(BUILD_CHAT_SERVER "Build the chat server" OFF)
+# オプションで AuthenticationService のビルドを切り替え
+option(BUILD_AUTH_SERVICE "Build the authentication service" OFF)
+option(BUILD_CHAT_SERVICE "Build the chat service" OFF)
 
 
 
@@ -18,18 +18,18 @@ option(BUILD_CHAT_SERVER "Build the chat server" OFF)
 add_subdirectory(CommonLib)
 add_subdirectory(ThirdParty)
 
-# AuthenticationServer<->ChatServer間のgRPC API用スタブ。
+# AuthenticationService<->ChatService間のgRPC API用スタブ。
 # 両サーバーが参照する可能性があるため常にビルドする。
 add_subdirectory(Proto)
 
-# ChatServer をビルドする場合
-if (BUILD_CHAT_SERVER)
-    add_subdirectory(ChatServer)
+# ChatService をビルドする場合
+if (BUILD_CHAT_SERVICE)
+    add_subdirectory(ChatService)
 endif()
 
-# AuthenticationServer をビルドする場合
-if (BUILD_AUTH_SERVER)
-    add_subdirectory(AuthenticationServer)
+# AuthenticationService をビルドする場合
+if (BUILD_AUTH_SERVICE)
+    add_subdirectory(AuthenticationService)
 endif()
 
 # Test

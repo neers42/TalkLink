@@ -40,7 +40,7 @@ generate_cert() {
     chmod 644 "${dir}/server-cert.pem"
 }
 
-generate_cert "./certs/chat-server" "localhost"
-generate_cert "./certs/auth-server" "localhost"
+generate_cert "./certs/chat-service" "localhost"
+generate_cert "./certs/auth-service" "localhost"
 
 echo "Certificates generated."

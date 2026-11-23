@@ -1,9 +1,9 @@
 syntax = "proto3";
 package talklink.auth;
 
-// AuthenticationServerがセッション情報(Redis)へのアクセスをChatServerに
-// 公開するためのAPI。ChatServerはこれ経由でセッションの検証/削除を行い、
-// Redisには直接アクセスしない(セッションストアはAuthenticationServerの
+// AuthenticationServiceがセッション情報(Redis)へのアクセスをChatServiceに
+// 公開するためのAPI。ChatServiceはこれ経由でセッションの検証/削除を行い、
+// Redisには直接アクセスしない(セッションストアはAuthenticationServiceの
 // 内部実装詳細として隠蔽する)。
 service SessionService {
   rpc ValidateSession (ValidateSessionRequest) returns (ValidateSessionResponse);

@@ -17,18 +17,18 @@ FetchContent_MakeAvailable(googletest)
 # テストしたいソースファイルを指定
 add_executable(
     domain_tests
-    ChatServer/Domain/ChatroomIDGeneratorTest.cpp
-    ChatServer/Domain/MessageValidationTest.cpp
-    ChatServer/Domain/UserAuthStatusTest.cpp
-    ChatServer/Domain/ChatroomSequenceHandlerTest.cpp
-    ChatServer/Domain/MessageIDGeneratorTest.cpp
-    ChatServer/Domain/UserAggregateStoreTest.cpp
-    ChatServer/Domain/UserEntityTest.cpp
-    ChatServer/Domain/ControlAndSessionMessageValidationTest.cpp
-    ChatServer/Domain/UnimplementedMessageStubTest.cpp
-    ChatServer/Domain/ChatroomRepositoryHandlerTest.cpp
-    ChatServer/Domain/SessionHandlerTest.cpp
-    ChatServer/Domain/GrpcSessionRepositoryTest.cpp
+    ChatService/Domain/ChatroomIDGeneratorTest.cpp
+    ChatService/Domain/MessageValidationTest.cpp
+    ChatService/Domain/UserAuthStatusTest.cpp
+    ChatService/Domain/ChatroomSequenceHandlerTest.cpp
+    ChatService/Domain/MessageIDGeneratorTest.cpp
+    ChatService/Domain/UserAggregateStoreTest.cpp
+    ChatService/Domain/UserEntityTest.cpp
+    ChatService/Domain/ControlAndSessionMessageValidationTest.cpp
+    ChatService/Domain/UnimplementedMessageStubTest.cpp
+    ChatService/Domain/ChatroomRepositoryHandlerTest.cpp
+    ChatService/Domain/SessionHandlerTest.cpp
+    ChatService/Domain/GrpcSessionRepositoryTest.cpp
 )
 
 # Domainのテストに必要なインクルードディレクトリを設定
@@ -45,16 +45,16 @@ gtest_discover_tests(
     domain_tests
     PROPERTIES
     LABELS "domain"
-    ENVIRONMENT "CHAT_SERVER_MACHINE_ID=1"
+    ENVIRONMENT "CHAT_SERVICE_MACHINE_ID=1"
 )
 
-# AuthenticationServerのテストをビルド(auth_coreライブラリが存在する場合のみ)
+# AuthenticationServiceのテストをビルド(auth_coreライブラリが存在する場合のみ)
 if(TARGET auth_core)
     add_executable(
         auth_tests
-        AuthenticationServer/SessionTokenHandlerTest.cpp
-        AuthenticationServer/AuthMessageValidationTest.cpp
-        AuthenticationServer/AuthenticationUseCaseTest.cpp
+        AuthenticationService/SessionTokenHandlerTest.cpp
+        AuthenticationService/AuthMessageValidationTest.cpp
+        AuthenticationService/AuthenticationUseCaseTest.cpp
     )
 
     target_link_libraries(
@@ -72,14 +72,14 @@ if(TARGET auth_core)
     )
 endif()
 
-# ChatServer Application層のテストをビルド(applicationライブラリが存在する場合のみ)
+# ChatService Application層のテストをビルド(applicationライブラリが存在する場合のみ)
 if(TARGET application)
     add_executable(
         application_tests
-        ChatServer/Application/SyncUseCaseTest.cpp
-        ChatServer/Application/TaskSchedulerTest.cpp
-        ChatServer/Application/ChatroomUseCaseTest.cpp
-        ChatServer/Application/ChatUseCaseTest.cpp
+        ChatService/Application/SyncUseCaseTest.cpp
+        ChatService/Application/TaskSchedulerTest.cpp
+        ChatService/Application/ChatroomUseCaseTest.cpp
+        ChatService/Application/ChatUseCaseTest.cpp
     )
 
     target_link_libraries(
@@ -94,6 +94,6 @@ if(TARGET application)
         application_tests
         PROPERTIES
         LABELS "application"
-        ENVIRONMENT "CHAT_SERVER_MACHINE_ID=1"
+        ENVIRONMENT "CHAT_SERVICE_MACHINE_ID=1"
     )
 endif()
