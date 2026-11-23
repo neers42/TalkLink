@@ -1,4 +1,4 @@
-﻿#include "Domain/Entity/Messages/HeartBeatMessage.hpp"
+﻿#include "Domain/Messages/HeartBeatMessage.hpp"
 
 
 HeartBeatMessage::HeartBeatMessage(){}

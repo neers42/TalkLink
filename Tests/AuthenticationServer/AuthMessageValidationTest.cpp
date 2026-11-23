@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "Domain/Entity/Messages/AuthRequestMessage.hpp"
-#include "Domain/Entity/Messages/AuthResponseMessage.hpp"
+#include "Domain/Messages/AuthRequestMessage.hpp"
+#include "Domain/Messages/AuthResponseMessage.hpp"
 
 namespace {
 // header.payload.signature形式かつ各セクションがURL-safe Base64文字のみで

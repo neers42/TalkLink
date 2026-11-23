@@ -1,4 +1,4 @@
-﻿#include "Domain/Entity/Messages/ChatroomControlDeliveryMessage.hpp"
+﻿#include "Domain/Messages/ChatroomControlDeliveryMessage.hpp"
 
 namespace {
 std::string room_action_to_string(ChatroomControlMessage::RoomAction action)

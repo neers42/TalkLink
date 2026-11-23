@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/AuthRequestMessage.hpp"
+#include "Domain/Messages/AuthRequestMessage.hpp"
 
 
 // コンストラクタ

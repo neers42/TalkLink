@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "Domain/Entity/Messages/ChatMessage.hpp"
-#include "Domain/Entity/Messages/ChatDeliveryMessage.hpp"
-#include "Domain/Entity/Messages/SyncRequestMessage.hpp"
-#include "Domain/Entity/Messages/SyncResponseMessage.hpp"
-#include "Domain/Entity/Messages/SessionResponseMessage.hpp"
-#include "Domain/Entity/Messages/UserSearchResponseMessage.hpp"
+#include "Domain/Messages/ChatMessage.hpp"
+#include "Domain/Messages/ChatDeliveryMessage.hpp"
+#include "Domain/Messages/SyncRequestMessage.hpp"
+#include "Domain/Messages/SyncResponseMessage.hpp"
+#include "Domain/Messages/SessionResponseMessage.hpp"
+#include "Domain/Messages/UserSearchResponseMessage.hpp"
 
 namespace {
 // 28byteのダミーuid、32/36文字のダミーroom_idを用意するヘルパー

@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "Domain/Entity/Messages/IncrementalSearchMessage.hpp"
-#include "Domain/Entity/Messages/UserSettingControlMessage.hpp"
-#include "Domain/Entity/Messages/UserSettingControlResponseMessage.hpp"
+#include "Domain/Messages/IncrementalSearchMessage.hpp"
+#include "Domain/Messages/UserSettingControlMessage.hpp"
+#include "Domain/Messages/UserSettingControlResponseMessage.hpp"
 
 // これら3クラスは現時点で未実装のスタブで、validate_payload/create_instance/
 // validate_valueが常にfalse/nullptrを返す。機能追加はこのテストの対象外であり、

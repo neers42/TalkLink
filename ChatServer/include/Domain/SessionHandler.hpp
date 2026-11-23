@@ -3,8 +3,8 @@
 #include <string>
 #include <memory>
 #include "Domain/Entity/User.hpp"
-#include "Domain/Entity/Messages/SessionRequestMessage.hpp"
-#include "Domain/Entity/Messages/SessionResponseMessage.hpp"
+#include "Domain/Messages/SessionRequestMessage.hpp"
+#include "Domain/Messages/SessionResponseMessage.hpp"
 #include "Infrastructure/MySQLAdapter.hpp"
 #include "common.hpp"
 #include "LogHandler.hpp"

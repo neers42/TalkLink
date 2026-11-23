@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/UserSearchRequestMessage.hpp"
+#include "Domain/Messages/UserSearchRequestMessage.hpp"
 
 UserSearchRequestMessage::UserSearchRequestMessage()
     : MessageBase(MessageBase::MessageType::USER_SEARCH_REQUEST),

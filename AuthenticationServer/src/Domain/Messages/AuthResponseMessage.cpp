@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/AuthResponseMessage.hpp"
+#include "Domain/Messages/AuthResponseMessage.hpp"
 
 AuthResponseMessage::AuthResponseMessage()
     :MessageBase(MessageBase::MessageType::AUTHENTICATION_RESPONSE),_verify_status(false), ttl(0){

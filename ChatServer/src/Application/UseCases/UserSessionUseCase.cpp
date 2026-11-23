@@ -4,10 +4,10 @@
 #include "Domain/SessionHandler.hpp"
 #include "Domain/Entity/User.hpp"
 #include "Domain/UserAggregateStore.hpp"
-#include "Domain/Entity/Messages/SessionRequestMessage.hpp"
-#include "Domain/Entity/Messages/SessionResponseMessage.hpp"
-#include "Domain/Entity/Messages/UserSearchRequestMessage.hpp"
-#include "Domain/Entity/Messages/UserSearchResponseMessage.hpp"
+#include "Domain/Messages/SessionRequestMessage.hpp"
+#include "Domain/Messages/SessionResponseMessage.hpp"
+#include "Domain/Messages/UserSearchRequestMessage.hpp"
+#include "Domain/Messages/UserSearchResponseMessage.hpp"
 
 // Constructor
 UserSessionUseCase::UserSessionUseCase(

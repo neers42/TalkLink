@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
-#include "Domain/Entity/Messages/ChatAckMessage.hpp"
-#include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
-#include "Domain/Entity/Messages/ChatroomControlDeliveryMessage.hpp"
-#include "Domain/Entity/Messages/ChatroomControlMessage.hpp"
-#include "Domain/Entity/Messages/HeartBeatMessage.hpp"
-#include "Domain/Entity/Messages/SessionRequestMessage.hpp"
-#include "Domain/Entity/Messages/UserSearchRequestMessage.hpp"
+#include "Domain/Messages/ChatAckMessage.hpp"
+#include "Domain/Messages/ChatroomControlAckMessage.hpp"
+#include "Domain/Messages/ChatroomControlDeliveryMessage.hpp"
+#include "Domain/Messages/ChatroomControlMessage.hpp"
+#include "Domain/Messages/HeartBeatMessage.hpp"
+#include "Domain/Messages/SessionRequestMessage.hpp"
+#include "Domain/Messages/UserSearchRequestMessage.hpp"
 #include "ServerTime.hpp"
 
 namespace {

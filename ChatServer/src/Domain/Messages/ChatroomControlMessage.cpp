@@ -1,4 +1,4 @@
-﻿#include "Domain/Entity/Messages/ChatroomControlMessage.hpp"
+﻿#include "Domain/Messages/ChatroomControlMessage.hpp"
 
 ChatroomControlMessage::ChatroomControlMessage()
 	:MessageBase(MessageBase::MessageType::CHATROOM_CONTROL),

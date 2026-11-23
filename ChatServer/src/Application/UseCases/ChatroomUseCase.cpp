@@ -1,6 +1,6 @@
 #include "Application/UseCases/ChatroomUseCase.hpp"
-#include "Domain/Entity/Messages/ChatroomControlDeliveryMessage.hpp"
-#include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
+#include "Domain/Messages/ChatroomControlDeliveryMessage.hpp"
+#include "Domain/Messages/ChatroomControlAckMessage.hpp"
 #include "Application/Interfaces/IMessageSender.hpp"
 #include "Domain/ChatroomRepositoryHandler.hpp"
 #include "Domain/ChatroomSequenceHandler.hpp"

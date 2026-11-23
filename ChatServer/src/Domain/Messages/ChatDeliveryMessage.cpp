@@ -1,4 +1,4 @@
-﻿#include "Domain/Entity/Messages/ChatDeliveryMessage.hpp"
+﻿#include "Domain/Messages/ChatDeliveryMessage.hpp"
 
 ChatDeliveryMessage::ChatDeliveryMessage()
     : MessageBase(MessageBase::MessageType::CHAT_DELIVERY),

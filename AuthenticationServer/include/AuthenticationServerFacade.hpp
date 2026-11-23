@@ -1,8 +1,8 @@
 ﻿#ifndef AUNTHENTICATIONSERVERFACADE_HPP
 #define AUNTHENTICATIONSERVERFACADE_HPP
 #include "common.h"
-#include "Domain/Entity/Messages/AuthRequestMessage.hpp"
-#include "Domain/Entity/Messages/AuthResponseMessage.hpp"
+#include "Domain/Messages/AuthRequestMessage.hpp"
+#include "Domain/Messages/AuthResponseMessage.hpp"
 #include <thread>
 #include <memory>
 

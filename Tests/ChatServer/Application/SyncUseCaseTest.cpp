@@ -5,7 +5,7 @@
 #include "Domain/ChatroomRepositoryHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
 #include "Domain/UserAggregateStore.hpp"
-#include "Domain/Entity/Messages/SyncRequestMessage.hpp"
+#include "Domain/Messages/SyncRequestMessage.hpp"
 #include "ServerTime.hpp"
 #include "TestFakes.hpp"
 

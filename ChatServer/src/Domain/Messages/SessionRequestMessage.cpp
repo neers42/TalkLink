@@ -1,4 +1,4 @@
-﻿#include "Domain/Entity/Messages/SessionRequestMessage.hpp"
+﻿#include "Domain/Messages/SessionRequestMessage.hpp"
 
 SessionRequestMessage::SessionRequestMessage()
     : MessageBase(MessageBase::MessageType::SESSION_REQUEST),

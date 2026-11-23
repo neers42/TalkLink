@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/SessionResponseMessage.hpp"
+#include "Domain/Messages/SessionResponseMessage.hpp"
 
 
 SessionResponseMessage::SessionResponseMessage(const MessageBase::CommonField& common_fields, const std::string& uid, bool verify_result, const std::string& error_message, const json& unsend_messages)

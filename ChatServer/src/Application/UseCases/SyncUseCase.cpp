@@ -1,6 +1,6 @@
 #include "Application/UseCases/SyncUseCase.hpp"
-#include "Domain/Entity/Messages/SyncRequestMessage.hpp"
-#include "Domain/Entity/Messages/SyncResponseMessage.hpp"
+#include "Domain/Messages/SyncRequestMessage.hpp"
+#include "Domain/Messages/SyncResponseMessage.hpp"
 #include "Domain/ChatroomRepositoryHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
 #include "Application/Interfaces/IMessageSender.hpp"

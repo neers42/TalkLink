@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/UserSettingControlMessage.hpp"
+#include "Domain/Messages/UserSettingControlMessage.hpp"
 
 UserSettingControlMessage::UserSettingControlMessage()
 {

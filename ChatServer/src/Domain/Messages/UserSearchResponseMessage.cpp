@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/UserSearchResponseMessage.hpp"
+#include "Domain/Messages/UserSearchResponseMessage.hpp"
 
 UserSearchResponseMessage::UserSearchResponseMessage(const MessageBase::CommonField &common_fields, const json &search_results, const std::string &error_message)
     : MessageBase(common_fields, MessageBase::MessageType::USER_SEARCH_RESPONSE),

@@ -1,4 +1,4 @@
-﻿#include "Domain/Entity/Messages/ChatMessage.hpp"
+﻿#include "Domain/Messages/ChatMessage.hpp"
 
 ChatMessage::ChatMessage() 
 	: MessageBase(MessageBase::MessageType::CHAT_MESSAGE),_message_id(0), _room_id(""), _mention_ids(), _sender_uid(""), _content("")

@@ -3,7 +3,7 @@
 
 #include "Utils/common.hpp"
 #include "Application/DTO/DeliveryResult.hpp"
-#include "Domain/Entity/Messages/ChatroomControlMessage.hpp"
+#include "Domain/Messages/ChatroomControlMessage.hpp"
 #include "Domain/DTO/UserInfo.hpp"
 
 class ChatroomControlMessage;

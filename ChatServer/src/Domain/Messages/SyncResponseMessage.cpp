@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/SyncResponseMessage.hpp"
+#include "Domain/Messages/SyncResponseMessage.hpp"
 
 SyncResponseMessage::SyncResponseMessage(
 	const MessageBase::CommonField& common_fields,

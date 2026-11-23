@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/SyncRequestMessage.hpp"
+#include "Domain/Messages/SyncRequestMessage.hpp"
 
 SyncRequestMessage::SyncRequestMessage()
 	: MessageBase(MessageBase::MessageType::SYNC_REQUEST), _room_id(""), _target_uid(""), _from_sequence(0)

@@ -1,4 +1,4 @@
-﻿#include "Domain/Entity/Messages/ChatroomControlAckMessage.hpp"
+﻿#include "Domain/Messages/ChatroomControlAckMessage.hpp"
 
 ChatroomControlAckMessage::ChatroomControlAckMessage() 
 	: MessageBase(MessageBase::MessageType::CHATROOM_CONTROL_ACK), _message_id(0), _send_status(MessageSendStatus::SEND_FAILED), _room_id(""), _unsend_uid_list(), _room_sequence(0)

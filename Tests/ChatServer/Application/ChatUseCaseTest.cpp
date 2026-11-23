@@ -6,7 +6,7 @@
 #include "Domain/ChatroomSequenceHandler.hpp"
 #include "Domain/UserRepositoryHandler.hpp"
 #include "Domain/UserAggregateStore.hpp"
-#include "Domain/Entity/Messages/ChatMessage.hpp"
+#include "Domain/Messages/ChatMessage.hpp"
 #include "ServerTime.hpp"
 #include "TestFakes.hpp"
 

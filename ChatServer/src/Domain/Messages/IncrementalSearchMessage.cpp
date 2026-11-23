@@ -1,4 +1,4 @@
-#include "Domain/Entity/Messages/IncrementalSearchMessage.hpp"
+#include "Domain/Messages/IncrementalSearchMessage.hpp"
 
 
 IncrementalSearchMessage::IncrementalSearchMessage(const MessageBase::CommonField& common_fields, IncrementalSearchMessage::SearchType s_type, const std::string &keyword)

@@ -3,7 +3,7 @@
 #include "MessageBase.hpp"
 #include "ISendMessage.hpp"
 #include "Domain/MessageIDGenerator.hpp"
-#include "Domain/Entity/Messages/ChatroomControlMessage.hpp"
+#include "Domain/Messages/ChatroomControlMessage.hpp"
 #include "Domain/DTO/UserInfo.hpp"
 class ChatroomControlDeliveryMessage :
     public MessageBase, public ISendMessage
